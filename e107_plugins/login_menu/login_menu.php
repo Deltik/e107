@@ -16,7 +16,7 @@ $text = "";
 	if(USER == TRUE || ADMIN == TRUE){
 		if(ADMIN == TRUE){
 			$adminfpage = (!$pref['adminstyle'] || $pref['adminstyle'] == "default" ? "admin.php" : $pref['adminstyle'].".php");
-			$text = ($pref['maintainance_flag']==1 ? "<div style='text-align:center'><b>".LOGIN_MENU_L10."</div></b><br />" : "" );
+			$text = ($pref['maintainance_flag']==1 ? "<div style='text-align:center'><strong>".LOGIN_MENU_L10."</strong></div><br />" : "" );
 			$text .= "<img src='".THEME."images/bullet2.gif' alt='bullet' /> <a href='".e_ADMIN.$adminfpage."'>".LOGIN_MENU_L11."</a><br />";
 		}
 		$text .= "<img src='".THEME."images/bullet2.gif' alt='bullet' /> <a href='".e_BASE."usersettings.php'>".LOGIN_MENU_L12."</a>\n<br />\n<img src='".THEME."images/bullet2.gif' alt='bullet' /> <a href='".e_BASE."user.php?id.".USERID."'>".LOGIN_MENU_L13."</a>\n<br />\n<img src='".THEME."images/bullet2.gif' alt='bullet' /> <a href='".e_BASE."?logout'>".LOGIN_MENU_L8."</a>";		
@@ -36,6 +36,18 @@ $text = "";
 		}
 		$new_total = $new_total + $new_news;
 		if(!$new_news){ $new_news = LOGIN_MENU_L26; }	
+
+
+		$new_articles = 0;
+		$new_articles = $sql -> db_Select("content", "*", "content_datestamp>$time  ORDER BY content_datestamp DESC");
+		while($row = $sql -> db_Fetch()){
+			extract($row);
+				if(!check_class($content_class)){
+					$new_articles = $new_articles - 1;
+				}
+		}
+		$new_total = $new_total + $new_articles;
+		if(!$new_articles){ $new_articles = LOGIN_MENU_L26; }
 
 		$new_comments=0;
 		if($comments = $sql -> db_Select("comments", "*", "comment_datestamp>$time ORDER BY comment_datestamp DESC ")){
@@ -130,14 +142,19 @@ $text = "";
 		$new_users = $sql -> db_Count("user", "(*)", "WHERE user_join>'".$time."' "); $new_total = $new_total + $new_users;
 		if(!$new_users){ $new_users = LOGIN_MENU_L26; }
 
-		$text .= "<br /><br />\n<span class='smalltext'>\n".LOGIN_MENU_L25." 
-		$new_news ".($new_news == 1 ? LOGIN_MENU_L14 : LOGIN_MENU_L15).", ";
+		$text .= "<br /><br />\n<span class='smalltext'>\n".LOGIN_MENU_L25."<br /> 
+		$new_news ".($new_news == 1 ? LOGIN_MENU_L14 : LOGIN_MENU_L15).",<br />";
+
+		$text .= $new_articles ." ".($new_articles == 1 ? LOGIN_MENU_L29 : LOGIN_MENU_L30).",<br />";
+
+		
+		
 		if($display_chats == TRUE){
-			$text .= $new_chat ." ".($new_chat == 1 ? LOGIN_MENU_L16 : LOGIN_MENU_L17).", ";
+			$text .= $new_chat ." ".($new_chat == 1 ? LOGIN_MENU_L16 : LOGIN_MENU_L17).",<br />";
 		}
-		$text .= $new_comments ." ".($new_comments == 1 ? LOGIN_MENU_L18 : LOGIN_MENU_L19).", 
-		$new_forum ".($new_forum == 1 ? LOGIN_MENU_L20 : LOGIN_MENU_L21)." ".LOGIN_MENU_L27." 
-		$new_users ".($new_users == 1 ? LOGIN_MENU_L22 : LOGIN_MENU_L23).".</span>";
+		$text .= $new_comments ." ".($new_comments == 1 ? LOGIN_MENU_L18 : LOGIN_MENU_L19).",<br />
+		$new_forum ".($new_forum == 1 ? LOGIN_MENU_L20 : LOGIN_MENU_L21).",<br />";
+		$text .= $new_users." ".($new_users == 1 ? LOGIN_MENU_L22 : LOGIN_MENU_L23).".</span>";
 		if($new_total){
 			$text .= "<br /><a href='".e_PLUGIN."list_new/new.php'>".LOGIN_MENU_L24."</a>";
 		}

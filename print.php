@@ -65,8 +65,14 @@ $print_info[] = array( 'table' => 'content', 'handler' => '
 	$content_heading = $aj -> tpa($content_heading);
 	$content_subheading = $aj -> tpa($content_subheading);
 	$content_content = ereg_replace("\{EMAILPRINT\}|\[newpage\]", "", $aj -> tpa($content_content));
-	$sql -> db_Select("user", "*", "user_id=\"$content_author\" ");
-	list($a_id, $a_name) = $sql-> db_Fetch();
+	if(is_numeric($content_author)) {
+		$sql -> db_Select("user", "*", "user_id=\"$content_author\" ");
+		list($a_id, $a_name) = $sql-> db_Fetch();
+	} else {
+		$tmp = explode("^",$content_author);
+		$a_name = $tmp[0];
+		$user_email = $tmp[1];
+	}
 	$content_datestamp = $con -> convert_date($content_datestamp, "long");
 	$text = "<font style=\"FONT-SIZE: 11px; COLOR: black; FONT-FAMILY: Tahoma, Verdana, Arial, Helvetica; TEXT-DECORATION: none\">
 	<b>".LAN_304.$content_heading."</b>

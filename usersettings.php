@@ -16,6 +16,7 @@
 
 
 require_once("class2.php");
+
 if(IsSet($_POST['sub_news'])){
         header("location:".e_BASE."submitnews.php");
         exit;
@@ -90,7 +91,6 @@ if(IsSet($_POST['updatesettings'])){
                 $row = $sql -> db_Fetch();
                 $user_entended = unserialize($row[0]);
                 $c=0;
-                $user_pref = unserialize($user_prefs);
                 while(list($key, $u_entended) = each($user_entended)){
                     if($u_entended){
 
@@ -128,6 +128,31 @@ if(IsSet($_POST['updatesettings'])){
                  $error .= LAN_106;
          }
 
+
+        if($sql -> db_Select("user", "user_email", "user_email='".$_POST['email']." AND user_id!=".USERID."' ")){
+                message_handler("P_ALERT", LAN_408);
+                $error = TRUE;
+        }
+
+
+		if($sql -> db_Select("core", " e107_value", " e107_name='user_entended'")){
+			$row = $sql -> db_Fetch();
+			$user_entended = unserialize($row[0]);
+			$c=0;
+			while(list($key, $u_entended) = each($user_entended)){
+				if($u_entended){
+					if($pref['signup_ext'.$key] ==2 && $_POST["ue_{$key}"] == ""){
+						$ut = explode("|",$u_entended);
+						$u_name = ($ut[0] != "") ? trim($ut[0]) : trim($u_entended);
+						$error_ext = LAN_SIGNUP_6.$u_name.LAN_SIGNUP_7;
+						message_handler("P_ALERT", $error_ext);
+						$error = TRUE;
+					}
+		
+				}
+			}
+		}
+		
          if (preg_match('#^www\.#si', $_POST['website'])) {
                 $_POST['website'] = "http://$homepage";
         }else if (!preg_match('#^[a-z0-9]+://#si', $_POST['website'])){
@@ -147,7 +172,11 @@ if(IsSet($_POST['updatesettings'])){
                         if($uploaded[0]['name'] && $pref['avatar_upload']){
                                 // avatar uploaded
                                 $_POST['image'] = "-upload-".$uploaded[0]['name'];
-                                resize_image(e_FILE."public/avatars/".$uploaded[0]['name'], e_FILE."public/avatars/".$uploaded[0]['name'], "avatar");
+                                if(!resize_image(e_FILE."public/avatars/".$uploaded[0]['name'], e_FILE."public/avatars/".$uploaded[0]['name'], "avatar")){
+									unset($message);
+									$error = RESIZE_NOT_SUPPORTED;
+									@unlink(e_FILE."public/avatars/".$uploaded[0]['name']);
+								}
                         }else{
                                 // photograph uploaded
                                 $user_sess = ($pref['avatar_upload'] ? $uploaded[1]['name'] : $uploaded[0]['name']);
@@ -405,7 +434,7 @@ $text .= "</select>
 </tr>
 
 <tr>
-<td colspan='2' class='forumheader3' style='text-align:center'>".LAN_404."</td>
+<td colspan='2' class='forumheader3' style='text-align:center'>".LAN_404.($pref['im_width'] || $pref['im_height'] ? "<br />".($pref['im_width'] ? MAX_AVWIDTH.$pref['im_width']." pixels. " : "").($pref['im_height'] ? MAX_AVHEIGHT.$pref['im_height']." pixels." : "") : "")."</td>
 </tr>
 
 
@@ -422,7 +451,7 @@ $text .= "</select>
 <td style='width:20%; vertical-align:top' class='forumheader3'>".LAN_421."<br /><span class='smalltext'>".LAN_424."</span></td>
 <td style='width:80%' class='forumheader2'>
 <input class='button' type ='button' style=' cursor:hand' size='30' value='".LAN_403."' onclick='expandit(this)' />
-<div style='{head}; display:none' >";
+<div style='display:none' >";
 $avatarlist[0] = "";
 $handle=opendir(e_IMAGE."avatars/");
 while ($file = readdir($handle)){

@@ -27,29 +27,49 @@ if(!e_QUERY){
 	if(!$from){ $from = 0; }
 }
 
-define("IMAGE_newthread", (file_exists(THEME."forum/newthread.png") ? "<img src='".THEME."forum/newthread.png' alt='' style='border:0' />" : "<img src='".e_IMAGE."forum/newthread.png' alt='' style='border:0' />"));
-define("IMAGE_new_small", (file_exists(THEME."forum/new_small.png") ? "<img src='".THEME."forum/new_small.png' alt='' />" : "<img src='".e_IMAGE."forum/new_small.png' alt='' />"));
-define("IMAGE_nonew_small", (file_exists(THEME."forum/nonew_small.png") ? "<img src='".THEME."forum/nonew_small.png' alt='' />" : "<img src='".e_IMAGE."forum/nonew_small.png' alt='' />"));
-define("IMAGE_new_popular", (file_exists(THEME."forum/new_popular.gif") ? "<img src='".THEME."forum/new_popular.gif' alt='' />" : "<img src='".e_IMAGE."forum/new_popular.gif' alt='' />"));
-define("IMAGE_nonew_popular", (file_exists(THEME."forum/nonew_popular.gif") ? "<img src='".THEME."forum/nonew_popular.gif' alt='' />" : "<img src='".e_IMAGE."forum/nonew_popular.gif' alt='' />"));
-define("IMAGE_sticky", (file_exists(THEME."forum/sticky.png") ? "<img src='".THEME."forum/sticky.png' alt='' />" : "<img src='".e_IMAGE."forum/sticky.png' alt='' />"));
-define("IMAGE_stickyclosed", (file_exists(THEME."forum/stickyclosed.png") ? "<img src='".THEME."forum/stickyclosed.png' alt='' />" : "<img src='".e_IMAGE."forum/stickyclosed.png' alt='' />"));
-define("IMAGE_announce", (file_exists(THEME."forum/announce.png") ? "<img src='".THEME."forum/announce.png' alt='' />" : "<img src='".e_IMAGE."forum/announce.png' alt='' />"));
-define("IMAGE_closed_small", (file_exists(THEME."forum/closed_small.png") ? "<img src='".THEME."forum/closed_small.png' alt='' />" : "<img src='".e_IMAGE."forum/closed_small.png' alt='' />"));
-define("IMAGE_admin_unstick", (file_exists(THEME."forum/admin_unstick.png") ? "<img src='".THEME."forum/admin_unstick.png' alt='".LAN_398."' style='border:0' />" : "<img src='".e_IMAGE."forum/admin_unstick.png' alt='".LAN_398."' style='border:0' />"));
-define("IMAGE_admin_lock", (file_exists(THEME."forum/admin_lock.png") ? "<img src='".THEME."forum/admin_lock.png' alt='".LAN_399."' style='border:0' />" : "<img src='".e_IMAGE."forum/admin_lock.png' alt='".LAN_399."' style='border:0' />"));
-define("IMAGE_admin_unlock", (file_exists(THEME."forum/admin_unlock.png") ? "<img src='".THEME."forum/admin_unlock.png' alt='".LAN_400."' style='border:0' />" : "<img src='".e_IMAGE."forum/admin_unlock.png' alt='".LAN_400."' style='border:0' />"));
-define("IMAGE_admin_stick", (file_exists(THEME."forum/admin_stick.png") ? "<img src='".THEME."forum/admin_stick.png' alt='".LAN_401."' style='border:0' />" : "<img src='".e_IMAGE."forum/admin_stick.png' alt='".LAN_401."' style='border:0' />"));
-define("IMAGE_admin_move", (file_exists(THEME."forum/admin_move.png") ? "<img src='".THEME."forum/admin_move.png' alt='".LAN_402."' style='border:0' />" : "<img src='".e_IMAGE."forum/admin_move.png' alt='".LAN_402."' style='border:0' />"));
+$image = (file_exists(THEME."forum/newthread.png")) ? THEME."forum/newthread.png" : e_IMAGE."forum/newthread.png";
+define("IMAGE_newthread", "<img src='{$image}' alt='".FORLAN_10."' title='".FORLAN_10."' style='border:0' />");
+$image = (file_exists(THEME."forum/new_small.png")) ? THEME."forum/new_small.png" : e_IMAGE."forum/new_small.png";
+define("IMAGE_new_small", "<img src='{$image}' alt='".FORLAN_11."' title='".FORLAN_11."' style='border:0' />");
+$image = (file_exists(THEME."forum/nonew_small.png")) ? THEME."forum/nonew_small.png" : e_IMAGE."forum/nonew_small.png";
+define("IMAGE_nonew_small", "<img src='{$image}' alt='".FORLAN_12."' title='".FORLAN_12."' style='border:0' />");
+$image = (file_exists(THEME."forum/new_popular.pgif")) ? THEME."forum/new_popular.gif" : e_IMAGE."forum/new_popular.gif";
+define("IMAGE_new_popular", "<img src='{$image}' alt='".FORLAN_13."' title='".FORLAN_13."' style='border:0' />");
+$image = (file_exists(THEME."forum/nonew_popular.gif")) ? THEME."forum/nonew_popular.gif" : e_IMAGE."forum/nonew_popular.gif";
+define("IMAGE_nonew_popular", "<img src='{$image}' alt='".FORLAN_14."' title='".FORLAN_14."' style='border:0' />");
+$image = (file_exists(THEME."forum/sticky.png")) ? THEME."forum/sticky.png" : e_IMAGE."forum/sticky.png";
+define("IMAGE_sticky", "<img src='{$image}' alt='".FORLAN_15."' title='".FORLAN_15."' style='border:0' />");
+$image = (file_exists(THEME."forum/stickyclosed.png")) ? THEME."forum/stickyclosed.png" : e_IMAGE."forum/stickyclosed.png";
+define("IMAGE_stickyclosed", "<img src='{$image}' alt='".FORLAN_16."' title='".FORLAN_16."' style='border:0' />");
+$image = (file_exists(THEME."forum/announce.png")) ? THEME."forum/announce.png" : e_IMAGE."forum/announce.png";
+define("IMAGE_announce", "<img src='{$image}' alt='".FORLAN_17."' title='".FORLAN_17."' style='border:0' />");
+$image = (file_exists(THEME."forum/closed_small.png")) ? THEME."forum/closed_small.png" : e_IMAGE."forum/closed_small.png";
+define("IMAGE_closed_small", "<img src='{$image}' alt='".FORLAN_18."' title='".FORLAN_18."' style='border:0' />");
+$image = (file_exists(THEME."forum/admin_move.png")) ? THEME."forum/admin_move.png" : e_IMAGE."forum/admin_move.png";
+define("IMAGE_admin_move", "<img src='{$image}' alt='".LAN_402."' title='".LAN_402."' style='border:0' />");
+
+define("IMAGE_admin_unstick", ((file_exists(THEME."forum/admin_unstick.png") ? "src='".THEME."forum/admin_unstick.png' " : "src='".e_IMAGE."forum/admin_unstick.png' ")."alt='".LAN_398."' title='".LAN_398."' style='border:0' "));
+define("IMAGE_admin_stick", ((file_exists(THEME."forum/admin_stick.png")     ? "src='".THEME."forum/admin_stick.png' "   : "src='".e_IMAGE."forum/admin_stick.png' ")."alt='".LAN_401."' title='".LAN_401."' style='border:0' "));
+define("IMAGE_admin_lock", ((file_exists(THEME."forum/admin_lock.png")     ? "src='".THEME."forum/admin_lock.png' "      : "src='".e_IMAGE."forum/admin_lock.png' ")."alt='".LAN_399."' title='".LAN_399."' style='border:0' "));
+define("IMAGE_admin_unlock", ((file_exists(THEME."forum/admin_unlock.png") ? "src='".THEME."forum/admin_unlock.png' "    : "src='".e_IMAGE."forum/admin_unlock.png' ")."alt='".LAN_400."' title='".LAN_400."' style='border:0' "));
+
 
 $STARTERTITLE = LAN_54;
-	$THREADTITLE = LAN_53;
-	$REPLYTITLE = LAN_55;
-	$LASTPOSTITLE = LAN_57;
-	$VIEWTITLE = LAN_56;
+$THREADTITLE = LAN_53;
+$REPLYTITLE = LAN_55;
+$LASTPOSTITLE = LAN_57;
+$VIEWTITLE = LAN_56;
 
-if(!$FORUM_VIEW_START){
-	require_once(e_BASE.$THEMES_DIRECTORY."templates/forum_viewforum_template.php");
+if(!$FORUM_VIEW_START)
+{
+	if(file_exists(THEME."forum_viewforum_template.php"))
+	{
+    require_once(THEME."forum_viewforum_template.php");
+  }
+  else
+  {
+    require_once(e_BASE.$THEMES_DIRECTORY."templates/forum_viewforum_template.php");
+  }
 }
 
 $sql -> db_Select("forum", "*", "forum_id='".$forum_id."' ");
@@ -60,12 +80,25 @@ if($forum_class && !check_class($forum_class) || !$forum_parent){ header("Locati
 
 define("MODERATOR", (preg_match("/".preg_quote(ADMINNAME)."/", $forum_moderators) && getperms("A") ? TRUE : FALSE));
 
+$message="";
+if(MODERATOR)
+{
+	if($_POST)
+	{
+		require_once(e_HANDLER."forum_mod.php");
+		$message = forum_thread_moderate($_POST);
+	}
+}
+
 $member_users = $sql -> db_Select("online", "*", "online_location REGEXP('forum_viewforum.php.$forum_id') AND online_user_id!='0' ");
 $guest_users = $sql -> db_Select("online", "*", "online_location REGEXP('forum_viewforum.php.$forum_id') AND online_user_id='0' ");
 $users = $member_users+$guest_users;
 
-
 require_once(HEADERF);
+if($message)
+{
+	$ns -> tablerender("",$message);
+}
 
 $view=25;
 $topics = $sql -> db_Count("forum_t", "(*)", " WHERE thread_forum_id='".$forum_id."' AND thread_parent='0' ");
@@ -201,7 +234,7 @@ require_once(FOOTERF);
 
 
 function parse_thread($row){
-	global $sql2, $sql3, $FORUM_VIEW_FORUM, $gen, $aj, $pref, $forum_id;
+	global $sql2, $sql3, $FORUM_VIEW_FORUM, $gen, $aj, $pref, $forum_id, $menu_pref;
 	extract($row);
 	$VIEWS = $thread_views;
 	$REPLIES = $sql2 -> db_Count("forum_t", "(*)", " WHERE thread_parent='$thread_id' ");
@@ -255,9 +288,18 @@ function parse_thread($row){
 
 	$thread_name = strip_tags($aj -> tpa($thread_name));
 	$result = preg_split("/\]/", $thread_name);
-	$THREADNAME = ($result[1] ? $result[0]."] <a href='".e_BASE."forum_viewtopic.php?".$forum_id.".".$thread_id."'>".ereg_replace("\[.*\]", "", $thread_name)."</a>" : "<a href='".e_BASE."forum_viewtopic.php?".$forum_id.".".$thread_id."'>".$thread_name."</a>");
-
-	
+	if($pref['forum_tooltip']){
+		$thread_thread = strip_tags($aj -> tpa($thread_thread));
+		$tip_length = ($pref['forum_tiplength'] ? $pref['forum_tiplength'] : 400);
+		if(strlen($thread_thread) > $tip_length) {
+			$thread_thread = substr($thread_thread, 0, $tip_length)." ".$menu_pref['newforumposts_postfix'];
+		}
+		$thread_thread = str_replace("'", "&#39;", $thread_thread);
+		$title = "title='".$thread_thread."'";
+	}else{
+		$title = "";
+	}
+	$THREADNAME = ($result[1] ? $result[0]."] <a  ".$title." href='".e_BASE."forum_viewtopic.php?".$forum_id.".".$thread_id."'>".ereg_replace("\[.*\]", "", $thread_name)."</a>" : "<a ".$title." href='".e_BASE."forum_viewtopic.php?".$forum_id.".".$thread_id."'>".$thread_name."</a>");
 
 	$pages = ceil($REPLIES/$pref['forum_postspage']);
 	if($pages>1){
@@ -268,24 +310,17 @@ function parse_thread($row){
 		$PAGES .= " ]";
 	}
 
-	if(MODERATOR){
-		
-		if($thread_s == 1){
-			$ADMIN_ICONS = "<a href='".e_ADMIN."forum_conf.php?unstick.".$forum_id.".".$thread_id."'>".IMAGE_admin_unstick."</a> ";
-			if($thread_active){
-				$ADMIN_ICONS .= "<a href='".e_ADMIN."forum_conf.php?close.".$forum_id.".".$thread_id."'>".IMAGE_admin_lock."</a> ";
-			}else{
-				$ADMIN_ICONS .= "<a href='".e_ADMIN."forum_conf.php?open.".$forum_id.".".$thread_id."'>".IMAGE_admin_unlock."</a> ";
-			}
-		}else{
-			$ADMIN_ICONS = "<a href='".e_ADMIN."forum_conf.php?stick.".$forum_id.".".$thread_id."'>".IMAGE_admin_stick."</a> ";
-			if($thread_active){
-				$ADMIN_ICONS .= "<a href='".e_ADMIN."forum_conf.php?close.".$forum_id.".".$thread_id."'>".IMAGE_admin_lock."</a> ";
-			}else{
-				$ADMIN_ICONS .= "<a href='".e_ADMIN."forum_conf.php?open.".$forum_id.".".$thread_id."'>".IMAGE_admin_unlock."</a> ";
-			}
-		}
-		$ADMIN_ICONS .= "<a href='".e_ADMIN."forum_conf.php?move.".$forum_id.".".$thread_id."'>".IMAGE_admin_move."</a></div>";
+	if(MODERATOR)
+	{
+		$ADMIN_ICONS = "
+		<form method='post' action='".e_SELF."?{$forum_id}' id='frmMod_{$forum_id}_{$thread_id}'><div>
+		";
+		$ADMIN_ICONS .= ($thread_s == 1) ? "<input type='image' ".IMAGE_admin_unstick." name='unstick_{$thread_id}' value='thread_action' /> " : "<input type='image' ".IMAGE_admin_stick." name='stick_{$thread_id}' value='thread_action' /> ";
+		$ADMIN_ICONS .= ($thread_active) ? "<input type='image' ".IMAGE_admin_lock." name='lock_{$thread_id}' value='thread_action' /> " : "<input type='image' ".IMAGE_admin_unlock." name='unlock_{$thread_id}' value='thread_action' /> ";
+		$ADMIN_ICONS .= "<a href='".e_ADMIN."forum_conf.php?move.".$forum_id.".".$thread_id."'>".IMAGE_admin_move."</a>";
+		$ADMIN_ICONS .= "
+		</div></form>
+		";
 	}
 			
 	$text .= "</td>

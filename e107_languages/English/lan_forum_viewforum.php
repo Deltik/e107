@@ -1,6 +1,15 @@
 <?php
-
-define("PAGE_NAME", "Forum"); 
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system - Language File.
+|
+|     $Source: /cvsroot/e107/e107/e107_languages/English/lan_forum_viewforum.php,v $
+|     $Revision: 1.8 $
+|     $Date: 2004/09/08 12:02:28 $
+|     $Author: mcfly_e107 $
++----------------------------------------------------------------------------+
+*/
+define("PAGE_NAME", "Forum");
 
 define("LAN_01", "Forums");
 define("LAN_02", "Back to top");
@@ -11,7 +20,7 @@ define("LAN_55", "Replies");
 define("LAN_56", "Views");
 define("LAN_57", "Lastpost");
 define("LAN_58", "There are no topics in this forum yet.");
-define("LAN_59", "You must be a registered member and logged in to post on this forum. Click <a href='".e_BASE."signup.php'>here</a> to sign up or login from the login menu.");
+define("LAN_59", "You must be a registered member and logged in to post on this forum. Click on signup or login from the login menu.");
 define("LAN_79", "New posts");
 define("LAN_80", " No new posts");
 define("LAN_81", "Closed thread");
@@ -50,4 +59,26 @@ define("LAN_410", "guests");
 //v.616
 define("LAN_411", "Important Threads");
 define("LAN_412", "Forum Threads");
+
+//v.617
+define("FORLAN_CLOSE", "Thread closed.");
+define("FORLAN_OPEN", "Thread reopened.");
+define("FORLAN_STICK", "Thread made sticky.");
+define("FORLAN_UNSTICK", "Thread unstuck.");
+define("FORLAN_6", "Thread deleted");
+define("FORLAN_7", "replies deleted");
+define("FORLAN_8", "here");
+define("FORLAN_9", "to sign up or login from the login menu.");
+
+define("FORLAN_10","Begin New Thread");
+define("FORLAN_11","New Posts");
+define("FORLAN_12","No New Posts");
+define("FORLAN_13","New Posts on Popular Thread");
+define("FORLAN_14","No New Posts on Popular Thread");
+define("FORLAN_15","Sticky Thread");
+define("FORLAN_16","Closed Sticky Thread");
+define("FORLAN_17","Announcement Thread");
+define("FORLAN_18","Closed Thread");
+
+
 ?>

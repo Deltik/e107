@@ -9,7 +9,7 @@
 // Version 3.0 developed by Mihai Bazon.
 //   http://dynarch.com/mishoo
 //
-// $Id: htmlarea.js,v 1.7 2004/05/09 20:43:38 e107coders Exp $
+// $Id: htmlarea.js,v 1.9 2004/08/11 09:26:35 e107coders Exp $
 
 if (typeof _editor_url == "string") {
         // Leave exactly one backslash at the end of _editor_url
@@ -25,6 +25,15 @@ if (typeof _editor_lang == "string") {
 } else {
         _editor_lang = "en";
 }
+
+// browser identification
+HTMLArea.agt = navigator.userAgent.toLowerCase();
+HTMLArea.is_ie           = ((HTMLArea.agt.indexOf("msie") != -1) && (HTMLArea.agt.indexOf("opera") == -1));
+HTMLArea.is_opera  = (HTMLArea.agt.indexOf("opera") != -1);
+HTMLArea.is_mac           = (HTMLArea.agt.indexOf("mac") != -1);
+HTMLArea.is_mac_ie = (HTMLArea.is_ie && HTMLArea.is_mac);
+HTMLArea.is_win_ie = (HTMLArea.is_ie && !HTMLArea.is_mac);
+HTMLArea.is_gecko  = (navigator.product == "Gecko");
 
 // Creates a new HTMLArea object.  Tries to replace the textarea with the given
 // ID with it.
@@ -49,20 +58,38 @@ function HTMLArea(textarea, config) {
         }
 };
 
-// load some scripts
-(function() {
-        var scripts = HTMLArea._scripts = [ _editor_url + "htmlarea.js",
-                                            _editor_url + "dialog.js",
-                                            _editor_url + "popupwin.js",
-                                            _editor_url + "lang/" + _editor_lang + ".js" ];
+HTMLArea.onload = function(){};
+HTMLArea._scripts = [];
+HTMLArea._loadScript = function(url) { this._scripts.push(url); };
+
+HTMLArea.init = function() {
         var head = document.getElementsByTagName("head")[0];
-        // start from 1, htmlarea.js is already loaded
-        for (var i = 1; i < scripts.length; ++i) {
-                var script = document.createElement("script");
-                script.src = scripts[i];
-                head.appendChild(script);
-        }
-})();
+        var current = 0;
+        var savetitle = document.title;
+        var evt = HTMLArea.is_ie ? "onreadystatechange" : "onload";
+        function loadNextScript() {
+                if (current > 0 && HTMLArea.is_ie &&
+                    !/loaded|complete/.test(window.event.srcElement.readyState))
+                        return;
+                if (current < HTMLArea._scripts.length) {
+                        var url = HTMLArea._scripts[current++];
+                        document.title = "[HTMLArea: loading script " + current + "/" + HTMLArea._scripts.length + "]";
+                        var script = document.createElement("script");
+                        script.type = "text/javascript";
+                        script.src = url;
+                        script[evt] = loadNextScript;
+                        head.appendChild(script);
+                } else {
+                        document.title = savetitle;
+                        HTMLArea.onload();
+                }
+        };
+        loadNextScript();
+};
+
+HTMLArea._loadScript(_editor_url + "dialog.js");
+HTMLArea._loadScript(_editor_url + "popupwin.js");
+HTMLArea._loadScript(_editor_url + "lang/" + _editor_lang + ".js");
 
 // cache some regexps
 HTMLArea.RE_tagName = /(<\/|<)\s*([^ \t\n>]+)/ig;
@@ -78,6 +105,10 @@ HTMLArea.Config = function () {
 
         // enable creation of a status bar?
         this.statusBar = true;
+
+        // intercept ^V and use the HTMLArea paste command
+        // If false, then passes ^V through to browser editor widget
+        this.htmlareaPaste = false;
 
         // maximum size of the undo queue
         this.undoSteps = 20;
@@ -98,6 +129,9 @@ HTMLArea.Config = function () {
 
         // set to true if you want Word code to be cleaned upon Paste
         this.killWordOnPaste = false;
+
+        // enable the 'Target' field in the Make Link dialog
+        this.makeLinkShowsTarget = true;
 
         // BaseURL included in the iframe document
         this.baseURL = document.baseURI || document.URL;
@@ -126,7 +160,7 @@ HTMLArea.Config = function () {
                   "formatblock", "space",
                   "bold", "italic", "underline", "strikethrough", "separator",
                   "subscript", "superscript", "separator",
-                  "copy", "cut", "paste", "space", "undo", "redo" ],
+                  "copy", "cut", "paste", "space", "undo", "redo", "space", "removeformat" ],
 
                 [ "justifyleft", "justifycenter", "justifyright", "justifyfull", "separator",
                   "lefttoright", "righttoleft", "separator",
@@ -137,6 +171,7 @@ HTMLArea.Config = function () {
         ];
 
         this.fontname = {
+                "&mdash; font &mdash;":         '',
                 "Arial":           'arial,helvetica,sans-serif',
                 "Courier New":           'courier new,courier,monospace',
                 "Georgia":           'georgia,times new roman,times,serif',
@@ -148,7 +183,8 @@ HTMLArea.Config = function () {
         };
 
         this.fontsize = {
-                "1 (8 pt)":  "1",
+                "&mdash; size &mdash;"  : "",
+                "1 (8 pt)" : "1",
                 "2 (10 pt)": "2",
                 "3 (12 pt)": "3",
                 "4 (14 pt)": "4",
@@ -158,14 +194,15 @@ HTMLArea.Config = function () {
         };
 
         this.formatblock = {
+                "&mdash; format &mdash;"  : "",
                 "Heading 1": "h1",
                 "Heading 2": "h2",
                 "Heading 3": "h3",
                 "Heading 4": "h4",
                 "Heading 5": "h5",
                 "Heading 6": "h6",
-                "Normal": "p",
-                "Address": "address",
+                "Normal"   : "p",
+                "Address"  : "address",
                 "Formatted": "pre"
         };
 
@@ -174,6 +211,8 @@ HTMLArea.Config = function () {
         function cut_copy_paste(e, cmd, obj) {
                 e.execCommand(cmd);
         };
+
+        this.debug = true;
 
         // ADDING CUSTOM BUTTONS: please read below!
         // format of the btnList elements is "ID: [ ToolTip, Icon, Enabled in text mode?, ACTION ]"
@@ -220,7 +259,9 @@ HTMLArea.Config = function () {
                 copy: [ "Copy selection", "ed_copy.gif", false, cut_copy_paste ],
                 paste: [ "Paste from clipboard", "ed_paste.gif", false, cut_copy_paste ],
                 lefttoright: [ "Direction left to right", "ed_left_to_right.gif", false, function(e) {e.execCommand("lefttoright");} ],
-                righttoleft: [ "Direction right to left", "ed_right_to_left.gif", false, function(e) {e.execCommand("righttoleft");} ]
+                righttoleft: [ "Direction right to left", "ed_right_to_left.gif", false, function(e) {e.execCommand("righttoleft");} ],
+                removeformat: [ "Remove formatting", "ed_rmformat.gif", false, function(e) {e.execCommand("removeformat");} ],
+                print: [ "Print document", "ed_print.gif", false, function(e) {e._iframe.contentWindow.print();} ]
         };
         /* ADDING CUSTOM BUTTONS
          * ---------------------
@@ -324,7 +365,7 @@ HTMLArea.Config.prototype.registerDropdown = function(object) {
  */
 HTMLArea.Config.prototype.hideSomeButtons = function(remove) {
         var toolbar = this.toolbar;
-        for (var i in toolbar) {
+        for (var i = toolbar.length; --i >= 0;) {
                 var line = toolbar[i];
                 for (var j = line.length; --j >= 0; ) {
                         if (remove.indexOf(" " + line[j] + " ") >= 0) {
@@ -463,7 +504,7 @@ HTMLArea.prototype._createToolbar = function () {
                         tb_objects[txt] = obj;
                         for (var i in options) {
                                 var op = document.createElement("option");
-                                op.appendChild(document.createTextNode(i));
+                                op.innerHTML = i;
                                 op.value = options[i];
                                 el.appendChild(op);
                         }
@@ -575,14 +616,14 @@ HTMLArea.prototype._createToolbar = function () {
         };
 
         var first = true;
-        for (var i in this.config.toolbar) {
+        for (var i = 0; i < this.config.toolbar.length; ++i) {
                 if (!first) {
                         createButton("linebreak");
                 } else {
                         first = false;
                 }
                 var group = this.config.toolbar[i];
-                for (var j in group) {
+                for (var j = 0; j < group.length; ++j) {
                         var code = group[j];
                         if (/^([IT])\[(.*?)\]/.test(code)) {
                                 // special case, create text label
@@ -661,7 +702,7 @@ HTMLArea.prototype.generate = function () {
                         var a = this.__msh_prevOnSubmit;
                         // call previous submit methods if they were there.
                         if (typeof a != "undefined") {
-                                for (var i in a) {
+                                for (var i = a.length; --i >= 0;) {
                                         a[i]();
                                 }
                         }
@@ -679,7 +720,7 @@ HTMLArea.prototype.generate = function () {
                         var a = this.__msh_prevOnReset;
                         // call previous reset methods if they were there.
                         if (typeof a != "undefined") {
-                                for (var i in a) {
+                                for (var i = a.length; --i >= 0;) {
                                         a[i]();
                                 }
                         }
@@ -911,6 +952,15 @@ HTMLArea.prototype.setFullHTML = function(html) {
  *  Category: PLUGINS
  ***************************************************/
 
+// Create the specified plugin and register it with this HTMLArea
+HTMLArea.prototype.registerPlugin = function() {
+        var plugin = arguments[0];
+        var args = [];
+        for (var i = 1; i < arguments.length; ++i)
+                args.push(arguments[i]);
+        this.registerPlugin2(plugin, args);
+};
+
 // this is the variant of the function above where the plugin arguments are
 // already packed in an array.  Externally, it should be only used in the
 // full-screen editor code, in order to initialize plugins with the same
@@ -935,15 +985,6 @@ HTMLArea.prototype.registerPlugin2 = function(plugin, args) {
                 alert("Can't register plugin " + plugin.toString() + ".");
 };
 
-// Create the specified plugin and register it with this HTMLArea
-HTMLArea.prototype.registerPlugin = function() {
-        var plugin = arguments[0];
-        var args = [];
-        for (var i = 1; i < arguments.length; ++i)
-                args.push(arguments[i]);
-        this.registerPlugin2(plugin, args);
-};
-
 // static function that loads the required plugin and lang file, based on the
 // language loaded already for HTMLArea.  You better make sure that the plugin
 // _has_ that language, otherwise shit might happen ;-)
@@ -954,10 +995,11 @@ HTMLArea.loadPlugin = function(pluginName) {
                                                 return l1 + "-" + l2.toLowerCase() + l3;
                                         }).toLowerCase() + ".js";
         var plugin_file = dir + "/" + plugin;
-        var plugin_lang = dir + "/lang/" + HTMLArea.I18N.lang + ".js";
-        HTMLArea._scripts.push(plugin_file, plugin_lang);
-        document.write("<script type='text/javascript' src='" + plugin_file + "'></script>");
-        document.write("<script type='text/javascript' src='" + plugin_lang + "'></script>");
+        var plugin_lang = dir + "/lang/" + _editor_lang + ".js";
+        //document.write("<script type='text/javascript' src='" + plugin_file + "'></script>");
+        //document.write("<script type='text/javascript' src='" + plugin_lang + "'></script>");
+        this._loadScript(plugin_file);
+        this._loadScript(plugin_lang);
 };
 
 HTMLArea.loadStyle = function(style, plugin) {
@@ -966,9 +1008,16 @@ HTMLArea.loadStyle = function(style, plugin) {
                 url += "plugins/" + plugin + "/";
         }
         url += style;
-        document.write("<style type='text/css'>@import url(" + url + ");</style>");
+        if (/^\//.test(style))
+                url = style;
+        var head = document.getElementsByTagName("head")[0];
+        var link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = url;
+        head.appendChild(link);
+        //document.write("<style type='text/css'>@import url(" + url + ");</style>");
 };
-HTMLArea.loadStyle("htmlarea.css");
+HTMLArea.loadStyle(typeof _editor_css == "string" ? _editor_css : "htmlarea.css");
 
 /***************************************************
  *  Category: EDITOR UTILITIES
@@ -978,7 +1027,7 @@ HTMLArea.loadStyle("htmlarea.css");
 // by Weeezl (user @ InteractiveTools forums).
 HTMLArea.prototype._wordClean = function() {
         var D = this.getInnerHTML();
-        if (D.indexOf('class=Mso') >= 0) {
+        if ( (D.indexOf('class=Mso') >= 0) || (D.indexOf('class="Mso') >= 0) ) {
 
                 // make one line
                 D = D.replace(/\r\n/g, ' ').
@@ -1162,14 +1211,14 @@ HTMLArea.prototype.updateToolbar = function(noStatus) {
                         }
                         context = context.toLowerCase();
                         var match = (context == "*");
-                        for (var k in ancestors) {
+                        for (var k = 0; k < ancestors.length; ++k) {
                                 if (!ancestors[k]) {
                                         // the impossible really happens.
                                         continue;
                                 }
                                 if (match || (ancestors[k].tagName.toLowerCase() == context)) {
                                         inContext = true;
-                                        for (var ka in attrs) {
+                                        for (var ka = 0; ka < attrs.length; ++ka) {
                                                 if (!eval("ancestors[k]." + attrs[ka])) {
                                                         inContext = false;
                                                         break;
@@ -1198,7 +1247,7 @@ HTMLArea.prototype.updateToolbar = function(noStatus) {
                         if (!text) try {
                                 var value = ("" + doc.queryCommandValue(cmd)).toLowerCase();
                                 if (!value) {
-                                        // FIXME: what do we do here?
+                                        btn.element.selectedIndex = 0;
                                         break;
                                 }
                                 // HACK -- retrieve the config option for this
@@ -1207,16 +1256,16 @@ HTMLArea.prototype.updateToolbar = function(noStatus) {
                                 // button name in the toolbar.
                                 var options = this.config[cmd];
                                 var k = 0;
-                                // btn.element.selectedIndex = 0;
                                 for (var j in options) {
                                         // FIXME: the following line is scary.
                                         if ((j.toLowerCase() == value) ||
                                             (options[j].substr(0, value.length).toLowerCase() == value)) {
                                                 btn.element.selectedIndex = k;
-                                                break;
+                                                throw "ok";
                                         }
                                         ++k;
                                 }
+                                btn.element.selectedIndex = 0;
                         } catch(e) {};
                         break;
                     case "textindicator":
@@ -1447,11 +1496,32 @@ HTMLArea.prototype._createLink = function(link) {
                 if (link && !/^a$/i.test(link.tagName))
                         link = null;
         }
-        if (link) outparam = {
-                f_href   : HTMLArea.is_ie ? editor.stripBaseURL(link.href) : link.getAttribute("href"),
-                f_title  : link.title,
-                f_target : link.target
-        };
+        if (!link) {
+                var sel = editor._getSelection();
+                var range = editor._createRange(sel);
+                var compare = 0;
+                if (HTMLArea.is_ie) {
+                        compare = range.compareEndPoints("StartToEnd", range);
+                } else {
+                        compare = range.compareBoundaryPoints(range.START_TO_END, range);
+                }
+                if (compare == 0) {
+                        alert("You need to select some text before creating a link");
+                        return;
+                }
+                outparam = {
+                        f_href : '',
+                        f_title : '',
+                        f_target : '',
+                        f_usetarget : editor.config.makeLinkShowsTarget
+                };
+        } else
+                outparam = {
+                        f_href   : HTMLArea.is_ie ? editor.stripBaseURL(link.href) : link.getAttribute("href"),
+                        f_title  : link.title,
+                        f_target : link.target,
+                        f_usetarget : editor.config.makeLinkShowsTarget
+                };
         this._popupDialog("link.html", function(param) {
                 if (!param)
                         return false;
@@ -1509,7 +1579,7 @@ HTMLArea.prototype._insertImage = function(image) {
                 f_vert   : image.vspace,
                 f_horiz  : image.hspace
         };
-        this._popupDialog("insert_image.php", function(param) {
+        this._popupDialog("insert_image.html", function(param) {
                 if (!param) {        // user must have pressed Cancel
                         return false;
                 }
@@ -1531,7 +1601,7 @@ HTMLArea.prototype._insertImage = function(image) {
                         img.src = param.f_url;
                 }
 
-                for (field in param) {
+                for (var field in param) {
                         var value = param[field];
                         switch (field) {
                             case "f_alt"    : img.alt         = value; break;
@@ -1626,6 +1696,7 @@ HTMLArea.prototype.execCommand = function(cmdID, UI, param) {
         var editor = this;        // for nested functions
         this.focusEditor();
         cmdID = cmdID.toLowerCase();
+        if (HTMLArea.is_gecko) try { this._doc.execCommand('useCSS', false, true); } catch (e) {};
         switch (cmdID) {
             case "htmlmode" : this.setMode(); break;
             case "hilitecolor":
@@ -1704,7 +1775,8 @@ HTMLArea.prototype.execCommand = function(cmdID, UI, param) {
                                 el.style.direction = dir;
                 }
                 break;
-            default: this._doc.execCommand(cmdID, UI, param);
+            default: try { this._doc.execCommand(cmdID, UI, param); }
+                catch(e) { if (this.config.debug) { alert(e + "\n\nby execCommand(" + cmdID + ");"); } }
         }
         this.updateToolbar();
         return false;
@@ -1753,7 +1825,8 @@ HTMLArea.prototype._editorEvent = function(ev) {
                     case 'j': cmd = "justifyfull"; break;
                     case 'z': cmd = "undo"; break;
                     case 'y': cmd = "redo"; break;
-                    case 'v': cmd = "paste"; break;
+                    case 'v': if (editor.config.htmlareaPaste) { cmd = "paste"; } break;
+                    case 'n': cmd = "formatblock"; value = HTMLArea.is_ie ? "<p>" : "p"; break;
 
                     case '0': cmd = "killword"; break;
 
@@ -1766,9 +1839,8 @@ HTMLArea.prototype._editorEvent = function(ev) {
                     case '6':
                         cmd = "formatblock";
                         value = "h" + key;
-                        if (HTMLArea.is_ie) {
+                        if (HTMLArea.is_ie)
                                 value = "<" + value + ">";
-                        }
                         break;
                 }
                 if (cmd) {
@@ -1777,19 +1849,18 @@ HTMLArea.prototype._editorEvent = function(ev) {
                         HTMLArea._stopEvent(ev);
                 }
         }
-        /*
         else if (keyEvent) {
                 // other keys here
                 switch (ev.keyCode) {
                     case 13: // KEY enter
-                        // if (HTMLArea.is_ie) {
-                        this.insertHTML("<br />");
-                        HTMLArea._stopEvent(ev);
-                        // }
+                        if (HTMLArea.is_gecko && !ev.shiftKey) {
+                                this.checkInsertP();
+                                HTMLArea._stopEvent(ev);
+                        }
                         break;
                 }
         }
-        */
+
         // update the toolbar state after some time
         if (editor._timerToolbar) {
                 clearTimeout(editor._timerToolbar);
@@ -1798,6 +1869,66 @@ HTMLArea.prototype._editorEvent = function(ev) {
                 editor.updateToolbar();
                 editor._timerToolbar = null;
         }, 50);
+};
+
+HTMLArea.prototype.convertNode = function(el, newTagName) {
+        var newel = this._doc.createElement(newTagName);
+        while (el.firstChild)
+                newel.appendChild(el.firstChild);
+        return newel;
+};
+
+HTMLArea.prototype.checkInsertP = function() {
+        var p = this.getAllAncestors();
+        var block = null;
+        var body = this._doc.body;
+        for (var i = 0; i < p.length; ++i)
+                if (HTMLArea.isBlockElement(p[i]) && !/body|html/i.test(p[i].tagName)) {
+                        block = p[i];
+                        break;
+                }
+        var sel = this._getSelection();
+        var range = this._createRange(sel);
+        if (!range.collapsed)
+                range.deleteContents();
+        sel.removeAllRanges();
+        var SC = range.startContainer;
+        var SO = range.startOffset;
+        var EC = range.endContainer;
+        var EO = range.endOffset;
+        //alert(SC.tagName + ":" + SO + " => " + EC.tagName + ":" + EO);
+        if (SC == EC && SC == body && !SO && !EO) {
+                p = this._doc.createTextNode(" ");
+                body.insertBefore(p, body.firstChild);
+                range.selectNodeContents(p);
+                SC = range.startContainer;
+                SO = range.startOffset;
+                EC = range.endContainer;
+                EO = range.endOffset;
+        }
+        if (!block) {
+                var r2 = range.cloneRange();
+                r2.setStartBefore(SC);
+                r2.setEndAfter(EC);
+                r2.surroundContents(block = this._doc.createElement("p"));
+                range.setEndAfter(block);
+                range.setStart(block.firstChild, SO);
+        } else range.setEndAfter(block);
+        var df = range.extractContents();
+        if (!/\S/.test(block.innerHTML))
+                block.innerHTML = "<br />";
+        p = df.firstChild;
+        if (!/\S/.test(p.innerHTML))
+                p.innerHTML = "<br />";
+        if (/^\s*<br\s*\/?>\s*$/.test(p.innerHTML) && /^h[1-6]$/i.test(p.tagName)) {
+                df.appendChild(this.convertNode(p, "p"));
+                df.removeChild(p);
+        }
+        block.parentNode.insertBefore(df, block.nextSibling);
+        range.selectNodeContents(block.nextSibling);
+        range.collapse(true);
+        sel.addRange(range);
+        this.forceRedraw();
 };
 
 // retrieve the HTML
@@ -1853,21 +1984,12 @@ HTMLArea.prototype.setDoctype = function(doctype) {
  *  Category: UTILITY FUNCTIONS
  ***************************************************/
 
-// browser identification
-
-HTMLArea.agt = navigator.userAgent.toLowerCase();
-HTMLArea.is_ie           = ((HTMLArea.agt.indexOf("msie") != -1) && (HTMLArea.agt.indexOf("opera") == -1));
-HTMLArea.is_opera  = (HTMLArea.agt.indexOf("opera") != -1);
-HTMLArea.is_mac           = (HTMLArea.agt.indexOf("mac") != -1);
-HTMLArea.is_mac_ie = (HTMLArea.is_ie && HTMLArea.is_mac);
-HTMLArea.is_win_ie = (HTMLArea.is_ie && !HTMLArea.is_mac);
-HTMLArea.is_gecko  = (navigator.product == "Gecko");
-
 // variable used to pass the object to the popup editor window.
 HTMLArea._object = null;
 
 // function that returns a clone of the given object
 HTMLArea.cloneObject = function(obj) {
+        if (!obj) return null;
         var newObj = new Object;
 
         // check for array objects
@@ -1943,7 +2065,7 @@ HTMLArea._addEvent = function(el, evname, func) {
 };
 
 HTMLArea._addEvents = function(el, evs, func) {
-        for (var i in evs) {
+        for (var i = evs.length; --i >= 0;) {
                 HTMLArea._addEvent(el, evs[i], func);
         }
 };
@@ -1957,7 +2079,7 @@ HTMLArea._removeEvent = function(el, evname, func) {
 };
 
 HTMLArea._removeEvents = function(el, evs, func) {
-        for (var i in evs) {
+        for (var i = evs.length; --i >= 0;) {
                 HTMLArea._removeEvent(el, evs[i], func);
         }
 };
@@ -2031,7 +2153,18 @@ HTMLArea.htmlEncode = function(str) {
 
 // Retrieves the HTML code from the given node.         This is a replacement for
 // getting innerHTML, using standard DOM calls.
-HTMLArea.getHTML = function(root, outputRoot, editor) {
+// Wrapper catch a Mozilla-Exception with non well formed html source code
+HTMLArea.getHTML = function(root, outputRoot, editor){
+    try{
+        return HTMLArea.getHTMLWrapper(root,outputRoot,editor);
+    }
+    catch(e){
+        alert('Your Document is not well formed. Check JavaScript console for details.');
+        return editor._iframe.contentWindow.document.body.innerHTML;
+    }
+}
+
+HTMLArea.getHTMLWrapper = function(root, outputRoot, editor) {
         var html = "";
         switch (root.nodeType) {
             case 1: // Node.ELEMENT_NODE
@@ -2112,7 +2245,7 @@ HTMLArea.getHTML = function(root, outputRoot, editor) {
                         }
                 }
                 for (i = root.firstChild; i; i = i.nextSibling) {
-                        html += HTMLArea.getHTML(i, true, editor);
+                        html += HTMLArea.getHTMLWrapper(i, true, editor);
                 }
                 if (outputRoot && !closed) {
                         html += "</" + root.tagName.toLowerCase() + ">";

@@ -10,17 +10,19 @@
 |
 |        Released under the terms and conditions of the
 |        GNU General Public License (http://gnu.org).
+|
+|   $Id: submitnews.php,v 1.13 2004/08/12 15:54:52 e107coders Exp $
 +---------------------------------------------------------------+
 */
 
 
 require_once("class2.php");
-
-require_once(HEADERF);
 if($pref['subnews_htmlarea']){
         require_once(e_HANDLER."htmlarea/htmlarea.inc.php");
-        htmlarea("item");
+        $htmlarea_js = htmlarea("item");
 }
+require_once(HEADERF);
+
 if(!isset($pref['subnews_class'])){
         $pref['subnews_class']="0";
 }
@@ -169,7 +171,7 @@ $text .= " <tr>
 if($pref['subnews_attach']){
     $text .="
     <tr>
-    <td style='width:20%' class='forumheader3'>Image File<br /><span class='smalltext'>(jpg, gif or png)</span></td>
+    <td style='width:20%' class='forumheader3'>".SUBNEWSLAN_5."<br /><span class='smalltext'>".SUBNEWSLAN_6."</span></td>
     <td style='width:80%' class='forumheader3'>
     <input class='tbox' type='file' name='file_userfile[]' style='width:90%' />
     </td>

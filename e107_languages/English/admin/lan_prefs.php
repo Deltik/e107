@@ -1,5 +1,14 @@
 <?php
-
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system - Language File.
+|
+|     $Source: /cvsroot/e107/e107/e107_languages/English/admin/lan_prefs.php,v $
+|     $Revision: 1.17 $
+|     $Date: 2004/09/06 09:55:17 $
+|     $Author: e107coders $
++----------------------------------------------------------------------------+
+*/
 define("PRFLAN_1", "Site Information");
 define("PRFLAN_2", "Site Name");
 define("PRFLAN_3", "Site URL");
@@ -24,7 +33,7 @@ define("PRFLAN_21", "Date display options");
 define("PRFLAN_22", "Short date format");
 define("PRFLAN_23", "Long date format");
 define("PRFLAN_24", "Forum date format");
-define("PRFLAN_25", "For more information on date formats see the <a href='http://www.php.net/manual/en/function.strftime.php' rel='external'>strftime function page at php.net</a>");
+define("PRFLAN_25", "For more information on date formats see the");
 define("PRFLAN_26", "Time offset");
 define("PRFLAN_27", "Example, if you set this to +2, all times on your site will have two hours added to them");
 define("PRFLAN_28", "User registration/posting");
@@ -35,9 +44,9 @@ define("PRFLAN_32", "Allow anonymous posting?");
 define("PRFLAN_33", "if left unchecked only registered members can post comments etc");
 define("PRFLAN_34", "Security");
 define("PRFLAN_35", "Enable flood protection?");
-define("PRFLAN_36", "Flood hits");
-define("PRFLAN_37", "Flood time");
-define("PRFLAN_38", "example, flood hits set to 100 and flood time set to 50: if any single page on your site gets 100 hits in 50 seconds the page will be inaccessable for a further 50 seconds");
+define("PRFLAN_36", "Flood timeout");
+define("PRFLAN_37", "Auto Ban");
+define("PRFLAN_38", "Time required in seconds between 2 posts for areas where users can post (chatbox, forums...). if a user post too fast, he will be redirected to the homepage");
 define("PRFLAN_39", "Protection of minors options");
 define("PRFLAN_40", "Filter profanities?");
 define("PRFLAN_41", "if checked swearing will be replaced with string below");
@@ -45,7 +54,7 @@ define("PRFLAN_42", "Replace string");
 define("PRFLAN_43", "Filter words");
 define("PRFLAN_44", "words to censor, seperate with a comma");
 define("PRFLAN_45", "Use COPPA on signup page?");
-define("PRFLAN_46", "for more info on COPPA see <a href='http://www.cdt.org/legislation/105th/privacy/coppa.html'>here</a>");
+define("PRFLAN_46", "for more info on COPPA see");
 define("PRFLAN_47", "Security &amp; Protection");
 define("PRFLAN_48", "User Tracking method");
 define("PRFLAN_49", "Cookies");
@@ -115,4 +124,9 @@ define("CUSTSIG_16", "Minimum Length for Passwords");
 
 define("PRFLAN_89", "Site Header:");
 define("PRFLAN_90", "Click here to force Internet Explorer to use standards mode. Default is quirks mode.");
+define("PRFLAN_91", "If someone is attacking your site by multiple requests to your server, his IP will be automatically banned ! Don't replace a correct server config !!!");
+define("PRFLAN_92", "Secure signup verification -- hide password in email?");
+
+define("PRFLAN_93", "strftime function page at php.net");
+define("PRFLAN_94", "here");
 ?>

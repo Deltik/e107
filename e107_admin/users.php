@@ -1,19 +1,27 @@
 <?php
 /*
-+---------------------------------------------------------------+
-|        e107 website system
-|        /admin/users.php
++ ----------------------------------------------------------------------------+
+|     e107 website system
 |
-|        ©Steve Dunstan 2001-2002
-|        http://e107.org
-|        jalist@e107.org
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
 |
-|        Released under the terms and conditions of the
-|        GNU General Public License (http://gnu.org).
-+---------------------------------------------------------------+
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107/e107_admin/users.php,v $
+|     $Revision: 1.29 $
+|     $Date: 2004/09/09 09:31:15 $
+|     $Author: e107coders $
++----------------------------------------------------------------------------+
 */
 require_once("../class2.php");
 if(!getperms("4")){ header("location:".e_BASE."index.php"); exit;}
+
+require_once(e_HANDLER."textparse/basic.php");
+$etp = new e107_basicparse;
+
 require_once("auth.php");
 $user = new users;
 require_once(e_HANDLER."form_handler.php");
@@ -31,11 +39,7 @@ if(e_QUERY){
 $from = ($from ? $from : 0);
 $amount = 50;
 
-//echo "action = {$action}<br />";
-//echo "sub action = {$sub_action}<br />";
-//
-//print_r($_POST);
-//exit;
+
 
 if(IsSet($_POST['resend_mail'])){
     $id = $_POST['resend_id'];
@@ -43,7 +47,9 @@ if(IsSet($_POST['resend_mail'])){
     $name = $_POST['resend_name'];
    define("RETURNADDRESS", (substr(SITEURL, -1) == "/" ? SITEURL."signup.php?activate.".$id.".".$key : SITEURL."/signup.php?activate.".$id.".".$key));
 
-   $message = USRLAN_114.RETURNADDRESS.USRLAN_115." ".SITENAME."\n".SITEURL;
+   $message = USRLAN_114." ".$_POST['resend_name']."\n\n".USRLAN_122." ".SITENAME."\n".USRLAN_123."\n\n".USRLAN_124."...\n\n";
+   $message .= RETURNADDRESS . "\n\n".USRLAN_115."\n\n ".USRLAN_125." ".SITENAME."\n".SITEURL;
+
    require_once(e_HANDLER."mail.php");
    sendemail($_POST['resend_email'], USRLAN_113." ".SITENAME, $message);
  //  echo str_replace("\n","<br>",$message);
@@ -52,7 +58,6 @@ if(IsSet($_POST['resend_mail'])){
 }
 
 if(IsSet($_POST['test_mail'])){
-
    require_once(e_HANDLER."mail.php");
    $text = validatemail($_POST['test_email']);
    $caption = $_POST['test_email']." - ";
@@ -60,8 +65,6 @@ if(IsSet($_POST['test_mail'])){
    $ns -> tablerender($caption, $text[1]);
    unset($id,$action,$sub_cation);
 }
-
-
 
 if(IsSet($_POST['update_options'])){
         $pref['avatar_upload'] = (FILE_UPLOADS ? $_POST['avatar_upload'] : 0);
@@ -138,12 +141,35 @@ if(IsSet($_POST['adduser'])){
         }
 }
 
-if($action == "ban"){
+if($_POST['useraction'] == 'userinfo')
+{
+        header('location:'.SITEURL.$ADMIN_DIRECTORY."userinfo.php?{$_POST['userip']}");
+        exit;
+}
+
+if($_POST['useraction'] == 'usersettings')
+{
+        header('location:'.SITEURL."usersettings.php?{$_POST['userid']}");
+        exit;
+}
+
+if($_POST['useraction'] == 'userclass')
+{
+        header('location:'.SITEURL.$ADMIN_DIRECTORY."userclass.php?{$_POST['userid']}");
+        exit;
+}
+
+
+if($_POST['useraction'] == "ban")
+{
+        $sub_action = $_POST['userid'];
         $sql -> db_Select("user", "*", "user_id='$sub_action'");
         $row = $sql -> db_Fetch(); extract($row);
-        if($user_perms == "0"){
+        if($user_perms == "0")
+        {
                 $user -> show_message(USRLAN_7);
-        }else{
+        } else
+        {
                 $sql -> db_Update("user", "user_ban='1' WHERE user_id=$sub_action");
                 $user -> show_message(USRLAN_8);
         }
@@ -151,52 +177,88 @@ if($action == "ban"){
         $sub_action = "user_id";
 }
 
-
-if($action == "resend"){
-     if($sql -> db_Select("user", "*", "user_id='$sub_action' ")){
-     $resend = $sql -> db_Fetch();
-     $text .= "<form method='post' action='".e_SELF."'><div style='text-align:center'>\n";
-     $text .= USRLAN_116." <b>".$resend['user_name']."</b><br /><br />
-
-     <input type='hidden' name='resend_id' value='$sub_action' />\n
-     <input type='hidden' name='resend_name' value='".$resend['user_name']."' />\n
-     <input type='hidden' name='resend_key' value='".$resend['user_sess']."' />\n
-     <input type='hidden' name='resend_email' value='".$resend['user_email']."' />\n
-     <input class='button' type='submit' name='resend_mail' value='".USRLAN_112."' />\n</div></form>\n";
-     $caption = USRLAN_112;
-     $ns -> tablerender($caption, $text);
-     }
-}
-
-if($action == "test"){
-     if($sql -> db_Select("user", "*", "user_id='$sub_action' ")){
-     $test = $sql -> db_Fetch();
-     $text .= "<form method='post' action='".e_SELF."'><div style='text-align:center'>\n";
-     $text .= USRLAN_117." <br /><b>".$test['user_email']."</b><br /><br />
-     <input type='hidden' name='test_email' value='".$test['user_email']."' />\n
-     <input class='button' type='submit' name='test_mail' value='".USRLAN_118."' />\n</div></form>\n";
-     $caption = USRLAN_118;
-     $ns -> tablerender($caption, $text);
-     }
-}
-
-
-if($action == "unban"){
+if($_POST['useraction'] == "unban")
+{
+        $sub_action=$_POST['userid'];
         $sql -> db_Update("user", "user_ban='0' WHERE user_id='$sub_action' ");
         $user -> show_message(USRLAN_9);
         $action = "main";
         $sub_action = "user_id";
 }
 
-if($action == "main" && $sub_action == "confirm"){
-        if($sql -> db_Delete("user", "user_id=$id AND user_perms != '0'")){
-                $user -> show_message(USRLAN_10);
+
+if($_POST['useraction'] == 'resend')
+{
+        $sub_action=$_POST['userid'];
+        if($sql -> db_Select("user", "*", "user_id='$sub_action' "))
+        {
+                $resend = $sql -> db_Fetch();
+                $text .= "<form method='post' action='".e_SELF."'><div style='text-align:center'>\n";
+                $text .= USRLAN_116." <b>".$resend['user_name']."</b><br /><br />
+
+                <input type='hidden' name='resend_id' value='$sub_action' />\n
+                <input type='hidden' name='resend_name' value='".$resend['user_name']."' />\n
+                <input type='hidden' name='resend_key' value='".$resend['user_sess']."' />\n
+                <input type='hidden' name='resend_email' value='".$resend['user_email']."' />\n
+                <input class='button' type='submit' name='resend_mail' value='".USRLAN_112."' />\n</div></form>\n";
+                $caption = USRLAN_112;
+                $ns -> tablerender($caption, $text);
         }
-        $sub_action = "user_id";
-        $id = "DESC";
 }
 
-if($action == "admin"){
+if($_POST['useraction'] == 'test')
+{
+        $sub_action=$_POST['userid'];
+        if($sql -> db_Select("user", "*", "user_id='$sub_action' ")){
+                $test = $sql -> db_Fetch();
+                $text .= "<form method='post' action='".e_SELF."'><div style='text-align:center'>\n";
+                $text .= USRLAN_117." <br /><b>".$test['user_email']."</b><br /><br />
+                <input type='hidden' name='test_email' value='".$test['user_email']."' />\n
+                <input class='button' type='submit' name='test_mail' value='".USRLAN_118."' />\n</div></form>\n";
+                $caption = USRLAN_118;
+                $ns -> tablerender($caption, $text);
+        }
+}
+
+if($_POST['useraction'] == 'deluser')
+{
+        $sub_action=$_POST['userid'];
+        if($_POST['confirm'])
+        {
+                if($sql -> db_Delete("user", "user_id=$sub_action AND user_perms != '0'"))
+                {
+                        $user -> show_message(USRLAN_10);
+                }
+                $sub_action = "user_id";
+                $id = "DESC";
+        } else
+        {
+                if($sql -> db_Select("user", "*", "user_id='$sub_action' "))
+                {
+                        $row = $sql -> db_Fetch();
+                        $text .= "<form method='post' action='".e_SELF."'><div style='text-align:center'>\n";
+                        $text .= "<div>
+                         <input type='hidden' name='useraction' value='deluser' />
+                        <input type='hidden' name='userid' value='{$row['user_id']}' /></div>".
+                        USRLAN_13."
+                        <br /><br /><span class='indent'>#{$row['user_id']} : {$row['user_name']}</span>
+                        <br /><br />
+                        <input type='submit' class='button' name='confirm' value='".USRLAN_17."' />
+                        &nbsp;&nbsp;
+                        <input type='submit' class='button' name='cancel' value='".USRLAN_15."' />
+                        </div>
+                        </form>
+                        ";
+                        $ns -> tablerender(USRLAN_16,$text);
+                        require_once("footer.php");
+                        exit;
+                }
+        }
+}
+
+if($_POST['useraction'] == "admin")
+{
+        $sub_action = $_POST['userid'];
         $sql -> db_Select("user", "*", "user_id='$sub_action'");
         $row = $sql -> db_Fetch(); extract($row);
         $sql -> db_Update("user", "user_admin='1' WHERE user_id=$sub_action");
@@ -206,12 +268,15 @@ if($action == "admin"){
         $id = "DESC";
 }
 
-if($action == "unadmin"){
+if($_POST['useraction'] == "unadmin")
+{
+        $sub_action = $_POST['userid'];
         $sql -> db_Select("user", "*", "user_id='$sub_action'");
         $row = $sql -> db_Fetch(); extract($row);
         if($user_perms == "0"){
                 $user -> show_message(USRLAN_5);
-        }else{
+        } else
+        {
                 $sql -> db_Update("user", "user_admin='0' WHERE user_id=$sub_action");
                 $user -> show_message($user_name." ".USRLAN_6);
                 $action = "main";
@@ -256,7 +321,8 @@ if(IsSet($_POST['update_field'])){
 }
 
 
-if($action == "delext"){
+if($_POST['eu_action'] == "delext"){
+        $sub_action = $_POST['key'];
         $sql -> db_Select("core", " e107_value", " e107_name='user_entended'");
         $row = $sql -> db_Fetch();
         $user_entended = unserialize($row[0]);
@@ -264,27 +330,29 @@ if($action == "delext"){
         $tmp = addslashes(serialize($user_entended));
         $sql -> db_Update("core", "e107_value='$tmp' WHERE e107_name='user_entended' ");
         $user -> show_message(USRLAN_83);
-   //     $action = "extended"; // this line prevents adding another field without resetting.
-
-   //     $user -> show_extended();//   this fixes the delete/add problem but causes the showmessage to occur.
+//        $action = "extended"; // this line prevents adding another field without resetting.
+//        $user -> show_extended();//   this fixes the delete/add problem but causes the showmessage to occur.
 }
 
 if($action == "editext"){
-	$sql -> db_Select("core", " e107_value", " e107_name='user_entended'");
-	$row = $sql -> db_Fetch();
-	$user_entended = unserialize($row[0]);
-	$tmp = explode("|",$user_entended[$sub_action]);
-	$uf_name = $tmp[0];
-	$uf_type = $tmp[1];
-	$uf_value = $tmp[2];
-	$uf_default = $tmp[3];
-	$uf_visible = $tmp[4];
-	$uf_hide = $tmp[5];
-	$user -> show_extended();
+        $sql -> db_Select("core", " e107_value", " e107_name='user_entended'");
+        $row = $sql -> db_Fetch();
+        $user_entended = unserialize($row[0]);
+        $tmp = explode("|",$user_entended[$sub_action]);
+        $uf_name = $tmp[0];
+        $uf_type = $tmp[1];
+        $uf_value = $tmp[2];
+        $uf_default = $tmp[3];
+        $uf_visible = $tmp[4];
+        $uf_hide = $tmp[5];
+        $user -> show_extended();
 }
 
-if($action == "verify"){
-        if($sql -> db_Update("user", "user_ban='0' WHERE user_id=$sub_action")){
+if($_POST['useraction'] == "verify")
+{
+        $sub_action = $_POST['userid'];
+        if($sql -> db_Update("user", "user_ban='0' WHERE user_id=$sub_action"))
+        {
                 $user -> show_message(USRLAN_86);
                 $action = "main";
                 $sub_action = "user_id";
@@ -325,14 +393,15 @@ if($action == "create"){
 //$user -> show_options($action);
 require_once("footer.php");
 function headerjs(){
+global $etp;
 $header_js= "<script type=\"text/javascript\">
 function confirm_(mode, user_id, user_name){
         if(mode == 'cat'){
-                var x=confirm(\"".NWSLAN_37." [ID: \" + user_id + \"]\");
+                var x=confirm(\"".$etp->unentity(NWSLAN_37)." [ID: \" + user_id + \"]\");
         }else if(mode == 'sn'){
-                var x=confirm(\"".NWSLAN_38." [ID: \" + user_id + \"]\");
+                var x=confirm(\"".$etp->unentity(NWSLAN_38)." [ID: \" + user_id + \"]\");
         }else{
-                var x=confirm(\"".USRLAN_82." [".USRLAN_61.": \" + user_name + \"]\");
+                var x=confirm(\"".$etp->unentity(USRLAN_82)." [".USRLAN_61.": \" + user_name + \"]\");
         }
 if(x)
         if(mode == 'cat'){
@@ -366,6 +435,8 @@ class users{
                 if(IsSet($_POST['searchquery'])){
 
                         $query = (eregi("@",$_POST['searchquery']))?"user_email REGEXP('".$_POST['searchquery']."') OR ":"";
+                        $query .= (eregi(".",$_POST['searchquery']))?"user_ip REGEXP('".$_POST['searchquery']."') OR ":"";
+                        $query .= "user_login REGEXP('".$_POST['searchquery']."') OR ";
                         $query .= "user_name REGEXP('".$_POST['searchquery']."') ORDER BY user_id";
                 }else{
                         $query = "ORDER BY ".($sub_action ? $sub_action : "user_id")." ".($id ? $id : "DESC")."  LIMIT $from, $amount";
@@ -415,46 +486,48 @@ class users{
 
                                 $text .= "</td>
                                 <td style='width:30%; text-align:center' class='forumheader3'>
-
-
-                                <select name='activate' onchange='urljump(this.options[selectedIndex].value)' class='tbox'>\n<option selected='selected' value='".e_SELF."'></option>";
+                                <form method='post' action='".e_SELF."'>
+                                <div>
+                                <input type='hidden' name='userid' value='{$user_id}' />
+                                <input type='hidden' name='userip' value='{$user_ip}' />
+                                <select name='useraction' onchange='this.form.submit()' class='tbox'>
+                                <option selected='selected' value=''></option>";
 
                                 if($user_perms != "0"){
-                                        $text .= "<option value='".e_ADMIN."userinfo.php?$user_ip'>".USRLAN_80."</option>
-                                        <option value='".e_BASE."usersettings.php?$user_id'>".USRLAN_81."</option>";
+                                        $text .= "<option value='userinfo'>".USRLAN_80."</option>
+                                        <option value='usersettings'>".USRLAN_81."</option>";
 
                                         if($user_ban == 1){
-                                                $text .= "<option value='".e_SELF."?unban.$user_id'>".USRLAN_33."</option>";
+                                                $text .= "<option value='unban'>".USRLAN_33."</option>";
                                         }else if($user_ban == 2){
-                                                $text .= "<option value='".e_SELF."?ban.$user_id'>".USRLAN_30."</option>
-                                                <option value='".e_SELF."?verify.$user_id'>".USRLAN_32."</option>
-                                                <option value='".e_SELF."?resend.$user_id'>".USRLAN_112."</option>
-                                                <option value='".e_SELF."?test.$user_id'>".USRLAN_118."</option>";
+                                                $text .= "<option value='ban'>".USRLAN_30."</option>
+                                                <option value='verify'>".USRLAN_32."</option>
+                                                <option value='resend'>".USRLAN_112."</option>
+                                                <option value='test'>".USRLAN_118."</option>";
                                         }else{
-                                                $text .= "<option value='".e_SELF."?ban.$user_id'>".USRLAN_30."</option>";
+                                                $text .= "<option value='ban'>".USRLAN_30."</option>";
                                         }
 
                                         if(!$user_admin && !$user_ban && $user_ban != 2){
-                                                $text .= "<option value='".e_SELF."?admin.$user_id'>".USRLAN_35."</option>";
+                                                $text .= "<option value='admin'>".USRLAN_35."</option>";
                                         }else if ($user_admin && $user_perms != "0"){
-                                                $text .= "<option value='".e_SELF."?unadmin.$user_id'>".USRLAN_34."</option>";
+                                                $text .= "<option value='unadmin'>".USRLAN_34."</option>";
                                         }
-
 
                                 }       if($user_perms == "0" && !getperms("0")){
                                         $text .="";
                                         } elseif($user_id != USERID || getperms("0") ){
-                                        $text .= "<option value='".e_ADMIN."userclass.php?$user_id'>".USRLAN_36."</option>";
+                                        $text .= "<option value='userclass'>".USRLAN_36."</option>";
                                         }
 
-                                $text .= "</select>";
-                                if($user_perms != "0"){
-                                        $text .= $rs -> form_button("submit", "main_$user_id", USRLAN_29, "onclick=\"confirm_('main', '$user_id', '$user_name');\"");
+                                if($user_perms != "0")
+                                {
+                                                $text .= "<option value='deluser'>".USRLAN_29."</option>";
+//                                        $text .= $rs -> form_button("submit", "main_$user_id", USRLAN_29, "onclick=\"confirm_('main', '$user_id', '$user_name');\"");
                                 }
-                                 $text .="</td></tr>";
+                                $text .= "</select></div>";
+                                 $text .="</form></td></tr>";
                         }
-
-                       // $text .= "</td>\n</tr>";
                         $text .= "</table>";
                 }
                 $text .= "</div>";
@@ -498,6 +571,9 @@ class users{
 
                                 $var['options']['text']=USRLAN_75;
                                 $var['options']['link']=e_SELF."?options";
+
+                                $var['mailing']['text']= USRLAN_121;
+                                $var['mailing']['link']="mailout.php";
                                 show_admin_menu(USRLAN_76,$action,$var);
                    }
 
@@ -566,7 +642,7 @@ class users{
                 $text = "<div style='text-align:center'>";
       //    $text = "<div style='text-align:center'><div style='border : solid 1px #000; padding : 4px; width : auto; height : 200px; overflow : auto; '>";
 
-                $text .="<form method='post' action='".e_SELF."?".e_QUERY."'>
+                $text .="
                 <table style='width:97%' class='fborder'><tr>
                 <td class='fcaption'>".USRLAN_96."</td>
                 <td class='fcaption'>".USRLAN_97."</td>
@@ -601,22 +677,36 @@ class users{
                                                                                 <td class='forumheader3' >".$u_default."&nbsp; </td>
                                                                                 <td class='forumheader3' >".r_userclass_name($u_visible)."&nbsp; </td>
                                                                                 <td class='forumheader3' >".r_userclass_name($u_hide)."&nbsp; </td>
-                                        <td class='forumheader3' style='text-align:center;'><span class='button' style='height:16px; width:50%;'><a style='text-decoration:none' href='".e_SELF."?editext.$key'>".USRLAN_81."</a></span>&nbsp;<span class='button' style='height:16px; width:50%'><a style='text-decoration:none' href='".e_SELF."?delext.$key'>".USRLAN_29."</a></span>
+                                        <td class='forumheader3' style='text-align:center;'>
+                                        <span class='button' style='height:16px; width:50%;'>
+                                        <a style='text-decoration:none' href='".e_SELF."?editext.$key'>".USRLAN_81."</a>
+                                        </span>
+                                        &nbsp;
+                                        <form method='post' action='".e_SELF."?extended' onsubmit='return confirm(\"".USRLAN_16."\")'>
+                                        <div>
+                                        <input type='hidden' name='eu_action' value='delext' />
+                                        <input type='hidden' name='key' value='{$key}' />
+                                        <input type='submit' class='button' name='eudel' value='".USRLAN_29."' />
+                                        </div>
+                                        </form>
                                         </td>
                                         </tr>";
                                         $c++;
                                 }
+//                                        <a style='text-decoration:none' href='".e_SELF."?delext.$key'>".USRLAN_29."</a>
                         }
                 }
 
-                $text .="</table>";
+                $text .="
+                </table>
+                <form method='post' action='".e_SELF."?".e_QUERY."'>
+                ";
                 $text .="<div><br /></div><table style='width:97%' class='fborder'>  ";
                 $text .= "<tr>
                 <td style='width:30%' class='forumheader3'>".USRLAN_41.":</td>
                 <td style='width:70%' class='forumheader3' colspan='3'>
                 <input class='tbox' type='text' name='user_field' size='40' value='".$uf_name."' maxlength='50' /></td>
                 </tr>";
-
 
                $text .="<tr>
                 <td style='width:30%' class='forumheader3'>".USRLAN_103."</td>
@@ -730,26 +820,28 @@ class users{
                 <td style='width:70%' class='forumheader3'>
                 ".$rs -> form_text("email", 60, "", 100)."
                 </td>
-                </tr>
-                <tr style='vertical-align:top'>
-                <td colspan='2' style='text-align:center' class='forumheader'>
-                                ".USRLAN_120."
-                </td>
                 </tr>";
 
+
                                 if(!is_object($sql)) $sql = new db;
-                                $sql -> db_Select("userclass_classes");
-                                $c=0;
-                                while($row = $sql -> db_Fetch()){
-                                        $class[$c][0] = $row['userclass_id'];
-                                        $class[$c][1] = $row['userclass_name'];
-                                        $class[$c][2] = $row['userclass_description'];
-                                        $c++;
-                                }
-                                for($a=0; $a<= (count($class)-1); $a++){
-                                        $text .= "<tr><td style='width:30%' class='forumheader'>
-                                        <input type='checkbox' name='userclass[]' value='".$class[$a][0]."' />".$class[$a][1]."
-                                        </td><td style='width:70%' class='forumheader3'> ".$class[$a][2]."</td></tr>";
+                                if($sql -> db_Select("userclass_classes")){
+                                    $text .= "<tr style='vertical-align:top'>
+                                    <td colspan='2' style='text-align:center' class='forumheader'>
+                                                    ".USRLAN_120."
+                                    </td>
+                                    </tr>";
+                                    $c=0;
+                                    while($row = $sql -> db_Fetch()){
+                                            $class[$c][0] = $row['userclass_id'];
+                                            $class[$c][1] = $row['userclass_name'];
+                                            $class[$c][2] = $row['userclass_description'];
+                                            $c++;
+                                    }
+                                    for($a=0; $a<= (count($class)-1); $a++){
+                                            $text .= "<tr><td style='width:30%' class='forumheader'>
+                                            <input type='checkbox' name='userclass[]' value='".$class[$a][0]."' />".$class[$a][1]."
+                                            </td><td style='width:70%' class='forumheader3'> ".$class[$a][2]."</td></tr>";
+                                    }
                                 }
                                 $text .= "
                 <tr style='vertical-align:top'>

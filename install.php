@@ -1,5 +1,21 @@
 <?php
-
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107/install_.php,v $
+|     $Revision: 1.19 $
+|     $Date: 2004/09/10 02:58:10 $
+|     $Author: e107coders $
++----------------------------------------------------------------------------+
+*/
 @include("e107_handlers/errorhandler_class.php");
 set_error_handler("error_handler");
 error_reporting(E_ERROR | E_WARNING | E_PARSE);
@@ -36,7 +52,7 @@ var listpics = new Array();
 $handle=opendir("e107_install/images");
 $nbrpic=0;
 while ($file = readdir($handle)){
-        if($file != "." && $file != ".."){
+        if(strstr($file,".") && $file != "." && $file != ".."){
                 $imagelist[] = $file;
                 echo "listpics[".$nbrpic."]='e107_install/images/".$file."';";
                 $nbrpic++;
@@ -97,12 +113,16 @@ function stage2(){
         <td style='width:33%' class='installboxgeneric'>".phpversion()."</td>";
         $verreq = str_replace(".","", "4.0.6");
         $server = str_replace(".","", phpversion());
+                if(strlen($server) < 3) {$server = $server."0";}
         if($server <= $verreq){
                 $error[0] = TRUE;
                 $text .= "<td style='width:33%' class='installboxfail'>* ".INSLAN4." *</td>
                 </tr>
                 <tr>
-                <td colspan='3' class='installboxfail'><br />".INSLAN5."<br /><br />".INSLAN6."<br /><br /></td></tr></table></td></tr></table></div>";
+                <td colspan='3' class='installboxfail'><br />";
+
+                $text .= "<b>".INSLAN5."<br />(".INSLAN65.").</b><br /><br />".INSLAN66."<br />".INSLAN67." <a href='http://php.net'>php.net</a> ".INSLAN68."<br />".INSLAN69."<br />".INSLAN70."<br />".INSLAN71;
+                $text .= "<br /><br />".INSLAN6."<br /><br /></td></tr></table></td></tr></table></div>";
                 tablestyle(INSLAN14." ...", $text);
                 exit;
         }else{
@@ -118,7 +138,10 @@ function stage2(){
                 $text .= "<td style='width:33%' class='installboxfail'>* Fail *</td>
                 </tr>
                 <tr>
-                <td colspan='3' class='installboxgeneric'><br />".INSLAN9."<br /><br /></td></tr>";
+                <td colspan='3' class='installboxgeneric'><br />";
+
+                $text .= "<b>".INSLAN9."</b><br /><br /> ".INSLAN72."<br />".INSLAN73."<br />".INSLAN74."<br />".INSLAN75;
+                $text .= "<br /><br /></td></tr>";
         }else{
                 $text .= "<td style='width:33%; text-align:center' class='installboxpass'>* ".INSLAN7." *</td>
                 </tr>";
@@ -132,18 +155,27 @@ function stage2(){
                 $errorstr .= "<b>e107_config.php</b> ".INSLAN11.".</b> ";
         }
 
+        if(!is_writable("e107_files/cache/")){
+                $error[3] = TRUE;
+                $errorstr .= "<b>e107_files/cache/</b> ".INSLAN11.".</b> ";
+        }
 
         if(!is_writable("e107_files/backend/news.txt") || !is_writable("e107_files/backend/news.xml")){
-                $error[3] = TRUE;
+                $error[4] = TRUE;
                 $errorstr .= "<b>e107_files/backend/news.txt</b> ".INSLAN62." <b>e107_files/backend/news.xml</b> ".INSLAN11.".</b> ";
         }
 
         if(!is_writable("e107_files/public/") || !is_writable("e107_files/public/avatars/")){
-                $error[4] = TRUE;
+                $error[5] = TRUE;
                 $errorstr .= "<b>e107_files/public/</b> ".INSLAN61." ".INSLAN62." <b>e107_files/public/avatars/</b> ".INSLAN12.".</b> ";
         }
 
-        if($error[2] || $error[3] || $error[4]){
+        if(!is_writable("e107_plugins/custom/") || !is_writable("e107_plugins/custompages/")){
+                $error[6] = TRUE;
+                $errorstr .= "<br /><b>e107_plugins/custom/</b> ".INSLAN61." ".INSLAN62." <b>e107_plugins/custompages/</b> ".INSLAN61." ".INSLAN12.".</b> ";
+        }
+
+        if($error[2] || $error[3] || $error[4] || $error[5] || $error[6]){
                 $text .= "<td style='width:33%' class='installboxfail'>* ".INSLAN4." *</td>
                 </tr>
                 <tr>
@@ -163,7 +195,7 @@ function stage2(){
                 echo "\n\n</body>\n</html>";
                 exit;
 
-        }else if($error[2] || $error[3] || $error[4]){
+        }else if($error[2] || $error[3] || $error[4] || $error[5] || $error[6]){
                 $text .= "
                 <input class='button' type='submit' name='retest' value='".INSLAN18."' />
                 <input type='hidden' name='stage' value='2'><input type='hidden' name='installlanguage' value='".$_POST['installlanguage']."'><br /><br />";
@@ -434,7 +466,10 @@ function create_tables(){
                 if(!mysql_query($sql_table)){        return INSLAN55; }
         }
 
-        $welcome_message = "<b>".INSLAN56."</b><br /><br />".INSLAN57."\n\n[b]Support[/b]\ne107 Homepage: http://e107.org, ".INSLAN58."\nForums: http://e107.org/forum.php\n\n[b]Downloads[/b]\nPlugins: http://e107coders.org\nThemes: http://e107themes.org\n<br /><br />".INSLAN59."";
+        $welcome_message = "<b>".INSLAN56."</b><br /><br />";
+        $welcome_message .= INSLAN57. "<br />".INSLAN76." <a href='e107_admin/admin.php'>".INSLAN77."</a>, ".INSLAN78;
+        $welcome_message .= "\n\n[b]Support[/b]\ne107 Homepage: http://e107.org, ".INSLAN58."\nForums: http://e107.org/forum.php\n\n[b]Downloads[/b]\nPlugins: http://e107coders.org\nThemes: http://e107themes.org\n<br /><br />".INSLAN59."";
+
         $search = array("'", "'");
         $replace = array("&quot;", "&#39;");
         $welcome_message = str_replace($search, $replace, $welcome_message);
@@ -454,11 +489,12 @@ function create_tables(){
         mysql_query("INSERT INTO ".$mySQLprefix."links VALUES (0, 'Submit Review', 'subcontent.php?review', '', '', 1, 0, 0, 0, 255) ");
         mysql_query("INSERT INTO ".$mySQLprefix."links VALUES (0, 'e107.org', 'http://e107.org', 'Home of the e107 website script', 'e107_images/button.png', 2, 0, 0, 0, 0) ");
         mysql_query("INSERT INTO ".$mySQLprefix."links VALUES (0, 'Stats', 'stats.php', '', '', 1, 0, 0, 0, 0) ");
+        mysql_query("INSERT INTO ".$mySQLprefix."links VALUES (0, 'Site Map', 'sitemap.php', '', '', 1, 0, 0, 0, 0) ");
 
 
         $e107['e107_author'] = "Steve Dunstan (jalist)";
         $e107['e107_url'] = "http://e107.org";
-        $e107['e107_version'] = "v0.612";
+        $e107['e107_version'] = "v0.617";
         $e107['e107_build'] = "";
         $e107['e107_datestamp'] = time();
         $tmp = serialize($e107);
@@ -467,70 +503,7 @@ function create_tables(){
         $udirs = "admin/|plugins/|temp";
         $e_SELF = "http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF'];
         $e_HTTP = eregi_replace($udirs, "", substr($e_SELF, 0, strrpos($e_SELF, "/"))."/");
-        $pref['sitename'] = "e107 powered website";
-        $pref['siteurl'] = $e_HTTP;
-        $pref['sitebutton'] = "button.png";
-        $pref['sitetag'] = "e107 website system";
-        $pref['sitedescription'] = "";
-        $pref['siteadmin'] = $_POST['admin_name'];
-        $pref['siteadminemail'] = $_POST['admin_email'];
-        $pref['sitetheme'] = "e107v4a";
-        $pref['admintheme'] = "e107v4a";
-        $pref['sitedisclaimer'] = "All trademarks are &copy; their respective owners, all other content is &copy; e107 powered website.<br />e107 is &copy; e107.org 2002/2003 and is released under the <a href=&#39;http://www.gnu.org/&#39;>GNU GPL license</a>.";
-        $pref['newsposts'] = "10";
-        $pref['flood_protect'] = "";
-        $pref['flood_timeout'] = "5";
-        $pref['flood_time'] = "30";
-        $pref['flood_hits'] = "100";
-        $pref['anon_post'] = "1";
-        $pref['user_reg'] = "1";
-        $pref['use_coppa'] = "1";
-        $pref['profanity_filter'] = "1";
-        $pref['profanity_replace'] = "[censored]";
-        $pref['chatbox_posts'] = "10";
-        $pref['smiley_activate'] = "";
-        $pref['log_activate'] = "";
-        $pref['log_refertype'] = "1";
-        $pref['longdate'] = "%A %d %B %Y - %H:%M:%S";
-        $pref['shortdate'] = "%d %b : %H:%M";
-        $pref['forumdate'] = "%a %b %d %Y, %I:%M%p";
-        $pref['sitelanguage'] = "English";
-        $pref['maintainance_flag'] = "0";
-        $pref['time_offset'] = "0";
-        $pref['cb_linkc'] = " -link- ";
-        $pref['cb_wordwrap'] = "20";
-        $pref['cb_linkreplace'] = "1";
-        $pref['log_lvcount'] = "10";
-        $pref['meta_tag'] = "";
-        $pref['user_reg_veri'] = "1";
-        $pref['email_notify'] = "0";
-        $pref['forum_poll'] = "0";
-        $pref['forum_popular'] = "10";
-        $pref['forum_track'] = "0";
-        $pref['forum_eprefix'] = "[forum]";
-        $pref['forum_enclose'] = "1";
-        $pref['forum_title'] = "Forums";
-        $pref['forum_postspage'] = "10";
-        $pref['user_tracking'] = "cookie";
-        $pref['cookie_name'] = "e107cookie";
-        $pref['resize_method'] = "gd2";
-        $pref['im_path'] = "/usr/X11R6/bin/convert";
-        $pref['im_quality'] = "80";
-        $pref['im_width'] = "120";
-        $pref['im_height'] = "100";
-        $pref['upload_enabled'] = "0";
-        $pref['upload_allowedfiletype'] = ".zip\n.gz\n.jpg\n.png\n.gif\n.txt";
-        $pref['upload_storagetype'] = "2";
-        $pref['upload_maxfilesize'] = "";
-        $pref['upload_class'] = "999";
-        $pref['cachestatus'] = "";
-        $pref['displayrendertime'] = "1";
-        $pref['displaysql'] = "";
-        $pref['displaythemeinfo'] = "1";
-        $pref['link_submit'] = "1";
-        $pref['link_submit_class'] = "0";
-        $pref['timezone'] = "GMT";
-        $pref['search_restrict'] = "1";
+        require_once("e107_files/def_e107_prefs.php");
 
         $tmp = serialize($pref);
         mysql_query("INSERT INTO ".$mySQLprefix."core VALUES ('pref', '$tmp') ");
@@ -547,43 +520,43 @@ function create_tables(){
         mysql_query("INSERT INTO ".$mySQLprefix."wmessage VALUES ('1', 'This text (if activated) will appear at the top of your front page all the time.', '0')");
         mysql_query("INSERT INTO ".$mySQLprefix."wmessage VALUES ('2', 'Member message ----- This text (if activated) will appear at the top of your front page all the time - only logged in members will see this.', '0')");
         mysql_query("INSERT INTO ".$mySQLprefix."wmessage VALUES ('3', 'Administrator message ----- This text (if activated) will appear at the top of your front page all the time - only logged in administrators will see this.', '0')");
-		mysql_query("INSERT INTO ".$mySQLprefix."wmessage VALUES (4, 'This text (if activated) will appear on a page when \"Forum Rules\" link is clicked on.', '0')");
-		mysql_query("INSERT INTO ".$mySQLprefix."wmessage VALUES (5, 'Member rules ----- This text (if activated) will appear on a page when \"Forum Rules\" link is clicked on - only logged in members will see this.', '0')");
-		mysql_query("INSERT INTO ".$mySQLprefix."wmessage VALUES (6, 'Administrator rules ----- This text (if activated) will appear on a page when \"Forum Rules\" link is clicked on - only logged in administrators will see this.', '0')");
+                mysql_query("INSERT INTO ".$mySQLprefix."wmessage VALUES (4, 'This text (if activated) will appear on a page when \"Forum Rules\" link is clicked on.', '0')");
+                mysql_query("INSERT INTO ".$mySQLprefix."wmessage VALUES (5, 'Member rules ----- This text (if activated) will appear on a page when \"Forum Rules\" link is clicked on - only logged in members will see this.', '0')");
+                mysql_query("INSERT INTO ".$mySQLprefix."wmessage VALUES (6, 'Administrator rules ----- This text (if activated) will appear on a page when \"Forum Rules\" link is clicked on - only logged in administrators will see this.', '0')");
 
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'login_menu', 1, 1, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'search_menu', 0, 0, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'chatbox_menu', 1, 3, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'sitebutton_menu', 1, 4, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'online_menu', 1, 5, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'compliance_menu', 1, 6, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'clock_menu', 2, 1, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'articles_menu', 2, 2, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'poll_menu', 2, 4, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'headlines_menu', 2, 5, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'counter_menu', 2, 6, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'powered_by_menu', 2, 7, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'backend_menu', 2, 8, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'admin_menu', 0, 0, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'banner_menu', 0, 0, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'comment_menu', 0, 0, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'newforumposts_menu', 0, 0, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'review_menu', 2, 3, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'tree_menu', 0, 0, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'userlanguage_menu', 0, 0, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'usertheme_menu', 0, 0, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'blogcalendar_menu', 0, 0, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'online_extended_menu', 0, 0, 0)");
-        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'other_news_menu', 0, 0, 0)");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'login_menu', 1, 1, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'search_menu', 0, 0, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'chatbox_menu', 1, 3, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'sitebutton_menu', 1, 4, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'online_menu', 1, 5, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'compliance_menu', 1, 6, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'clock_menu', 2, 1, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'articles_menu', 2, 2, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'poll_menu', 2, 4, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'headlines_menu', 2, 5, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'counter_menu', 2, 6, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'powered_by_menu', 2, 7, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'backend_menu', 2, 8, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'admin_menu', 0, 0, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'banner_menu', 0, 0, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'comment_menu', 0, 0, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'newforumposts_menu', 0, 0, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'review_menu', 2, 3, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'tree_menu', 0, 0, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'userlanguage_menu', 0, 0, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'usertheme_menu', 0, 0, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'blogcalendar_menu', 0, 0, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'online_extended_menu', 0, 0, 0, '')");
+        mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'other_news_menu', 0, 0, 0, '')");
 
         mysql_query("INSERT INTO ".$mySQLprefix."userclass_classes VALUES (1, 'PRIVATEMENU', 'Grants access to private menu items')");
         mysql_query("INSERT INTO ".$mySQLprefix."userclass_classes VALUES (2, 'PRIVATEFORUM1', 'Example private forum class')");
-		mysql_query("INSERT INTO ".$mySQLprefix."parser VALUES (0,'e107core','/{(PROFILE)=([0-9]+)}/') ");
-		mysql_query("INSERT INTO ".$mySQLprefix."parser VALUES (0,'e107core','/{(EMAILTO)=(.+?)}/') ");
-		mysql_query("INSERT INTO ".$mySQLprefix."parser VALUES (0,'e107core','/{(AVATAR)(=(.+?))*}/') ");
-		mysql_query("INSERT INTO ".$mySQLprefix."parser VALUES (0,'e107core','/{(PICTURE)(=(.+?))*}/') ");
-		mysql_query("INSERT INTO ".$mySQLprefix."parser VALUES (0,'e107core','/{(USERNAME)}/') ");
-		mysql_query("INSERT INTO ".$mySQLprefix."plugin VALUES (0, 'Integrity Check', '0.03', 'integrity_check', 1) ");
+                mysql_query("INSERT INTO ".$mySQLprefix."parser VALUES (0,'e107core','/{(PROFILE)=([0-9]+)}/') ");
+                mysql_query("INSERT INTO ".$mySQLprefix."parser VALUES (0,'e107core','/{(EMAILTO)=(.+?)}/') ");
+                mysql_query("INSERT INTO ".$mySQLprefix."parser VALUES (0,'e107core','/{(AVATAR)(=(.+?))*}/') ");
+                mysql_query("INSERT INTO ".$mySQLprefix."parser VALUES (0,'e107core','/{(PICTURE)(=(.+?))*}/') ");
+                mysql_query("INSERT INTO ".$mySQLprefix."parser VALUES (0,'e107core','/{(USERNAME)}/') ");
+                mysql_query("INSERT INTO ".$mySQLprefix."plugin VALUES (0, 'Integrity Check', '0.03', 'integrity_check', 1) ");
 
 
 

@@ -1,19 +1,27 @@
 <?php
 /*
-+---------------------------------------------------------------+
-|        e107 website system
-|        /admin/links.php
++ ----------------------------------------------------------------------------+
+|     e107 website system
 |
-|        ©Steve Dunstan 2001-2002
-|        http://e107.org
-|        jalist@e107.org
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
 |
-|        Released under the terms and conditions of the
-|        GNU General Public License (http://gnu.org).
-+---------------------------------------------------------------+
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107/e107_admin/links.php,v $
+|     $Revision: 1.25 $
+|     $Date: 2004/08/31 13:57:21 $
+|     $Author: loloirie $
++----------------------------------------------------------------------------+
 */
+
 require_once("../class2.php");
 if(!getperms("I")){ header("location:".e_BASE."index.php"); }
+
+require_once(e_HANDLER."textparse/basic.php");
+$etp = new e107_basicparse;
 
 require_once("auth.php");
 require_once(e_HANDLER."userclass_class.php");
@@ -22,6 +30,8 @@ $rs = new form;
 $aj = new textparse;
 $linkpost = new links;
 
+$deltest = array_flip($_POST);
+
 if(e_QUERY){
         $tmp = explode(".", e_QUERY);
         $action = $tmp[0];
@@ -29,10 +39,23 @@ if(e_QUERY){
         $id = $tmp[2];
         unset($tmp);
 }
+if(preg_match("#(.*?)_delete_(\d+)#",$deltest[$etp->unentity(LCLAN_10)],$matches))
+{
+        $delete = $matches[1];
+        $del_id = $matches[2];
+}
+
+if(preg_match("#create_sn_(\d+)#",$deltest[$etp->unentity(LCLAN_14)],$matches))
+{
+	$action='create';
+	$sub_action='sn';
+	$id=$matches[1];
+}
 
 // ##### Main loop -----------------------------------------------------------------------------------------------------------------------
 
-if($action == "dec"){
+if($action == "dec" && strpos($_SERVER['HTTP_REFERER'],"links"))
+{
         $qs = explode(".", e_QUERY);
         $action = $qs[0];
         $linkid = $qs[1];
@@ -42,9 +65,11 @@ if($action == "dec"){
         $sql -> db_Update("links", "link_order=link_order+1 WHERE link_id='$linkid' AND link_category='$location' ");
         clear_cache("sitelinks");
         header("location: ".e_ADMIN."links.php?order");
+        exit;
 }
 
-if($action == "inc"){
+if($action == "inc" && strpos($_SERVER['HTTP_REFERER'],"links"))
+{
         $qs = explode(".", e_QUERY);
         $action = $qs[0];
         $linkid = $qs[1];
@@ -54,6 +79,7 @@ if($action == "inc"){
         $sql -> db_Update("links", "link_order=link_order-1 WHERE link_id='$linkid' AND link_category='$location' ");
         clear_cache("sitelinks");
         header("location: ".e_ADMIN."links.php?order");
+        exit;
 }
 
 if(IsSet($_POST['create_category'])){
@@ -91,19 +117,37 @@ if($action == "order"){
         $linkpost -> set_order();
 }
 
-if($action == "main" && $sub_action == "confirm"){
-        if($sql -> db_Delete("links", "link_id='$id' ")){
+if($delete == 'main')
+{
+        if($sql -> db_Delete("links", "link_id='$del_id' "))
+        {
                 clear_cache("sitelinks");
-                $linkpost -> show_message(LCLAN_53." #".$id." ".LCLAN_54);
+                $linkpost -> show_message(LCLAN_53." #".$del_id." ".LCLAN_54);
         }
 }
 
-if($action == "cat" && $sub_action == "confirm"){
-        if($sql -> db_Delete("link_category", "link_category_id='$id' ")){
-                $linkpost -> show_message(LCLAN_55." #".$id." ".LCLAN_54);
+if($delete == 'category')
+{
+        if($sql -> db_Delete("link_category", "link_category_id='$del_id' "))
+        {
+                $linkpost -> show_message(LCLAN_55." #".$del_id." ".LCLAN_54);
                 unset($id);
         }
 }
+
+if($delete == "sn")
+{
+	if($sql -> db_Delete("tmp", "tmp_time='$del_id' "))
+	{
+		$linkpost -> show_message(LCLAN_77);
+	}
+}
+
+if($action == "sn")
+{
+	$linkpost -> show_submitted($sub_action, $id);
+}
+
 
 if(IsSet($_POST['add_link'])){
         $linkpost -> submit_link($sub_action, $id);
@@ -122,13 +166,6 @@ if($action == "cat"){
         $linkpost -> show_categories($sub_action, $id);
 }
 
-if($action == "sn"){
-        if($sub_action == "confirm"){
-                $sql -> db_Delete("tmp", "tmp_time='$id' ");
-                $linkpost -> show_message(LCLAN_77);
-        }
-        $linkpost -> show_submitted($sub_action, $id);
-}
 
 if($action == "opt"){
         $linkpost -> show_pref_options();
@@ -140,6 +177,7 @@ if($action == "opt"){
 
 require_once("footer.php");
 function headerjs(){
+global $etp;
 $headerjs  = "<script type=\"text/javascript\">
 function addtext(sc){
         document.getElementById('linkform').link_button.value = sc;
@@ -152,19 +190,11 @@ function addtext2(sc){
 $headerjs .= "<script type=\"text/javascript\">
 function confirm_(mode, link_id){
         if(mode == 'cat'){
-                var x=confirm(\"".LCLAN_56." [ID: \" + link_id + \"]\");
+                return confirm(\"".$etp->unentity(LCLAN_56)." [ID: \" + link_id + \"]\");
         }else if(mode == 'sn'){
-                var x=confirm(\"".LCLAN_57." [ID: \" + link_id + \"]\");
+                return confirm(\"".$etp->unentity(LCLAN_57)." [ID: \" + link_id + \"]\");
         }else{
-                var x=confirm(\"".LCLAN_58." [ID: \" + link_id + \"]\");
-        }
-if(x)
-        if(mode == 'cat'){
-                window.location='".e_SELF."?cat.confirm.' + link_id;
-        }else if(mode == 'sn'){
-                window.location='".e_SELF."?sn.confirm.' + link_id;
-        }else{
-                window.location='".e_SELF."?main.confirm.' + link_id;
+                return confirm(\"".$etp->unentity(LCLAN_58)." [ID: \" + link_id + \"]\");
         }
 }
 </script>";
@@ -208,11 +238,16 @@ class links{
                                 <td style='width:10%' class='forumheader3'>".$cat[$link_category]."</td>
                                 <td style='width:50%' class='forumheader3'><a href='".e_BASE."comment.php?comment.news.$link_id'></a>$link_name</td>
                                 <td style='width:25%; text-align:center' class='forumheader3'>".
-                                $rs -> form_button("submit", "main_edit_{$link_id}", LCLAN_9, "onclick=\"document.location='".e_SELF."?create.edit.$link_id'\"").
-                                $rs -> form_button("submit", "main_delete_{$link_id}", LCLAN_10, "onclick=\"confirm_('create', $link_id)\"")."
+                                $rs -> form_open("post", e_SELF,"myform_{$link_id}","",""," onsubmit=\"return confirm_('create',$link_id)\"")."<div>".
+                                $rs -> form_button("button", "main_edit_{$link_id}", LCLAN_9, "onclick=\"document.location='".e_SELF."?create.edit.$link_id'\"")."
+
+                                ".$rs -> form_button("submit", "main_delete_{$link_id}", LCLAN_10)."
+                                </div>".$rs -> form_close()."
+
                                 </td>
                                 </tr>";
                         }
+//                                $rs -> form_button("submit", "main_delete_{$link_id}", LCLAN_10, "onclick=\"confirm_('create', $link_id)\"")."
                         $text .= "</table>";
                 }else{
                         $text .= "<div style='text-align:center'>".LCLAN_61."</div>";
@@ -255,6 +290,7 @@ class links{
                 // ##### Display comfort ---------------------------------------------------------------------------------------------------------
                 global $ns;
                 $ns -> tablerender("", "<div style='text-align:center'><b>".$message."</b></div>");
+                if($message==LCLAN_3){echo "<script>\nfunction zou(){\nwindow.location='links.php';\n}\nsetTimeout(\"zou()\",10);\n</script>";}
         }
 
 
@@ -369,7 +405,7 @@ class links{
                 </tr>
                 <tr>
                 <td style='width:30%' class='forumheader3'>".LCLAN_25.":<br /><span class='smalltext'>(".LCLAN_26.")</span></td>
-                <td style='width:70%' class='forumheader3'>".r_userclass("link_class",$link_class)."
+                <td style='width:70%' class='forumheader3'>".r_userclass("link_class",$link_class,"off","public,guest,nobody,member,admin,classes")."
 
                 </td></tr>
 
@@ -478,10 +514,15 @@ class links{
                                 <td style='width:75%' class='forumheader3'>$link_category_name<br /><span class='smalltext'>$link_category_description</span></td>
                                 <td style='width:20%; text-align:center' class='forumheader3'>
                                 ".$rs -> form_button("submit", "category_edit_{$link_category_id}", LCLAN_9, "onclick=\"document.location='".e_SELF."?cat.edit.$link_category_id'\"")."
-                                ".$rs -> form_button("submit", "category_delete_{$link_category_id}", LCLAN_10, "onclick=\"confirm_('cat', '$link_category_id');\"")."
+
+                                ".$rs -> form_open("post", e_SELF,"","",""," onsubmit=\"return confirm_('cat',$link_category_id)\"")."
+                                ".$rs -> form_button("submit", "category_delete_{$link_category_id}", LCLAN_10)."
+                                ".$rs -> form_close()."
+
                                 </td>
                                 </tr>\n";
                         }
+//                                ".$rs -> form_button("submit", "category_delete_{$link_category_id}", LCLAN_10, "onclick=\"confirm_('cat', '$link_category_id');\"")."
                         $text .= "</table>";
                 }else{
                         $text .= "<div style='text-align:center'>".LCLAN_69."</div>";
@@ -563,9 +604,11 @@ class links{
                                 $text .= "<tr>
                                 <td style='width:50%' class='forumheader3'><a href='".$submitted[2]."' rel='external'>".$submitted[2]."</a></td>
                                 <td style='width:30%' class='forumheader3'>".$submitted[5]."</td>
-                                <td style='width:20%; text-align:center; vertical-align:top' class='forumheader3'>
-                                ".$rs -> form_button("submit", "category_edit_{$tmp_time}", LCLAN_14, "onclick=\"document.location='".e_SELF."?create.sn.$tmp_time'\"")."
-                                ".$rs -> form_button("submit", "category_delete_{$tmp_time}", LCLAN_10, "onclick=\"confirm_('sn', $tmp_time);\"")."
+                                <td style='width:20%; text-align:center; vertical-align:top' class='forumheader3'><div>
+                                ".$rs -> form_open("post", e_SELF."?sn","submitted_links")."
+                                ".$rs -> form_button("submit", "create_sn_{$tmp_time}", LCLAN_14, "onclick=\"document.location='".e_SELF."?create.sn.$tmp_time'\"")."
+                                ".$rs -> form_button("submit", "sn_delete_{$tmp_time}", LCLAN_10, "onclick=\"confirm_('sn', $tmp_time);\"")."
+                                </div>".$rs -> form_close()."
                                 </td>
                                 </tr>\n";
                         }

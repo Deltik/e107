@@ -22,6 +22,10 @@ if(IsSet($_POST['updatesettings'])){
         }
         $tmp = addslashes(serialize($emote));
         $sql -> db_Update("core", "e107_value='$tmp' WHERE e107_name='emote' ");
+        if($_POST['smiley_activate'] != $pref['smiley_activate'])
+        {
+        	clear_cache();
+        }
         $pref['smiley_activate'] = $_POST['smiley_activate'];
         save_prefs();
         header("location:".e_ADMIN."emoticon.php?u");
@@ -49,6 +53,7 @@ if(IsSet($_POST['addemote'])){
 $tmp = explode(".", e_QUERY);
 
 if($tmp[0] == "del"){
+	if(!e_REFERER_SELF){exit;}
         unset($emote[$tmp[1]]);
 
  //Fix Thermo to allow emote deletion
@@ -61,9 +66,6 @@ if($tmp[0] == "del"){
         header("location:".e_ADMIN."emoticon.php?w");
         exit;
 }
-
-
-
 
 require_once("auth.php");
 

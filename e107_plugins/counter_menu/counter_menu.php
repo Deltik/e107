@@ -1,5 +1,7 @@
 <?php
+$text = "";
 if($pref['log_activate']){
+
 $date = date("Y-m-d");
 $self = substr(strrchr($_SERVER['PHP_SELF'], "/"), 1);
 $sql -> db_Select("stat_counter", "*", "counter_date='$date' AND counter_url='$self' ");

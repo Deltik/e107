@@ -27,6 +27,8 @@ switch($table){
 	case "poll" :  $type = 4;  break;
 	case "docs" : $tid=5; $type = "docs";  break;
 	case "bugtrack" : $tid=6; $type = "bugtrack";  break;
+	default : $tid = ""; $type=$table; 
+
 	/****************************************
 	Add your comment type here in same format as above, ie ...
 	case "your_comment_type"; $type = your_type_id; break;
@@ -65,7 +67,7 @@ $text = "<div style='text-align:center'>
 <form method='post' action='".e_SELF."?".e_QUERY."'>
 <table style='width:95%' class='fborder'>";
 
-if(!$sql -> db_Select("comments", "*", "(comment_type='".$type." OR comment_type=".$nid."') AND comment_item_id=$id")){
+if(!$sql -> db_Select("comments", "*", "(comment_type='".$type."' OR comment_type='".$tid."') AND comment_item_id=$id")){
 	$text .= "<tr><td class='forumheader3' style='text-align:center'>".MDCLAN_2.".</td></tr></table></form></div>";
 }else{
 	$con = new convert;

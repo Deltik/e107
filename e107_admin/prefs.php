@@ -25,8 +25,8 @@ if(!$pref['timezone']){ $pref['timezone'] = "GMT"; }
 $signup_title = array(CUSTSIG_2,CUSTSIG_3,"ICQ","Aim","MSN",CUSTSIG_4,CUSTSIG_5,CUSTSIG_6,CUSTSIG_7,CUSTSIG_8);
 $signup_name = array("real","url","icq","aim","msn","dob","loc","sig","avt","zone");
 
+$aj = new textparse;
 if(IsSet($_POST['updateprefs'])){
-        $aj = new textparse;
         $pref['sitename'] = $aj -> formtpa($_POST['sitename']);
         $pref['siteurl'] = $aj -> formtpa($_POST['siteurl']);
         $pref['sitebutton'] = $aj -> formtpa($_POST['sitebutton']);
@@ -50,6 +50,7 @@ if(IsSet($_POST['updateprefs'])){
         $pref['sitelanguage'] = $_POST['sitelanguage'];
         $pref['time_offset'] = $_POST['time_offset'];
         $pref['user_reg_veri'] = $_POST['user_reg_veri'];
+        $pref['user_reg_secureveri'] = $_POST['user_reg_secureveri'];
         $pref['user_tracking'] = $_POST['user_tracking'];
         $pref['cookie_name'] = ereg_replace("[^[:alpha:]]", "", $_POST['cookie_name']);
         $pref['auth_method'] = $_POST['auth_method'];
@@ -62,7 +63,9 @@ if(IsSet($_POST['updateprefs'])){
         $pref['ssl_enabled'] = $_POST['ssl_enabled'];
         $pref['search_restrict'] = $_POST['search_restrict'];
         $pref['nested_comments'] = $_POST['nested_comments'];
-        $pref['standards_mode'] = $_POST['standards_mode'];
+        $pref['antiflood1'] = $_POST['antiflood1'];
+        $pref['antiflood_timeout'] = $_POST['antiflood_timeout'];
+        $pref['autoban'] = $_POST['autoban'];
 
         // Signup. ====================================================
 
@@ -86,11 +89,11 @@ if(IsSet($_POST['updateprefs'])){
         }
 
         $signup_options = "";
-			for ($i=0; $i<count($signup_title); $i++) {
-				$valuesignup =  $signup_name[$i];
-				$signup_options .= $_POST[$valuesignup];
-				$signup_options .= $i < (count($signup_title)-1)?".":"";
-			}
+                        for ($i=0; $i<count($signup_title); $i++) {
+                                $valuesignup =  $signup_name[$i];
+                                $signup_options .= $_POST[$valuesignup];
+                                $signup_options .= $i < (count($signup_title)-1)?".":"";
+                        }
         $pref['signup_options'] = $signup_options;
 
         // =========================
@@ -151,7 +154,11 @@ $forumdate = $pref['forumdate'];
 $sitelocale = $pref['sitelocale'];
 $time_offset = $pref['time_offset'];
 $user_reg_veri = $pref['user_reg_veri'];
+$user_reg_secureveri = $pref['user_reg_secureveri'];
 $user_tracking = $pref['user_tracking'];
+$antiflood1 = $pref['antiflood1'];
+$antiflood_timeout = $pref['antiflood_timeout'];
+$autoban = $pref['autoban'];
 
 require_once("auth.php");
 
@@ -211,7 +218,6 @@ $text .="</div>";
 */
 // end new.
 
-
 $text = "<form method='post' action='prefs.php' >
 <div style='text-align:center;margin-left: auto;margin-right: auto'>
 <div style='text-align:center;width:95%;margin-left: auto;margin-right: auto'>
@@ -222,7 +228,7 @@ $text = "<form method='post' action='prefs.php' >
 <tr>
 <td style='width:50%' class='forumheader3'>".PRFLAN_2.": </td>
 <td style='width:50%; text-align:right' class='forumheader3'>
-<input class='tbox' type='text' name='sitename' size='50' value='".SITENAME."' maxlength='100' />
+<input class=\"tbox\" type=\"text\" name=\"sitename\" size=\"50\" value=\"".SITENAME."\" maxlength=\"100\" />
 </td>
 </tr>
 
@@ -291,14 +297,6 @@ while(IsSet($dirlist[$counter])){
         $counter++;
 }
 $text .= "</select>
-</td>
-</tr>
-
-<tr>
-<td style='width:50%' class='forumheader3'>".PRFLAN_89." <br />
-<span class='smalltext'>".PRFLAN_90."</span></td>
-<td style='width:50%; text-align:right' class='forumheader3'>".
-($pref['standards_mode'] ? "<input type='checkbox' name='standards_mode' value='1' checked='checked' />" : "<input type='checkbox' name='standards_mode' value='1' />")."
 </td>
 </tr>
 
@@ -438,7 +436,7 @@ $text .= "<td style='width:50%' class='forumheader3'>".PRFLAN_22.": </td>
 
 <tr>
 <td colspan='2' style='text-align:center' class='forumheader3'>
-(".PRFLAN_25.")
+(".PRFLAN_25." <a href='http://www.php.net/manual/en/function.strftime.php' rel='external'>".PRFLAN_93."</a>)
 </td>
 </tr>
 
@@ -512,7 +510,7 @@ if($use_coppa == 1){
 }
 
 
-$text .= "(".PRFLAN_46.")
+$text .= "(".PRFLAN_46." <a href='http://www.cdt.org/legislation/105th/privacy/coppa.html'>".PRFLAN_94."</a>)
 </td>
 </tr>
 
@@ -568,28 +566,28 @@ $text .= "
 // Custom Fields.
 
 if($sql -> db_Select("core", " e107_value", " e107_name='user_entended'")){
-	$row = $sql -> db_Fetch();
-	$user_entended = unserialize($row[0]);
-	$c=0;
-	$user_pref = unserialize($user_prefs);
-	while(list($key, $u_entended) = each($user_entended)){
-		if($u_entended){
-			$ut = explode("|",$u_entended);
-			$u_name = ($ut[0] != "") ? str_replace("_"," ",$ut[0]): $u_entended;
-			$u_type = $ut[1];
-			$u_value = $ut[2];
-			$signup_ext = "signup_ext";
-			$text .="
-			<tr>
-			<td style='width:50%' class='forumheader3'>".$u_name." <span class='smalltext'>(custom field)</span></td>
-			<td style='width:50%;text-align:right' class='forumheader3' >".
-			($pref['signup_ext'.$key] == "0" || $pref['signup_ext'.$key]=="" ? "<input type='radio' name='signup_ext".$key."' value='0' checked='checked' /> ".CUSTSIG_12 : "<input type='radio' name='signup_ext".$key."' value='0' /> ".CUSTSIG_12)."&nbsp;&nbsp;".
-			($pref['signup_ext'.$key] == "1" ? "<input type='radio' name='signup_ext".$key."' value='1' checked='checked' /> ".CUSTSIG_14 : "<input type='radio' name='signup_ext".$key."' value='1' /> ".CUSTSIG_14)."&nbsp;&nbsp;".
-			($pref['signup_ext'.$key] == "2" ? "<input type='radio' name='signup_ext".$key."' value='2' checked='checked' /> ".CUSTSIG_15 : "<input type='radio' name='signup_ext".$key."' value='2' /> ".CUSTSIG_15)."&nbsp;&nbsp;".
-			"</td>
-			</tr>";
-		}
-	}
+        $row = $sql -> db_Fetch();
+        $user_entended = unserialize($row[0]);
+        $c=0;
+        $user_pref = unserialize($user_prefs);
+        while(list($key, $u_entended) = each($user_entended)){
+                if($u_entended){
+                        $ut = explode("|",$u_entended);
+                        $u_name = ($ut[0] != "") ? str_replace("_"," ",$ut[0]): $u_entended;
+                        $u_type = $ut[1];
+                        $u_value = $ut[2];
+                        $signup_ext = "signup_ext";
+                        $text .="
+                        <tr>
+                        <td style='width:50%' class='forumheader3'>".$u_name." <span class='smalltext'>(custom field)</span></td>
+                        <td style='width:50%;text-align:right' class='forumheader3' >".
+                        ($pref['signup_ext'.$key] == "0" || $pref['signup_ext'.$key]=="" ? "<input type='radio' name='signup_ext".$key."' value='0' checked='checked' /> ".CUSTSIG_12 : "<input type='radio' name='signup_ext".$key."' value='0' /> ".CUSTSIG_12)."&nbsp;&nbsp;".
+                        ($pref['signup_ext'.$key] == "1" ? "<input type='radio' name='signup_ext".$key."' value='1' checked='checked' /> ".CUSTSIG_14 : "<input type='radio' name='signup_ext".$key."' value='1' /> ".CUSTSIG_14)."&nbsp;&nbsp;".
+                        ($pref['signup_ext'.$key] == "2" ? "<input type='radio' name='signup_ext".$key."' value='2' checked='checked' /> ".CUSTSIG_15 : "<input type='radio' name='signup_ext".$key."' value='2' /> ".CUSTSIG_15)."&nbsp;&nbsp;".
+                        "</td>
+                        </tr>";
+                }
+        }
 }
 
 $text .="</table></div>";
@@ -620,6 +618,13 @@ $text .="
 <td style='width:50%' class='forumheader3'>".PRFLAN_81.": </td>
 <td style='width:50%; text-align:right' class='forumheader3'>".
 ($pref['logcode'] ? "<input type='checkbox' name='logcode' value='1'  checked='checked' />" : "<input type='checkbox' name='logcode' value='1' />")."
+</td>
+</tr>
+
+<tr>
+<td style='width:50%' class='forumheader3'>".PRFLAN_92.": </td>
+<td style='width:50%; text-align:right' class='forumheader3'>".
+($user_reg_secureveri ? "<input type='checkbox' name='user_reg_secureveri' value='1'  checked='checked' />" : "<input type='checkbox' name='user_reg_secureveri' value='1' />")."
 </td>
 </tr>
 
@@ -672,8 +677,46 @@ if($search_restrict == 1){
 $text .= "</td>
 </tr>
 
+<tr>
+<td style='width:50%' class='forumheader3'>".PRFLAN_35.": </td>
+<td style='width:50%; text-align:right' class='forumheader3'>";
+if($antiflood1 == 1){
+        $text .= "<input type='checkbox' name='antiflood1' value='1'  checked='checked' />";
+}else{
+        $text .= "<input type='checkbox' name='antiflood1' value='1' />";
+}
+$text .= "</td>
+</tr>
+
+<tr>
+<td style='width:50%' class='forumheader3'>".PRFLAN_36.": </td>
+<td style='width:50%; text-align:right' class='forumheader3'>
+<input class='tbox' type='text' name='antiflood_timeout' size='3' value='$antiflood_timeout' maxlength='3' />
+<br />
+<b class=\"smalltext\" >".PRFLAN_38."</b>
+</td>
+</tr>
+
+
+<tr>
+<td style='width:50%' class='forumheader3'>".PRFLAN_37.": </td>
+<td style='width:50%; text-align:right' class='forumheader3'>";
+if($autoban == 1){
+        $text .= "<input type='checkbox' name='autoban' value='1'  checked='checked' />";
+}else{
+        $text .= "<input type='checkbox' name='autoban' value='1' />";
+}
+$text .= "<br />
+<b class=\"smalltext\" >".PRFLAN_91."</b></td>
+</tr>
+
 </table></div>";
 
+
+
+
+
+// Mail settings..........................
 $text .="
 <div class='caption' title='".PRFLAN_80."' style='cursor:pointer;cursor:hand;text-align:left;border:1px solid black' onclick=\"expandit(this)\">".PRFLAN_62."</div>
 <div id='mail' style='text-align:center; display:none'>

@@ -14,6 +14,10 @@
 */
 require_once("../class2.php");
 if(!getperms("3")){ header("location:".e_BASE."index.php"); exit; }
+
+require_once(e_HANDLER."textparse/basic.php");
+$etp = new e107_basicparse;
+
 require_once("auth.php");
 require_once(e_HANDLER."form_handler.php");
 $rs = new form;
@@ -64,7 +68,7 @@ if(IsSet($_POST['update_admin'])){
         }
         $sql -> db_Update("user", "user_password='$admin_password', user_perms='$perm' WHERE user_name='$a_name' ");
         unset($ad_name, $a_password, $a_perms);
-        $message = "Administrator ".$_POST['ad_name']." ".ADMSLAN_2."<br />";
+        $message = ADMSLAN_56." ".$_POST['ad_name']." ".ADMSLAN_2."<br />";
 }
 
 if($action == "edit"){
@@ -82,7 +86,7 @@ if($action == "edit"){
         }
 }
 
-if($action == "delete"){
+if($action == "delete" && $_POST['del_administrator_confirm']==1){
         $sql -> db_Select("user", "*", "user_id=$sub_action");
         $row = $sql-> db_Fetch();
         extract($row);
@@ -106,6 +110,8 @@ $sql -> db_Select("user", "*", "user_admin='1'");
 
 
 $text = "<div style='text-align:center'><div style='border : solid 1px #000; padding : 4px; width : auto; height : 100px; overflow : auto; '>
+<form action=\"".e_SELF."\" method=\"post\" id=\"del_administrator\" >
+<input type=\"hidden\" name=\"del_administrator_confirm\" id=\"del_administrator_confirm\" value=\"1\" />
 <table class='fborder' style='width:100%'>
 <tr>
 <td style='width:5%' class='forumheader2'>ID</td>
@@ -122,12 +128,12 @@ while($row = $sql -> db_Fetch()){
 <td style='width:35%' class='forumheader3'>".($user_perms == "0" ? ADMSLAN_58 : ($user_perms ? str_replace(".", "", $user_perms) : "&nbsp;"))."</td>
 <td style='width:30%; text-align:center' class='forumheader3'>".
 ($user_perms == "0" ? "&nbsp;" :
-$rs -> form_button("submit", "main_edit", ADMSLAN_15, "onclick=\"document.location='".e_SELF."?edit.$user_id'\"").
-$rs -> form_button("submit", "main_delete", ADMSLAN_59, "onclick=\"confirm_($user_id, '$user_name')\""))."</td>
+$rs -> form_button("button", "main_edit", ADMSLAN_15, "onclick=\"document.location='".e_SELF."?edit.$user_id'\"").
+$rs -> form_button("button", "main_delete", ADMSLAN_59, "onclick=\"confirm_($user_id, '$user_name')\""))."</td>
 </tr>";
 }
 
-$text .= "</table>\n</div>\n</div>";
+$text .= "</table>\n</form></div>\n</div>";
 
 $ns -> tablerender(ADMSLAN_13, $text);
 
@@ -196,12 +202,12 @@ $text .= checkb("M", $a_perms).ADMSLAN_46."<br />";
 $text .= checkb("N", $a_perms).ADMSLAN_47."<br /><br />";
 
 
-$text .= checkb("Z", $a_perms)."Plugin Manager<br /><br />";
+$text .= checkb("Z", $a_perms).ADMSLAN_62."<br /><br />";
 
 $sql -> db_Select("plugin", "*", "plugin_installflag='1'");
 while($row = $sql-> db_Fetch()){
 extract($row);
-$text .= checkb("P".$plugin_id, $a_perms)."Plugin - ".$plugin_name."<br />";
+$text .= checkb("P".$plugin_id, $a_perms).ADMSLAN_63." - ".$plugin_name."<br />";
 }
 
 
@@ -236,11 +242,13 @@ $ns -> tablerender("<div style='text-align:center'>".ADMSLAN_54."</div>", $text)
 require_once("footer.php");
 
 function headerjs(){
+global $etp;
 $script = "<script type=\"text/javascript\">
 function confirm_(user_id, user_name){
-        var x=confirm(\"".ADMSLAN_60." \" + user_name + \"\");
+        var x=confirm(\"".$etp->unentity(ADMSLAN_60)." \" + user_name + \"\");
         if(x){
-                window.location='".e_SELF."?delete.' + user_id;
+                document.getElementById('del_administrator').action='".e_SELF."?delete.' + user_id;
+                document.getElementById('del_administrator').submit();
         }
 }
 </script>";

@@ -1,9 +1,5 @@
 <?php
 
-define("FORLAN_1", "Thread closed.");
-define("FORLAN_2", "Thread reopened.");
-define("FORLAN_3", "Thread made sticky.");
-define("FORLAN_4", "Thread unstuck.");
 define("FORLAN_5", "Poll deleted.");
 define("FORLAN_6", "Thread deleted");
 define("FORLAN_7", "replies deleted");
@@ -26,5 +22,7 @@ define("FORLAN_23", "cannot</u></b> be retreived");
 define("FORLAN_24", "Move thread  to forum");
 define("FORLAN_25", "Move Thread");
 define("FORLAN_26", "Reply deleted");
+
+define("FORLAN_27", "moved");
 
 ?>

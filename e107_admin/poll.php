@@ -14,6 +14,10 @@
 */
 require_once("../class2.php");
 if(!getperms("U")){ header("location:".e_BASE."index.php"); exit;}
+
+require_once(e_HANDLER."textparse/basic.php");
+$etp = new e107_basicparse;
+
 require_once("auth.php");
 require_once(e_HANDLER."poll_class.php");
 require_once(e_HANDLER."form_handler.php");
@@ -41,18 +45,18 @@ if(IsSet($_POST['reset'])){
         unset($poll_id, $_POST['poll_title'], $_POST['poll_option'], $_POST['activate']);
 }
 
-
-if($action == "delete"){
+if($action == "delete" && $_POST['del_poll_confirm']==1){
         $message = $poll -> delete_poll($sub_action);
         unset($poll_id, $_POST['poll_title'], $_POST['poll_option'], $_POST['activate']);
 }
 
 if(IsSet($_POST['submit'])){
-        $message = $poll -> submit_poll($sub_action, $_POST['poll_title'], $_POST['poll_option'], $_POST['activate']);
-        unset($_POST['poll_title'], $_POST['poll_option'], $_POST['activate']);
+        $message = $poll -> submit_poll($sub_action, $_POST['poll_title'], $_POST['poll_option'], $_POST['activate'], $_POST['poll_comment']);
+        unset($_POST['poll_title'], $_POST['poll_option'], $_POST['activate'], $_POST['poll_comment']);
 }
 
 if($action == "edit" && !$_POST['preview']  && !$_POST['addoption'] && !$_POST['submit']){
+        
         if($sql -> db_Select("poll", "*", "poll_id=$sub_action")){
                 $row = $sql-> db_Fetch(); extract($row);
                 for($a=1; $a<=10; $a++){
@@ -64,6 +68,7 @@ if($action == "edit" && !$_POST['preview']  && !$_POST['addoption'] && !$_POST['
                 $_POST['activate'] = $poll_active;
                 $_POST['option_count'] = count($_POST['poll_option']);
                 $_POST['poll_title'] = $poll_title;
+				$_POST['poll_comment'] = $poll_comment;
         }
 }
 
@@ -91,7 +96,9 @@ if(IsSet($message)){
         $ns -> tablerender("", "<div style='text-align:center'><b>".$message."</b></div>");
 }
 
-$text = "<div style='text-align:center'><div style='border : solid 1px #000; padding : 4px; width : auto; height : 200px; overflow : auto; '>";
+$text = "<div style='text-align:center'><div style='border : solid 1px #000; padding : 4px; width : auto; height : 200px; overflow : auto; '>
+<form action=\"".e_SELF."\" method=\"post\" id=\"del_poll\" >
+<input type=\"hidden\" name=\"del_poll_confirm\" id=\"del_poll_confirm\" value=\"1\" />";
 if($poll_total = $sql -> db_Select("poll")){
         $text .= "<table class='fborder' style='width:100%'>
         <tr>
@@ -105,7 +112,7 @@ if($poll_total = $sql -> db_Select("poll")){
                 <td style='width:5%' class='forumheader3'>$poll_id</td>
                 <td style='width:75%' class='forumheader3'>$poll_title</td>
                 <td style='width:20%; text-align:center' class='forumheader3'>".
-                $rs -> form_button("submit", "main_edit_{$poll_id}", POLLAN_4, "onclick=\"document.location='".e_SELF."?edit.$poll_id'\"").
+                $rs -> form_button("button", "main_edit_{$poll_id}", POLLAN_4, "onclick=\"document.location='".e_SELF."?edit.$poll_id'\"").
                 $rs -> form_button("submit", "main_delete_{$poll_id}", POLLAN_5, "onclick=\"confirm_($poll_id)\"")."
                 </td>
                 </tr>";
@@ -114,13 +121,14 @@ if($poll_total = $sql -> db_Select("poll")){
 }else{
         $text .= "<div style='text-align:center'>".POLLAN_22."</div>";
 }
-$text .= "</div></div>";
+$text .= "</form></div></div>";
 $ns -> tablerender(POLLAN_3, $text);
 
 $poll_total = $sql -> db_Select("poll");
 
+$act_add = (e_QUERY && !strpos(e_QUERY,"elete")) ? "?".e_QUERY : "";
 $text = "<div style='text-align:center'>
-<form method='post' action='".e_SELF.(e_QUERY ? "?".e_QUERY : "")."'>
+<form method='post' action='".e_SELF.$act_add."'>
 <table style='width:85%' class='fborder'>
 <tr>
 <td style='width:30%' class='forumheader3'><div class='normaltext'>".POLLAN_7.":</div></td>
@@ -150,7 +158,12 @@ $text .= ($_POST['activate'] == 2 ? "<input name='activate' type='radio' value='
 
 $text .= "</td>
 </tr>
+<tr>
+<td class='forumheader3'>".POLLAN_24.": </td><td class='forumheader3'>".
 
+ ($_POST['poll_comment'] ? "<input name='poll_comment' type='radio' value='1' checked='checked' />".POLLAN_25."&nbsp;&nbsp;<input name='poll_comment' type='radio' value='0' />".POLLAN_26 : "<input name='poll_comment' type='radio' value='1' />".POLLAN_25."&nbsp;&nbsp;<input name='poll_comment' type='radio' value='0' checked='checked' />".POLLAN_26)."
+        </td>
+        </tr>
 <tr style='vertical-align:top'>
 <td colspan='2'  style='text-align:center' class='forumheader'>";
 
@@ -175,11 +188,13 @@ $text .= "</td></tr></table>
 $ns -> tablerender("<div style='text-align:center'>".POLLAN_19."</div>", $text);
 require_once("footer.php");
 function headerjs(){
+global $etp;
 $headerjs = "<script type=\"text/javascript\">
 function confirm_(poll_id){
-        var x=confirm(\"".POLLAN_21." [ID: \" + poll_id + \"]\");
+        var x=confirm(\"".$etp->unentity(POLLAN_21)." [ID: \" + poll_id + \"]\");
         if(x){
-                window.location='".e_SELF."?delete.' + poll_id;
+                document.getElementById('del_poll').action='".e_SELF."?delete.' + poll_id;
+                document.getElementById('del_poll').submit();
         }
 }
 </script>";

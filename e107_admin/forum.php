@@ -14,6 +14,10 @@
 */
 require_once("../class2.php");
 if(!getperms("5")){ header("location:".e_BASE."index.php"); exit; }
+
+require_once(e_HANDLER."textparse/basic.php");
+$etp = new e107_basicparse;
+
 require_once("auth.php");
 require_once(e_HANDLER."userclass_class.php");
 require_once(e_HANDLER."form_handler.php");
@@ -22,12 +26,19 @@ $rs = new form;
 $forum = new forum;
 $aj = new textparse;
 
+
+$deltest = array_flip($_POST);
 if(e_QUERY){
         $tmp = explode(".", e_QUERY);
         $action = $tmp[0];
         $sub_action = $tmp[1];
         $id = $tmp[2];
         unset($tmp);
+}
+if(preg_match("#(.*?)_delete_(\d+)#",$deltest[$etp->unentity(FORLAN_20)],$matches))
+{
+        $delete = $matches[1];
+        $del_id = $matches[2];
 }
 
 If(IsSet($_POST['submit_parent'])){
@@ -44,27 +55,15 @@ If(IsSet($_POST['update_parent'])){
 }
 
 If(IsSet($_POST['submit_forum'])){
-        $c = 0;
-        while($_POST['mod'][$c]){
-                $mods .= $_POST['mod'][$c].", ";
-                $c++;
-        }
-        $mods = ereg_replace(", $", ".", $mods);
+        $mods=implode(", ",$_POST['mod']);
         $_POST['forum_name'] = $aj -> formtpa($_POST['forum_name'], "admin");
         $_POST['forum_description'] = $aj -> formtpa($_POST['forum_description'], "admin");
-
         $sql -> db_Insert("forum", "0, '".$_POST['forum_name']."', '".$_POST['forum_description']."', '".$_POST['forum_parent']."', '".time()."', '".$mods."', 0, 0, 0, '".$_POST['forum_class']."', 0");
         $forum -> show_message(FORLAN_11);
 }
 
 If(IsSet($_POST['update_forum'])){
-
-        $c = 0;
-        while($_POST['mod'][$c]){
-                $mods .= $_POST['mod'][$c].", ";
-                $c++;
-        }
-        $mods = ereg_replace(", $", ".", $mods);
+        $mods=implode(", ",$_POST['mod']);
         $_POST['forum_name'] = $aj -> formtpa($_POST['forum_name'], "admin");
         $_POST['forum_description'] = $aj -> formtpa($_POST['forum_description'], "admin");
         $forum_parent = $row['forum_id'];
@@ -91,13 +90,14 @@ if(IsSet($_POST['updateoptions'])){
         $pref['forum_enclose'] = $_POST['forum_enclose'];
         $pref['forum_title'] = $_POST['forum_title'];
         $pref['forum_postspage'] = $_POST['forum_postspage'];
-        $pref['forum_levels'] = $_POST['forum_levels'];
         $pref['html_post'] = $_POST['html_post'];
         $pref['forum_attach'] = $_POST['forum_attach'];
         $pref['forum_redirect'] = $_POST['forum_redirect'];
         $pref['forum_user_customtitle'] = $_POST['forum_user_customtitle'];
         $pref['reported_post_email'] = $_POST['reported_post_email'];
         $pref['links_new_window'] = $_POST['links_new_window'];
+        $pref['forum_tooltip'] = $_POST['forum_tooltip'];
+        $pref['forum_tiplength'] = $_POST['forum_tiplength'];
         save_prefs();
         $forum -> show_message(FORLAN_10);
 }
@@ -143,6 +143,7 @@ if(IsSet($_POST['set_ranks'])){
         $pref['rank_main_admin_image'] = $_POST['rank_main_admin_image'];
         $pref['rank_admin'] = $_POST['rank_admin'];
         $pref['rank_admin_image'] = $_POST['rank_admin_image'];
+        $pref['rank_moderator'] = $_POST['rank_moderator'];
         $pref['rank_moderator_image'] = $_POST['rank_moderator_image'];
         $pref['forum_levels'] = $r_names;
         $pref['forum_thresholds'] = $r_thresholds;
@@ -161,8 +162,10 @@ if(IsSet($_POST['frsubmit'])){
         $sql -> db_Update("wmessage", "wm_text ='$adminrules', wm_active='".$_POST['wm_active6']."' WHERE wm_id='6' ");
 }
 
-if($action == "main" && $sub_action == "confirm"){
-        if($sql -> db_Delete("forum", "forum_id='$id' ")){
+if($delete == 'main')
+{
+        if($sql -> db_Delete("forum", "forum_id='$del_id' "))
+        {
                 $forum -> show_message(FORLAN_96);
         }
 }
@@ -176,16 +179,19 @@ if($action == "create"){
         }
 }
 
-if($action == "cat"){
-        if($sub_action == "confirm"){
-                if($sql -> db_Delete("forum", "forum_id='$id' ")){
-                        $sql -> db_Delete("forum", "forum_parent='$id' ");
-                        $forum -> show_message(FORLAN_97);
-                        $action = "main";
-                }
-        }else{
-                $forum -> create_parents($sub_action, $id);
+if($delete == 'cat')
+{
+        if($sql -> db_Delete("forum", "forum_id='$del_id' "))
+        {
+                $sql -> db_Delete("forum", "forum_parent='$del_id' ");
+                $forum -> show_message(FORLAN_97);
+                $action = "main";
         }
+}
+
+if($action == "cat")
+{
+        $forum -> create_parents($sub_action, $id);
 }
 
 if($action == "order"){
@@ -208,11 +214,15 @@ if($action == "rules"){
         $forum -> show_rules();
 }
 
+if($delete == 'reported')
+{
+        $sql -> db_Delete("tmp", "tmp_time='$del_id' ");
+        $forum -> show_message(FORLAN_118);
+        $forum -> show_reported();
+}
+
+
 if($action == "sr"){
-        if($sub_action == "confirm"){
-                $sql -> db_Delete("tmp", "tmp_time='$id' ");
-                        $forum -> show_message(FORLAN_118);
-        }
         $forum -> show_reported();
 }
 
@@ -221,31 +231,18 @@ if(!e_QUERY || $action == "main"){
         $forum -> show_existing_forums($sub_action, $id);
 }
 
-
-
-
-
-
-
 //$forum -> show_options($action);
 require_once("footer.php");
 function headerjs(){
+global $etp;
 $headerjs =  "<script type=\"text/javascript\">
 function confirm_(mode, forum_id, forum_name){
         if(mode == 'sr'){
-                var x=confirm(\"".FORLAN_117."\");
+                return confirm(\"".$etp->unentity(FORLAN_117)."\");
         }else if(mode == 'parent'){
-                var x=confirm(\"".FORLAN_81." [ID: \" + forum_name + \"]\");
+                return confirm(\"".$etp->unentity(FORLAN_81)." [ID: \" + forum_name + \"]\");
         }else{
-                var x=confirm(\"".FORLAN_82." [ID: \" + forum_name + \"]\");
-        }
-if(x)
-        if(mode == 'sr'){
-                window.location='".e_SELF."?sr.confirm.' + forum_id;
-        }else if(mode == 'parent'){
-                window.location='".e_SELF."?cat.confirm.' + forum_id;
-        }else{
-                window.location='".e_SELF."?main.confirm.' + forum_id;
+                return confirm(\"".$etp->unentity(FORLAN_82)." [ID: \" + forum_name + \"]\");
         }
 }
 </script>";
@@ -332,9 +329,12 @@ class forum{
                                         }
                                         $text .= "</select>";
                                 }else{
-										$forum_heading = str_replace("&#39;", "\'", $forum_name);
-                                        $text .= $rs -> form_button("submit", "main_edit_{$forum_id}", FORLAN_19, "onclick=\"document.location='".e_SELF."?cat.edit.$forum_id'\"")."
-                                        ".$rs -> form_button("submit", "main_delete_{$forum_id}", FORLAN_20, "onclick=\"confirm_('parent', $forum_id, '$forum_heading')\"");
+                                                  $forum_heading = str_replace("&#39;", "\'", $forum_name);
+
+                                                  $text .= $rs -> form_open("post", e_SELF,"parent_{$forum_id}","",""," onsubmit=\"return confirm_('parent',$forum_id,'$forum_heading')\"")."
+                                                  <div>".$rs -> form_button("button", "main_edit_{$forum_id}", FORLAN_19, "onclick=\"document.location='".e_SELF."?cat.edit.$forum_id'\"")."
+                                                  ".$rs -> form_button("submit", "cat_delete_{$forum_id}", FORLAN_20)."
+                                                  </div>".$rs -> form_close();
                                 }
                                 $text .= "</td></tr>";
 
@@ -370,9 +370,17 @@ class forum{
                                                         $text .= "</select>";
                                                 }else{
 
-														$forum_heading = str_replace("&#39;", "\'", $forum_name);
-                                                        $text .= $rs -> form_button("submit", "main_edit_{$forum_id}", FORLAN_19, "onclick=\"document.location='".e_SELF."?create.edit.$forum_id'\"")."
-                                                        ".$rs -> form_button("submit", "main_delete_{$forum_id}", FORLAN_20, "onclick=\"confirm_('forum', $forum_id, '$forum_heading')\"");
+                                                       $forum_heading = str_replace("&#39;", "\'", $forum_name);
+                                                       $text .= "
+
+                                                       ".$rs -> form_open("post", e_SELF,"existing_{$forum_id}","",""," onsubmit=\"return confirm_('forum',$forum_id,'$forum_heading')\"")."
+                                                       <div>".$rs -> form_button("button", "main_edit_{$forum_id}", FORLAN_19, "onclick=\"document.location='".e_SELF."?create.edit.$forum_id'\"")."
+                                                       ".$rs -> form_button("submit", "main_delete_{$forum_id}", FORLAN_20)."
+                                                       </div>".$rs -> form_close();
+
+
+
+//                                                        ".$rs -> form_button("submit", "main_delete_{$forum_id}", FORLAN_20, "onclick=\"confirm_('forum', $forum_id, '$forum_heading')\"");
                                                 }
                                                 $text .= "</td>\n</tr>";
                                         }
@@ -403,7 +411,7 @@ class forum{
                 <table style='width:auto' class='fborder'>
 
                 <tr>
-                <td style='width:40%' class='forumheader3'><u>".FORLAN_31."</u>:</td>
+                <td style='width:40%' class='forumheader3'>".FORLAN_31.":</td>
                 <td style='width:60%' class='forumheader3'>
                 <input class='tbox' type='text' name='forum_name' size='60' value='$forum_name' maxlength='250' />
                 </td>
@@ -412,7 +420,7 @@ class forum{
                 <tr>
                 <td style='width:40%' class='forumheader3'>".FORLAN_23.":<br /><span class='smalltext'>(".FORLAN_24.")</span></td>
                 <td style='width:60%' class='forumheader3'>".r_userclass("forum_class",$forum_class);
-
+                $text .= "</td></tr>";
                 $text .= "<tr style='vertical-align:top'>
                 <td colspan='2'  style='text-align:center' class='forumheader'>";
 
@@ -463,13 +471,14 @@ class forum{
                 </tr>
 
                 <tr>
-                <td style='width:40%' class='forumheader3'><u>".FORLAN_31."</u>:</td>
+                <td style='width:40%' class='forumheader3'>".FORLAN_31.":</td>
                 <td style='width:60%' class='forumheader3'>
                 <input class='tbox' type='text' name='forum_name' size='60' value='$forum_name' maxlength='250' />
                 </td>
                 </tr>
 
-                <td style='width:40%' class='forumheader3'><u>".FORLAN_32."</u>: </td>
+                <tr>
+                <td style='width:40%' class='forumheader3'>".FORLAN_32.": </td>
                 <td style='width:60%' class='forumheader3'>
                 <textarea class='tbox' name='forum_description' cols='50' rows='5'>$forum_description</textarea>
                 </td>
@@ -485,7 +494,7 @@ class forum{
                         if(preg_match('/'.preg_quote($user_name).'/', $forum_moderators)){
                                 $text .= " checked";
                         }
-                        $text .= "> ".$user_name ."<br />";
+                        $text .= "/> ".$user_name ."<br />";
                 }
 
                 $text .= "</td>
@@ -493,6 +502,7 @@ class forum{
                 <tr>
                 <td style='width:40%' class='forumheader3'>".FORLAN_23.":<br /><span class='smalltext'>(".FORLAN_24.")</span></td>
                 <td style='width:60%' class='forumheader3'>".r_userclass("forum_class",$forum_class, "on");
+                $text .= "</td></tr>";
                 $text .= "<tr style='vertical-align:top'>
                 <td colspan='2'  style='text-align:center' class='forumheader'>";
                 if($sub_action == "edit"){
@@ -521,74 +531,85 @@ class forum{
 
                 <tr>
                 <td style='width:75%' class='forumheader3'>".FORLAN_44."<br /><span class='smalltext'>".FORLAN_45."</span></td>
-                <td style='width:25%' class='forumheader2' style='text-align:center'>".($pref['forum_enclose'] ? "<input type='checkbox' name='forum_enclose' value='1' checked='checked' />" : "<input type='checkbox' name='forum_enclose' value='1' />")."</td>
+                <td style='width:25%;text-align:center' class='forumheader2' >".($pref['forum_enclose'] ? "<input type='checkbox' name='forum_enclose' value='1' checked='checked' />" : "<input type='checkbox' name='forum_enclose' value='1' />")."</td>
                 </tr>
 
                 <tr>
                 <td style='width:75%' class='forumheader3'>".FORLAN_65."<br /><span class='smalltext'>".FORLAN_46."</span></td>
-                <td style='width:25%' class='forumheader2' style='text-align:center'><input class='tbox' type='text' name='forum_title' size='15' value='".$pref['forum_title']."' maxlength='100' /></td>
+                <td style='width:25%;text-align:center' class='forumheader2' ><input class='tbox' type='text' name='forum_title' size='15' value='".$pref['forum_title']."' maxlength='100' /></td>
                 </tr>
 
                 <tr>
                 <td style='width:75%' class='forumheader3'>".FORLAN_47."<br /><span class='smalltext'>".FORLAN_48."</span></td>
-                <td style='width:25%' class='forumheader2' style='text-align:center'>".($pref['email_notify'] ? "<input type='checkbox' name='email_notify' value='1' checked='checked' />" : "<input type='checkbox' name='email_notify' value='1' />")."</td>
+                <td style='width:25%;text-align:center' class='forumheader2' >".($pref['email_notify'] ? "<input type='checkbox' name='email_notify' value='1' checked='checked' />" : "<input type='checkbox' name='email_notify' value='1' />")."</td>
                 </tr>
 
                 <tr>
                 <td style='width:75%' class='forumheader3'>".FORLAN_68."<br /><span class='smalltext'>".FORLAN_69."</span></td>
-                <td style='width:25%' class='forumheader2' style='text-align:center'>".($pref['html_post'] ? "<input type='checkbox' name='html_post' value='1' checked='checked' />" : "<input type='checkbox' name='html_post' value='1' />")."</td>
+                <td style='width:25%;text-align:center' class='forumheader2' >".($pref['html_post'] ? "<input type='checkbox' name='html_post' value='1' checked='checked' />" : "<input type='checkbox' name='html_post' value='1' />")."</td>
                 </tr>
 
 
                 <tr>
                 <td style='width:75%' class='forumheader3'>".FORLAN_124."<br /><span class='smalltext'>".FORLAN_125."</span></td>
-                <td style='width:25%' class='forumheader2' style='text-align:center'>".($pref['links_new_window'] ? "<input type='checkbox' name='links_new_window' value='1' checked='checked' />" : "<input type='checkbox' name='links_new_window' value='1' />")."</td>
+                <td style='width:25%;text-align:center' class='forumheader2' >".($pref['links_new_window'] ? "<input type='checkbox' name='links_new_window' value='1' checked='checked' />" : "<input type='checkbox' name='links_new_window' value='1' />")."</td>
                 </tr>
 
                 <tr>
                 <td style='width:75%' class='forumheader3'>".FORLAN_49."<br /><span class='smalltext'>".FORLAN_50."</span></td>
-                <td style='width:25%' class='forumheader2' style='text-align:center'>".($pref['forum_poll'] ? "<input type='checkbox' name='forum_poll' value='1' checked='checked' />" : "<input type='checkbox' name='forum_poll' value='1' />")."</td>
+                <td style='width:25%;text-align:center' class='forumheader2' >".($pref['forum_poll'] ? "<input type='checkbox' name='forum_poll' value='1' checked='checked' />" : "<input type='checkbox' name='forum_poll' value='1' />")."</td>
                 </tr>
 
                 <tr>
-                <td style='width:75%' class='forumheader3'>".FORLAN_70."<br /><span class='smalltext'>".FORLAN_71."</span></td>
-                <td style='width:25%' class='forumheader2' style='text-align:center'>".($pref['forum_attach'] ? "<input type='checkbox' name='forum_attach' value='1' checked='checked' />" : "<input type='checkbox' name='forum_attach' value='1' />")."</td>
+                <td style='width:75%' class='forumheader3'>".FORLAN_70."<br /><span class='smalltext'>".FORLAN_71." <a href='upload.php'>".FORLAN_130."</a> ". FORLAN_131."</span></td>
+                <td style='width:25%;text-align:center' class='forumheader2' >".($pref['forum_attach'] ? "<input type='checkbox' name='forum_attach' value='1' checked='checked' />" : "<input type='checkbox' name='forum_attach' value='1' />")."</td>
                 </tr>
 
                 <tr>
                 <td style='width:75%' class='forumheader3'>".FORLAN_51."<br /><span class='smalltext'>".FORLAN_52."</span></td>
-                <td style='width:25%' class='forumheader2' style='text-align:center'>".($pref['forum_track'] ? "<input type='checkbox' name='forum_track' value='1' checked='checked' />" : "<input type='checkbox' name='forum_track' value='1' />")."</td>
+                <td style='width:25%;text-align:center' class='forumheader2' >".($pref['forum_track'] ? "<input type='checkbox' name='forum_track' value='1' checked='checked' />" : "<input type='checkbox' name='forum_track' value='1' />")."</td>
                 </tr>
 
                 <tr>
                 <td style='width:75%' class='forumheader3'>".FORLAN_112."<br /><span class='smalltext'>".FORLAN_113."</span></td>
-                <td style='width:25%' class='forumheader2' style='text-align:center'>".($pref['forum_redirect'] ? "<input type='checkbox' name='forum_redirect' value='1' checked='checked' />" : "<input type='checkbox' name='forum_redirect' value='1' />")."</td>
+                <td style='width:25%;text-align:center' class='forumheader2' >".($pref['forum_redirect'] ? "<input type='checkbox' name='forum_redirect' value='1' checked='checked' />" : "<input type='checkbox' name='forum_redirect' value='1' />")."</td>
                 </tr>
 
                 <tr>
                 <td style='width:75%' class='forumheader3'>".FORLAN_114."<br /><span class='smalltext'>".FORLAN_115."</span></td>
-                <td style='width:25%' class='forumheader2' style='text-align:center'>".($pref['forum_user_customtitle'] ? "<input type='checkbox' name='forum_user_customtitle' value='1' checked='checked' />" : "<input type='checkbox' name='forum_user_customtitle' value='1' />")."</td>
+                <td style='width:25%;text-align:center' class='forumheader2' >".($pref['forum_user_customtitle'] ? "<input type='checkbox' name='forum_user_customtitle' value='1' checked='checked' />" : "<input type='checkbox' name='forum_user_customtitle' value='1' />")."</td>
                 </tr>
 
                 <tr>
                 <td style='width:75%' class='forumheader3'>".FORLAN_116."<br /><span class='smalltext'>".FORLAN_122."</span></td>
-                <td style='width:25%' class='forumheader2' style='text-align:center'>".($pref['reported_post_email'] ? "<input type='checkbox' name='reported_post_email' value='1' checked='checked' />" : "<input type='checkbox' name='reported_post_email' value='1' />")."</td>
+                <td style='width:25%;text-align:center' class='forumheader2' >".($pref['reported_post_email'] ? "<input type='checkbox' name='reported_post_email' value='1' checked='checked' />" : "<input type='checkbox' name='reported_post_email' value='1' />")."</td>
+                </tr>
+
+
+                <tr>
+                <td style='width:75%' class='forumheader3'>".FORLAN_126."<br /><span class='smalltext'>".FORLAN_127."</span></td>
+                <td style='width:25%;text-align:center' class='forumheader2' >".($pref['forum_tooltip'] ? "<input type='checkbox' name='forum_tooltip' value='1' checked='checked' />" : "<input type='checkbox' name='forum_tooltip' value='1' />")."</td>
+                </tr>
+
+                <tr>
+                <td style='width:75%' class='forumheader3'>".FORLAN_128."<br /><span class='smalltext'>".FORLAN_129."</span></td>
+                <td style='width:25%;text-align:center' class='forumheader2' ><input class='tbox' type='text' name='forum_tiplength' size='15' value='".$pref['forum_tiplength']."' maxlength='20' /></td>
                 </tr>
 
 
                 <tr>
                 <td style='width:75%' class='forumheader3'>".FORLAN_53."<br /><span class='smalltext'>".FORLAN_54."</span></td>
-                <td style='width:25%' class='forumheader2' style='text-align:center'><input class='tbox' type='text' name='forum_eprefix' size='15' value='".$pref['forum_eprefix']."' maxlength='20' /></td>
+                <td style='width:25%;text-align:center' class='forumheader2' ><input class='tbox' type='text' name='forum_eprefix' size='15' value='".$pref['forum_eprefix']."' maxlength='20' /></td>
                 </tr>
 
                 <tr>
                 <td style='width:75%' class='forumheader3'>".FORLAN_55."<br /><span class='smalltext'>".FORLAN_56."</span></td>
-                <td style='width:25%' class='forumheader2' style='text-align:center'><input class='tbox' type='text' name='forum_popular' size='3' value='".$pref['forum_popular']."' maxlength='3' /></td>
+                <td style='width:25%;text-align:center' class='forumheader2' ><input class='tbox' type='text' name='forum_popular' size='3' value='".$pref['forum_popular']."' maxlength='3' /></td>
                 </tr>
 
                 <tr>
                 <td style='width:75%' class='forumheader3'>".FORLAN_57."<br /><span class='smalltext'>".FORLAN_58."</span></td>
-                <td style='width:25%' class='forumheader2' style='text-align:center'><input class='tbox' type='text' name='forum_postspage' size='3' value='".$pref['forum_postspage']."' maxlength='3' /></td>
+                <td style='width:25%;text-align:center' class='forumheader2' ><input class='tbox' type='text' name='forum_postspage' size='3' value='".$pref['forum_postspage']."' maxlength='3' /></td>
                 </tr>
 
                 <tr>
@@ -617,10 +638,13 @@ class forum{
                                         $text .= "<tr>
                                         <td style='width:80%' class='forumheader3'><a href='".e_BASE."forum_viewtopic.php?".$reported[0].".".$reported[1]."#".$reported[2]."' rel='external'>".$reported[3]."</a></td>
                                         <td style='width:20%; text-align:center; vertical-align:top' class='forumheader3'>
-                                        ".$rs -> form_button("submit", "reported_delete", FORLAN_20, "onclick=\"confirm_('sr', $tmp_time);\"")."
+                                                               ".$rs -> form_open("post", e_SELF,"","",""," onsubmit=\"return confirm_('sr',$tmp_time)\"")."
+                                                                    ".$rs -> form_button("submit", "reported_delete_{$tmp_time}", FORLAN_20)."
+                                                                            ".$rs -> form_close()."
                                         </td>
                                         </tr>\n";
                                 }
+//                                     ".$rs -> form_button("submit", "reported_delete", FORLAN_20, "onclick=\"confirm_('sr', $tmp_time);\"")."
                                 $text .= "</table>";
                         }else{
                                 $text .= "<div style='text-align:center'>".FORLAN_121."</div>";
@@ -646,7 +670,7 @@ class forum{
 
                 <tr>
                 <td style='text-align:center' class='forumheader3'>".FORLAN_2."<br />
-                ".FORLAN_89." <input type='radio' name='prune_type' value='".FORLAN_3."'>&nbsp;&nbsp;&nbsp;
+                ".FORLAN_89." <input type='radio' name='prune_type' value='".FORLAN_3."' />&nbsp;&nbsp;&nbsp;
                 ".FORLAN_90." <input type='radio' name='prune_type' value='".FORLAN_111."' checked='checked' />
                 </td>
                 </tr>
@@ -692,7 +716,7 @@ class forum{
                 </tr>
 
                 <tr>
-                <td class='forumheader3' style='width:40%; text-align:center'><input class='tbox' type='text' name='rank_admin' size='30' value='".($pref['rank_moderator'] ? $pref['rank_moderator'] : FORLAN_105)."' maxlength='30' /></td>
+                <td class='forumheader3' style='width:40%; text-align:center'><input class='tbox' type='text' name='rank_moderator' size='30' value='".($pref['rank_moderator'] ? $pref['rank_moderator'] : FORLAN_105)."' maxlength='30' /></td>
                 <td class='forumheader3' style='width:40%'>&nbsp;</td>
                 <td class='forumheader3' style='width:40%; text-align:center'><input class='tbox' type='text' name='rank_moderator_image' size='30' value='".($pref['rank_moderator_image'] ? $pref['rank_moderator_image'] : "moderator.png")."' maxlength='30' /></td>
                 </tr>";
@@ -753,7 +777,6 @@ class forum{
                 <br />
                 ".ren_help(1,"addtext1","help1")."
                 </td>
-
                 </tr>
 
                 <tr>
@@ -772,7 +795,7 @@ class forum{
                 <br />
                 ".ren_help(1,"addtext2","help2")."
                 </td>
-
+                </tr>
 
                 <tr>
                 <td style='width:20%' class='forumheader3'>".WMGLAN_3.": <br />

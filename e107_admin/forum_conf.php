@@ -10,6 +10,11 @@
 |
 |	Released under the terms and conditions of the	
 |	GNU General Public License (http://gnu.org).
+|
+| $Source: /cvsroot/e107/e107/e107_admin/forum_conf.php,v $
+| $Revision: 1.5 $
+| $Date: 2004/08/15 02:16:18 $
+| $Author: mcfly_e107 $ 
 +---------------------------------------------------------------+
 */
 require_once("../class2.php");
@@ -75,7 +80,6 @@ if($action == "confirm"){
 		if($replies){
 			$pages = ((ceil($replies/$pref['forum_postspage']) -1) * $pref['forum_postspage']);
 		}
-		
 		$url = e_BASE."forum_viewtopic.php?".$forum_id.".".$thread_parent.($pages ? ".$pages" : "");	// set return url
 		$message = FORLAN_26;
 	}else{	// post is thread
@@ -86,17 +90,28 @@ if($action == "confirm"){
 		$url = e_BASE."forum_viewforum.php?".$forum_id;	// set return url
 		$message = FORLAN_6.($count ? ", ".$count." ".FORLAN_7."." : ".");
 	}
+
+	if($sql -> db_Select("forum_t", "*", "thread_forum_id='$forum_id' ORDER BY thread_datestamp DESC LIMIT 0,1")){
+		$row = $sql -> db_Fetch(); extract($row);
+		$new_forum_lastpost = $thread_user.".".$thread_datestamp;
+	}
+	else
+	{
+		$new_forum_lastpost = "";
+	}
+	$sql -> db_Update("forum", "forum_lastpost='{$new_forum_lastpost}' WHERE forum_id='$new_forum' ");
 }
 // end delete ----------------------------------------------------------------------------------------------------------------------------------------------
 
 if(IsSet($_POST['move'])){
 
 	$new_forum = $_POST['forum_move'];
+		
 	$replies = $sql -> db_Select("forum_t", "*", "thread_parent='$thread_id' ");
 	
 	$sql -> db_Select("forum_t", "thread_name", "thread_id ='".$thread_id."' ");
 	$row = $sql -> db_Fetch(); extract($row);
-	$sql -> db_Update("forum_t", "thread_forum_id='$new_forum', thread_name='[moved] ".$thread_name."' WHERE thread_id='$thread_id' ");
+	$sql -> db_Update("forum_t", "thread_forum_id='$new_forum', thread_name='[".FORLAN_27."] ".$thread_name."' WHERE thread_id='$thread_id' ");
 	$sql -> db_Update("forum_t", "thread_forum_id='$new_forum' WHERE thread_parent='$thread_id' ");
 	$sql -> db_Update("forum", "forum_threads=forum_threads-1, forum_replies=forum_replies-$replies WHERE forum_id='$forum_id' ");
 	$sql -> db_Update("forum", "forum_threads=forum_threads+1, forum_replies=forum_replies+$replies WHERE forum_id='$new_forum' ");
@@ -109,6 +124,7 @@ if(IsSet($_POST['move'])){
 	}else{
 		$new_forum_lastpost = "";
 	}
+	$sql -> db_Update("forum", "forum_lastpost='{$new_forum_lastpost}' WHERE forum_id='$new_forum' ");
 
 	if($sql -> db_Select("forum_t", "*", "thread_forum_id='$forum_id' ORDER BY thread_datestamp DESC LIMIT 0,1")){
 		$row = $sql -> db_Fetch(); extract($row);
@@ -116,7 +132,7 @@ if(IsSet($_POST['move'])){
 	}else{
 		$new_forum_lastpost = "";
 	}
-
+	$sql -> db_Update("forum", "forum_lastpost='{$new_forum_lastpost}' WHERE forum_id='$forum_id' ");
 
 	$message = FORLAN_9;
 	$url = e_BASE."forum_viewforum.php?".$new_forum;
@@ -181,17 +197,19 @@ if($action == "delete"){
 }
 
 if($action == "move"){
-$forum_total = $sql -> db_Select("forum", "*", "forum_parent!='0' ");
+$forum_total = $sql -> db_Select("forum", "forum_id,forum_name", "forum_parent!='0' ");
 $text = "
 <form method='post' action='".e_SELF."?".e_QUERY.".".$thread_parent."'>
 <div style='text-align:center'>
-<table style='width:50%'>
+<table style='width:90%'>
 <tr> 
-<td style='width:40%'>".FORLAN_24.": </td>
-<td style='width:60%'>
+<td style='text-align:right'>".FORLAN_24.": </td>
+<td style='text-align:left'>
 <select name='forum_move' class='tbox'>";
-while(list($forum_id_, $forum_name_) = $sql-> db_Fetch()){
-	if($forum_id_ != $forum_id){
+while(list($forum_id_, $forum_name_) = $sql-> db_Fetch())
+{
+	if($forum_id_ != $forum_id)
+	{
 		$text .= "<option value='$forum_id_'>".$forum_name_."</option>";
 	}
 }
@@ -199,13 +217,15 @@ $text .= "</select>
 </td>
 </tr>
 <tr style='vertical-align: top;'>
-<td colspan='2'  style='text-align=center'>
+<td colspan='2'  style='text-align:center'><br />
 <input class='button' type='submit' name='move' value='".FORLAN_25."' /> 
 <input class='button' type='submit' name='movecancel' value='".FORLAN_14."' />
+</td>
+</tr>
 </table>
 </div>
 </form>";
-$ns -> tablerender(FORLAN_26, $text);
+$ns -> tablerender(FORLAN_25, $text);
 }
 
 require_once("footer.php");

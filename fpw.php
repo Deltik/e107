@@ -58,7 +58,7 @@ if(e_QUERY){
                 cookie($pref['cookie_name'], "", (time()-2592000));
                 $_SESSION[$pref['cookie_name']] = "";
 
-                $txt = LAN_FPW8." {$username} ".LAN_FPW9." {$newpw}<br /><br />".LAN_FPW10;
+                $txt = LAN_FPW8." {$username} ".LAN_FPW9." {$newpw}<br /><br />".LAN_FPW10." <a href='".e_BASE."index.php'>".LAN_FPW11."</a> ".LAN_FPW12;
                 fpw_error($txt);
 
         } else {
@@ -97,7 +97,8 @@ if(IsSet($_POST['pwsubmit'])){
                 $rcode = md5($_SERVER[HTTP_USER_AGENT] . serialize($pref). $rand_num . $datekey);
 
                 $link = SITEURL."fpw.php?{$rcode}";
-                $message = LAN_FPW5."\n\n{$link}";
+                $message = LAN_FPW5." ".SITENAME." ".LAN_FPW14." : ".getip().".\n\n".LAN_FPW15."\n\n".LAN_FPW16."\n\n".LAN_FPW17."\n\n{$link}";
+              //  $message = LAN_FPW5."\n\n{$link}";
 
                 $deltime = time()+86400*2;  //Set timestamp two days ahead so it doesn't get auto-deleted
                 $sql -> db_Insert("tmp","'pwreset',{$deltime},'{$user_name}.{$rcode}'");

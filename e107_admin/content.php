@@ -11,19 +11,24 @@
 |        Released under the terms and conditions of the
 |        GNU General Public License (http://gnu.org).
 +---------------------------------------------------------------+
+$Id: content.php,v 1.17 2004/08/31 16:02:51 loloirie Exp $  
 */
 require_once("../class2.php");
+    if($pref['htmlarea']){
+        require_once(e_HANDLER."htmlarea/htmlarea.inc.php");
+       $htmlarea_js =  htmlarea("data");
+    }
 if(!getperms("J") && !getperms("K") && !getperms("L")){
         header("location:".e_HTTP."index.php");
         exit;
 }
+
+require_once(e_HANDLER."textparse/basic.php");
+$etp = new e107_basicparse;
+
 require_once("auth.php");
 require_once(e_HANDLER."userclass_class.php");
 require_once(e_HANDLER."form_handler.php");
-    if($pref['htmlarea']){
-        require_once(e_HANDLER."htmlarea/htmlarea.inc.php");
-        htmlarea("data");
-    }
 
 
 $rs = new form;
@@ -36,6 +41,13 @@ if(e_QUERY){
         unset($tmp);
 }
 
+foreach($_POST as $k => $v){
+        if(preg_match("#^main_delete_(\d*)$#",$k,$matches) && $_POST[$k] == $etp->unentity(CNTLAN_7))
+        {
+                $delete_content=$matches[1];
+        }
+}
+
 $aj = new textparse;
 
 If(IsSet($_POST['submit'])){
@@ -43,7 +55,7 @@ If(IsSet($_POST['submit'])){
                 $content_subheading = $aj -> formtpa($_POST['content_subheading'], "admin");
                 $content_heading = $aj -> formtpa($_POST['content_heading'], "admin");
                 $content_content = $aj -> formtpa($_POST['data'],"admin");
-                $sql -> db_Insert("content", "0, '".$content_heading."', '".$content_subheading."', '$content_content', '".$_POST['auto_line_breaks']."', '".time()."', '".ADMINID."', '".$_POST['content_comment']."', '', '1', 0, 0,  {$_POST['c_class']}");
+                $sql -> db_Insert("content", "0, '".$content_heading."', '".$content_subheading."', '$content_content', '".$_POST['auto_line_breaks']."', '".time()."', '".ADMINID."', '".$_POST['content_comment']."', '', '1', 0, ".$_POST['add_icons'].",  {$_POST['c_class']}");
                 if($_POST['content_heading']){
                         $sql -> db_Select("content", "*", "ORDER BY content_datestamp DESC LIMIT 0,1 ", $mode="no_where");
                         list($content_id, $content_heading) = $sql-> db_Fetch();
@@ -66,7 +78,7 @@ if(IsSet($_POST['update'])){
         $content_subheading = $aj -> formtpa($_POST['content_subheading'], "admin");
         $content_heading = $aj -> formtpa($_POST['content_heading'], "admin");
         $content_content = $aj -> formtpa($_POST['data'], "admin");
-        $sql -> db_Update("content", " content_heading='$content_heading', content_subheading='$content_subheading', content_content='$content_content', content_parent='".$_POST['auto_line_breaks']."',  content_comment='".$_POST['content_comment']."', content_type='1', content_class='{$_POST['c_class']}' WHERE content_id='".$_POST['content_id']."'");
+        $sql -> db_Update("content", " content_heading='$content_heading', content_subheading='$content_subheading', content_content='$content_content', content_parent='".$_POST['auto_line_breaks']."',  content_comment='".$_POST['content_comment']."', content_type='1', content_class='{$_POST['c_class']}', content_pe_icon='".$_POST['add_icons']."' WHERE content_id='".$_POST['content_id']."'");
         $sql -> db_Update("links", "link_class='".$_POST['c_class']."' WHERE link_name='$content_heading' ");
         unset($content_heading, $content_subheading, $content_content, $content_parent);
         $message = CNTLAN_2;
@@ -74,46 +86,51 @@ if(IsSet($_POST['update'])){
         clear_cache("sitelinks");
 }
 
-if($action == "delete"){
+if($delete_content)
+{
         $sql = new db;
-        $sql -> db_Select("content", "*", "content_id=$sub_action");
+        $sql -> db_Select("content", "*", "content_id=$delete_content");
         $row = $sql -> db_Fetch(); extract($row);
         $sql -> db_Delete("links", "link_name='".$content_heading."' ");
-        $sql -> db_Delete("content", "content_id=$sub_action");
+        $sql -> db_Delete("content", "content_id=$delete_content");
         $message = CNTLAN_20;
         unset($content_heading, $content_subheading, $content_content);
         clear_cache("content");
         clear_cache("sitelinks");
 }
 
-if(IsSet($message)){
+if(IsSet($message))
+{
         $ns -> tablerender("", "<div style='text-align:center'><b>".$message."</b></div>");
 }
 
 $text = "<div style='text-align:center'><div style='border : solid 1px #000; padding : 4px; width : auto; height : 100px; overflow : auto; '>\n";
-if(!$content_total = $sql -> db_Select("content", "*", "content_type='254' OR content_type='255' OR content_type='1' ORDER BY content_datestamp DESC")){
+if(!$content_total = $sql -> db_Select("content", "*", "content_type='254' OR content_type='255' OR content_type='1' ORDER BY content_datestamp DESC"))
+{
         $text .= "<div style='text-align:center'>".CNTLAN_4."</div>";
-}else{
-        $text .= "<table class='fborder' style='width:100%'>
+} else
+{
+        $text .= "
+        <form method='post' action='".e_SELF."' onsubmit=\"return confirm_()\">
+        <table class='fborder' style='width:100%'>
         <tr>
         <td style='width:5%' class='forumheader2'>&nbsp;</td>
-<td style='width:65%' class='forumheader2'>".CNTLAN_25."</td>
-<td style='width:30%' class='forumheader2'>".CNTLAN_26."</td>
-
-</tr>";
-
-        while($row = $sql -> db_Fetch()){
+        <td style='width:65%' class='forumheader2'>".CNTLAN_25."</td>
+        <td style='width:30%' class='forumheader2'>".CNTLAN_26."</td>
+        </tr>";
+        while($row = $sql -> db_Fetch())
+        {
                 extract($row);
                 $content_title = ($content_heading) ? $content_heading : $content_subheading;
                 $text .= "<tr><td style='width:5%; text-align:center' class='forumheader3'>$content_id</td>
                 <td style='width:65%' class='forumheader3'>$content_title</td>
                 <td style='width:30%; text-align:center' class='forumheader3'>
-                ".$rs -> form_button("submit", "main_edit_{$content_id}", CNTLAN_6, "onclick=\"document.location='".e_SELF."?edit.$content_id'\"")."
-                ".$rs -> form_button("submit", "main_delete_{$content_id}", CNTLAN_7, "onclick=\"confirm_($content_id)\"")."
+                ".$rs -> form_button("button", "main_edit_{$content_id}", CNTLAN_6, "onclick=\"document.location='".e_SELF."?edit.$content_id'\"")."
+                ".$rs -> form_button("submit", "main_delete_{$content_id}", CNTLAN_7)."
 
                 </td>\n</tr>";
         }
-        $text .= "</table>\n";
+        $text .= "</table>\n</form>";
 }
 $text .= "</div></div>";
 
@@ -195,6 +212,14 @@ if(!$content_comment){
 
 $text .= "
 </td></tr>
+
+
+        <tr>
+        <td class='forumheader3'>".CNTLAN_28.":&nbsp;&nbsp;</td><td class='forumheader3'>".
+        ($content_pe_icon ? CNTLAN_29.": <input type='radio' name='add_icons' value='1' checked='checked' />".CNTLAN_30.": <input type='radio' name='add_icons' value='0' />" : CNTLAN_29.": <input type='radio' name='add_icons' value='1' />".CNTLAN_30.": <input type='radio' name='add_icons' value='0' checked='checked' />")."
+        </td>
+        </tr>
+
 ";
 
 $text.="
@@ -225,9 +250,7 @@ $ns -> tablerender("<div style='text-align:center'>".CNTLAN_18."</div>", $text);
 
 echo "<script type=\"text/javascript\">
 function confirm_(content_id){
-        var x=confirm(\"".CNTLAN_27." [ID: \" + content_id + \"]\");
-if(x)
-        window.location='".e_SELF."?delete.' + content_id;
+        return  confirm(\"".$etp->unentity(CNTLAN_27)."\");
 }
 </script>";
 

@@ -38,7 +38,11 @@ if(IsSet($_POST['commentsubmit'])){
 		if(!$row[0] && (ANON===TRUE || USER===TRUE)){
 			if(!$pid){ $pid = 0; }
 			$cobj -> enter_comment($_POST['author_name'], $_POST['comment'], $table, $id, $pid, $_POST['subject']);
-			clear_cache("comment.php?$table.$id");
+			if($table == "news"){
+				clear_cache("news");
+			} else {
+				clear_cache("comment.php?$table.$id");
+			}
 		}
 	}
 }
@@ -190,6 +194,7 @@ if($cache = retrieve_cache("comment.php?$table.$id")){
 		} else {
 			$row = $sql -> db_Fetch();
 			extract($row);
+			if($poll_comment == 0){header("location:".e_BASE."index.php");}
 			$subject = $poll_title;
 			define(e_PAGETITLE,  LAN_101." / ".LAN_99." / ".$subject."");
 			require_once(HEADERF);

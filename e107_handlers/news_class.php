@@ -10,6 +10,11 @@
 |
 |	Released under the terms and conditions of the
 |	GNU General Public License (http://gnu.org).	
+|
+| $Source: /cvsroot/e107/e107/e107_handlers/news_class.php,v $
+| $Revision: 1.16 $
+| $Date: 2004/08/15 02:31:14 $
+| $Author: mcfly_e107 $ 
 +---------------------------------------------------------------+
 */
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -32,7 +37,7 @@ class news{
 				$message = "News updated in database.";
              clear_cache("news.php");
 			}else{
-				$message = "<b>Error!</b> Was unable to update news item into database!</b>";
+				$message = "<strong>Error! - Was unable to update news item into database!</strong>";
 			}
 		}else{
 			$news_title = $aj -> formtpa($news_title);
@@ -42,20 +47,29 @@ class news{
 				$message = "News entered into database.";
              clear_cache("news.php");
 			}else{
-				$message = "<b>Error!</b> Was unable to enter news item into database!</b>";
+				$message = "<strong>Error! - Was unable to enter news item into database!</strong>";
 			}
 		}
 		$this -> create_rss();
 		return $message;
 	}
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-	function render_newsitem($news, $mode="default"){
-
+	function render_newsitem($news, $mode="default", $n_restrict=""){
+    if($n_restrict=="userclass"){
+      $news['news_id'] = 0;
+      $news['news_title'] = LAN_NEWS_1;
+      $news['data'] = LAN_NEWS_2;
+      $news['news_extended'] = "";
+      $news['news_allow_comments'] = 1;
+      $news['news_start'] = 0;
+      $news['news_end'] = 0;
+      $news['news_rendertype'] = 0;
+      $news['comment_total'] = 0;
+    }
 		if(function_exists("theme_render_newsitem")){
 			$result = call_user_func("theme_render_newsitem",$news);
 			if($result == "return"){return;}
 		}
-
 		global $NEWSSTYLE, $NEWSLISTSTYLE;
 		if(!is_object($aj)) $aj = new textparse;
 		if(!is_object($sql)) $sql = new db;
@@ -85,7 +99,7 @@ on
 		if(IsSet($_POST['highlight_search'])){
 			$highlight_search = TRUE;
 		}
-		$news_body = $aj -> tpa($data, "off", "admin", $highlight_search=TRUE);
+		$news_body = $aj -> tpa($data, "off", "admin", $highlight_search);
 		$news_extended = trim(chop($aj -> tpa($news_extended, "off", "admin")));
 
 		if(!$comment_total) $comment_total = "0";
@@ -219,18 +233,18 @@ function create_rss(){
                 global $sql;
   							global $aj;
 								if(!is_object($aj)) $aj = new textparse;
-                setlocale (LC_TIME, "en");
+                setlocale (LC_TIME, CORE_LC);
                 $pubdate = strftime("%a, %d %b %Y %I:%M:00 GMT", time());
                 $sitebutton = (strstr(SITEBUTTON, "http:") ? SITEBUTTON : SITEURL.str_replace("../", "", e_IMAGE).SITEBUTTON);
                 $sitedisclaimer = ereg_replace("<br />|\n", "", SITEDISCLAIMER);
 
-        $rss = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>
+        $rss = "<?xml version=\"1.0\" encoding=\"".CHARSET."\"?>
 <rss version=\"2.0\">
 <channel>
   <title>".$this->make_xml_compatible(SITENAME)."</title>
   <link>http://".$_SERVER['HTTP_HOST'].e_HTTP."index.php</link>
   <description>".$this->make_xml_compatible(SITEDESCRIPTION)."</description>
-  <language>en-gb</language>
+  <language>".CORE_LC."-".CORE_LC2."</language>
   <copyright>".$this->make_xml_compatible($sitedisclaimer)."</copyright>
   <managingEditor>".$this->make_xml_compatible(SITEADMIN)." - ".SITEADMINEMAIL."</managingEditor>
   <webMaster>".SITEADMINEMAIL."</webMaster>

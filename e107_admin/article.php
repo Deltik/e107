@@ -10,29 +10,44 @@
 |
 |        Released under the terms and conditions of the
 |        GNU General Public License (http://gnu.org).
+|
+|   $Source: /cvsroot/e107/e107/e107_admin/article.php,v $
+|   $Revision: 1.27 $
+|   $Date: 2004/09/03 08:21:28 $
+|   $Author: loloirie $
+
 +---------------------------------------------------------------+
 */
 require_once("../class2.php");
+if($pref['htmlarea']){
+    require_once(e_HANDLER."htmlarea/htmlarea.inc.php");
+   $htmlarea_js =  htmlarea("data");
+  //  htmlarea("content_summary");
+}
 if(!getperms("J") && !getperms("K") && !getperms("L")){header("location:".e_BASE."index.php"); exit; }
+
+require_once(e_HANDLER."textparse/basic.php");
+$etp = new e107_basicparse;
+
 require_once("auth.php");
 $aj = new textparse;
 require_once(e_HANDLER."form_handler.php");
 require_once(e_HANDLER."userclass_class.php");
 
-if($pref['htmlarea']){
-    require_once(e_HANDLER."htmlarea/htmlarea.inc.php");
-    htmlarea("data");
-  //  htmlarea("content_summary");
-}
-
 $rs = new form;
 
+$deltest = array_flip($_POST);
 if(e_QUERY){
         $tmp = explode(".", e_QUERY);
         $action = $tmp[0];
         $sub_action = $tmp[1];
         $id = $tmp[2];
         unset($tmp);
+}
+if(preg_match("#(.*?)_delete_(\d+)#",$deltest[$etp->unentity(ARLAN_62)],$matches))
+{
+        $delete = $matches[1];
+        $del_id = $matches[2];
 }
 
 // ##### DB --------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -43,6 +58,7 @@ if(IsSet($_POST['create_category'])){
         $sql -> db_Insert("content", " '0', '".$_POST['category_name']."', '".$_POST['category_description']."', '', 0, ".time().", '".ADMINID."', 0, '".$_POST['category_button']."', 6, 0, 0, 0");
         $message = ARLAN_56;
         clear_cache("article");
+        $action = "cat";
 }
 
 if(IsSet($_POST['update_category'])){
@@ -51,6 +67,7 @@ if(IsSet($_POST['update_category'])){
         $sql -> db_Update("content", "content_heading='".$_POST['category_name']."', content_subheading='".$_POST['category_description']."', content_summary='".$_POST['category_button']."' WHERE content_id='".$_POST['category_id']."' ");
         $message = ARLAN_57;
         clear_cache("article");
+        $action = "cat";
 }
 
 if(IsSet($_POST['create_article'])){
@@ -66,10 +83,11 @@ if(IsSet($_POST['create_article'])){
         }else{
                 $message = ARLAN_1;
         }
-        unset($action);
+        unset($action, $sub_action);
 }
 
 If(IsSet($_POST['sa_article'])){
+
         if($_POST['data'] && $_POST['content_heading']){
                 if($_POST['category'] == -1){ unset($_POST['category']); }
                 $content_subheading = $aj -> formtpa($_POST['content_subheading'], "admin");
@@ -98,7 +116,7 @@ If(IsSet($_POST['update_article'])){
                 $sql -> db_Update("content", " content_heading='$content_heading', content_subheading='$content_subheading', content_content='$content_content', content_parent='".$_POST['category']."', content_datestamp='".time()."', content_author='$content_author', content_comment='".$_POST['content_comment']."', content_summary='$content_summary', content_type='0', content_pe_icon=".$_POST['add_icons'].", content_class='{$_POST['a_class']}' WHERE content_id='".$_POST['content_id']."'");
                 unset($content_heading, $content_subheading, $data, $content_summary);
                 $message = ARLAN_2;
-                unset($action);
+                                 unset($action, $sub_action);
                 clear_cache("article");
         }else{
                 $message = ARLAN_1;
@@ -117,45 +135,60 @@ if(IsSet($_POST['updateoptions'])){
         $message = ARLAN_92;
 }
 
-if($action == "cat" && $sub_action == "confirm"){
-        if($sql -> db_Delete("content", "content_id='$id' ")){
+if($delete == 'category')
+{
+        if($sql -> db_Delete("content", "content_id='$del_id' "))
+        {
                 $message = ARLAN_58;
+                unset($sub_action, $id);
+                $action = "cat";
         }
 }
 
-if($action == "confirm"){
-        if($sql -> db_Delete("content", "content_id='$sub_action' ")){
+if($delete == "main")
+{
+        if($sql -> db_Delete("content", "content_id='$del_id' "))
+        {
                 $message = ARLAN_30;
                 clear_cache("article");
+                unset($action, $sub_action, $id);
         }
 }
 
-if(IsSet($_POST['preview'])){
-        $obj = new convert;
-        $datestamp = $obj->convert_date(time(), "long");
-        $ch = $aj -> formtpa($_POST['content_heading']); $ch = $aj -> tpa($ch);
-        $cs = $aj -> formtpa($_POST['content_subheading']); $cs = $aj -> tpa($ch);
-        $dt = (strstr($_POST['data'], "[img]http") ? $_POST['data'] : str_replace("[img]", "[img]../", $_POST['data']));
-        $dt = $aj -> formtpa($dt); $dt = $aj -> tpa($dt);
-        $cu= $aj -> formtpa($_POST['content_summary']); $cu= $aj -> tpa($cu);
-        $ca = ($_POST['content_author'] && $_POST['content_author'] != ARLAN_84 ? $_POST['content_author'] : ADMINNAME);
-        $text = "<i>by $ca</i><br /><span class='smalltext'>".$datestamp."</span><br /><br />".ARLAN_18.": $cs<br />".ARLAN_19.": $cu<br /><br />$dt";
-        $ns -> tablerender($content_heading, $text);
-        echo "<br /><br />";
-        // make form friendly ...
-        /* Before bug fixing for apostroph
-                $content_heading = $aj -> formtparev($_POST['content_heading']);
-        $content_subheading = $aj -> formtparev($_POST['content_subheading']);
-        $data = $aj -> formtparev(str_replace("../", "", $_POST['data']));
-        $content_summary = $aj -> formtparev($_POST['content_summary']);
-                */
-                $content_heading = $aj -> formtpa($_POST['content_heading']);
-        $content_subheading = $aj -> formtpa($_POST['content_subheading']);
-        $data = $aj -> formtpa(str_replace("../", "", $_POST['data']));
-        $content_summary = $aj -> formtpa($_POST['content_summary']);
 
-        $content_parent = $_POST['category'];
-                $content_class = $_POST['a_class'];
+if(IsSet($_POST['preview']))
+{
+	$obj = new convert;
+	$datestamp = $obj->convert_date(time(), "long");
+	$content_heading = $aj -> formtpa($_POST['content_heading'],"admin"); $ch = $aj -> tpa($content_heading,"nobreak","admin");
+	$content_subheading = $aj -> formtpa($_POST['content_subheading'],"admin"); $cs = $aj -> tpa($content_subheading,"nobreak","admin");
+	$dt = (strstr($_POST['data'], "[img]http") ? $_POST['data'] : str_replace("[img]", "[img]../", $_POST['data']));
+	$dt = $aj -> formtpa($dt,"admin"); $dt = $aj -> tpa($dt,"off","admin");
+	$content_summary = $aj -> formtpa($_POST['content_summary'],"admin"); $cu= $aj -> tpa($content_summary,"nobreak","admin");
+	$ca = $aj -> formtpa($_POST['content_author'] && $_POST['content_author'] != ARLAN_84 ? $_POST['content_author'] : ADMINNAME);
+	$text = "<i>".ARLAN_101." $ca</i><br /><span class='smalltext'>".$datestamp."</span><br />";
+	if( $cs != '' ){$text .= '<br />'.ARLAN_18.": $cs";}
+	if( $cu != '' ){$text .= '<br />'.ARLAN_19.": $cu";}
+	$text .= "<br /><br />$dt";
+	$content_comment = $_POST['content_comment'];
+	$content_pe_icon = $_POST['add_icons'];
+	/* 9 Aug 2004 - unknown - the article preview looks more like the actual article */
+	$text = '<div style="text-align: center"><table class="fborder" style="width:95%" border="0"><tr><td>'.$text.'</td></tr></table></div>';
+	echo "<br /><br />";
+	// make form friendly ...
+	/* Before bug fixing for apostroph
+	$content_heading = $aj -> formtparev($_POST['content_heading']);
+	$content_subheading = $aj -> formtparev($_POST['content_subheading']);
+	$data = $aj -> formtparev(str_replace("../", "", $_POST['data']));
+	$content_summary = $aj -> formtparev($_POST['content_summary']);
+	*/
+	$data = $aj -> formtpa(str_replace("../", "", $_POST['data']),"admin");
+	$content_parent = $_POST['category'];
+	$content_class = $_POST['a_class'];
+	$content_author = $aj -> formtpa($_POST['content_author']);
+	$content_author_email = $aj -> formtpa($_POST['content_author_email']);
+		  
+	$ns -> tablerender($content_heading, $text);
 }
 
 
@@ -180,13 +213,16 @@ if($action == "cat"){
                 </tr>";
                 while($row = $sql -> db_Fetch()){
                         extract($row);
-                                                $delete_heading = str_replace("&#39;", "\'", $content_heading);
+                        $delete_heading = str_replace("&#39;", "\'", $content_heading);
                         $text .= "<tr>
                         <td style='width:5%; text-align:center' class='forumheader3'>".($content_summary ? "<img src='".e_IMAGE."link_icons/$content_summary' alt='' style='vertical-align:middle' />" : "&nbsp;")."</td>
                         <td style='width:75%' class='forumheader3'>$content_heading [$content_subheading]</td>
                         <td style='width:20%; text-align:center' class='forumheader3'>
                         ".$rs -> form_button("submit", "category_edit", ARLAN_61, "onclick=\"document.location='".e_SELF."?cat.edit.$content_id'\"")."
-                        ".$rs -> form_button("submit", "category_delete", ARLAN_62, "onclick=\"confirm_('cat', '$delete_heading', $content_id);\"")."
+                               ".$rs -> form_open("post", e_SELF,"myform_{$content_id}","",""," onsubmit=\"return confirm_('cat','$delete_heading','$content_id')\"")."
+                                              ".$rs -> form_button("submit", "category_delete_{$content_id}", ARLAN_62)."
+                                              ".$rs -> form_close()."
+
                         </td>
                         </tr>";
                 }
@@ -259,84 +295,88 @@ if($action == "cat"){
 // ##### Display scrolling list of existing articles --------------------------------------------------------------------------------------------------------------------------
 if(!$action || $action == "confirm" || $action == 'c'){
 
-	$text = "";
-	// -------- SHOW FIRST LETTERS FIRSTNAMES ------------------------------------
-	$sql = new db;
-	$distinctfirstletter = $sql -> db_Select("content", "DISTINCT(LEFT(content_heading,1)) as letter", "content_type='0' ORDER BY content_heading ASC ");
-	
-	if ($distinctfirstletter != 1){
+        $text = "";
+        // -------- SHOW FIRST LETTERS FIRSTNAMES ------------------------------------
+        $sql = new db;
+        $distinctfirstletter = $sql -> db_Select("content", "DISTINCT(LEFT(content_heading,1)) as letter", "content_type='0' ORDER BY content_heading ASC ");
 
-		$text .= "<table class='fborder' style='width:100%'>
-		<form method='post' action='".e_SELF."'>
-		<tr><td colspan='2' class='forumheader'>".ARLAN_31."</td></tr>
-		<tr><td colspan='2' class='forumheader3'>";
+        if ($distinctfirstletter != 1){
 
-		while($row = $sql-> db_Fetch()){
-		extract($row);
-			$text .= "<input class='button' style='width:20' type='submit' name='letter' value='".strtoupper($letter)."'>";
-		}
+                $text .= "<form method='post' action='".e_SELF."'>
+                <table class='fborder' style='width:100%'>
 
-		$text .= "
-		<input class='button' style='width:20' type='submit' name='letter' value='all'>
-		</td></tr>
-		</form>
-		</table>";
-	}
-	// ---------------------------------------------------------------------------
+                <tr><td colspan='2' class='forumheader'>".ARLAN_31."</td></tr>
+                <tr><td colspan='2' class='forumheader3'>";
 
-	// -------- CHECK FOR FIRST LETTER SUBMISSION --------------------------------
-	$sql = new db;
-	$letter=$_POST['letter'];
-	if ($_POST['letter'] != "" && $_POST['letter'] != "all" ) {
-		$letter = $_POST['letter'];
-		$query = "content_type='0' AND content_heading LIKE '".$letter."%' ORDER BY content_datestamp DESC";
-	} else {
-		if($sub_action){
-			$cat=intval($sub_action);
-			if($cat=="none"){$cat='0';}
-			$query = "content_type='0' AND content_parent={$cat} ORDER BY content_datestamp DESC";
-		} else {
-			$query = "content_type='0' ORDER BY content_datestamp DESC";
-		}
-	}
-	// ---------------------------------------------------------------------------
+                while($row = $sql-> db_Fetch()){
+                extract($row);
+                        $text .= "<input class='button' style='width:20' type='submit' name='letter' value='".strtoupper($letter)."' />";
+                }
 
-	$sql2 = new db;
-	$text .= "<div style='border : solid 1px #000; padding : 4px; width : auto; height : 400px; overflow : auto; '>";
-	if($article_total = $sql -> db_Select("content", "*", $query)){
-		if($article_total < 50 || $letter || $cat){
-			$text .= "<table class='fborder' style='width:100%'>
-			<tr>
-			<td style='width:5%' class='forumheader2'>&nbsp;</td>
-			<td style='width:50%' class='forumheader2'>".ARLAN_20."</td>
-			<td style='width:45%' class='forumheader2'>".ARLAN_60."</td>
-			</tr>";
-			while($row = $sql -> db_Fetch()){
-				extract($row);
-				unset($cs);
-				$delete_heading = str_replace("&#39;", "\'", $content_heading);
-				if($sql2 -> db_Select("content", "content_summary", "content_id=$content_parent")){
-					$row = $sql2 -> db_Fetch(); $cs = $row[0];
-				}
-				$text .= "<tr>
-				<td style='width:5%; text-align:center' class='forumheader3'>".($cs ? "<img src='".e_IMAGE."link_icons/$cs' alt='' style='vertical-align:middle' />" : "&nbsp;")."</td>
-				<td style='width:75%' class='forumheader3'><a href='".e_BASE."content.php?article.$content_id'>$content_heading</a> [$content_subheading]</td>
-				<td style='width:20%; text-align:center' class='forumheader3'>
-				".$rs -> form_button("submit", "main_edit", ARLAN_61, "onclick=\"document.location='".e_SELF."?create.edit.$content_id'\"")."
-				".$rs -> form_button("submit", "main_delete", ARLAN_62, "onclick=\"confirm_('create', '$delete_heading', $content_id)\"")."
-				</td>
-				</tr>";
-			}
-			$text .= "</table>";
-		} else {
-			$text .= "<br /><div style='text-align:center'>".ARLAN_32."</div>";
-		}
-	} else {
-		$text .= "<div style='text-align:center'>".ARLAN_14."</div>";
-	}
-	$text .= "</div>";
-	$ns -> tablerender(ARLAN_72, $text);
-	}
+                $text .= "
+                <input class='button' style='width:20' type='submit' name='letter' value='all' />
+                </td></tr>
+                </table></form> ";
+        }
+        // ---------------------------------------------------------------------------
+
+        // -------- CHECK FOR FIRST LETTER SUBMISSION --------------------------------
+        $sql = new db;
+        $letter=$_POST['letter'];
+        if ($_POST['letter'] != "" && $_POST['letter'] != "all" ) {
+                $letter = $_POST['letter'];
+                $query = "content_type='0' AND content_heading LIKE '".$letter."%' ORDER BY content_datestamp DESC";
+        } else {
+                if($sub_action){
+                        $cat=intval($sub_action);
+                        if($cat=="none"){$cat='0';}
+                        $query = "content_type='0' AND content_parent={$cat} ORDER BY content_datestamp DESC";
+                } else {
+                        $query = "content_type='0' ORDER BY content_datestamp DESC";
+                }
+        }
+        // ---------------------------------------------------------------------------
+
+        $sql2 = new db;
+        $text .= "<div style='border : solid 1px #000; padding : 4px; width : auto; height : 400px; overflow : auto; '>";
+        if($article_total = $sql -> db_Select("content", "*", $query)){
+                if($article_total < 50 || $letter || $cat){
+                        $text .= "<table class='fborder' style='width:100%'>
+                        <tr>
+                        <td style='width:5%' class='forumheader2'>&nbsp;</td>
+                        <td style='width:50%' class='forumheader2'>".ARLAN_20."</td>
+                        <td style='width:45%' class='forumheader2'>".ARLAN_60."</td>
+                        </tr>";
+                        while($row = $sql -> db_Fetch()){
+                                extract($row);
+                                unset($cs);
+                                $delete_heading = str_replace("&#39;", "\'", $content_heading);
+                                if($sql2 -> db_Select("content", "content_summary", "content_id=$content_parent")){
+                                        $row = $sql2 -> db_Fetch(); $cs = $row[0];
+                                }
+                                $text .= "<tr>
+                                <td style='width:5%; text-align:center' class='forumheader3'>".($cs ? "<img src='".e_IMAGE."link_icons/$cs' alt='' style='vertical-align:middle' />" : "&nbsp;")."</td>
+                                <td style='width:75%' class='forumheader3'><a href='".e_BASE."content.php?article.$content_id'>$content_heading</a> [$content_subheading]</td>
+                                <td style='width:20%; text-align:center' class='forumheader3'>
+                                ".$rs -> form_open("post", e_SELF,"myform_{$content_id}","",""," onsubmit=\"return confirm_('create','$delete_heading','$content_id')\"")."
+                                <div>".$rs -> form_button("button", "main_edit_{$content_id}", ARLAN_61, "onclick=\"document.location='".e_SELF."?create.edit.$content_id'\"")."
+                                ".$rs -> form_button("submit", "main_delete_{$content_id}", ARLAN_62)."</div>
+                                ".$rs -> form_close()."
+
+                                </td>
+                                </tr>";
+                        }
+//                                ".$rs -> form_button("submit", "main_delete", ARLAN_62, "onclick=\"confirm_('create', '$delete_heading', $content_id)\"")."
+                        $text .= "</table>";
+                } else {
+                        $text .= "<br /><div style='text-align:center'>".ARLAN_32."</div>";
+                }
+        } else {
+                $text .= "<div style='text-align:center'>".ARLAN_14."</div>";
+        }
+        $text .= "</div>";
+        $ns -> tablerender(ARLAN_72, $text);
+        }
 
 // ##### End ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -393,7 +433,7 @@ if($action == "create"){
 
         <tr>
         <td style='width:20%; vertical-align:top' class='forumheader3'>".ARLAN_82.":<br /><span class='smalltext'>(".ARLAN_83.")</span></td>
-        <td style='width:80%' class='forumheader3'>
+        <td style='width:80%; vertical-align:top' class='forumheader3'>
                 <a href=\"javascript:void(0);\" onclick=\"expandit(this);\" >".ARLAN_100."</a>\n
         <span style=\"display: none;\" >
                 <br /><br />
@@ -569,23 +609,23 @@ function article_adminmenu(){
 
                 show_admin_menu(ARLAN_79,$act,$var);
 
-					unset($var);
-					$var=array();
-					if($sql -> db_Select("content","content_id,content_heading","content_type='6'")){
-				 		$var['cnone']['text']=ARLAN_75;
-				 		$var['cnone']['link']=e_SELF."?c.none";
-					 	while($row = $sql -> db_Fetch()){
-					 		extract($row);
-							$txt = substr($content_heading,0,15);
-							if(strlen($content_heading)>15){
-								$txt .= " ...";
-							}
-					 		$var['c'.$content_id]['text']=$txt;
-					 		$var['c'.$content_id]['link']=e_SELF."?c.{$content_id}";
-					 	}
-					 	show_admin_menu(ARLAN_78,'c'.$sub_action,$var);
-					 }
-					
+                                        unset($var);
+                                        $var=array();
+                                        if($sql -> db_Select("content","content_id,content_heading","content_type='6'")){
+                                                 $var['cnone']['text']=ARLAN_75;
+                                                 $var['cnone']['link']=e_SELF."?c.none";
+                                                 while($row = $sql -> db_Fetch()){
+                                                         extract($row);
+                                                        $txt = substr($content_heading,0,15);
+                                                        if(strlen($content_heading)>15){
+                                                                $txt .= " ...";
+                                                        }
+                                                         $var['c'.$content_id]['text']=$txt;
+                                                         $var['c'.$content_id]['link']=e_SELF."?c.{$content_id}";
+                                                 }
+                                                 show_admin_menu(ARLAN_78,'c'.$sub_action,$var);
+                                         }
+
 
 
 }
@@ -595,9 +635,10 @@ function article_adminmenu(){
 require_once("footer.php");
 
 function headerjs(){
+global $etp;
 $script = "<script type=\"text/javascript\">
 function addtext2(sc){
-        document.dataform.category_button.value = sc;
+        document.getElementById('dataform').category_button.value = sc;
 }
 
 </script>\n";
@@ -605,15 +646,9 @@ function addtext2(sc){
 $script .= "<script type=\"text/javascript\">
 function confirm_(mode, content_heading, content_id){
         if(mode == 'cat'){
-                var x=confirm(\"".ARLAN_80." [ID \" + content_id + \": \" + content_heading + \"]\");
+                return confirm(\"".$etp->unentity(ARLAN_80)." [ID \" + content_id + \": \" + content_heading + \"]\");
         }else{
-                var x=confirm(\"".ARLAN_81." [ID \" + content_id + \": \" + content_heading + \"]\");
-        }
-if(x)
-        if(mode == 'cat'){
-                window.location='".e_SELF."?cat.confirm.' + content_id;
-        }else{
-                window.location='".e_SELF."?confirm.' + content_id;
+                return confirm(\"".$etp->unentity(ARLAN_81)." [ID \" + content_id + \": \" + content_heading + \"]\");
         }
 }
 </script>";
@@ -621,4 +656,3 @@ return $script;
 
 }
 ?>
-
