@@ -20,14 +20,17 @@ echo "<?xml version='1.0' encoding='iso-8859-1' ?>
 <title>".SITENAME.(defined("PAGE_NAME") ? ": ".PAGE_NAME : "")."</title>
 <link rel=\"stylesheet\" href=\"".THEME."style.css\" type=\"text/css\" />
 <link rel=\"stylesheet\" href=\"".e_FILE."e107.css\" type=\"text/css\" />";
+if(file_exists(e_BASE."favicon.ico")){echo "\n<link rel=\"shortcut icon\" href=\"favicon.ico\" />"; }
 if(file_exists(e_FILE."style.css")){ echo "\n<link rel='stylesheet' href='".e_FILE."style.css' type=\"text/css\" />\n"; }
 echo "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=".CHARSET."\" />
 <meta http-equiv=\"content-style-type\" content=\"text/css\" />
 ".($pref['meta_tag'] ? $aj -> formtparev($pref['meta_tag'])."\n" : "");
+/*
 if(eregi("forum_post.php", e_SELF) && ($_POST['reply'] || $_POST['newthread'])){
 	$tmp = explode(".", e_QUERY);
 	echo "<meta http-equiv=\"refresh\" content=\"5;url='".e_BASE."forum_viewforum.php?".$tmp[1]."'>\n";
 }
+*/
 echo "<script type='text/javascript' src='".e_FILE."e107.js'></script>";
 if(file_exists(THEME."theme.js")){echo "<script type='text/javascript' src='".THEME."theme.js'></script>";}
 if(file_exists(e_FILE."user.js")){echo "<script type='text/javascript' src='".e_FILE."user.js'></script>\n";}
@@ -87,7 +90,7 @@ function parseheader($LAYOUT){
 }
 function checklayout($str){
 	$sql = new db;
-	global $pref, $style, $userthemes, $udirs, $userclass, $dbq, $menu_pref;
+	global $pref, $style, $userthemes, $udirs, $userclass, $dbq, $menu_pref, $dbq;
 	if(strstr($str, "LOGO")){
 		echo "<img src='".e_IMAGE."logo.png' alt='Logo' />\n";
 	}else if(strstr($str, "SITENAME")){
@@ -95,7 +98,7 @@ function checklayout($str){
 	}else if(strstr($str, "SITETAG")){
 		echo SITETAG."\n";
 	}else if(strstr($str, "SITELINKS")){
-		if(!$sql -> db_Select("menus", "*", "(menu_name='edynamic_menu' OR menu_name='tree_menu') AND menu_location!=0")){
+		if(!$sql -> db_Select("menus", "*", "(menu_name='edynamic_menu' OR menu_name REGEXP('tree_menu')) AND menu_location!=0")){
 			$linktype = substr($str,(strpos($str, "=")+1), 4);
 			define("LINKDISPLAY", ($linktype == "menu" ? 2 : 1));
 			require_once(e_HANDLER."sitelinks_class.php");
@@ -106,23 +109,13 @@ function checklayout($str){
 		$ns = new e107table;
 		$menu = trim(chop(preg_replace("/\{MENU=(.*?)\}/si", "\\1", $str)));
 		$sql9 = new db;
-		$sql9 -> db_Select("menus", "*",  "menu_location='$menu' ORDER BY menu_order");
+		$sql9 -> db_Select("menus", "menu_name,menu_class",  "menu_location='$menu' ORDER BY menu_order");
 		while($row = $sql9-> db_Fetch()){
 			extract($row);
-			$sm = FALSE;
-			if(!$menu_class){
-				$sm = TRUE;
-			}else if($menu_class == 253 && USER){
-				$sm = TRUE;
-			}else if($menu_class == 254 && ADMIN){
-				$sm = TRUE;
-			}else if(check_class($menu_class)){
-				$sm = TRUE;
-			}
-			if($sm == TRUE){
+			if(check_class($menu_class)){
 				if(strstr($menu_name, "custom_")){
 					require_once(e_PLUGIN."custom/".str_replace("custom_", "", $menu_name).".php");
-				}else{
+				} else {
 					@include(e_PLUGIN.$menu_name."/languages/".e_LANGUAGE.".php");
 					@include(e_PLUGIN.$menu_name."/languages/English.php");
 					require_once(e_PLUGIN.$menu_name."/".$menu_name.".php");
@@ -140,30 +133,23 @@ function checklayout($str){
 		if($custom == "login"){
 			@include(e_PLUGIN."login_menu/languages/".e_LANGUAGE.".php");
 			@include(e_PLUGIN."login_menu/languages/English.php");
-			if($pref['user_reg'] == 1){
-				if(USER == TRUE){
-					echo "<table><tr>
-					<td class='mediumtext'>".LOGIN_MENU_L5." ".USERNAME."&nbsp;&nbsp;&nbsp;</td>
-					<td>.:.</td>";
-					if(ADMIN == TRUE){
-						echo "<td><a href='".e_ADMIN.(!$pref['adminstyle'] || $pref['adminstyle'] == "default" ? "admin.php" : $pref['adminstyle'].".php")."'>".LOGIN_MENU_L11."</a></td><td>.:.</td>";
-					}
-					echo "<td> <a href='" . e_BASE . "usersettings.php'>".LOGIN_MENU_L12."</a></td><td>.:.</td><td><a href='".e_BASE."?logout'>".LOGIN_MENU_L8."</a></td><td>.:.</td></tr></table> ";
-				}else{
-					echo  "<form method='post' action='".e_SELF."'>
-					<p>
-					".LOGIN_MENU_L1."<input class='tbox' type='text' name='username' size='15' value='$username' maxlength='20' />&nbsp;&nbsp;
-					".LOGIN_MENU_L2."<input class='tbox' type='password' name='userpass' size='15' value='' maxlength='20' />&nbsp;&nbsp;
-					<input type='checkbox' name='autologin' value='1' />".LOGIN_MENU_L6."&nbsp;&nbsp;
-					<input class='button' type='submit' name='userlogin' value='Login' />";
-					if($pref['user_reg']){
-						$text .= "&nbsp;&nbsp;<a href='signup.php'>".LOGIN_MENU_L3."</a>";
-					}
-					$text .= "</p>
-					</form>";
+			
+			if(USER == TRUE){
+				echo "<table><tr>\n<td class='mediumtext'>".LOGIN_MENU_L5." ".USERNAME."&nbsp;&nbsp;&nbsp;</td>\n<td>.:.</td>";
+				if(ADMIN == TRUE){
+					echo "<td><a href='".e_ADMIN.(!$pref['adminstyle'] || $pref['adminstyle'] == "default" ? "admin.php" : $pref['adminstyle'].".php")."'>".LOGIN_MENU_L11."</a></td><td>.:.</td>";
 				}
+				echo "<td> 
+				 <a href='".e_BASE."user.php?id.".USERID."'>".LOGIN_MENU_L13."</a>\n</td><td>.:.</td><td><td> <a href='" . e_BASE . "usersettings.php'>".LOGIN_MENU_L12."</a></td><td>.:.</td><td><a href='".e_BASE."?logout'>".LOGIN_MENU_L8."</a></td><td>.:.</td></tr></table> ";
+			}else{
+				echo  "<form method='post' action='".e_SELF."'>\n<p>\n".LOGIN_MENU_L1."<input class='tbox' type='text' name='username' size='15' value='$username' maxlength='20' />&nbsp;&nbsp;\n".LOGIN_MENU_L2."<input class='tbox' type='password' name='userpass' size='15' value='' maxlength='20' />&nbsp;&nbsp;\n<input type='checkbox' name='autologin' value='1' />".LOGIN_MENU_L6."&nbsp;&nbsp;\n<input class='button' type='submit' name='userlogin' value='Login' />";
+				if($pref['user_reg']){
+					echo "&nbsp;&nbsp;<a href='signup.php'>".LOGIN_MENU_L3."</a>";
+				}
+				echo "</p>\n</form>";
 			}
-		}else if($custom == "search"){
+			
+		}else if($custom == "search" && (USER || $pref['search_restrict']!=1)){
 			$searchflat = TRUE;
 			include(e_PLUGIN."search_menu/search_menu.php");
 		}else if($custom == "quote"){

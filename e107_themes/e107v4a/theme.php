@@ -229,18 +229,6 @@ $POLLSTYLE = <<< EOF
 </div>
 EOF;
 
-$CHATBOXSTYLE = "
-<span class='alttd'>
-<span class='mediumtext'>
-<img src='".THEME."images/bullet2.gif' alt='bullet' />
-<b>{USERNAME}</b> @ {TIMEDATE}<br />
-</span>
-</span>
-<span class='mediumtext'>
-{MESSAGE}
-</span>
-<br /><br />";
-
 define(CB_STYLE, $CHATBOXSTYLE);
 
 

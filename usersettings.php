@@ -58,6 +58,13 @@ if(IsSet($_POST['updatesettings'])){
                 $error .= LAN_105."<br />";
         }
 
+        if(strlen($_POST['password1']) < $pref['signup_pass_len'] && $_POST['password1'] !=""){
+
+                $error .= LAN_SIGNUP_4.$pref['signup_pass_len'].LAN_SIGNUP_5;
+                $password1 = "";
+                $password2 = "";
+        }
+
         if($_POST['password1'] =="" || $_POST['password2'] == ""){
                 $password = $_POST['_pw'];
         }else{
@@ -79,7 +86,7 @@ if(IsSet($_POST['updatesettings'])){
         if($file_userfile['error'] != 4){
                 require_once(e_HANDLER."upload_handler.php");
                 require_once(e_HANDLER."resize_handler.php");
-                if($uploaded = file_upload(e_FILE."public/avatars/", TRUE)){
+                if($uploaded = file_upload(e_FILE."public/avatars/", "avatar")){
                         if($uploaded[0]['name'] && $pref['avatar_upload']){
                                 // avatar uploaded
                                 $_POST['image'] = "-upload-".$uploaded[0]['name'];
@@ -141,7 +148,7 @@ $birth_year = $tmp[0];
 require_once(e_HANDLER."form_handler.php");
 $rs = new form;
 
-$text = (e_QUERY ? $rs -> form_open("post", e_SELF."?".$user_id, "settings", "", "enctype='multipart/form-data'") : $rs -> form_open("post", e_SELF, "settings", "", "enctype='multipart/form-data'"));
+$text = (e_QUERY ? $rs -> form_open("post", e_SELF."?".$user_id, "dataform", "", " enctype='multipart/form-data'") : $rs -> form_open("post", e_SELF, "dataform", "", " enctype='multipart/form-data'"));
 
 $text .= "<div style='text-align:center'>
 <table style='width:auto' class='fborder'>
@@ -168,7 +175,11 @@ $rs -> form_text("name", 20, $name, 100, "tbox", TRUE)
 <tr>
 <td style='width:20%' class='forumheader3'>".LAN_152."<br /><span class='smalltext'>".LAN_401."</span></td>
 <td style='width:80%' class='forumheader2'>
-".$rs -> form_password("password1", 40, "", 20)."
+".$rs -> form_password("password1", 40, "", 20);
+if($pref['signup_pass_len']){
+$text .= "<br><span class='smalltext'>  (".LAN_SIGNUP_1." {$pref['signup_pass_len']} ".LAN_SIGNUP_2.")</span>";
+}
+$text .="
 </td>
 </tr>
 
@@ -287,11 +298,11 @@ if($sql -> db_Select("core", " e107_value", " e107_name='user_entended'")){
 $text .= "<tr>
 <td style='width:20%' style='vertical-align:top' class='forumheader3'>".LAN_120."</td>
 <td style='width:80%' class='forumheader2'>
-<textarea class='tbox' name='signature' cols='58' rows='4'>$signature</textarea>
+<textarea class='tbox' name='signature' cols='58' rows='4' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'>$signature</textarea>
 <br />
 <input class='helpbox' type='text' name='helpb' size='90' />
 <br />
-".ren_help("addtext", TRUE)."
+".ren_help()."
 </td>
 </tr>
 
@@ -340,7 +351,7 @@ $text .= "</select>
 $avatarlist[0] = "";
 $handle=opendir(e_IMAGE."avatars/");
 while ($file = readdir($handle)){
-        if($file != "." && $file != ".." && $file != "index.html"){
+        if($file != "." && $file != ".." && $file != "index.html" && $file != "CVS"){
                 $avatarlist[] = $file;
         }
 }
@@ -435,17 +446,23 @@ function timezone(){
         $timezone = array("-12", "-11", "-10", "-9", "-8", "-7", "-6", "-5", "-4", "-3", "-2", "-1", "GMT", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "+11", "+12", "+13");
         $timearea = array("International DateLine West", "Samoa", "Hawaii", "Alaska", "Pacific Time (US and Canada)", "Mountain Time (US and Canada)", "Central Time (US and Canada), Central America", "Eastern Time (US and Canada)", "Atlantic Time (Canada)", "Greenland, Brasilia, Buenos Aires, Georgetown", "Mid-Atlantic", "Azores", "GMT - UK, Ireland, Lisbon", "West Central Africa, Western Europe", "Greece, Egypt, parts of Africa", "Russia, Baghdad, Kuwait, Nairobi", "Abu Dhabi, Kabul", "Islamabad, Karachi", "Astana, Dhaka", "Bangkok, Rangoon", "Hong Kong, Singapore, Perth, Beijing", "Tokyo, Seoul", "Brisbane, Canberra, Sydney, Melbourne", "Soloman Islands", "New Zealand", "Nuku'alofa");
 }
+
+
+function req($field){
+        global $pref;
+        if($field ==2){
+                $ret = "<span style='text-align:right;font-size:15px; color:red'> *</span>";
+        } else {
+                $ret = "";
+        }
+        return $ret;
+}
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
 ?>
 <script type="text/javascript">
-function addtext(sc){
-        document.settings.signature.value += sc;
-}
 function addtext2(sc){
-        document.settings.image.value = sc;
+        document.dataform.image.value = sc;
 }
-function help(help){
-        document.settings.helpb.value = help;
-}
+
 </script>

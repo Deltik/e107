@@ -46,4 +46,9 @@ define("BNRLAN_40", "Update Banner");
 define("BNRLAN_41", "Create New Banner");
 define("BNRLAN_42", "Banner Rotation System");
 
+define("BNRLAN_43", "Choose banner image");
+define("BNRLAN_44", "Edit");
+define("BNRLAN_45", "Starts");
+define("BNRLAN_46", "Code");
+
 ?>

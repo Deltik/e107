@@ -23,7 +23,8 @@ body {
 .indent{
 	padding: 3px 10px 3px 10px;
 	font: 11px verdana, tahoma, arial, sans-serif;
-	color: #000040;
+	color: #aaa;
+	border: 1px solid #545454;
 }
 .smalltext {
 	font: 10px verdana, tahoma, arial, helvetica, sans-serif;
@@ -103,6 +104,14 @@ hr {
 }
 p {
 	margin-top: 0px
+}
+.nextprev{
+	background-color: #EBEFF2;
+	font: 14px verdana, tahoma, arial, helvetica, sans-serif;
+	color:#C3C160;
+	padding: 4px;
+	background-image : url(../../e107_images/forum/fcap.png);
+	border: #000 1px solid;
 }
 .fborder {
 	border: #000000 1px solid;

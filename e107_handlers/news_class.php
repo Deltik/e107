@@ -67,9 +67,9 @@ on
 ";
 	}
 
-		$news_title = $aj -> tpa($news_title);
-		$news_body = $aj -> tpa($data);
-		$news_extended = trim(chop($aj -> tpa($news_extended)));
+		$news_title = $aj -> tpa($news_title, "off", "admin");
+		$news_body = $aj -> tpa($data, "off", "admin");
+		$news_extended = trim(chop($aj -> tpa($news_extended, "off", "admin")));
 
 		if(!$comment_total) $comment_total = "0";
 		$con = new convert;
@@ -104,8 +104,8 @@ on
 
 		$news_category = "<a href='".e_BASE."news.php?cat.".$category_id."'>".$category_name."</a>";
 		$news_author = "<a href='".e_BASE."user.php?id.".$admin_id."'>".$admin_name."</a>";
-		$etext = " <a href='".e_BASE."email.php?news.".$news_id."'><img src='".e_IMAGE."generic/friend.gif' style='border:0' alt='email to someone' /></a>";
-		$ptext = " <a href='".e_BASE."print.php?news.".$news_id."'><img src='".e_IMAGE."generic/printer.gif' style='border:0' alt='printer friendly' /></a>";
+		$etext = " <a href='".e_BASE."email.php?news.".$news_id."'><img src='".e_IMAGE."generic/friend.gif' style='border:0' alt='email to someone' title='email to someone'/></a>";
+		$ptext = " <a href='".e_BASE."print.php?news.".$news_id."'><img src='".e_IMAGE."generic/printer.gif' style='border:0' alt='printer friendly' title='printer friendly'/></a>";
 
 		if(ADMIN && getperms("H")){
 			$adminoptions .= "<a href='".e_BASE.e_ADMIN."newspost.php?create.edit.".$news_id."'><img src='".e_IMAGE."generic/newsedit.png' alt='' style='border:0' /></a>\n";

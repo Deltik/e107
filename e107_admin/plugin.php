@@ -13,8 +13,9 @@
 +---------------------------------------------------------------+
 */
 require_once("../class2.php");
-if(!getperms("P")){ header("location:".e_HTTP."index.php"); exit; }
+if(!getperms("Z")){ header("location:".e_HTTP."index.php"); exit; }
 require_once("auth.php");
+require_once(e_HANDLER."parser_handler.php");
 
 //	check for new plugins, create entry in plugin table ...
 $handle=opendir(e_PLUGIN);
@@ -56,8 +57,8 @@ if(strstr(e_QUERY, "uninstall")){
 <table style='width:95%' class='fborder' cellspacing='1' cellpadding='0'>
 <tr>
 <td class='forumheader3' style='text-align:center'>".EPL_ADLAN_2."<br /><br />
-<input class='button' type='submit' name='cancel' value='Cancel' />
-<input class='button' type='submit' name='confirm' value='Uninstall $plugin_name' />
+<input class='button' type='submit' name='cancel' value='".EPL_CANCEL."' />
+<input class='button' type='submit' name='confirm' value='".EPL_ADLAN_1." $plugin_name' />
 </td>
 </tr>
 </table>
@@ -99,6 +100,23 @@ if(IsSet($_POST['confirm'])){
 			save_prefs();
 			$text .= EPL_ADLAN_29."<br />";
 		}
+		if(is_array($eplug_user_prefs)){
+			$sql = new db;
+			$sql -> db_Select("core", " e107_value", " e107_name='user_entended'");
+			$row = $sql -> db_Fetch();
+			$user_entended = unserialize($row[0]);
+			$user_entended = array_values(array_diff($user_entended, array_keys($eplug_user_prefs)));
+			if($user_entended == NULL){
+				$sql -> db_Delete("core", "e107_name='user_entended'");
+			}else{
+				$tmp = addslashes(serialize($user_entended));
+				$sql -> db_Update("core", "e107_value='$tmp' WHERE e107_name='user_entended' ");
+			}
+			while(list($key, $e_user_pref) = each($eplug_user_prefs)){
+				unset($user_pref[$key]);
+			}
+			save_prefs("user");
+		}
 		if($eplug_menu_name){
 			$sql -> db_Delete("menus", "menu_name='$eplug_menu_name' ");
 		}
@@ -111,6 +129,9 @@ if(IsSet($_POST['confirm'])){
 			$sql -> db_Delete("userclass_classes", "userclass_name='$eplug_userclass' ");
 		}
 
+		if(is_array($eplug_parse)){
+			$sql -> db_Delete("parser","parser_pluginname='".$eplug_folder."'");
+		}
 
 		$sql -> db_Update("plugin", "plugin_installflag=0, plugin_version='$eplug_version' WHERE plugin_id='$id' ");
 		$text .= "<br />".EPL_ADLAN_31." <b>".e_PLUGIN.$eplug_folder."</b> ".EPL_ADLAN_32;
@@ -151,6 +172,33 @@ if(strstr(e_QUERY, "install")){
 			save_prefs();
 			$text .= EPL_ADLAN_20."<br />";
 			
+		}
+		if(is_array($eplug_user_prefs)){
+			$sql = new db;
+			$sql -> db_Select("core", " e107_value", " e107_name='user_entended'");
+			$row = $sql -> db_Fetch();
+			$user_entended = unserialize($row[0]);
+			while(list($e_user_pref, $default_value) = each($eplug_user_prefs)){
+			    $user_entended[] = $e_user_pref;
+				$user_pref['$e_user_pref'] = $default_value;
+			}
+			save_prefs("user");
+			$tmp = addslashes(serialize($user_entended));
+			if($sql -> db_Select("core", " e107_value", " e107_name='user_entended'")){
+				$sql -> db_Update("core", "e107_value='$tmp' WHERE e107_name='user_entended' ");
+			}else{
+				$sql -> db_Insert("core", "'user_entended', '$tmp' ");
+			}
+			$text .= EPL_ADLAN_20."<br />";
+		}
+
+		if(is_array($eplug_parse)){
+			while(list($key, $e_regexp) = each($eplug_parse)){
+				if(register_parser($eplug_folder,$e_regexp) == 2){
+					$text .= EPL_ADLAN_36."<br />";
+				}
+			}
+			$text .= EPL_ADLAN_35."<br />";
 		}
 
 		if($eplug_link){
@@ -202,6 +250,15 @@ if(strstr(e_QUERY, "upgrade")){
 		 }
 	}
 
+	if(is_array($eplug_parse)){
+		while(list($key, $e_regexp) = each($eplug_parse)){
+			$p_added .= register_parser($eplug_folder,$e_regexp);
+		}
+		if($p_added){
+			$text .= EPL_ADLAN_35."<br />";
+		}
+	}
+
 	if(is_array($upgrade_add_prefs)){
 		while(list($key, $e_pref) = each($upgrade_add_prefs)){
 			if(!in_array($pref, $e_pref)){
@@ -218,6 +275,36 @@ if(strstr(e_QUERY, "upgrade")){
 			unset($pref[$key]);
 		}
 		save_prefs();
+	}
+	if(is_array($upgrade_add_user_prefs)){
+		$sql = new db;
+		$sql -> db_Select("core", " e107_value", " e107_name='user_entended'");
+		$row = $sql -> db_Fetch();
+		$user_entended = unserialize($row[0]);
+		while(list($key, $e_user_pref) = each($eplug_user_prefs)){
+		    $user_entended[] = $e_user_pref;
+		}
+		$tmp = addslashes(serialize($user_entended));
+		if($sql -> db_Select("core", " e107_value", " e107_name='user_entended'")){
+			$sql -> db_Update("core", "e107_value='$tmp' WHERE e107_name='user_entended' ");
+		}else{
+			$sql -> db_Insert("core", "'user_entended', '$tmp' ");
+		}
+		$text .= EPL_ADLAN_8."<br />";
+	}
+
+	if(is_array($upgrade_remove_user_prefs)){
+		$sql = new db;
+		$sql -> db_Select("core", " e107_value", " e107_name='user_entended'");
+		$row = $sql -> db_Fetch();
+		$user_entended = unserialize($row[0]);
+		$user_entended = array_values(array_diff($user_entended, $eplug_user_prefs));
+		if($user_entended == NULL){
+			$sql -> db_Delete("core", "e107_name='user_entended'");
+		}else{
+			$tmp = addslashes(serialize($user_entended));
+			$sql -> db_Update("core", "e107_value='$tmp' WHERE e107_name='user_entended' ");
+		}
 	}
 
 	$text .= "<br />".$eplug_upgrade_done;
@@ -241,7 +328,7 @@ while($row = $sql -> db_Fetch()){
 	unset($eplug_name, $eplug_version, $eplug_author, $eplug_logo, $eplug_url, $eplug_email, $eplug_description, $eplug_compatible, $eplug_readme, $eplug_folder, $eplug_table_names);
 	include(e_PLUGIN.$plugin_path."/plugin.php");
 
-	if(is_array($eplug_table_names) || is_array($eplug_prefs)){
+	if(is_array($eplug_table_names) || is_array($eplug_prefs)  || is_array($eplug_user_prefs) || is_array($eplug_parse)){
 		$img = (!$plugin_installflag ? "<img src='".e_IMAGE."generic/uninstalled.png' alt='' />" : "<img src='".e_IMAGE."generic/installed.png' alt='' />");
 	}else{
 		$img = "<img src='".e_IMAGE."generic/noinstall.png' alt='' />";
@@ -256,22 +343,22 @@ while($row = $sql -> db_Fetch()){
 		
 	
 	$img <b>$plugin_name</b><br />version $plugin_version<br />
-	<td class='forumheader3' style='width:70%'><b>Author</b>: $eplug_author<br />[ email: $eplug_email | website: $eplug_url ]<br />
-	<b>Description</b>: $eplug_description<br />\n";
+	<td class='forumheader3' style='width:70%'><b>".EPL_ADLAN_12."</b>: $eplug_author<br />[ ".EPL_EMAIL.": $eplug_email | ".EPL_WEBSITE.": $eplug_url ]<br />
+	<b>".EPL_ADLAN_14."></b>: $eplug_description<br />\n";
 	if($eplug_readme){
 		$text .= "[ <a href='".e_PLUGIN.$eplug_folder."/".$eplug_readme."'>".$eplug_readme."</a> ]<br />";
 	}
-	if(is_array($eplug_table_names) || is_array($eplug_prefs)){
-		$text .= "<b>Options</b>: [ ".($plugin_installflag ? "<a href='".e_SELF."?uninstall.$plugin_id'>Uninstall</a>" : "<a href='".e_SELF."?install.$plugin_id'>Install</a>")." ]";
+	if(is_array($eplug_table_names) || is_array($eplug_prefs)  || is_array($eplug_user_prefs) || is_array($eplug_parse)){
+		$text .= "<b>".EPL_OPTIONS."</b>: [ ".($plugin_installflag ? "<a href='".e_SELF."?uninstall.$plugin_id'> ".EPL_ADLAN_1."</a>" : "<a href='".e_SELF."?install.$plugin_id'>".EPL_ADLAN_0."</a>")." ]";
 	}else{
 		if($eplug_menu_name){
-			$text .= "No install required, just activate from your menus screen. To uninstall, delete the ".str_replace("..", "", e_PLUGIN.$plugin_path)."/ directory.";
+			$text .= EPL_NOINSTALL.str_replace("..", "", e_PLUGIN.$plugin_path)."/ ".EPL_DIRECTORY;
 		}else{
-			$text .= "No install required, to remove delete the ".str_replace("..", "", e_PLUGIN.$plugin_path)."/ directory.";
+			$text .= EPL_NOINSTALL_1.str_replace("..", "", e_PLUGIN.$plugin_path)."/ ".EPL_DIRECTORY;
 		}
 	}
 	if($plugin_version != $eplug_version && $plugin_installflag){
-		$text .= " [ <a href='".e_SELF."?upgrade.$plugin_id'>Upgrade</a> ]";
+		$text .= " [ <a href='".e_SELF."?upgrade.$plugin_id'>".EPL_UPGRADE."</a> ]";
 	}
 	$text .= "</td>
 	</tr>";

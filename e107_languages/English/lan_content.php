@@ -24,8 +24,8 @@ define("LAN_39", "votes");
 define("LAN_40", "How would you rate this article?");
 define("LAN_41", "thanks for submitting your rating");
 define("LAN_42", "Rating");
-define("LAN_43", "by");
-define("LAN_44", "on");
+define("LAN_43", "by ");
+define("LAN_44", " on ");
 define("LAN_45", "No articles in this category");
 define("LAN_46", "Archive");
 define("LAN_47", "Recent Articles");
@@ -37,5 +37,18 @@ define("LAN_51", "This article cannot be viewed.");
 define("LAN_52", "Error");
 define("LAN_53", "This review cannot be viewed.");
 define("LAN_54", "This page cannot be viewed.");
+
+define("LAN_55", "No reviews yet.");
+define("LAN_56", "No articles yet.");
+define("LAN_57", "Articles");
+define("LAN_58", "Reviews");
+define("LAN_59", "View");
+define("LAN_60", "Content");
+
+define("LAN_61", "Uncategorized");
+define("LAN_62", "Archive");
+define("LAN_63", "page");
+define("LAN_64", "This article has been rated: ");
+define("LAN_65", "Not rated");
 
 ?>

@@ -21,6 +21,11 @@ if(e_QUERY){
 	$sub_action = $tmp[1];
 	$id = $tmp[2];
 	unset($tmp);
+}else{	
+	$text = "<a href='".e_SELF."?article'>".LAN_59." ".LAN_57."</a>\n<br />\n<a href='".e_SELF."?review'>".LAN_59." ".LAN_58."</a>";
+	$ns -> tablerender(LAN_60, $text);
+	require_once(FOOTERF);
+	exit;
 }
 
 $ep = "<div style='text-align:right'>
@@ -35,8 +40,17 @@ $rater = new rater;
 
 if(IsSet($_POST['commentsubmit'])){
 	$tmp = explode(".", e_QUERY);
-	$cobj -> enter_comment($_POST['author_name'], $_POST['comment'], "content", $sub_action);
-	$sql -> db_Delete("cache", "cache_url='comment.content.$sub_action' ");
+
+	if(!$sql -> db_Select("content", "content_comment", "content_id='$sub_action' ")){
+		header("location:".e_BASE."index.php");
+		exit;
+	}else{
+		$row = $sql -> db_Fetch();
+		if($row[0] && (ANON===TRUE || USER===TRUE)){
+			$cobj -> enter_comment($_POST['author_name'], $_POST['comment'], "content", $sub_action);
+			$sql -> db_Delete("cache", "cache_url='comment.content.$sub_action' ");
+		}
+	}
 }
 
 // content page -------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -59,8 +73,8 @@ if($action == "content"){
 		echo $aj -> formtparev($cache);
 	}else{
 		ob_start();
-		$text = ($content_parent ? $aj -> tpa($content_content, "nobreak") : $aj -> tpa($content_content));
-		$caption = $aj -> tpa($content_subheading);
+		$text = ($content_parent ? $aj -> tpa($content_content, "nobreak", "admin") : $aj -> tpa($content_content, "off", "admin"));
+		$caption = $aj -> tpa($content_subheading, "off", "admin");
 		$ns -> tablerender($caption, $text);
 		
 		if($pref['cachestatus']){
@@ -111,8 +125,6 @@ if($action == "review"){
 					require_once(FOOTERF);
 					exit;
 				}
-
-
 				
 				$sql2 = new db;
 				$gen = new convert; 
@@ -133,13 +145,13 @@ if($action == "review"){
 				$text .= ($content_summary_ ? "<a href='".e_SELF."?review.cat.$content_id_'><img src='".e_IMAGE."link_icons/".$content_summary_."' alt='' style='float:left; border:0' /></a>" : "")."
 				<span class='mediumtext'><b>$content_heading</b></span>
 				<br />
-				<span class='smalltext'>by $user_name on $datestamp</span>
+				<span class='smalltext'>".LAN_43."$user_name".LAN_44."$datestamp</span>
 				<br /><br />
 				$content_summary
 				<br /><br />
-				".$aj -> tpa($content_content)."
+				".$aj -> tpa($content_content, "off", "admin")."
 				<br /><br />
-				Rating: 
+				".LAN_42.": 
 				<table style='width:".($content_review_score*2)."px'>
 				<tr class='border'>
 				<td class='caption' style='width:100%; text-align:right'>$content_review_score%</td>
@@ -224,7 +236,7 @@ if($action == "review"){
 							<td style='width:95%'>
 							<b><span class='mediumtext'><a href='".e_SELF."?review.$content_id'>$content_heading</a></span></b>
 							<br />
-							<span class='smalltext'>by $user_name on $datestamp</span>
+							<span class='smalltext'>".LAN_43."$user_name".LAN_44."$datestamp</span>
 							<br />
 							$content_summary
 							<br />
@@ -271,7 +283,7 @@ if($action == "review"){
 				$datestamp = ereg_replace(" -.*", "", $gen->convert_date($content_datestamp, "long"));
 				$text .= "<img src='".e_IMAGE."generic/hme.png' alt='' style='vertical-align:middle' /> <a href='".e_SELF."?review.$content_id'>$content_heading</a> ($datestamp)<br />";
 			}
-			$ns -> tablerender("Archive: ".$category, $text);
+			$ns -> tablerender(LAN_62.": ".$category, $text);
 		}
 		require_once(FOOTERF);
 		exit;
@@ -285,7 +297,6 @@ if($action == "review"){
 		ob_start();
 		if($sql -> db_Select("content", "*", "content_type=3 ORDER BY content_datestamp DESC LIMIT 0,10")){
 			$text = "<br />";
-			
 			$sql2 = new db;
 			$gen = new convert; 
 			while($row = $sql -> db_Fetch()){
@@ -311,7 +322,7 @@ if($action == "review"){
 					$text .= (file_exists(e_IMAGE."link_icons/$content_summary") ? "<a href='".e_SELF."?review.cat.$content_id'><img src='".e_IMAGE."link_icons/".$content_summary."' alt='' style='float:left; border:0' /></a>" : "&nbsp;")."
 					<b><span class='mediumtext'><a href='".e_SELF."?review.$rev_id'>$content_heading</a></span></b>
 					<br />
-					<span class='smalltext'>by <b>$user_name</b> on $datestamp</span>
+					<span class='smalltext'>".LAN_43."<b>$user_name</b>".LAN_44."$datestamp</span>
 					<br />
 					$summary
 					<br />
@@ -323,10 +334,11 @@ if($action == "review"){
 				}
 			}
 		}else{
-			echo LAN_31;
+			$ns -> tablerender(LAN_32, LAN_55);
+			require_once(FOOTERF);
+			exit;
 		}
-		$caption = LAN_32;
-		$ns -> tablerender($caption, $text);
+		$ns -> tablerender(LAN_32, $text);
 
 		if($sql -> db_Select("content", "*", "content_type=10")){
 			$text = "<div style='text-align:center'>
@@ -350,7 +362,7 @@ if($action == "review"){
 				<td class='forumheader3' style='width:10%; text-align:center' rowspan='2'>
 				&nbsp;
 				</td>
-				<td class='forumheader' style='width:90%'><b><a href='".e_SELF."?review.cat.0'>Uncategorized</a></b></td>
+				<td class='forumheader' style='width:90%'><b><a href='".e_SELF."?review.cat.0'>".LAN_61."</a></b></td>
 				</tr>
 				<tr>
 				<td class='forumheader3'><span class='smalltext'>( $total ".($total>1 ? LAN_33 : LAN_34)." )</span></td>
@@ -407,7 +419,7 @@ if($action == "article"){
 				$text .= ($content_summary_ ? "<a href='".e_SELF."?article.cat.$content_id_'><img src='".e_IMAGE."link_icons/".$content_summary_."' alt='' style='float:left; border:0' /></a>" : "")."
 				<span class='mediumtext'><b>$content_heading</b></span>
 				<br />
-				<span class='smalltext'>by <b>$user_name</b> on $datestamp</span>
+				<span class='smalltext'>".LAN_43."<b>$user_name</b>".LAN_44."$datestamp</span>
 				<br /><br />
 				$content_summary
 				<br /><br />";
@@ -423,15 +435,15 @@ if($action == "article"){
 					$text .=  $aj -> tpa($articlepages[(!$id ? 0 : $id)]."<br /><br />");
 					if($id != 0){ $text .= "<a href='content.php?article.$sub_action.".($id-1)."'>".LAN_25." <<</a> "; }
 					for($c=1; $c<= $totalpages; $c++){
-						$text .= ($c == ($id+1) ? "<u>$c</u>&nbsp;&nbsp;" : "<a href='content.php?article.$sub_action.".($c-1)."'>$c</a>&nbsp;&nbsp;");
+						$text .= ($c == ($id+1) ? "<span style='text-decoration: underline;'>$c</span>&nbsp;&nbsp;" : "<a href='content.php?article.$sub_action.".($c-1)."'>$c</a>&nbsp;&nbsp;");
 					}
 					if(($id+1) != $totalpages){ $text .= "<a href='content.php?article.$sub_action.".($id+1)."'>>> ".LAN_26."</a> "; }
 					if($epflag){ $text .= $ep; }
-					$content_heading .= ", page ".($id+1);
+					$content_heading .= ", ".LAN_63." ".($id+1);
 					$cachestr = ($id ? "article.item.$sub_action.$id" : "article.item.$sub_action");
 
 				}else{
-					$content_content = $aj -> tpa($content_content);
+					$content_content = $aj -> tpa($content_content, "off", "admin");
 					$text .= $content_content."\n<br />\n";
 					if($epflag){ $text .= $ep; }
 					$cachestr = "article.item.$sub_action";
@@ -459,7 +471,7 @@ if($action == "article"){
 		if($comflag){
 			unset($text);
 			if($ratearray = $rater -> getrating("article", $sub_action)){
-				$text = "This article has been rated: ";
+				$text = LAN_64;
 				for($c=1; $c<= $ratearray[1]; $c++){
 					$text .= "<img src='".e_IMAGE."rate/box.png' alt='' style='vertical-align:middle' />";
 				}
@@ -475,7 +487,7 @@ if($action == "article"){
 				$text .= "&nbsp;".$ratearray[1].".".$ratearray[2]." - ".$ratearray[0]."&nbsp;";
 				$text .= ($ratearray[0] == 1 ? LAN_38 : LAN_39);
 			}else{
-				$text .= "Not rated";
+				$text .= LAN_65;
 			}
 
 			if(!$rater -> checkrated("article", $sub_action) && USER){
@@ -505,7 +517,7 @@ if($action == "article"){
 				}
 			}
 			if(ADMIN && getperms("B")){
-				echo "<div style='text-align:right'><a href='".e_ADMIN."modcomment.php?content.$sub_action'>moderate comments</a></div><br />";
+				echo "<div style='text-align:right'><a href='".e_ADMIN."modcomment.php?content.$sub_action'>".LAN_29."</a></div><br />";
 			}
 			$cobj -> form_comment();
 		}
@@ -528,7 +540,7 @@ if($action == "article"){
 			ob_start();
 			if($sql -> db_Select("content", "*", "content_id=$id") || !$id){
 				$row = $sql -> db_Fetch(); extract($row);
-				$caption = "Recent Articles: ".$content_heading;
+				$caption = LAN_47.": ".$content_heading;
 				$category = $content_heading;
 				if($sql -> db_Select("content", "*", $query)){
 					$text = "<br />";
@@ -624,14 +636,16 @@ if($action == "article"){
 					</td>\n<td style='width:95%'>
 					<b><span class='mediumtext'><a href='".e_SELF."?article.$rev_id'>$content_heading</a></span></b>
 					<br />
-					<span class='smalltext'>by $user_name on $datestamp</span>
+					<span class='smalltext'>".LAN_43."$user_name".LAN_44."$datestamp</span>
 					<br />
 					$summary
 					<br /><br />\n</td></tr>\n";
 				}
 			}
 		}else{
-			$text .= "<tr><td>".LAN_45."</td></tr>";
+			$ns -> tablerender(LAN_47, LAN_56);
+			require_once(FOOTERF);
+			exit;
 		}
 		$text .= "</table>";
 		$ns -> tablerender(LAN_47, $text);
@@ -658,7 +672,7 @@ if($action == "article"){
 				<td class='forumheader3' style='width:10%; text-align:center' rowspan='2'>
 				&nbsp;
 				</td>
-				<td class='forumheader' style='width:90%'><b><a href='".e_SELF."?article.cat.0'>Uncategorized</a></b></td>
+				<td class='forumheader' style='width:90%'><b><a href='".e_SELF."?article.cat.0'>".LAN_61."</a></b></td>
 				</tr>
 				<tr>
 				<td class='forumheader3'><span class='smalltext'>( $total ".($total>1 ? LAN_48 : LAN_49)." )</span></td>

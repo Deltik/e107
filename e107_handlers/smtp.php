@@ -6,7 +6,7 @@
  *   copyright            : (C) 2001 The phpBB Group
  *   email                : support@phpbb.com
  *
- *   $Id: smtp.php,v 1.16.2.2 2002/12/22 15:09:17 psotfx Exp $
+ *   $Id: smtp.php,v 1.2 2004/03/03 18:41:14 stevedunstan Exp $
  *
  ***************************************************************************/
 

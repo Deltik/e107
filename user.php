@@ -84,7 +84,7 @@ $text = "<div style='text-align:center'>
 ".LAN_138." ".$users_total."<br /><br />
 <form method='post' action='".e_SELF."'>
 <p>
-Show: ";
+".LAN_419.": ";
 
 if($records == 10){
         $text .= "<select name='records' class='tbox'>
@@ -109,17 +109,17 @@ $text .= LAN_139;
 
 if($order == "ASC"){
         $text .= "<select name='order' class='tbox'>
-<option>DESC</option>
-<option selected>ASC</option>
+<option>".LAN_420."</option>
+<option selected>".LAN_421."</option>
 </select>";
 }else{
         $text .= "<select name='order' class='tbox'>
-<option selected>DESC</option>
-<option>ASC</option>
+<option selected>".LAN_420."</option>
+<option>".LAN_421."</option>
 </select>";
 }
 
-$text .= " <input class='button' type='submit' name='submit' value='Go' />
+$text .= " <input class='button' type='submit' name='submit' value='".LAN_422."' />
 <input type='hidden' name='from' value='$from' />
 </p>
 </form>\n\n<br /><br />";
@@ -277,8 +277,11 @@ function renderuser($row, $user_entended, $mode="verbose"){
 
                         $user_prefs = unserialize($user_prefs);
                         while(list($key, $u_entended) = each($user_entended)){
+							$ut = explode("|", $u_entended);
+							if(!$ut[5] || check_class($ut[5])==TRUE){
                                 $str .= "<tr><td style='width:40%' class='forumheader3'>".user_extended_name($u_entended)."</td>
                                 <td style='width:60%' class='forumheader3'>".($user_prefs[$u_entended] ? $user_prefs[$u_entended] : "<i>".LAN_401."</i>")."</td></tr>";
+							}
                         }
                 }
 

@@ -42,22 +42,22 @@ class nextprev{
 		}
 
 		if($pages){
-			$nppage= "Go to page ";
+			$nppage= NP_3." ";
 			if($pages > 10){
 				$current = ($from/$view)+1;
 
 				for($c=0; $c<=2; $c++){
-					$nppage .= ($view*$c == $from ? "[<u>".($c+1)."</u>] " : "<a href='$url?".($view*$c).($qs ? ".".$qs : "")."'>".($c+1)."</a> ");
+					$nppage .= ($view*$c == $from ? "[<span class='text-decoration:underline'>".($c+1)."</span>] " : "<a href='$url?".($view*$c).($qs ? ".".$qs : "")."'>".($c+1)."</a> ");
 				}
 
 				if($current >=3 && $current <= 5){
 					for($c=3; $c<=$current; $c++){
-						$nppage .= ($view*$c == $from ? "[<u>".($c+1)."</u>] " : "<a href='$url?".($view*$c).($qs ? ".".$qs : "")."'>".($c+1)."</a> ");
+						$nppage .= ($view*$c == $from ? "[<span class='text-decoration:underline'>".($c+1)."</span>] " : "<a href='$url?".($view*$c).($qs ? ".".$qs : "")."'>".($c+1)."</a> ");
 					}
 				}else if($current >= 6 && $current <= ($pages-5)){
 					$nppage .= " ... ";
 					for($c=($current-2); $c<=$current; $c++){
-						$nppage .= ($view*$c == $from ? "[<u>".($c+1)."</u>] " : "<a href='$url?".($view*$c).($qs ? ".".$qs : "")."'>".($c+1)."</a> ");
+						$nppage .= ($view*$c == $from ? "[<span class='text-decoration:underline'>".($c+1)."</span>] " : "<a href='$url?".($view*$c).($qs ? ".".$qs : "")."'>".($c+1)."</a> ");
 					}
 				}
 				$nppage .= " ... ";
@@ -70,15 +70,15 @@ class nextprev{
 				}
 
 				for($c=$tmp; $c<=($pages-1); $c++){
-					$nppage .= ($view*$c == $from ? "[<u>".($c+1)."</u>] " : "<a href='$url?".($view*$c).($qs ? ".".$qs : "")."'>".($c+1)."</a> ");
+					$nppage .= ($view*$c == $from ? "[<span class='text-decoration:underline'>".($c+1)."</span>] " : "<a href='$url?".($view*$c).($qs ? ".".$qs : "")."'>".($c+1)."</a> ");
 				}
 
 			}else{
 				for($c=0; $c < $pages; $c++){
-					if($view*$c == $from ? $nppage .= "[<u>".($c+1)."</u>] " : $nppage .= "<a href='$url?".($view*$c).($qs ? ".".$qs : "")."'>".($c+1)."</a> ");
+					if($view*$c == $from ? $nppage .= "[<span class='text-decoration:underline'>".($c+1)."</span>] " : $nppage .= "<a href='$url?".($view*$c).($qs ? ".".$qs : "")."'>".($c+1)."</a> ");
 				}
 			}
-			$text = "<div style='text-align:right'><div class='forumheader'><span class='smalltext'>".$nppage."</span></div></div><br /><br />";
+			$text = "<div style='text-align:right'><div class='nextprev'><span class='smalltext'>".$nppage."</span></div></div><br /><br />";
 			echo $text;
 		}
 		

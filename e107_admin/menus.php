@@ -49,13 +49,19 @@ if($action == "adv"){
 <table style=\"width:50%\">
 <tr>
 <td>
-<input name=\"menu_class\" type=\"radio\" value=\"0\" ";
+	
+	<input name=\"menu_class\" type=\"radio\" value=\"0\" ";
 	if(!$menu_class){ $text .= "checked"; }
 	$text .= ">".MENLAN_1."<br />
+	
+	<input name=\"menu_class\" type=\"radio\" value=\"252\" ";
+	if($menu_class == 252){ $text .= "checked"; }
+	$text .= ">".MENLAN_21."<br />
+	
 	<input name=\"menu_class\" type=\"radio\" value=\"253\" ";
-
 	if($menu_class == 253){ $text .= "checked"; }
 	$text .= ">".MENLAN_2."<br />
+
 	<input name=\"menu_class\" type=\"radio\" value=\"254\" ";
 	if($menu_class == 254){ $text .= "checked"; }
 	$text .= ">".MENLAN_3."<br />";
@@ -197,7 +203,7 @@ if($message != ""){
 parseheader(($NEWSHEADER ? $NEWSHEADER : $HEADER), $menus_used);
 
 echo "<div style=\"text-align:center\">
-<div style=\"font-size:14px\" class=\"fborder\"><div class=\"forumheader\"><b>Inactive Menus</b></div></div><br />
+<div style=\"font-size:14px\" class=\"fborder\"><div class=\"forumheader\"><b>".MENLAN_22."</b></div></div><br />
 <table style=\"width:96%\" class=\"fborder\">";
 
 $sql -> db_Select("menus", "*", "menu_location='0' ");

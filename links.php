@@ -16,7 +16,7 @@ require_once("class2.php");
 
 require_once(HEADERF);
 
-if(IsSet($_POST['add_link'])){
+if(IsSet($_POST['add_link']) && check_class($pref['link_submit_class'])){
 	if($_POST['link_name'] && $_POST['link_url'] && $_POST['link_description']){
 		$link_name = $aj -> formtpa($_POST['link_name'], "public");
 		$link_url = $aj -> formtpa($_POST['link_url'], "public");
@@ -25,8 +25,6 @@ if(IsSet($_POST['add_link'])){
 		$submitted_link = $_POST['cat_name']."^".$link_name."^".$link_url."^".$link_description."^".$link_button."^".USERNAME;
 		$sql -> db_Insert("tmp", "'submitted_link', '".time()."', '$submitted_link' ");
 		$ns -> tablerender(LAN_99, "<div style='text-align:center'>".LAN_100."</div>");
-		require_once(FOOTERF);
-		exit;
 	}
 }
 
@@ -95,7 +93,7 @@ if(eregi("cat", e_QUERY)){
 		$sql -> db_Select("links", "*", "link_id='$id AND link_class!=255' ");
 		$row = $sql -> db_Fetch(); extract($row);
 
-		if($link_open == 4){
+		if($link_open == 4 || $link_open == 1){
 			echo "<script type='text/javascript'>open_window('$link_url')</script>\n";
 		}else{
 			header("location:".$link_url);

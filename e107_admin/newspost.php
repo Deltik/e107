@@ -19,6 +19,11 @@ require_once(e_HANDLER."userclass_class.php");
 require_once(e_HANDLER."news_class.php");
 require_once(e_HANDLER."ren_help.php");
 require_once(e_HANDLER."form_handler.php");
+    if($pref['htmlarea']){
+    require_once(e_HANDLER."htmlarea/htmlarea.inc.php");
+    htmlarea("data");
+    htmlarea("news_extended");
+    }
 $rs = new form;
 $aj = new textparse;
 $ix = new news;
@@ -37,6 +42,7 @@ $amount = 50;
 if($action == "main" && $sub_action == "confirm"){
 	if($sql -> db_Delete("news", "news_id='$id' ")){
 		$newspost -> show_message(NWSLAN_31." #".$id." ".NWSLAN_32);
+		clear_cache("news.php");
 	}
 	unset($sub_action, $id);
 }
@@ -58,7 +64,7 @@ if($action == "sn" && $sub_action == "confirm"){
 if(IsSet($_POST['submitupload'])){
 	$pref['upload_storagetype'] = "1";
 	require_once(e_HANDLER."upload_handler.php");
-	$uploaded = file_upload(($_POST['uploadtype'] == "Image" ? e_IMAGE."newspost_images/" : e_FILE."downloads/"));
+	$uploaded = file_upload(($_POST['uploadtype'] == NWSLAN_67 ? e_IMAGE."newspost_images/" : e_FILE."downloads/"));
 	if($_POST['uploadtype'] == "Image" && $_POST['imagecrethumb']){
 		require_once(e_HANDLER."resize_handler.php");
 		resize_image(e_IMAGE."newspost_images/".$uploaded[0]['name'], e_IMAGE."newspost_images/".$uploaded[0]['name'], 250, "copy");
@@ -79,7 +85,7 @@ if(IsSet($_POST['create_category'])){
 	if($_POST['category_name']){
 		$_POST['category_name'] = $aj -> formtpa($_POST['category_name'], "admin");
 		$sql -> db_Insert("news_category", " '0', '".$_POST['category_name']."', '".$_POST['category_button']."'");
-		$newspost -> show_message(NWSLAN_35);	
+		$newspost -> show_message(NWSLAN_35);
 	}
 }
 
@@ -90,6 +96,18 @@ if(IsSet($_POST['update_category'])){
 		$newspost -> show_message(NWSLAN_36);
 	}
 }
+
+if(IsSet($_POST['save_prefs'])){
+        $pref['newsposts'] = $_POST['newsposts'];
+        $pref['news_cats'] = $_POST['news_cats'];
+        $pref['nbr_cols'] = $_POST['nbr_cols'];
+
+        save_prefs();
+        $newspost -> show_message("Settings Saved");
+}
+
+
+
 
 if(!e_QUERY || $action == "main"){
 	$newspost -> show_existing_items($action, $sub_action, $id, $from, $amount);
@@ -123,6 +141,9 @@ if($action == "sn"){
 	$newspost -> submitted_news($sub_action, $id);
 }
 
+if($action == "pref"){
+        $newspost -> show_news_prefs($sub_action, $id);
+}
 
 
 
@@ -138,10 +159,7 @@ $newspost -> show_options($action);
 require_once("footer.php");
 ?>
 <script type="text/javascript">
-function addtext(str){
-	document.dataform.data.value += str;
-	document.forms.dataform.data.focus();
-}
+
 function addtext2(str){
 	document.dataform.news_extended.value += str;
 	document.forms.dataform.news_extended.focus();
@@ -153,9 +171,7 @@ function fclear(){
 	document.dataform.data.value = "";
 	document.dataform.news_extended.value = "";
 }
-function help(help){
-	document.dataform.helpb.value = help;
-}
+
 </script>
 <?php
 echo "<script type=\"text/javascript\">
@@ -254,6 +270,10 @@ class newspost{
 		}
 		if($action != "cat" && getperms("7")){
 			$text .= "<a href='".e_SELF."?cat'><div class='border'><div class='forumheader'><img src='".e_IMAGE."generic/location.png' style='vertical-align:middle; border:0' alt='' /> ".NWSLAN_46."</div></div></a>";
+                }
+
+                if($action != "pref" && getperms("N")){
+                        $text .= "<a href='".e_SELF."?pref'><div class='border'><div class='forumheader'><img src='".e_IMAGE."generic/location.png' style='vertical-align:middle; border:0' alt='' /> Preferences</div></div></a>";
 		}
 		if($action != "sn" && getperms("N")){
 			$text .= "<a href='".e_SELF."?sn'><div class='border'><div class='forumheader'><img src='".e_IMAGE."generic/location.png' style='vertical-align:middle; border:0' alt='' /> ".NWSLAN_47."</div></div></a>";
@@ -264,11 +284,11 @@ class newspost{
 
 	function create_item($sub_action, $id){
 		// ##### Display creation form ---------------------------------------------------------------------------------------------------------
-		global $sql, $rs, $ns;
+                global $sql, $rs, $ns,$pref;
 
 		$handle=opendir(e_IMAGE."newspost_images");
 		while ($file = readdir($handle)){
-			if($file != "." && $file != ".." && $file != "/" && $file != "index.html" && $file != "null.txt"){
+			if($file != "." && $file != ".." && $file != "/" && $file != "index.html" && $file != "null.txt" && $file != "CVS"){
 				if(!strstr($file, "thumb_")){
 					$imagelist[] = $file;
 				}else{
@@ -290,7 +310,7 @@ class newspost{
 
 		$handle=opendir(e_FILE."downloads");
 		while ($file = readdir($handle)){
-			if($file != "." && $file != ".." && $file != "/" && $file != "index.html" && $file != "null.txt"){
+			if($file != "." && $file != ".." && $file != "/" && $file != "index.html" && $file != "null.txt" && $file != "CVS"){
 				$filelist[$c][0] = "";
 				$filelist[$c][1] = $file;
 				$c++;
@@ -318,7 +338,7 @@ class newspost{
 		}
 
 		$text = "<div style='text-align:center'>
-		<form enctype='multipart/form-data' method='post' action='".e_SELF."?".e_QUERY."' name='dataform'>
+		<form ".(FILE_UPLOADS ? "enctype='multipart/form-data'" : "")." method='post' action='".e_SELF."?".e_QUERY."' name='dataform'>
 		<table style='width:95%' class='fborder'>
 		<tr>
 
@@ -354,14 +374,14 @@ class newspost{
 		<tr> 
 		<td style='width:20%' class='forumheader3'>".NWSLAN_13.":<br /></td>
 		<td style='width:80%' class='forumheader3'>
-		<textarea class='tbox' name='data' cols='80' rows='15'>".(strstr($_POST['data'], "[img]http") ? "" : str_replace("[img]../", "[img]", $_POST['data']))."</textarea>
-		<br />
+                <textarea class='tbox' id='data' name='data' cols='80' rows='15' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'>".(strstr($_POST['data'], "[img]http") ? "" : str_replace("[img]../", "[img]", $_POST['data']))."</textarea>
+                ";
+
+        if(!$pref['htmlarea']){$text .= ren_help()."
 		<input class='helpbox' type='text' name='helpb' size='100' />
 		<br />
-		".ren_help("addtext", TRUE)."<br />
-
 		<select class='tbox' name='thumbps' onChange=\"addtext('[link=e107_images/newspost_images/' + this.form.thumbps.options[this.form.thumbps.selectedIndex].value + '][img]e107_images/newspost_images/thumb_' + this.form.thumbps.options[this.form.thumbps.selectedIndex].value + '[/img][/link]');this.selectedIndex=0;\" onMouseOver=\"help('".NWSLAN_50."')\" onMouseOut=\"help('')\">
-		<option>Insert thumbnail ...</option>\n";
+		<option>".NWSLAN_80." ...</option>\n";
 		while(list($key, $image) = each($thumblist)){
 			$image2 = str_replace("thumb_", "", $image);
 			$text .= "<option value='".$image2."'>thumb_".$image2."</option>\n";
@@ -369,21 +389,21 @@ class newspost{
 		$text .= "</select>
 
 		<select class='tbox' name='imageps' onChange=\"addtext('[img]' + this.form.imageps.options[this.form.imageps.selectedIndex].value + '[/img]');this.selectedIndex=0;\" onMouseOver=\"help('".NWSLAN_50."')\" onMouseOut=\"help('')\">
-		<option>Insert image ...</option>\n";
-		while(list($key, $image) = each($imagelist)){ 
+		<option>".NWSLAN_81." ...</option>\n";
+                while(list($key, $image) = each($imagelist)){
 			$text .= "<option value='e107_images/newspost_images/".$image."'>".$image."</option>\n";
 		}
 		$text .= "</select>
 
-
-
-
 		<select class='tbox' name='fileps' onChange=\"addtext('[file=request.php?' + this.form.fileps.options[this.form.fileps.selectedIndex].value + ']' + this.form.fileps.options[this.form.fileps.selectedIndex].value + '[/file]');this.selectedIndex=0;\" onMouseOver=\"help('".NWSLAN_64."')\" onMouseOut=\"help('')\">
-		<option>Insert download ...</option>\n";
+		<option>".NWSLAN_82." ...</option>\n";
 		while(list($key, $file) = each($filelist)){
 			$text .= "<option value='".$file[1]."'>".$file[1]."</option>\n";
 		}
-		$text .= "</select>
+                $text .= "</select>";
+
+        } // end of htmlarea check.
+                $text .="
 
 		</td>
 		</tr>
@@ -391,20 +411,22 @@ class newspost{
 		<td style='width:20%' class='forumheader3'>".NWSLAN_14.":</td>
 		<td style='width:80%' class='forumheader3'>
 
-		<a style='cursor: pointer; cursor: hand' onclick='expandit(this);'>Extended news post</a>
+		<a style='cursor: pointer; cursor: hand' onclick='expandit(this);'>".NWSLAN_83."</a>
 		<div style='display: none;'>
 
-		<textarea class='tbox' name='news_extended' cols='80' rows='10'>".$_POST['news_extended']."</textarea>
-		<br />
-		".ren_help("addtext2", TRUE)."
+                <textarea class='tbox' id='news_extended' name='news_extended' cols='80' rows='10'>".$_POST['news_extended']."</textarea>
+                ";
+        if(!$pref['htmlarea']){ $text .="<br />".ren_help("addtext2", TRUE)."
 
 		<select class='tbox' name='imageps2' onChange=\"addtext2('[img]' + this.form.imageps2.options[this.form.imageps2.selectedIndex].value + '[/img]');this.selectedIndex=0;\" onMouseOver=\"help('".NWSLAN_50."')\" onMouseOut=\"help('')\">
 		<option>Insert image ...</option>\n";
 		reset($imagelist);
 		while(list($key, $image) = each($imagelist)){
 			$text .= "<option value='e107_images/newspost_images/".$image."'>".$image."</option>\n";
+                }
+                $text .= "</select>";
 		}
-		$text .= "</select>
+                $text .="
 		</div>
 		</td>
 		</tr>
@@ -415,22 +437,27 @@ class newspost{
 		<a style='cursor: pointer; cursor: hand' onclick='expandit(this);'>".NWSLAN_69."</a>
 		<div style='display: none;'>";
 
-		if(!is_writable(e_FILE."downloads")){
-			$text .= "<b>".NWSLAN_70."</b><br />";
-		}
-		if(!is_writable(e_IMAGE."newspost_images")){
-			$text .= "<b>".NWSLAN_71."</b><br />";
-		}
+		if(!FILE_UPLOADS){
+			$text .= "<b>".NWSLAN_78."</b>";
+		}else{
 
-		$text .= "<input class='tbox' type='file' name='file_userfile[]' size='50'>
-		<select class='tbox' name='uploadtype'>
-		<option>".NWSLAN_67."</option>
-		<option>".NWSLAN_68."</option>
-		</select>
-		<br />
-		<input type='checkbox' name='imagecrethumb' value='1'><span class='smalltext'>".NWSLAN_65."</span>&nbsp;&nbsp; 
-		<input class='button' type='submit' name='submitupload' value='".NWSLAN_66."' />
-		</div>
+			if(!is_writable(e_FILE."downloads")){
+				$text .= "<b>".NWSLAN_70."</b><br />";
+			}
+			if(!is_writable(e_IMAGE."newspost_images")){
+				$text .= "<b>".NWSLAN_71."</b><br />";
+			}
+
+			$text .= "<input class='tbox' type='file' name='file_userfile[]' size='50'>
+			<select class='tbox' name='uploadtype'>
+			<option>".NWSLAN_67."</option>
+			<option>".NWSLAN_68."</option>
+			</select>
+			<br />
+			<input type='checkbox' name='imagecrethumb' value='1'><span class='smalltext'>".NWSLAN_65."</span>&nbsp;&nbsp; 
+			<input class='button' type='submit' name='submitupload' value='".NWSLAN_66."' />\n";
+		}
+		$text .= "</div>
 		</td>
 		</tr>
 
@@ -487,7 +514,7 @@ class newspost{
 		for($a=2003; $a<=2010; $a++){
 			$text .= ($a == $_POST['startyear'] ? "<option selected>".$a."</option>" : "<option>".$a."</option>");
 		}
-		$text .= "</select> and <select name='endday' class='tbox'><option selected> </option>";
+		$text .= "</select> ".NWSLAN_83." <select name='endday' class='tbox'><option selected> </option>";
 		for($a=1; $a<=31; $a++){
 			$text .= ($a == $_POST['endday'] ? "<option selected>".$a."</option>" : "<option>".$a."</option>");
 		}
@@ -511,7 +538,7 @@ class newspost{
 		</td>
 		<td class='forumheader3'>
 			
-		<a style='cursor: pointer; cursor: hand' onclick='expandit(this);'>Choose which visitors will see news item</a>
+		<a style='cursor: pointer; cursor: hand' onclick='expandit(this);'>".NWSLAN_84."</a>
 		<div style='display: none;'>
 		".r_userclass("news_class",$_POST['news_class'])."
 		</div>
@@ -616,7 +643,7 @@ class newspost{
 
 		$handle=opendir(e_IMAGE."newsicons");
 		while ($file = readdir($handle)){
-			if($file != "." && $file != ".." && $file != "/" && $file != "null.txt"){
+			if($file != "." && $file != ".." && $file != "/" && $file != "null.txt" && $file != "CVS"){
 				$iconlist[] = $file;
 			}
 		}
@@ -653,7 +680,7 @@ class newspost{
 		<tr><td colspan='2' style='text-align:center' class='forumheader'>";
 		if($id){
 			$text .= "<input class='button' type='submit' name='update_category' value='".NWSLAN_55."'> 
-			".$rs -> form_button("submit", "category_clear", "Clear Form").
+			".$rs -> form_button("submit", "category_clear", NWSLAN_79).
 			$rs -> form_hidden("category_id", $id)."
 			</td></tr>";
 		}else{
@@ -666,6 +693,59 @@ class newspost{
 		$ns -> tablerender(NWSLAN_56, $text);
 	}
 	
+        function show_news_prefs(){
+        global $sql, $rs, $ns,$pref;
+
+                $text = "<div style='text-align:center'>
+                ".$rs -> form_open("post", e_SELF."?pref", "dataform")."
+                <table class='fborder' style='width:94%'>
+                <tr>
+                <td class='forumheader3' style='width:60%'><span class='defaulttext'>Show News-Category Footer Menu</span></td>
+                <td class='forumheader3' style='width:40%'>
+                <input type='checkbox' name='news_cats' value='1' ".($pref['news_cats']==1 ? " checked" : "").">
+                        </td>
+
+                </tr>
+
+                <tr>
+                <td class='forumheader3' style='width:60%'><span class='defaulttext'>News Category Columns?:</span></td>
+                <td class='forumheader3' style='width:40%'>
+                <select class='tbox' name='nbr_cols'>
+                <option value='1' ".($pref['nbr_cols']==1 ? "selected" : "").">1</option>
+                <option value='2' ".($pref['nbr_cols']==2 ? "selected" : "").">2</option>
+                <option value='3' ".($pref['nbr_cols']==3 ? "selected" : "").">3</option>
+                <option value='4' ".($pref['nbr_cols']==4 ? "selected" : "").">4</option>
+                <option value='5' ".($pref['nbr_cols']==5 ? "selected" : "").">5</option>
+                <option value='6' ".($pref['nbr_cols']==6 ? "selected" : "").">6</option>
+                </select></td>
+                </tr>
+
+                <tr>
+                <td class='forumheader3' style='width:60%'><span class='defaulttext'>News posts to display per page?:</span></td>
+                <td class='forumheader3' style='width:40%'>
+                <select class='tbox' name='newsposts'>
+                <option value='1' ".($pref['newsposts']==1 ? "selected" : "").">1</option>
+                <option value='2' ".($pref['newsposts']==2 ? "selected" : "").">2</option>
+                <option value='3' ".($pref['newsposts']==3 ? "selected" : "").">3</option>
+                <option value='5' ".($pref['newsposts']==5 ? "selected" : "").">5</option>
+                <option value='10' ".($pref['newsposts']==10 ? "selected" : "").">10</option>
+                <option value='15' ".($pref['newsposts']==15 ? "selected" : "").">15</option>
+                <option value='20' ".($pref['newsposts']==20 ? "selected" : "").">20</option>
+
+                </select></td>
+                </tr>
+
+                <tr><td colspan='2' style='text-align:center' class='forumheader'>";
+                $text .= "<input class='button' type='submit' name='save_prefs' value='Save News Preferences'></td></tr>";
+
+                $text .= "</table>
+                ".$rs -> form_close()."
+                </div>";
+
+                $ns -> tablerender("News Preferences", $text);
+        }
+
+
 
 
 	function submitted_news($sub_action, $id){
@@ -684,7 +764,7 @@ class newspost{
 				extract($row);
 				$text .= "<tr>
 				<td style='width:5%; text-align:center; vertical-align:top' class='forumheader3'>$submitnews_id</td>
-				<td style='width:75%' class='forumheader3'><b>".$aj -> tpa($submitnews_title)."</b> [ submitted by $submitnews_name ]<br />".$aj -> tpa($submitnews_item)."</td>
+				<td style='width:75%' class='forumheader3'><b>".$aj -> tpa($submitnews_title)."</b> [ ".NWSLAN_85." $submitnews_name ]<br />".$aj -> tpa($submitnews_item)."</td>
 				<td style='width:20%; text-align:center; vertical-align:top' class='forumheader3'>
 				".$rs -> form_button("submit", "category_edit", NWSLAN_58, "onClick=\"document.location='".e_SELF."?create.sn.$submitnews_id'\"")."
 				".$rs -> form_button("submit", "category_delete", NWSLAN_8, "onClick=\"confirm_('sn', $submitnews_id);\"")."
@@ -712,6 +792,7 @@ class create_rss{
 		# - scope					public
 		*/
 		global $sql;
+		setlocale (LC_TIME, "en");
 		$pubdate = strftime("%a, %d %b %Y %I:%M:00 GMT", time());
 
 		$sitebutton = (strstr(SITEBUTTON, "http:") ? SITEBUTTON : SITEURL.str_replace("../", "", e_IMAGE).SITEBUTTON);
@@ -802,4 +883,3 @@ class create_rss{
 }
 }
 ?>
-

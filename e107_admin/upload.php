@@ -73,7 +73,7 @@ if(IsSet($_POST['optionsubmit'])){
         $pref['upload_class'] = $_POST['upload_class'];
         $pref['upload_enabled'] = (FILE_UPLOADS ? $_POST['upload_enabled'] : 0);
         if($pref['upload_enabled'] && !$sql -> db_Select("links", "*", "link_url='upload.php' ")){
-                $sql -> db_Insert("links", "0, 'Upload', 'upload.php', '', '', 1,0,0,0,0");
+                $sql -> db_Insert("links", "0, '".UPLLAN_44."', 'upload.php', '', '', 1,0,0,0,0");
         }
 
         if(!$pref['upload_enabled'] && $sql -> db_Select("links", "*", "link_url='upload.php' ")){
@@ -170,7 +170,7 @@ if($action == "view"){
 
         <tr>
         <td style='width:30%' class='forumheader3'>".UPLLAN_15."</td>
-        <td style='width:70%' class='forumheader3'><a href='".e_SELF."?dlm.$upload_id'>copy to download manager</a> | <a href='".e_SELF."?news.$upload_id'>".UPLLAN_16."</a> | <a href='".e_SELF."?dis.$upload_id'>".UPLLAN_17."</a></td>
+        <td style='width:70%' class='forumheader3'><a href='".e_SELF."?dlm.$upload_id'>".UPLAN_COPYTODLM."</a> | <a href='".e_SELF."?news.$upload_id'>".UPLLAN_16."</a> | <a href='".e_SELF."?dis.$upload_id'>".UPLLAN_17."</a></td>
         </tr>
 
         </table>
@@ -190,7 +190,7 @@ $text = "<div style='text-align:center'>
 if(!$active_uploads = $sql -> db_Select("upload", "*", "upload_active=0")){
         $text .= UPLLAN_19.".\n</td>\n</tr>";
 }else{
-        $text .= UPLLAN_20." ".($active_uploads == 1 ? "is " : "are ").$active_uploads." ".UPLLAN_21.($active_uploads == 1 ? "" : "s")." ...";
+        $text .= UPLLAN_20." ".($active_uploads == 1 ? UPLAN_IS : UPLAN_ARE).$active_uploads." ".UPLLAN_21.($active_uploads == 1 ? "" : "s")." ...";
 
         $text .= "</td></tr>";
         $text .= "<tr>
@@ -199,7 +199,7 @@ if(!$active_uploads = $sql -> db_Select("upload", "*", "upload_active=0")){
         <td style='width:20%' class='forumheader3'>".UPLLAN_5."</td>
         <td style='width:20%' class='forumheader3'>".UPLLAN_23."</td>
         <td style='width:30%' class='forumheader3'>".UPLLAN_24."</td>
-        <td style='width:18px' class='forumheader3'>Actions</td>
+        <td style='width:18px' class='forumheader3'>".UPLLAN_42."</td>
         </tr>";
         while($row = $sql -> db_Fetch()){
                 extract($row);
@@ -213,13 +213,13 @@ if(!$active_uploads = $sql -> db_Select("upload", "*", "upload_active=0")){
                 <td style='width:20%' class='forumheader3'>".$poster."</td>
                 <td style='width:20%' class='forumheader3'><a href='".e_SELF."?view.".$upload_id."'>".$upload_name ."</a></td>
                 <td style='width:20%' class='forumheader3'>".$upload_file ."</td>
-                <td style='width:18px' class='forumheader3'><a href='".e_SELF."?dlm.$upload_id'><img src=\"".$imgd."filemanager/exe.png\" alt=\"Copy to Downloads\" style=\"border:0\" /></a><br /><a href='".e_SELF."?news.$upload_id'><img src=\"".$imgd."filemanager/htm.png\" alt=\"".UPLLAN_16."\" style=\"border:0\" /></a><br /><a href='".e_SELF."?dis.$upload_id'><img src=\"".$imgd."filemanager/del.png\" alt=\"".UPLLAN_17."\" style=\"border:0\" /></a></td>
+                <td style='width:18px' class='forumheader3'><a href='".e_SELF."?dlm.$upload_id'><img src=\"".$imgd."filemanager/exe.png\" alt=\"".UPLAN_COPYTODLS."\" style=\"border:0\" /></a><br /><a href='".e_SELF."?news.$upload_id'><img src=\"".$imgd."filemanager/htm.png\" alt=\"".UPLLAN_16."\" style=\"border:0\" /></a><br /><a href='".e_SELF."?dis.$upload_id'><img src=\"".$imgd."filemanager/del.png\" alt=\"".UPLLAN_17."\" style=\"border:0\" /></a></td>
                 </tr>";
         }
 }
 $text .= "</table>\n</div>";
 
-$ns -> tablerender("Uploads", $text);
+$ns -> tablerender(UPLLAN_43, $text);
 
 
 // options -------------------------------------------------------------------------------------------------------------------------------------------------------------------

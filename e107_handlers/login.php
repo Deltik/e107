@@ -13,6 +13,7 @@
 +---------------------------------------------------------------+
 */
 @include(e_LANGUAGEDIR.$language."/lan_login.php");
+@include(e_LANGUAGEDIR."English/lan_login.php");
 class userlogin{
 	function userlogin($username, $userpass, $autologin){
 		/* Constructor
@@ -34,6 +35,14 @@ class userlogin{
 			}
 		}
 
+		if($pref['logcode'] && extension_loaded("gd")){
+			require_once(e_HANDLER."secure_img_handler.php");
+			$sec_img = new secure_image;
+			if(!$sec_img -> verify_code($_POST['rand_num'],$_POST['code_verify'])){
+				define("LOGINMESSAGE", LAN_303."<br /><br />");
+				return FALSE;
+			}
+		}
 		if($username != "" && $userpass != ""){
 			$username = ereg_replace("\sOR\s|\=|\#", "", $username);
 			$userpass = md5($userpass);
@@ -49,28 +58,25 @@ class userlogin{
 			}else{
 				list($user_id) = $sql-> db_Fetch();
 
+				$cookieval = $user_id.".".md5($userpass);
+
 				if($pref['user_tracking'] == "session"){
-					$_SESSION[$pref['cookie_name']] = $user_id.".".$userpass;
+					$_SESSION[$pref['cookie_name']] = $cookieval;
 				}else{
 					if($autologin == 1){
-						cookie($pref['cookie_name'], $user_id.".".$userpass, ( time()+3600*24*30));
+						cookie($pref['cookie_name'], $cookieval, ( time()+3600*24*30));
 					}else{
-						cookie($pref['cookie_name'], $user_id.".".$userpass, ( time()+3600*3));
+						cookie($pref['cookie_name'], $cookieval, ( time()+3600*3));
 					}
 				}
 
 				$redir = (e_QUERY ? e_SELF."?".e_QUERY : e_SELF);
-				echo "<script type='text/javascript'>document.location.href='$redir'</script>\n";
-
-/*
-				if(!eregi("Apache", $_SERVER['SERVER_SOFTWARE'])){
-					header("Refresh: 0; URL: ".$redir);
-					exit;
-				}else{
+				if(strstr($_SERVER['SERVER_SOFTWARE'], "Apache")){
 					header("Location: ".$redir);
 					exit;
+				}else{
+					echo "<script type='text/javascript'>document.location.href='$redir'</script>\n";
 				}
-*/
 			}
 		}else{
 			define("LOGINMESSAGE", LAN_27."<br /><br />");

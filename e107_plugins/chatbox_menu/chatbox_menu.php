@@ -19,7 +19,7 @@ if(IsSet($_POST['chat_submit'])){
 		// disallow post
 	}else{
 		$cmessage = $_POST['cmessage'];
-		$nick = trim(chop($_POST['nick']));
+		$nick = trim(chop(preg_replace("/\[.*\]/si", "", $_POST['nick'])));
 		$fp = new floodprotect;
 		if(!$fp -> flood("chatbox", "cb_datestamp")){
 			header("location:index.php");
@@ -28,7 +28,7 @@ if(IsSet($_POST['chat_submit'])){
 			if((strlen(trim(chop($cmessage))) < 1000) && trim(chop($cmessage)) != ""){
 				$cmessage = $aj -> formtpa($cmessage, "public");
 				if($sql -> db_Select("chatbox", "*", "cb_message='$cmessage' AND cb_datestamp+84600>".time())){
-					$emessage = "Duplicate post";
+					$emessage = CHATBOX_L17;
 				}else{
 					$datestamp = time();
 					$ip = getip();
