@@ -16,8 +16,11 @@ require_once("../class2.php");
 
 if(IsSet($_POST['metasubmit'])){
 
-	$pref['meta_tag'][1] = $_POST['meta'];
-	$sql -> db_Update("core", "e107_value='".addslashes(serialize($pref))."' WHERE e107_name='pref' ");
+	
+	$meta = str_replace("\"", "'", $_POST['meta']);
+	$meta = stripslashes($meta);
+	$pref['meta_tag'][1] = $meta;
+	save_prefs();
 	header("location:meta.php?e");
 }
 

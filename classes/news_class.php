@@ -75,7 +75,7 @@ class news{
 		$cls = new db;
 
 		if($news_id != ""){
-			if($cls -> db_Update("news", "news_title='$news_title', news_body='$news_body', news_extended='$news_extended', news_source='$news_source', news_url='$news_url', news_category='$category_id', news_allow_comments='$allow_comments', news_start='$news_start', news_end='$news_end', news_active='$news_active' WHERE news_id='$news_id' ")){
+			if($cls -> db_Update("news", "news_title='$news_title', news_body='$news_body', news_extended='$news_extended', news_source='$news_source', news_url='$news_url', news_category='$category_id', news_allow_comments='$allow_comments', news_start='$news_start', news_end='$news_end', news_active='".$_POST['news_active']."' WHERE news_id='$news_id' ")){
 				$message = LAN_14;
 			}else{
 				$search = array("\"", "'", "\\");
@@ -84,7 +84,7 @@ class news{
 				$news_body = str_replace($search, $replace, $news_body);
 				$news_extended = str_replace($search, $replace, $news_extended);
 
-				if($cls -> db_Update("news", "news_title='$news_title', news_body='$news_body', news_extended='$news_extended', news_source='$news_source', news_url='$news_url', news_category='$category_id', news_allow_comments='$allow_comments', news_start='$news_start', news_end='$news_end', news_active='$news_active' WHERE news_id='$news_id' ")){
+				if($cls -> db_Update("news", "news_title='$news_title', news_body='$news_body', news_extended='$news_extended', news_source='$news_source', news_url='$news_url', news_category='$category_id', news_allow_comments='$allow_comments', news_start='$news_start', news_end='$news_end', news_active='".$_POST['news_active']."' WHERE news_id='$news_id' ")){
 					$message = "<b>Had to modify quotemarks and apostrophies to update news item into database - item now entered.</b>";
 				}else{
 					$message = "<b>Error!</b> Was unable to update news item into database!</b>";
@@ -92,7 +92,7 @@ class news{
 			}
 		}else{
 			$datestamp = time();
-			if($cls -> db_Insert("news","0, '$news_title', '$news_body', '$news_extended', '$datestamp', '".ADMINID."', '$news_source', '$news_url', '$category_id', '$allow_comments', '$news_start', '$news_end', '$news_active' ")){
+			if($cls -> db_Insert("news","0, '$news_title', '$news_body', '$news_extended', '$datestamp', '".ADMINID."', '$news_source', '$news_url', '$category_id', '$allow_comments', '$news_start', '$news_end', '".$_POST['news_active']."' ")){
 				$message = LAN_15;
 			}else{
 				$search = array("\"", "'", "\\");
@@ -184,6 +184,14 @@ class news{
 			
 			$cls -> db_Select("news_category", "*",  "category_id='$category_id' ");
 			list($category_id, $category_name, $category_icon) = $cls-> db_Fetch();
+
+			$sql2 = new db;
+			if($sql2 -> db_Select("userclass_classes", "*", "userclass_name='PRIVATENEWS_".strtoupper($category_name)."' ")){
+				if(!check_class("PRIVATENEWS_".strtoupper($category_name))){
+					return;
+				}
+			}
+
 			if(eregi("images", $category_icon)){
 				$category_icon = THEME.$category_icon;
 			}else{
@@ -200,27 +208,15 @@ class news{
 		$info .= "Body length: ".strlen($news_body)."b. Extended length: ".strlen($news_entended)."b.<br /><br /></div>";
 
 		if($NEWSSTYLE != ""){
-			// get values ...
-			//	{NEWSTITLE} = $news_title
-			//	{NEWSBODY} = $news_body
-			//	{NEWSICON} = $category_icon
-			//	{NEWSHEADER} = $category_icon
-			//	{NEWSCATEGORY} = $category_name
-			//	{NEWSAUTHOR} = $a_name
-			//	{NEWSDATE} = $datestamp
-			//	{NEWSCOMMENTS} = $comment_total
-			//	{EMAILICON}
-			//	{PRINTICON}
-			//	{ENTENDEDSTRING}
 
-			$news_category = "<a href='index.php?cat.".$category_id."'>".$category_name."</a>";
-			$news_author = "<a href='mailto:".$a_email."'>".$a_name."</a>";
-			if(eregi("admin", e_SELF)){
-				$etext = " <a href=\"email.php?".$news_id."\"><img src=\"../themes/shared/generic/friend.gif\" style=\"border:0\" alt=\"email to someone\" /></a>";
-				$ptext = " <a href=\"print.php?".$news_id."\"><img src=\"../themes/shared/generic/printer.gif\" style=\"border:0\" alt=\"printer friendly\" /></a>";
-			}else{
-				$etext = " <a href=\"email.php?".$news_id."\"><img src=\"themes/shared/generic/friend.gif\" style=\"border:0\" alt=\"email to someone\" /></a>";
-				$ptext = "<a href=\"print.php?news.".$news_id."\"><img src=\"themes/shared/generic/printer.gif\" style=\"border:0\" alt=\"printer friendly\" /></a>";
+			$news_category = "<a href='".e_SELF."?cat.".$category_id."'>".$category_name."</a>";
+			$news_author = "<a href='user.php?id.".$a_id."'>".$a_name."</a>";
+			$etext = " <a href=\"email.php?news.".$news_id."\"><img src=\"".e_BASE."themes/shared/generic/friend.gif\" style=\"border:0\" alt=\"email to someone\" /></a>";
+			$ptext = " <a href=\"print.php?news.".$news_id."\"><img src=\"".e_BASE."themes/shared/generic/printer.gif\" style=\"border:0\" alt=\"printer friendly\" /></a>";
+
+			if(ADMIN && getperms("H")){
+				$adminoptions .= "<a href=\"".e_BASE.e_ADMIN."newspost.php?ne.".$news_id."\"><img src=\"".e_BASE."themes/shared/generic/newsedit.png\" alt=\"\" style=\"border:0\" /></a>
+				<a href=\"".e_BASE.e_ADMIN."newspost.php?nd.".$news_id."\"><img src=\"".e_BASE."themes/shared/generic/newsdelete.png\" alt=\"\" style=\"border:0\" /></a>";
 			}
 
 			$search[0] = "/\{NEWSTITLE\}(.*?)/si";
@@ -234,11 +230,11 @@ class news{
 			}
 
 			$search[2] = "/\{NEWSICON\}(.*?)/si";
-			$replace[2] = "<a href='index.php?cat.$category_id'><img style='".ICONSTYLE."'  src='$category_icon' alt='' /></a>";
+			$replace[2] = "<a href='".e_SELF."?cat.$category_id'><img style='".ICONSTYLE."'  src='$category_icon' alt='' /></a>";
 			$search[3] = "/\{NEWSHEADER\}(.*?)/si";
 			$replace[3] = $category_icon;
 			$search[4] = "/\{NEWSCATEGORY\}(.*?)/si";
-			$replace[4] = "<a href='index.php?cat.$category_id'>".$category_name."</a>";
+			$replace[4] = "<a href='".e_SELF."?cat.$category_id'>".$category_name."</a>";
 			$search[5] = "/\{NEWSAUTHOR\}(.*?)/si";
 			$replace[5] = $news_author;
 			$search[6] = "/\{NEWSDATE\}(.*?)/si";
@@ -256,35 +252,44 @@ class news{
 			$search[10] = "/\{NEWSID\}(.*?)/si";
 			$replace[10] = $news_id;
 
-			$search[11] = "/\{EXTENDED\}(.*?)/si";
-			if($news_extended != "" && !eregi("extend", e_QUERY)){
-				$replace[11] = "<a href='index.php?extend.".$news_id."'>".EXTENDEDSTRING."</a>";
+			$search[11] = "/\{ADMINOPTIONS\}(.*?)/si";
+			$replace[11] = $adminoptions;
+
+			$search[12] = "/\{EXTENDED\}(.*?)/si";
+			if($news_extended && !eregi("extend", e_QUERY)){
+				if(defined("PRE_EXTENDEDSTRING")){ $es1 = PRE_EXTENDEDSTRING; }
+				if(defined("POST_EXTENDEDSTRING")){ $es2 = POST_EXTENDEDSTRING; }
+				$replace[12] = $es1."<a href='".e_BASE."index.php?extend.".$news_id."'>".EXTENDEDSTRING."</a>".$es2;
 			}
 
-			$search[12] = "/\{NEWSSOURCE\}(.*?)/si";
+			$search[13] = "/\{NEWSSOURCE\}(.*?)/si";
 			if($news_source){
-				$replace[12] = SOURCESTRING.$news_source;
+				if(defined("PRE_SOURCESTRING")){ $es1 = PRE_SOURCESTRING; }
+				if(defined("POST_SOURCESTRING")){ $es2 = POST_SOURCESTRING; }
+				$replace[13] = $es1.SOURCESTRING.$news_source.$es2;
 			}
 
-			$search[13] = "/\{NEWSURL\}(.*?)/si";
+			$search[14] = "/\{NEWSURL\}(.*?)/si";
 			if($news_url){
-				$replace[13] = URLSTRING.$news_url;
+				if(defined("PRE_URLSTRING")){ $es1 = PRE_URLSTRING; }
+				if(defined("POST_URLSTRING")){ $es2 = POST_URLSTRING; }
+				$replace[14] = $es1.URLSTRING.$news_url.$es2;
 			}
 
 			$text = preg_replace($search, $replace, $NEWSSTYLE);
+
 			echo $text;
 			if($modex == "preview"){ echo $info; }
 
 			return TRUE;
-
 		}
 
 // ---------------- old newsstyle code, depracated but left for -5.3 themes
 		$search = array("[administrator]", "[date and time]", "[count]", "[l]", "[/l]", "[nc]");
 		if($allow_comments == 1){
-			$replace = array("<a href=\"mailto:$a_email\">$a_name</a>", $datestamp, COMMENT_OFF_TEXT, "", "", "<a href=\"index.php?cat.".$category_id."\">".$category_name."</a>");
+			$replace = array("<a href=\"mailto:$a_email\">$a_name</a>", $datestamp, COMMENT_OFF_TEXT, "", "", "<a href=\"".e_SELF."?cat.".$category_id."\">".$category_name."</a>");
 		}else{
-			$replace = array("<a href=\"mailto:$a_email\">$a_name</a>", $datestamp, $comment_total, "<a href=\"comment.php?".$news_id."\">", "</a>", "<a href=\"index.php?cat.".$category_id."\">".$category_name."</a>");
+			$replace = array("<a href=\"mailto:$a_email\">$a_name</a>", $datestamp, $comment_total, "<a href=\"comment.php?".$news_id."\">", "</a>", "<a href=\"".e_SELF."?cat.".$category_id."\">".$category_name."</a>");
 		}
 		$info_text = str_replace($search,$replace, INFO_TEXT);
 
@@ -307,10 +312,10 @@ class news{
 		if(ICON_SHOW == TRUE && ICON_POSITION == "caption" && $category_icon != ""){
 			$tmp = "<table style=\"width:95%\"><tr><td style=\"width:50%\">";
 			if(ICON_ALIGN == "left"){
-				$tmp = "<a href=\"index.php?cat.".$category_id."\"><img style=\"float: ".ICON_ALIGN."; border:0\"  src=\"".$category_icon."\" alt=\"\" /></a>";
+				$tmp = "<a href=\"".e_SELF."?cat.".$category_id."\"><img style=\"float: ".ICON_ALIGN."; border:0\"  src=\"".$category_icon."\" alt=\"\" /></a>";
 				$caption = $tmp.$caption."</td></tr></table>";
 			}else{
-				$caption .= "</td><td style=\"text-align:right; width:50%\"><a href=\"index.php?cat.".$category_id."\"><img style=\"float: ".ICON_ALIGN."; border:0\"  src=\"".$category_icon."\" alt=\"\" /></a></td></tr></table>";
+				$caption .= "</td><td style=\"text-align:right; width:50%\"><a href=\"".e_SELF."?cat.".$category_id."\"><img style=\"float: ".ICON_ALIGN."; border:0\"  src=\"".$category_icon."\" alt=\"\" /></a></td></tr></table>";
 			}
 		}
 		if(INFO_POSITION == "belowcaption"){
@@ -319,7 +324,7 @@ class news{
 			unset($text);
 		}
 		if(ICON_SHOW == TRUE && ICON_POSITION == "body" && $category_icon != ""){
-			$text .= "<a href=\"index.php?cat.".$category_id."\"><img style=\"float: ".ICON_ALIGN."; border:0\"  src=\"".$category_icon."\" alt=\"\" /></a>";
+			$text .= "<a href=\"".e_SELF."?cat.".$category_id."\"><img style=\"float: ".ICON_ALIGN."; border:0\"  src=\"".$category_icon."\" alt=\"\" /></a>";
 		}
 		if(TITLE_POSITION == "body"){
 			$text .= "<div style=\"text-align:".TITLE_ALIGN."\">".TITLE_STYLE_START.$news_title.TITLE_STYLE_END."</div><br />";
@@ -330,7 +335,7 @@ class news{
 		if($modex == "preview" && $news_extended != ""){
 			$text .= "<br />[Extended text]: ".$news_extended;
 		}else if($news_extended != "" && $modex != "extend"){
-			$text .= "<br /><a href=\"index.php?extend.".$news_id."\">".EXTENDED_STRING."</a>";
+			$text .= "<br /><a href=\"".e_SELF."?extend.".$news_id."\">".EXTENDED_STRING."</a>";
 		}		
 		if($modex == "extend"){
 			$text .= "<br />".$news_extended;
@@ -353,49 +358,5 @@ class news{
 		if($modex == "preview"){ echo $info; }
 	}
 // ------------ end old newsstyle code
-
-
-function parsenews($NEWSSTYLE, $news_title, $news_body, $category_icon, $category_name, $a_name, $datestamp, $comment_total, $emailicon, $printicon, $entendedstring, $a_email, $category_id){
-
-	$tmp = explode("\n", $NEWSSTYLE);
-	for($c=0; $c < count($tmp); $c++){ 
-		if(ereg("{|}", $tmp[$c])){
-			$text .= $this->checklayoutn($tmp[$c], $news_title, $news_body, $category_icon, $category_name, $a_name, $datestamp, $comment_total, $emailicon, $printicon, $entendedstring, $a_email, $category_id);
-		}else{
-			$text .=  $tmp[$c];
-		}
-	}
-	return $text;
 }
-
-function checklayoutn($str, $news_title, $news_body, $category_icon, $category_name, $a_name, $datestamp, $comment_total, $emailicon, $printicon, $entendedstring, $a_email, $category_id){
-	if(strstr($str, "NEWSTITLE")){
-		$text .= $news_title;
-	}else if(strstr($str, "NEWSBODY")){
-		$text .= $news_body;
-	}else if(strstr($str, "NEWSICON")){
-		$text .= $category_icon;
-	}else if(strstr($str, "NEWSHEADER")){
-		$text .= $category_icon;
-	}else if(strstr($str, "NEWSCATEGORY")){
-		$text .= "<a href='index.php?cat.".$category_id."'>".$category_name."</a>";
-	}else if(strstr($str, "NEWSAUTHOR")){
-		$text .= "<a href='mailto:".$a_email."'>".$a_name."</a>";
-	}else if(strstr($str, "NEWSDATE")){
-		$text .= $datestamp;
-	}else if(strstr($str, "NEWSCOMMENTS")){
-		$text .= $comment_total;
-	}else if(strstr($str, "ENTENDEDSTRING")){
-		$text .= $entendedstring;
-	}
-	return $text;
-}
-
-
-
-
-
-
-}
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 ?>

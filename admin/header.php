@@ -26,26 +26,37 @@ echo "<?xml version=\"1.0\" encoding=\"iso-8859-1\" ?>\n";
 function textCounter(field,cntfield) {
 	cntfield.value = field.value.length;
 }
-      
-function changestate(val){
-	frm=document.forms[0]
-	if(val=="enabl") {
-		frm.cb_linkc.disabled=false
-	}
-	if(val=="disabl") {
-		frm.cb_linkc.disabled=true
-	}
+var ns6=document.getElementById&&!document.all?1:0
+var head="display:''"
+var folder=''
+function expandit(curobj){
+folder=ns6?curobj.nextSibling.nextSibling.style:document.all[curobj.sourceIndex+1].style
+if (folder.display=="none")
+folder.display=""
+else
+folder.display="none"
 }
+
 function urljump(url){
 	top.window.location = url; 
 }
-function SetState(obj_checkbox, obj_textarea){
-	if(obj_checkbox.checked){
-		obj_textarea.disabled = false;
-	}else{
-		obj_textarea.disabled = true;
-	}
+
+function openwindow() {
+	opener = window.open("htmlarea/index.php", "popup","top=100,left=100,resizable=no,width=670,height=520,scrollbars=no,menubar=no");
 }
+function setCheckboxes(the_form, do_check){
+	var elts = (typeof(document.forms[the_form].elements['perms[]']) != 'undefined') ? document.forms[the_form].elements['perms[]'] : document.forms[the_form].elements['perms[]'];
+    var elts_cnt  = (typeof(elts.length) != 'undefined') ? elts.length : 0;
+    if(elts_cnt){
+		for(var i = 0; i < elts_cnt; i++){
+			elts[i].checked = do_check;
+        }
+	}else{
+		elts.checked        = do_check;
+    }
+	return true;
+}
+
 // -->
     </script>
   </head>
@@ -106,7 +117,7 @@ echo "<table style=\"width:100%\" cellspacing=\"10\" cellpadding=\"10\">
 
 // security update added by que
 if(ADMIN == TRUE){
- if(!eregi("/admin.php", $PHP_SELF)){
+ if(!eregi("/admin.php", $_SERVER['PHP_SELF'])){
 	 $text = "<a href=\"admin.php\">Admin Front Page</a>
 <br />
 <a href=\"../index.php\">Leave Admin Area</a>
@@ -128,7 +139,7 @@ if(getperms("2")){
 if(getperms("3")){
 	$text .= "<a href=\"administrator.php\">Administrators</a><br />";
 }
-$text .= "<a href=\"updateadmin.php\">Update admin settings</a><br />";
+$text .= "<a href=\"updateadmin.php\">Update admin password</a><br />";
 if(getperms("5")){
 	$text .= "<a href=\"forum.php\">Forums</a><br />";
 }
@@ -147,12 +158,18 @@ if(getperms("I")){
 if(getperms("8")){
 	$text .= "<a href=\"link_category.php\">Link Categories</a><br />";
 }
+if(getperms("Q")){
+	$text .= "<a href=\"download.php\">Downloads</a><br />";
+}
+if(getperms("R")){
+	$text .= "<a href=\"download_category.php\">Download Categories</a><br />";
+}
 if(getperms("M")){
 	$text .= "<a href=\"wmessage.php\">Welcome Message</a><br />";
 }
 
 if(getperms("6")){
-	$text .= "<a href=\"upload.php\">Upload</a><br />";
+	$text .= "<a href=\"filemanager.php\">File Manager</a><br />";
 }
 if(getperms("N")){
 	$text .= "<a href=\"submitnews.php\">Submitted News</a><br />";
@@ -170,12 +187,6 @@ if(getperms("4")){
 	unset($text);
  }
 
-if(getperms("P") && !ereg("userfile.php", e_SELF)){
-	if($sql -> db_Select("userfile", "userfile_authorized='0' ")){
-		$text = "<div style=\"text-align:center\">You have un-authorized userfiles in your upload directory - click <a href=\"userfile.php\">here</a> to review.</div>";
-		$ns -> tablerender("Userfile Uploaded", $text);
-	}	
-}
 if($sql -> db_Select("submitnews", "*", "submitnews_auth ='0' ")){
 	$text = "<div class=\"defaulttext\" style=\"text-align:center\">
 <b>You have had a news item submitted.</b>

@@ -5,7 +5,7 @@
 if(IsSet($_POST['frontpage'])){ header("location: index.php"); }
 if(IsSet($_POST['adminpage'])){ header("location: admin/admin.php"); }
 if(!$_POST['mysql_server']){ $_POST['mysql_server'] = "localhost"; }
-if(!$_POST['mysql_prefix']){ $_POST['mysql_prefix'] = "e107_"; }
+if(!$_POST['mysql_prefix'] && !$_POST['stage_2']){ $_POST['mysql_prefix'] = "e107_"; }
 if(!$_POST['admin_email']){ $_POST['admin_email'] = "you@yoursite.com"; }
 
 echo "<?xml version=\"1.0\" encoding=\"iso-8859-1\" ?>\n";
@@ -547,6 +547,33 @@ $banlist_table = "CREATE TABLE ".$mySQLprefix."banlist (
 ) TYPE=MyISAM;";
 if(!mysql_query($banlist_table)){	$error .= "There was a problem creating the <b>banlist</b> mySQL table ...<br />"; }
 
+
+$banner_table = "CREATE TABLE ".$mySQLprefix."banner (
+  banner_id int(10) unsigned NOT NULL auto_increment,
+  banner_clientname varchar(100) NOT NULL default '',
+  banner_clientlogin varchar(20) NOT NULL default '',
+  banner_clientpassword varchar(50) NOT NULL default '',
+  banner_image varchar(150) NOT NULL default '',
+  banner_clickurl varchar(150) NOT NULL default '',
+  banner_impurchased int(10) unsigned NOT NULL default '0',
+  banner_startdate int(10) unsigned NOT NULL default '0',
+  banner_enddate int(10) unsigned NOT NULL default '0',
+  banner_active tinyint(1) unsigned NOT NULL default '0',
+  banner_clicks int(10) unsigned NOT NULL default '0',
+  banner_impressions int(10) unsigned NOT NULL default '0',
+  banner_ip text NOT NULL,
+  banner_campaign varchar(150) NOT NULL default '',
+  PRIMARY KEY  (banner_id)
+) TYPE=MyISAM;";
+if(!mysql_query($banner_table)){	$error .= "There was a problem creating the <b>banner</b> mySQL table ...<br />"; }
+
+$cache_table = "CREATE TABLE ".$mySQLprefix."cache (
+  cache_url varchar(200) NOT NULL default '',
+  cache_datestamp int(10) unsigned NOT NULL default '0',
+  cache_data longtext NOT NULL
+) TYPE=MyISAM;";
+if(!mysql_query($cache_table)){	$error .= "There was a problem creating the <b>cache</b> mySQL table ...<br />"; }
+
 $chatbox_table = "CREATE TABLE ".$mySQLprefix."chatbox (
   cb_id int(10) unsigned NOT NULL auto_increment,
   cb_nick varchar(20) NOT NULL default '',
@@ -575,7 +602,7 @@ if(!mysql_query($comments_table)){	$error .= "There was a problem creating the <
 
 
 $content_table = "CREATE TABLE ".$mySQLprefix."content (
-  content_id int(10) unsigned NOT NULL auto_increment,
+ content_id int(10) unsigned NOT NULL auto_increment,
   content_heading tinytext NOT NULL,
   content_subheading tinytext NOT NULL,
   content_content text NOT NULL,
@@ -583,7 +610,7 @@ $content_table = "CREATE TABLE ".$mySQLprefix."content (
   content_datestamp int(10) unsigned NOT NULL default '0',
   content_author smallint(5) unsigned NOT NULL default '0',
   content_comment tinyint(3) unsigned NOT NULL default '0',
-  content_parent int(10) unsigned NOT NULL default '0',
+  content_summary text NOT NULL,
   content_type tinyint(3) unsigned NOT NULL default '0',
   PRIMARY KEY  (content_id)
 ) TYPE=MyISAM;";
@@ -596,6 +623,51 @@ $core_table = "CREATE TABLE ".$mySQLprefix."core (
   PRIMARY KEY  (e107_name)
 ) TYPE=MyISAM;";
 if(!mysql_query($core_table)){	$error .= "There was a problem creating the <b>core</b> mySQL table ...<br />"; }
+
+
+$download_table = "CREATE TABLE ".$mySQLprefix."download (
+  download_id int(10) unsigned NOT NULL auto_increment,
+  download_name varchar(100) NOT NULL default '',
+  download_url varchar(150) NOT NULL default '',
+  download_author varchar(100) NOT NULL default '',
+  download_author_email varchar(200) NOT NULL default '',
+  download_author_website varchar(200) NOT NULL default '',
+  download_description text NOT NULL,
+  download_filesize varchar(20) NOT NULL default '',
+  download_requested int(10) unsigned NOT NULL default '0',
+  download_category int(10) unsigned NOT NULL default '0',
+  download_active tinyint(3) unsigned NOT NULL default '0',
+  download_datestamp int(10) unsigned NOT NULL default '0',
+  download_thumb varchar(150) NOT NULL default '',
+  download_image varchar(150) NOT NULL default '',
+  PRIMARY KEY  (download_id),
+  UNIQUE KEY download_name (download_name)
+) TYPE=MyISAM;";
+if(!mysql_query($download_table)){	$error .= "There was a problem creating the <b>download</b> mySQL table ...<br />"; }
+
+
+$download_category_table = "CREATE TABLE ".$mySQLprefix."download_category (
+  download_category_id int(10) unsigned NOT NULL auto_increment,
+  download_category_name varchar(100) NOT NULL default '',
+  download_category_description text NOT NULL,
+  download_category_icon varchar(100) NOT NULL default '',
+  download_category_parent int(10) unsigned NOT NULL default '0',
+  download_category_class varchar(100) NOT NULL default '',
+  PRIMARY KEY  (download_category_id)
+) TYPE=MyISAM;";
+if(!mysql_query($download_category_table)){	$error .= "There was a problem creating the <b>download_category</b> mySQL table ...<br />"; }
+
+
+$rate_table = "CREATE TABLE ".$mySQLprefix."rate (
+  rate_id int(10) unsigned NOT NULL auto_increment,
+  rate_table varchar(100) NOT NULL default '',
+  rate_itemid int(10) unsigned NOT NULL default '0',
+  rate_rating int(10) unsigned NOT NULL default '0',
+  rate_votes int(10) unsigned NOT NULL default '0',
+  rate_voters text NOT NULL,
+  PRIMARY KEY  (rate_id)
+) TYPE=MyISAM;";
+if(!mysql_query($rate_table)){	$error .= "There was a problem creating the <b>rate</b> mySQL table ...<br />"; }
 
 
 $forum_table = "CREATE TABLE ".$mySQLprefix."forum (
@@ -680,10 +752,11 @@ $link_table = "CREATE TABLE ".$mySQLprefix."links (
 
 
 $menus_table = "CREATE TABLE ".$mySQLprefix."menus (
-  menu_id int(10) unsigned NOT NULL auto_increment,
+ menu_id int(10) unsigned NOT NULL auto_increment,
   menu_name varchar(100) NOT NULL default '',
   menu_location tinyint(3) unsigned NOT NULL default '0',
   menu_order tinyint(3) unsigned NOT NULL default '0',
+  menu_class tinyint(3) unsigned NOT NULL default '0',
   PRIMARY KEY  (menu_id)
 ) TYPE=MyISAM;";
 if(!mysql_query($menus_table)){	$error .= "There was a problem creating the <b>menus</b> mySQL table ...<br />"; }
@@ -876,19 +949,21 @@ $datestamp = time();
 mysql_query("INSERT INTO ".$mySQLprefix."content VALUES (0, '$article_heading', '$article_subheading', '$article', '$datestamp', 0, 0) ");
 mysql_query("INSERT INTO ".$mySQLprefix."news VALUES (0, 'Welcome to e107', '$welcome_message', '', '$datestamp', '0', '', '', '1', 1, 0, 0, 0) ");
 mysql_query("INSERT INTO ".$mySQLprefix."news_category VALUES (0, 'Misc', 'images/bullet1.gif') ");
-mysql_query("INSERT INTO ".$mySQLprefix."poll VALUES (0, '$datestamp', 0, 1, 'So what do you think of e107?', 'I\'m not impressed', 'It\'s not bad but other content management systems are a lot better', 'It\'s good', 'I love it!', 'Grah I hate polls', 'What\'s e107 anyway?', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', 1) ");
+mysql_query("INSERT INTO ".$mySQLprefix."poll VALUES (0, '$datestamp', 0, 1, 'So what do you think of e107?', 'I\'m not impressed', 'It\'s not bad but I\'ve seen better', 'It\'s good', 'I love it!', 'Grah I hate polls', 'What\'s e107 anyway?', '', '', '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', 1) ");
 mysql_query("INSERT INTO ".$mySQLprefix."links VALUES (0, 'Home', 'index.php', '', '', 1, 0, 0, 0) ");
 mysql_query("INSERT INTO ".$mySQLprefix."links VALUES (0, 'Links', 'links.php', '', '', 1, 0, 0, 0) ");
+mysql_query("INSERT INTO ".$mySQLprefix."links VALUES (0, 'Forum', 'forum.php', '', '', 1, 0, 0, 0) ");
+mysql_query("INSERT INTO ".$mySQLprefix."links VALUES (0, 'Downloads', 'download.php', '', '', 1, 0, 0, 0) ");
+mysql_query("INSERT INTO ".$mySQLprefix."links VALUES (0, 'Members', 'user.php', '', '', 1, 0, 0, 0) ");
 mysql_query("INSERT INTO ".$mySQLprefix."links VALUES (0, 'Submit News', 'submitnews.php', '', '', 1, 0, 0, 0) ");
 mysql_query("INSERT INTO ".$mySQLprefix."links VALUES (0, 'e107.org', 'http://e107.org', 'Home of the e107 website script', 'button.png', 2, 0, 0, 0) ");
-mysql_query("INSERT INTO ".$mySQLprefix."links VALUES (0, 'Forum', 'forum.php', '', '', 1, 0, 0, 0) ");
 mysql_query("INSERT INTO ".$mySQLprefix."links VALUES (0, 'Stats', 'stats.php', '', '', 1, 0, 0, 0) ");
-mysql_query("INSERT INTO ".$mySQLprefix."links VALUES (0, 'Members', 'user.php', '', '', 1, 0, 0, 0) ");
+
 
 $e107['e107_author'] = "Steve Dunstan (jalist)";
 $e107['e107_url'] = "http://e107.org";
-$e107['e107_version'] = "v5.4";
-$e107['e107_build'] = "beta1";
+$e107['e107_version'] = "v0.547beta";
+$e107['e107_build'] = "";
 $e107['e107_datestamp'] = time();
 $tmp = serialize($e107);
 mysql_query("INSERT INTO ".$mySQLprefix."core VALUES ('e107', '$tmp') ");
@@ -933,20 +1008,21 @@ $pref['meta_tag'][1] = "";
 $pref['user_reg_veri'][1] = "1";
 $tmp = serialize($pref);
 mysql_query("INSERT INTO ".$mySQLprefix."core VALUES ('pref', '$tmp') ");
+mysql_query("INSERT INTO ".$mySQLprefix."banner VALUES (0, 'e107', 'e107login', 'e107password', 'e107.jpg', 'http://e107.org', 0, 0, 0, 1, 0, 0, '', 'campaign_one') ");
 mysql_query("INSERT INTO ".$mySQLprefix."link_category VALUES (0, 'Main', 'Any links with this category will be displayed in main navigation bar.')");
 mysql_query("INSERT INTO ".$mySQLprefix."link_category VALUES (0, 'Misc', 'Miscellaneous links.')");
 mysql_query("INSERT INTO ".$mySQLprefix."wmessage VALUES ('1', 'This text (if activated) will appear at the top of your front page all the time.', '0')");
 mysql_query("INSERT INTO ".$mySQLprefix."wmessage VALUES ('2', 'Member message ----- This text (if activated) will appear at the top of your front page all the time - only logged in members will see this.', '0')");
 mysql_query("INSERT INTO ".$mySQLprefix."wmessage VALUES ('3', 'Administrator message ----- This text (if activated) will appear at the top of your front page all the time - only logged in administrators will see this.', '0')");
-mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'login_menu', 1, 2)");
-mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'chatbox_menu', 1, 3)");
-mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'sitebutton_menu', 1, 4)");
-mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'online_menu', 1, 5)");
-mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'compliance_menu', 1, 6)");
-mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'articles_menu', 2, 1)");
-mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'poll_menu', 2, 2)");
-mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'headlines_menu', 2, 3)");
-mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'backend_menu', 2, 4)");
+mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'login_menu', 1, 2, 0)");
+mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'chatbox_menu', 1, 3, 0)");
+mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'sitebutton_menu', 1, 4, 0)");
+mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'online_menu', 1, 5, 0)");
+mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'compliance_menu', 1, 6, 0)");
+mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'articles_menu', 2, 1, 0)");
+mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'poll_menu', 2, 2, 0)");
+mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'headlines_menu', 2, 3, 0)");
+mysql_query("INSERT INTO ".$mySQLprefix."menus VALUES (0, 'backend_menu', 2, 4, 0)");
 mysql_query("INSERT INTO ".$mySQLprefix."userclass_classes VALUES (1, 'PRIVATEMENU', 'Grants access to private menu items')");
 mysql_query("INSERT INTO ".$mySQLprefix."userclass_classes VALUES (2, 'PRIVATEFORUM1', 'Example private forum class')");
 mysql_close();

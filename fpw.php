@@ -21,10 +21,8 @@ if($qs != ""){
 	if($user_sess != ""){
 		$newpw = md5($user_sess);
 		$sql -> db_Update("user", "user_password='$newpw', user_sess='' WHERE user_id='$user_id' ");
-		if($user_admin == 1){
-			$sql -> db_Update("admin", "admin_password='$newpw' WHERE admin_name='$user_name' ");
-		}
 		setcookie('userkey', '', time()+3600*24*30, '/', '', 0);
+		$_SESSION["userkey"] = "";
 		$set = TRUE;
 	}
 }
@@ -32,7 +30,7 @@ if($qs != ""){
 require_once(HEADERF);
 
 if($set == TRUE){
-	$ns -> tablerender($caption, "<div style=\"text-align:center\">".LAN_217."</div>");
+	$ns -> tablerender($caption, "<div style='text-align:center'>".LAN_217."</div>");
 	require_once(FOOTERF);
 	exit;
 }
@@ -52,44 +50,49 @@ if(IsSet($_POST['pwsubmit'])){
 
 		$sql -> db_Update("user", "user_sess='$newpw' WHERE user_name='".$_POST['name']."' AND user_email='".$_POST['email']."' ");
 
-		$message = LAN_215.$newpw."\n\n".LAN_216."\n\n".SITEURL."/fpw.php?".$user_id;
-
-		if(@mail($_POST['email'], "Password reset from ".SITENAME, $message, "From: reset@".SITENAME."\r\n"."Reply-To: -null-\r\n"."X-Mailer: PHP/" . phpversion())){
-			$text = "<div style=\"text-align:center\">New password sent to ".$_POST['email'].", please follow the instructions in the email to validate your password.</div>";
+		$message = LAN_215.$newpw."\n\n".LAN_216."\n\n".SITEURL."fpw.php?".$user_id;
+		
+		if(file_exists(e_BASE."plugins/smtp.php")){
+			require_once(e_BASE."plugins/smtp.php");
+			smtpmail($_POST['email'], "Password reset from ".SITENAME, $message, "From: reset@".SITENAME."\r\n"."Reply-To: -null-\r\n"."X-Mailer: PHP/" . phpversion());
 		}else{
-			$text = "<div style=\"text-align:center\">Sorry - unable to send email.</div>";
+			if(@mail($_POST['email'], "Password reset from ".SITENAME, $message, "From: reset@".SITENAME."\r\n"."Reply-To: -null-\r\n"."X-Mailer: PHP/" . phpversion())){
+				$text = "<div style='text-align:center'>New password sent to ".$_POST['email'].", please follow the instructions in the email to validate your password.</div>";
+			}else{
+				$text = "<div style='text-align:center'>Sorry - unable to send email.</div>";
+			}
 		}
 		$ns -> tablerender("Password Reset", $text);
 		require_once(FOOTERF);
 		exit;
 	}else{
 		$text = LAN_213;
-		$ns -> tablerender(LAN_214, "<div style=\"text-align:center\">".$text."</div>");
+		$ns -> tablerender(LAN_214, "<div style='text-align:center'>".$text."</div>");
 	}
 }
 
-$text = "<div style=\"text-align:center\">
-<form method=\"post\" action=\"".e_SELF."\">\n
-<table style=\"width:70%\">
+$text = "<div style='text-align:center'>
+<form method='post' action='".e_SELF."'>\n
+<table style='width:70%'>
 <tr>
-<td style=\"width:20%\">".LAN_7."</td>
-<td style=\"width:80%\">
-<input class=\"tbox\" type=\"text\" name=\"name\" size=\"60\" value=\"\" maxlength=\"100\" />
+<td style='width:20%'>".LAN_7."</td>
+<td style='width:80%'>
+<input class='tbox' type='text' name='name' size='60' value='' maxlength='100' />
 </td>
 </tr>
 
 <tr>
-<td style=\"width:20%\">".LAN_112."</td>
-<td style=\"width:80%\">
-<input class=\"tbox\" type=\"text\" name=\"email\" size=\"60\" value=\"\" maxlength=\"100\" />
+<td style='width:20%'>".LAN_112."</td>
+<td style='width:80%'>
+<input class='tbox' type='text' name='email' size='60' value='' maxlength='100' />
 </td>
 </tr>
 
 </tr>
-<tr style=\"vertical-align:top\"> 
-<td colspan=\"2\"  style=\"text-align:center\">
+<tr style='vertical-align:top'> 
+<td colspan='2'  style='text-align:center'>
 <br />
-<input class=\"button\" type=\"submit\" name=\"pwsubmit\" value=\"".LAN_156."\" />
+<input class='button' type='submit' name='pwsubmit' value='".LAN_156."' />
 </table>
 </form>
 </div>";

@@ -36,9 +36,9 @@ if($table == "news"){
 	}
 	$news_datestamp = $con -> convert_date($news_datestamp, "long");
 
-	$text = "<font style=\"font-size: 11px; color: black; font-family: tahoma, verdana, arial, helvetica; text-decoration: none\">
-	<div style=\"text-align:center\">
-	<img src=\"themes/shared/logo.png\" alt=\"Logo\" />
+	$text = "<font style='font-size: 11px; color: black; font-family: tahoma, verdana, arial, helvetica; text-decoration: none'>
+	<div style='text-align:center'>
+	<img src='themes/shared/logo.png' alt='Logo' />
 	</div>
 	<hr />
 	<br />
@@ -57,7 +57,7 @@ if($table == "news"){
 	$text .= "<br /><br /><hr />".
 	LAN_303.SITENAME."
 	<br />
-	( ".e_HTTP."comment.php?".$news_id." )
+	( http://".$_SERVER['HTTP_HOST'].e_HTTP."comment.php?".$news_id." )
 	</font>";
 	
 }else{
@@ -68,9 +68,9 @@ if($table == "news"){
 	$sql -> db_Select("admin", "*", "admin_id='$content_author' ");
 	list($a_id, $a_name) = $sql-> db_Fetch();
 	$content_datestamp = $con -> convert_date($content_datestamp, "long");
-	$text = "<font style=\"FONT-SIZE: 11px; COLOR: black; FONT-FAMILY: Tahoma, Verdana, Arial, Helvetica; TEXT-DECORATION: none\">
-	<div style=\"text-align:center\">
-	<img src=\"themes/shared/logo.png\" alt=\"Logo\" />
+	$text = "<font style='FONT-SIZE: 11px; COLOR: black; FONT-FAMILY: Tahoma, Verdana, Arial, Helvetica; TEXT-DECORATION: none'>
+	<div style='text-align:center'>
+	<img src='themes/shared/logo.png' alt='Logo' />
 	</div>
 	<hr />
 	<br />
@@ -85,7 +85,7 @@ if($table == "news"){
 	<br /><br /><hr />
 	".LAN_306.SITENAME."
 	<br />
-	(".e_HTTP."article.php?".$content_id.".0)
+	( http://".$_SERVER['HTTP_HOST'].e_HTTP."article.php?".$content_id.".0 )
 	</font>";
 }
 echo $text;

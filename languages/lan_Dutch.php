@@ -303,5 +303,27 @@ define(LAN_324, "Je bericht is succesvol geplaatst.");
 define(LAN_325, "Klik hier om je bericht te bekijken");
 define(LAN_326, "Klik hier om terug te keren naar het forum");
 define(LAN_327, "Controleer");
+define(LAN_328, "Settings");   // "Settings" as used in default-header.
+define(LAN_328, "Tijd");
+define(LAN_329, "Uitspraak van het moment");
+
+define("LAN_354", "(Afgeschermd)");
+define("LAN_355", "Nog geen downloads in deze categorie");
+define("LAN_356", "Totale grootte bestanden: ");
+define("LAN_357", "Bestanden gedownload: ");
+define("LAN_358", "Bestanden beschikbaar: ");
+define("LAN_359", "Waardeer deze download");
+define("LAN_360", "Bedankt voor de waardering");
+define("LAN_361", "downloads van"); (as in "5 downloads from 8 files")
+define("LAN_362", "bestanden");
+define("LAN_363", "Downloads");
+define("LAN_364", "Sorteer op");
+define("LAN_365", "Datum");
+define("LAN_366", "Bestandsgrootte");
+define("LAN_367", "Download");
+define("LAN_368", "Nog geen downloads,kom hier later terug");
+define("LAN_369", "Nog geen waardering");
+define("LAN_370", "Waardering: ");
+
 
 ?>
