@@ -95,7 +95,7 @@ If(IsSet($_POST['update_article'])){
                 $content_content = $aj -> formtpa($_POST['data'], "admin");
                 $content_summary = $aj -> formtpa($_POST['content_summary'], "admin");
                 $content_author = ($_POST['content_author'] && $_POST['content_author'] != ARLAN_84 ? $_POST['content_author']."^".$_POST['content_author_email'] : ADMINID);
-                $sql -> db_Update("content", " content_heading='$content_heading', content_subheading='$content_subheading', content_content='$content_content', content_parent='".$_POST['category']."', content_datestamp='".time()."', content_author='$content_author', content_comment='".$_POST['content_comment']."', content_summary='$content_summary', content_pe_icon=".$_POST['add_icons'].", content_class='{$_POST['a_class']}' WHERE content_id='".$_POST['content_id']."'");
+                $sql -> db_Update("content", " content_heading='$content_heading', content_subheading='$content_subheading', content_content='$content_content', content_parent='".$_POST['category']."', content_datestamp='".time()."', content_author='$content_author', content_comment='".$_POST['content_comment']."', content_summary='$content_summary', content_type='0', content_pe_icon=".$_POST['add_icons'].", content_class='{$_POST['a_class']}' WHERE content_id='".$_POST['content_id']."'");
                 unset($content_heading, $content_subheading, $data, $content_summary);
                 $message = ARLAN_2;
                 unset($action);
@@ -109,7 +109,11 @@ if(IsSet($_POST['updateoptions'])){
         $pref['article_submit'] = $_POST['article_submit'];
         $pref['article_submit_class'] = $_POST['article_submit_class'];
         save_prefs();
-        $sql -> db_Update("links", "link_class=".($pref['article_submit'] ? "0" : "255")." WHERE link_url='subcontent.php?article' ");
+		if($pref['article_submit'] ){
+			$sql -> db_Update("links", "link_class=".$pref['article_submit_class']." WHERE link_url='subcontent.php?article' ");
+		}else{
+			$sql -> db_Update("links", "link_class='255' WHERE link_url='subcontent.php?article' ");
+		}
         $message = ARLAN_92;
 }
 
@@ -144,6 +148,7 @@ if(IsSet($_POST['preview'])){
         $data = $aj -> formtparev(str_replace("../", "", $_POST['data']));
         $content_summary = $aj -> formtparev($_POST['content_summary']);
         $content_parent = $_POST['category'];
+		$content_class = $_POST['a_class'];
 }
 
 
@@ -310,16 +315,12 @@ if($action == "create"){
         }
 
         require_once(e_HANDLER."userclass_class.php");
+        	
         $text = "<div style='text-align:center'>
         ".$rs -> form_open("post", e_SELF."?".e_QUERY."", "dataform")."
 
         <table style='width:95%' class='fborder'>
-        <tr>
-        <td colspan='2' style='text-align:center' class='forumheader2'>
-        <input class='button' type='button' onClick='openwindow()'  value='".ARLAN_73."' />
-        </td>
-        </tr>
-
+        
         <tr>
         <td style='width:20%; vertical-align:top' class='forumheader3'>".ARLAN_74.":</td>
         <td style='width:80%' class='forumheader3'>";
@@ -337,9 +338,13 @@ if($action == "create"){
         <tr>
         <td style='width:20%; vertical-align:top' class='forumheader3'>".ARLAN_82.":<br /><span class='smalltext'>(".ARLAN_83.")</span></td>
         <td style='width:80%' class='forumheader3'>
-        <input class='tbox' type='text' name='content_author' size='60' value='".($content_author ? $content_author : ARLAN_84)."' maxlength='100' ".($content_author ? "" : "onFocus=\"document.dataform.content_author.value='';\"")." /><br />
-        <input class='tbox' type='text' name='content_author_email' size='60' value='".($content_author_email ? $content_author_email : ARLAN_85)."' maxlength='100' ".($content_author_email ? "" : "onFocus=\"document.dataform.content_author_email.value='';\"")." /><br />
-        </td>
+                <a href=\"javascript:void(0);\" onclick=\"expandit(this);\" >".ARLAN_100."</a>\n
+        <span style=\"display: none;\" >
+                <br /><br />
+                <input class='tbox' type='text' name='content_author' size='60' value='".($content_author ? $content_author : ARLAN_84)."' maxlength='100' ".($content_author ? "" : "onFocus=\"if(document.dataform.content_author.value=='".ARLAN_84."'){document.dataform.content_author.value='';}\"")." /><br />
+        <input class='tbox' type='text' name='content_author_email' size='60' value='".($content_author_email ? $content_author_email : ARLAN_85)."' maxlength='100' ".($content_author_email ? "" : "onFocus=\"if(document.dataform.content_author_email.value=='".ARLAN_85."'){document.dataform.content_author_email.value='';}\"")." /><br />
+        </span>
+                </td>
         </tr>
 
         <tr>

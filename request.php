@@ -23,15 +23,11 @@ if(!is_numeric(e_QUERY)){
                 $row = $sql -> db_Fetch(); extract($row);
                 $type = "file";
                 $id = $download_id;
-    //    }else if(file_exists(e_FILE."downloads/".e_QUERY)){
-    }else if(file_exists($DOWNLOADS_DIRECTORY.e_QUERY)){
-
-             //   header("location:".e_FILE."downloads/".e_QUERY);
-                send_file(e_QUERY);
+        }else if(file_exists($DOWNLOADS_DIRECTORY.e_QUERY)){
+                send_file($DOWNLOADS_DIRECTORY.e_QUERY);
                 exit;
         }else if(strstr(e_QUERY, "http") || strstr(e_QUERY, "ftp")){
-              //  header("location:".e_QUERY);
-                 send_file(e_QUERY);
+                header("location:".e_QUERY);
                 exit;
         }
 }else{
@@ -68,20 +64,17 @@ if($type == "file"){
                                 exit;
                         }
                         if(strstr($download_url, "http") || strstr($download_url, "ftp")){
-                            //    header("location:".$download_url);
-                                send_file($download_url);
+                                header("location:".$download_url);
                                 exit;
                         }else{
-                          //      if(file_exists(e_FILE."downloads/".$download_url)){
                                 if(file_exists($DOWNLOADS_DIRECTORY.$download_url)){
-                                  //      header("location:".e_FILE."downloads/".$download_url);
-                                          send_file($download_url);
+                                        send_file($DOWNLOADS_DIRECTORY.$download_url);
                                         exit;
 
 
 
                                 }else if(file_exists(e_FILE."public/".$download_url)){
-                                        header("location:".e_FILE."public/".$download_url);
+                                        send_file(e_FILE."public/".$download_url);
                                         exit;
                                 }
                         }
@@ -129,7 +122,11 @@ if(eregi("http", $image)){
                 echo "<br /><a href='javascript:history.back(1)'>Back</a>";
                 require_once(FOOTERF);
         }else{
-                echo "<img src='".e_FILE."public/".$image."' alt='' />";
+                if(is_file(e_FILE."public/".$image)){
+               echo "<img src='".e_FILE."public/".$image."' alt='' />";
+               }else{
+               echo "Not Found";
+               }
                 exit;
         }
 }
@@ -139,14 +136,13 @@ if(eregi("http", $image)){
 // File retrieval function. by Cam.
 
 function send_file($file){
-      global $DOWNLOADS_DIRECTORY;
-      $fullpath = $DOWNLOADS_DIRECTORY . $file;
+      $fullpath = $file;
       $file = basename($file);
         if (strstr($_SERVER['HTTP_USER_AGENT'], "MSIE")){
-        $file = preg_replace('/\./', '%2e', $file,substr_count($file, '.') - 1);
+       $file = preg_replace('/\./', '%2e', $file,substr_count($file, '.') - 1);
         }
 
-      @set_time_limit(600);
+   //   @set_time_limit(600);
       if(file_exists($fullpath)){
        header("Cache-control: private");
        header('Pragma: no-cache');
@@ -162,6 +158,7 @@ function send_file($file){
        fclose($fd);
       }else{
       header("location: ".e_BASE."index.php");
+   //     echo "File Not Found";
       }
 }
 ?>

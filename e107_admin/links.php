@@ -40,6 +40,7 @@ if($action == "dec"){
 	$location = $qs[3];
 	$sql -> db_Update("links", "link_order=link_order-1 WHERE link_order='".($link_order+1)."' AND link_category='$location' ");
 	$sql -> db_Update("links", "link_order=link_order+1 WHERE link_id='$linkid' AND link_category='$location' ");
+	clear_cache("sitelinks");
 	header("location: links.php?order");
 }
 
@@ -51,6 +52,7 @@ if($action == "inc"){
 	$location = $qs[3];
 	$sql -> db_Update("links", "link_order=link_order+1 WHERE link_order='".($link_order-1)."' AND link_category='$location' ");
 	$sql -> db_Update("links", "link_order=link_order-1 WHERE link_id='$linkid' AND link_category='$location' ");
+	clear_cache("sitelinks");
 	header("location: links.php?order");
 }
 
@@ -72,6 +74,7 @@ if(IsSet($_POST['update_order'])){
 		$tmp = explode(".", $id);
 		$sql -> db_Update("links", "link_order=".$tmp[1]." WHERE link_id=".$tmp[0]);
 	}
+	clear_cache("sitelinks");
 	$linkpost -> show_message(LCLAN_6);
 }
 
@@ -90,6 +93,7 @@ if($action == "order"){
 
 if($action == "main" && $sub_action == "confirm"){
 	if($sql -> db_Delete("links", "link_id='$id' ")){
+		clear_cache("sitelinks");
 		$linkpost -> show_message(LCLAN_53." #".$id." ".LCLAN_54);
 	}
 }
@@ -240,7 +244,8 @@ class links{
 		if($action != "opt"){
 			$text .= "<a href='".e_SELF."?opt'><div class='border'><div class='forumheader'><img src='".e_IMAGE."generic/location.png' style='vertical-align:middle; border:0' alt='' /> ".LCLAN_67."</div></div></a>";
 		}
-
+		
+		$text .= "<a href='submenusgen.php'><div class='border'><div class='forumheader'><img src='".e_IMAGE."generic/location.png' style='vertical-align:middle; border:0' alt='' /> ".LCLAN_83."</div></div></a>";
 
 		$text .= "</div>";
 		$ns -> tablerender(LCLAN_68, $text);
@@ -344,6 +349,12 @@ class links{
 			$text .= "<a href='javascript:addtext(\"$icon\")'><img src='".e_IMAGE."link_icons/".$icon."' style='border:0' alt='' /></a> ";
 		}
 
+// 0 = same window
+// 1 = _blank
+// 2 = _parent
+// 3 = _top
+// 4 = miniwindow
+
 		$text .= "</td>
 		</tr>
 		<tr>
@@ -351,7 +362,6 @@ class links{
 		<td style='width:70%' class='forumheader3'>
 		<select name='linkopentype' class='tbox'>".
 		($link_open == 0 ? "<option value='0' selected>".LCLAN_20."</option>" : "<option value='0'>".LCLAN_20."</option>").
-
 		($link_open == 1 ? "<option value='1' selected>".LCLAN_21."</option>" : "<option value='1'>".LCLAN_21."</option>").
 		($link_open == 2 ? "<option value='2' selected>".LCLAN_22."</option>" : "<option value='2'>".LCLAN_22."</option>").
 		($link_open == 3 ? "<option value='3' selected>".LCLAN_23."</option>" : "<option value='3'>".LCLAN_23."</option>").
@@ -359,7 +369,6 @@ class links{
 		</select>
 		</td>
 		</tr>
-
 		<tr>
 		<td style='width:30%' class='forumheader3'>".LCLAN_25.":<br /><span class='smalltext'>(".LCLAN_26.")</span></td>
 		<td style='width:70%' class='forumheader3'>".r_userclass("link_class",$link_class)."
@@ -396,9 +405,11 @@ class links{
 
 		if($id && $sub_action != "sn"){
 			$sql -> db_Update("links", "link_name='$link_name', link_url='$link_url', link_description='$link_description', link_button= '$link_button', link_category='".$_POST['cat_id']."', link_open='".$_POST['linkopentype']."', link_class='".$_POST['link_class']."' WHERE link_id='$id'");
+			clear_cache("sitelinks");
 			$this->show_message(LCLAN_3);
 		}else{
 			$sql -> db_Insert("links", "0, '$link_name', '$link_url', '$link_description', '$link_button', '".$_POST['cat_id']."', '".($link_t+1)."', '0', '".$_POST['linkopentype']."', '".$_POST['link_class']."'");
+			clear_cache("sitelinks");
 			$this->show_message(LCLAN_2);
 		}
 		if($sub_action == "sn"){
@@ -625,5 +636,4 @@ class links{
 
 
 }
-
 

@@ -60,32 +60,12 @@ if(IsSet($_POST['updateprefs'])){
         $pref['adminstyle'] = $_POST['adminstyle'];
         $pref['membersonly_enabled'] = $_POST['membersonly_enabled'];
         $pref['ssl_enabled'] = $_POST['ssl_enabled'];
-		$pref['search_restrict'] = $_POST['search_restrict'];
+                $pref['search_restrict'] = $_POST['search_restrict'];
 
-        // Signup.
-          $pref['signup_real'] = $_POST['signup_real'];
-        $pref['signup_url'] = $_POST['signup_url'];
-        $pref['signup_icq'] = $_POST['signup_icq'];
-        $pref['signup_aim'] = $_POST['signup_aim'];
-        $pref['signup_msn'] = $_POST['signup_msn'];
-        $pref['signup_dob'] = $_POST['signup_dob'];
-        $pref['signup_loc'] = $_POST['signup_loc'];
-        $pref['signup_sig'] = $_POST['signup_sig'];
-        $pref['signup_avt'] = $_POST['signup_avt'];
-        $pref['signup_zone'] = $_POST['signup_zone'];
+        // Signup. ====================================================
 
         $pref['signup_pass_len'] = $_POST['signup_pass_len'];
 
-        $pref['signup_real_req'] = $_POST['signup_real_req'];
-        $pref['signup_url_req'] = $_POST['signup_url_req'];
-        $pref['signup_icq_req'] = $_POST['signup_icq_req'];
-        $pref['signup_aim_req'] = $_POST['signup_aim_req'];
-        $pref['signup_msn_req'] = $_POST['signup_msn_req'];
-        $pref['signup_dob_req'] = $_POST['signup_dob_req'];
-        $pref['signup_loc_req'] = $_POST['signup_loc_req'];
-        $pref['signup_sig_req'] = $_POST['signup_sig_req'];
-        $pref['signup_avt_req'] = $_POST['signup_avt_req'];
-        $pref['signup_zone_req'] = $_POST['signup_zone_req'];
 
         // Create prefs to custom fields.
         if($sql -> db_Select("core", " e107_value", " e107_name='user_entended'")){
@@ -103,13 +83,21 @@ if(IsSet($_POST['updateprefs'])){
             }
         }
 
+                $signup_options = "";
+        for ($i=0; $i<count($signup_title); $i++) {
+        $valuesignup =  $signup_name[$i];
+        $signup_options .= $_POST[$valuesignup];
+        $signup_options .= $i < (count($signup_title)-1)?".":"";
+        }
+        $pref['signup_options'] = $signup_options;
 
+        // =========================
 
 
 
         $pref['signcode'] = $_POST['signcode'];
-         $pref['logcode'] = $_POST['logcode'];
-
+        $pref['logcode'] = $_POST['logcode'];
+        $pref['no_rightclick'] = $_POST['no_rightclick'];
 
 
 
@@ -120,13 +108,7 @@ if(IsSet($_POST['updateprefs'])){
         $pref['smtp_username'] = $aj -> formtpa($_POST['smtp_username']);
         $pref['smtp_password'] = $aj -> formtpa($_POST['smtp_password']);
 
-        $signup_options = "";
-        for ($i=0; $i<count($signup_title); $i++) {
-        $valuesignup =  $signup_name[$i];
-        $signup_options .= $_POST[$valuesignup];
-        $signup_options .= $i < (count($signup_title)-1)?".":"";
-        }
-        $pref['signup_options'] = $signup_options;
+
 
 
         $sql -> db_Delete("cache");
@@ -546,9 +528,9 @@ $text .="
 <input type='text' class='tbox' size='3' name='signup_pass_len' value='".$pref['signup_pass_len']."'>
 (".PRFLAN_78.") </td>
 </tr></table></div>";
-// Signup options.
 
 
+// Signup options ===========================.
 
 $text .= "
 <div style='text-align:center'><div class='caption' title='".PRFLAN_80."' title='".PRFLAN_80."' style='cursor:pointer;cursor:hand;text-align:left;border:1px solid black;width:95%' onClick=\"expandit(this)\">".PRFLAN_19."</div>
@@ -577,114 +559,6 @@ $text .= "
 
     }
 
-/*
-
-$text .="
-<tr>
-<td style='width:50%' class='forumheader3'>".CUSTSIG_2."</td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_real'] ? "<input type='checkbox' name='signup_real' value='1'  checked>" : "<input type='checkbox' name='signup_real' value='1'>")."
-</td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_real_req'] ? "<input type='checkbox' name='signup_real_req' value='1'  checked>" : "<input type='checkbox' name='signup_real_req' value='1'>")."
-</td>
-</tr>
-
-<tr>
-<td style='width:50%' class='forumheader3'>".CUSTSIG_3."</td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_url'] ? "<input type='checkbox' name='signup_url' value='1'  checked>" : "<input type='checkbox' name='signup_url' value='1'>")."
-</td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_url_req'] ? "<input type='checkbox' name='signup_url_req' value='1'  checked>" : "<input type='checkbox' name='signup_url_req' value='1'>")."
-</td>
-</tr>
-
-<tr>
-<td style='width:50%' class='forumheader3'>ICQ: </td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_icq'] ? "<input type='checkbox' name='signup_icq' value='1'  checked>" : "<input type='checkbox' name='signup_icq' value='1'>")."
-</td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_icq_req'] ? "<input type='checkbox' name='signup_icq_req' value='1'  checked>" : "<input type='checkbox' name='signup_icq_req' value='1'>")."
-</td>
-</tr>
-
-<tr>
-<td style='width:50%' class='forumheader3'>Aim: </td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_aim'] ? "<input type='checkbox' name='signup_aim' value='1'  checked>" : "<input type='checkbox' name='signup_aim' value='1'>")."
-</td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_aim_req'] ? "<input type='checkbox' name='signup_aim_req' value='1'  checked>" : "<input type='checkbox' name='signup_aim_req' value='1'>")."
-</td>
-</tr>
-
-<tr>
-<td style='width:50%' class='forumheader3'>MSN: </td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_msn'] ? "<input type='checkbox' name='signup_msn' value='1'  checked>" : "<input type='checkbox' name='signup_msn' value='1'>")."
-</td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_msn_req'] ? "<input type='checkbox' name='signup_msn_req' value='1'  checked>" : "<input type='checkbox' name='signup_msn_req' value='1'>")."
-</td>
-</tr>
-
-
-
-
-<tr>
-<td style='width:50%' class='forumheader3'>".CUSTSIG_4."</td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_dob'] ? "<input type='checkbox' name='signup_dob' value='1'  checked>" : "<input type='checkbox' name='signup_dob' value='1'>")."
-</td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_dob_req'] ? "<input type='checkbox' name='signup_dob_req' value='1'  checked>" : "<input type='checkbox' name='signup_dob_req' value='1'>")."
-</td>
-</tr>
-
-<tr>
-<td style='width:50%' class='forumheader3'>".CUSTSIG_5."</td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_loc'] ? "<input type='checkbox' name='signup_loc' value='1'  checked>" : "<input type='checkbox' name='signup_loc' value='1'>")."
-</td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_loc_req'] ? "<input type='checkbox' name='signup_loc_req' value='1'  checked>" : "<input type='checkbox' name='signup_loc_req' value='1'>")."
-</td>
-</tr>
-
-<tr>
-<td style='width:50%' class='forumheader3'>".CUSTSIG_6."</td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_sig'] ? "<input type='checkbox' name='signup_sig' value='1'  checked>" : "<input type='checkbox' name='signup_sig' value='1'>")."
-</td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_sig_req'] ? "<input type='checkbox' name='signup_sig_req' value='1'  checked>" : "<input type='checkbox' name='signup_sig_req' value='1'>")."
-</td>
-</tr>
-
-<tr>
-<td style='width:50%' class='forumheader3'>".CUSTSIG_7."</td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_avt'] ? "<input type='checkbox' name='signup_avt' value='1'  checked>" : "<input type='checkbox' name='signup_avt' value='1'>")."
-</td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_avt_req'] ? "<input type='checkbox' name='signup_avt_req' value='1'  checked>" : "<input type='checkbox' name='signup_avt_req' value='1'>")."
-</td>
-</tr>";
-
-$text .="
-<tr>
-<td style='width:50%' class='forumheader3'>".CUSTSIG_8."</td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_zone'] ? "<input type='checkbox' name='signup_zone' value='1'  checked>" : "<input type='checkbox' name='signup_zone' value='1'>")."
-</td>
-<td style='width:25%' class='forumheader3'>".
-($pref['signup_zone_req'] ? "<input type='checkbox' name='signup_zone_req' value='1'  checked>" : "<input type='checkbox' name='signup_zone_req' value='1'>")."
-</td>
-</tr>";
-
-*/
 // Custom Fields.
 
 if($sql -> db_Select("core", " e107_value", " e107_name='user_entended'")){
@@ -697,7 +571,7 @@ if($sql -> db_Select("core", " e107_value", " e107_name='user_entended'")){
         while(list($key, $u_entended) = each($user_entended)){
                 if($u_entended){
                                 $ut = explode("|",$u_entended);
-                                $u_name = ($ut[0] != "") ? $ut[0] : $u_entended;
+                                $u_name = ($ut[0] != "") ? str_replace("_"," ",$ut[0]): $u_entended;
                                 $u_type = $ut[1];
                                 $u_value = $ut[2];
 
@@ -805,6 +679,12 @@ if($search_restrict == 1){
 $text .= "</td>
 </tr>
 
+<tr>
+<td style='width:50%' class='forumheader3'>".PRFLAN_84.": </td>
+<td style='width:50%; text-align:right' class='forumheader3'>".
+($pref['no_rightclick'] ? "<input type='checkbox' name='no_rightclick' value='1'  checked>" : "<input type='checkbox' name='no_rightclick' value='1'>")."
+</td>
+</tr>
 
 </table></div>";
 

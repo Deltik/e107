@@ -53,6 +53,55 @@ $_uid = e_QUERY;
 require_once(HEADERF);
 
 if(IsSet($_POST['updatesettings'])){
+        // check prefs for required fields =================================.
+    $signupval = explode(".",$pref['signup_options']);
+    $signup_title = array(LAN_308,LAN_144,LAN_115,LAN_116,LAN_117,LAN_118,LAN_119,LAN_120,LAN_121,LAN_122);
+    $signup_name = array("realname","website","icq","aim","msn","birth_year","location","signature","image","timezone");
+
+	if($_POST['image'] && $size = getimagesize($_POST['image'])){
+		$avwidth = $size[0];
+		$avheight = $size[1];
+
+		if($avwidth > $pref['im_width']){
+			$avmsg .= LAN_USET_1."<br />".LAN_USET_2.": {$pref['im_width']}<br /><br />";
+		}
+		if($avheight > $pref['im_height']){
+			$avmsg .= LAN_USET_3."<br />".LAN_USET_4.": {$pref['im_height']}";
+		}
+		if($avmsg){
+			$_POST['image']="";
+			$ns -> tablerender(" ",$avmsg);
+		}
+	}
+	
+        for ($i=0; $i<count($signup_title); $i++) {
+                $postvalue = $signup_name[$i];
+                if($signupval[$i]==2 && $_POST[$postvalue] == ""){
+                    $error .= LAN_SIGNUP_6."<b>".$signup_title[$i]."</b>".LAN_SIGNUP_7."<br>";
+                }
+        };
+
+
+        if($sql -> db_Select("core", " e107_value", " e107_name='user_entended'")){
+                $row = $sql -> db_Fetch();
+                $user_entended = unserialize($row[0]);
+                $c=0;
+                $user_pref = unserialize($user_prefs);
+                while(list($key, $u_entended) = each($user_entended)){
+                    if($u_entended){
+
+                        if($pref['signup_ext'.$key] ==2 && $_POST[str_replace(" ", "_", $u_entended)] == ""){
+                        $ut = explode("|",$u_entended);
+                        $u_name = ($ut[0] != "") ? trim($ut[0]) : trim($u_entended);
+                        $error_ext = LAN_SIGNUP_6."<b>".$u_name."</b>".LAN_SIGNUP_7;
+                        $error .= $error_ext."<br>";
+                        }
+
+                    }
+                }
+        }
+
+        // ====================================================================
 
         if($_POST['password1'] != $_POST['password2']){
                 $error .= LAN_105."<br />";
@@ -141,9 +190,17 @@ list($user_id, $name, $user_password, $user_sess, $email, $website, $icq, $aim, 
 
 $signature = $aj -> editparse($signature);
 $tmp = explode("-", $birthday);
-$birth_day = $tmp[2];
-$birth_month = $tmp[1];
-$birth_year = $tmp[0];
+$birth_day = ($_POST['birth_day'])? $_POST['birth_day']:$tmp[2];
+$birth_month = ($_POST['birth_month'])? $_POST['birth_month']:$tmp[1];
+$birth_year = ($_POST['birth_year'])? $_POST['birth_year']:$tmp[0];
+$user_login = ($_POST['realname'])? $_POST['realname']:$user_login;
+$location = ($_POST['location'])? $_POST['location']:$location;
+$icq = ($_POST['icq'])? $_POST['icq']:$icq;
+$msn = ($_POST['msn'])? $_POST['msn']:$msn;
+$aim = ($_POST['aim'])? $_POST['aim']:$aim;
+$website = ($_POST['website'])? $_POST['website']:$website;
+$signature = ($_POST['signature'])? $_POST['signature']:$signature;
+$user_timezone = ($_POST['user_timezone'])? $_POST['user_timezone']:$user_timezone;
 
 require_once(e_HANDLER."form_handler.php");
 $rs = new form;
@@ -280,17 +337,8 @@ if($sql -> db_Select("core", " e107_value", " e107_name='user_entended'")){
 
         while(list($key, $u_entended) = each($user_entended)){
                 if($u_entended){
-                //        $text .= "<tr>
-                //        <td style='width:20%' class='forumheader3'>".$u_entended."</td>
-                //        <td style='width:80%' class='forumheader3'>
-                //        <input class='tbox' type='text' name='".$u_entended."' size='60' value='".$user_pref[$u_entended]."' maxlength='200' />
-                //        </td>
-               //         </tr>";
-                //        $c++;
-
-              require_once(e_HANDLER."user_extended.php");
-               $text .= user_extended_edit($u_entended,"forumheader3","left");
-
+                require_once(e_HANDLER."user_extended.php");
+                $text .= user_extended_edit($u_entended,"forumheader3","left");
                 }
         }
 }

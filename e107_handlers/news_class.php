@@ -27,7 +27,7 @@ class news{
 			$news_extended = $aj -> formtpa($news_extended);
 			if($sql -> db_Update("news", "news_title='$news_title', news_body='$news_body', news_extended='$news_extended', news_category='$cat_id', news_allow_comments='$news_allow_comments', news_start='$active_start', news_end='$active_end', news_class='$news_class', news_render_type='$news_rendertype' WHERE news_id='$news_id' ")){
 				$message = "News updated in database.";
-				$sql -> db_Delete("cache", "cache_url='news.php' ");
+             clear_cache("news.php");
 			}else{
 				$message = "<b>Error!</b> Was unable to update news item into database!</b>";
 			}
@@ -37,7 +37,7 @@ class news{
 			$news_extended = $aj -> formtpa($news_extended);
 			if($sql -> db_Insert("news", "0, '$news_title', '$news_body', '$news_extended', ".time().", ".USERID.", $cat_id, $news_allow_comments, $active_start, $active_end, '$news_class', '$news_rendertype' ")){
 				$message = "News entered into database.";
-				$sql -> db_Delete("cache", "cache_url='news.php' ");
+             clear_cache("news.php");
 			}else{
 				$message = "<b>Error!</b> Was unable to enter news item into database!</b>";
 			}
@@ -46,6 +46,11 @@ class news{
 	}
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 	function render_newsitem($news, $mode="default"){
+
+		if(function_exists("theme_render_newsitem")){
+			call_user_func("theme_render_newsitem",$news);
+			return;
+		}
 
 		global $NEWSSTYLE, $NEWSLISTSTYLE, $aj;
 		if(!is_object($aj)) $aj = new textparse;
@@ -104,9 +109,16 @@ on
 
 		$news_category = "<a href='".e_BASE."news.php?cat.".$category_id."'>".$category_name."</a>";
 		$news_author = "<a href='".e_BASE."user.php?id.".$admin_id."'>".$admin_name."</a>";
+		
+		require_once(e_HANDLER."emailprint_class.php");
+		$ep = new emailprint;
+		$textemail = $ep -> render_emailprint("news",$news_id, 1);
+		$textprint = $ep -> render_emailprint("news",$news_id, 2);
+		
+		/*
 		$etext = " <a href='".e_BASE."email.php?news.".$news_id."'><img src='".e_IMAGE."generic/friend.gif' style='border:0' alt='email to someone' title='email to someone'/></a>";
 		$ptext = " <a href='".e_BASE."print.php?news.".$news_id."'><img src='".e_IMAGE."generic/printer.gif' style='border:0' alt='printer friendly' title='printer friendly'/></a>";
-
+		*/
 		if(ADMIN && getperms("H")){
 			$adminoptions .= "<a href='".e_BASE.e_ADMIN."newspost.php?create.edit.".$news_id."'><img src='".e_IMAGE."generic/newsedit.png' alt='' style='border:0' /></a>\n";
 		}
@@ -138,9 +150,9 @@ on
 		$search[7] = "/\{NEWSCOMMENTS\}(.*?)/si";
 		$replace[7] = ($news_allow_comments ? COMMENTOFFSTRING : "<a href='".e_BASE."comment.php?$news_id'>".COMMENTLINK.$comment_total."</a>");
 		$search[8] = "/\{EMAILICON\}(.*?)/si";
-		$replace[8] = $etext;
+		$replace[8] = $textemail;
 		$search[9] = "/\{PRINTICON\}(.*?)/si";
-		$replace[9] = $ptext;
+		$replace[9] = $textprint;
 		$search[10] = "/\{NEWSID\}(.*?)/si";
 		$replace[10] = $news_id;
 

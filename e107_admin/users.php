@@ -31,11 +31,39 @@ if(e_QUERY){
 $from = ($from ? $from : 0);
 $amount = 50;
 
+
+if(IsSet($_POST['resend_mail'])){
+    $id = $_POST['resend_id'];
+    $key = $_POST['resend_key'];
+    $name = $_POST['resend_name'];
+   define("RETURNADDRESS", (substr(SITEURL, -1) == "/" ? SITEURL."signup.php?activate.".$id.".".$key : SITEURL."/signup.php?activate.".$id.".".$key));
+
+   $message = USRLAN_114.RETURNADDRESS.USRLAN_115." ".SITENAME."\n".SITEURL;
+   require_once(e_HANDLER."mail.php");
+   sendemail($_POST['resend_email'], USRLAN_113." ".SITENAME, $message);
+ //  echo str_replace("\n","<br>",$message);
+   $user -> show_message("Email Re-sent to: ".$name);
+   unset($id,$action,$sub_cation);
+}
+
+if(IsSet($_POST['test_mail'])){
+
+   require_once(e_HANDLER."mail.php");
+   $text = validatemail($_POST['test_email']);
+   $caption = $_POST['test_email']." - ";
+   $caption .= ($text[0]==TRUE)?"Successful": "Error";
+   $ns -> tablerender($caption, $text[1]);
+   unset($id,$action,$sub_cation);
+}
+
+
+
 if(IsSet($_POST['update_options'])){
         $pref['avatar_upload'] = (FILE_UPLOADS ? $_POST['avatar_upload'] : 0);
         $pref['im_width'] = $_POST['im_width'];
+        $pref['im_height'] = $_POST['im_height'];
         $pref['photo_upload'] = (FILE_UPLOADS ? $_POST['photo_upload'] : 0);
-		$pref['del_unv'] = $_POST['del_unv'];
+                $pref['del_unv'] = $_POST['del_unv'];
         save_prefs();
         $user -> show_message(USRLAN_1);
 }
@@ -114,6 +142,36 @@ if($action == "ban"){
         $sub_action = "user_id";
 }
 
+
+if($action == "resend"){
+     if($sql -> db_Select("user", "*", "user_id='$sub_action' ")){
+     $resend = $sql -> db_Fetch();
+     $text .= "<form method='post' action='".e_SELF."'><div style='text-align:center'>\n";
+     $text .= USRLAN_116." <b>".$resend['user_name']."</b><br><br>
+
+     <input type='hidden' name='resend_id' value='$sub_action'>\n
+     <input type='hidden' name='resend_name' value='".$resend['user_name']."'>\n
+     <input type='hidden' name='resend_key' value='".$resend['user_sess']."'>\n
+     <input type='hidden' name='resend_email' value='".$resend['user_email']."'>\n
+     <input class='button' type='submit' name='resend_mail' value='".USRLAN_112."' />\n</div></form>\n";
+     $caption = USRLAN_112;
+     $ns -> tablerender($caption, $text);
+     }
+}
+
+if($action == "test"){
+     if($sql -> db_Select("user", "*", "user_id='$sub_action' ")){
+     $test = $sql -> db_Fetch();
+     $text .= "<form method='post' action='".e_SELF."'><div style='text-align:center'>\n";
+     $text .= USRLAN_117." <br><b>".$test['user_email']."</b><br><br>
+     <input type='hidden' name='test_email' value='".$test['user_email']."'>\n
+     <input class='button' type='submit' name='test_mail' value='".USRLAN_118."' />\n</div></form>\n";
+     $caption = USRLAN_118;
+     $ns -> tablerender($caption, $text);
+     }
+}
+
+
 if($action == "unban"){
         $sql -> db_Update("user", "user_ban='0' WHERE user_id='$sub_action' ");
         $user -> show_message(USRLAN_9);
@@ -159,6 +217,7 @@ if(IsSet($_POST['add_field'])){
         $row = $sql -> db_Fetch();
         $user_entended = unserialize($row[0]);
         // changed by Cameron
+        $user_field = str_replace(" ","_",$user_field);
         $user_entended[] = $user_field."|".$user_type."|".$user_value."|".$user_default."|".$user_visible."|".$user_hide;
    //     $user_entended[] = $user_field;
         $tmp = addslashes(serialize($user_entended));
@@ -176,6 +235,7 @@ if(IsSet($_POST['update_field'])){
         $row = $sql -> db_Fetch();
         $user_entended = unserialize($row[0]);
         unset($user_entended[$sub_action]);
+        $user_field = str_replace(" ","_",$user_field);
         $user_entended[] = $user_field."|".$user_type."|".$user_value."|".$user_default."|".$user_visible."|".$user_hide;
         $tmp = addslashes(serialize($user_entended));
         if($sql -> db_Select("core", " e107_value", " e107_name='user_entended'")){
@@ -208,9 +268,9 @@ if($action == "editext"){
         $uf_name = $tmp[0];
         $uf_type = $tmp[1];
         $uf_value = $tmp[2];
-		$uf_default = $tmp[3];
-		$uf_visible = $tmp[4];
-		$uf_hide = $tmp[5];
+                $uf_default = $tmp[3];
+                $uf_visible = $tmp[4];
+                $uf_hide = $tmp[5];
         $user -> show_extended();
 }
 
@@ -230,6 +290,7 @@ if($action == "main" && is_numeric($sub_action)){
 if($action == "cu" && is_numeric($sub_action)){
         $user -> show_message(USRLAN_88);
         $action = "main";
+        $sub_action = "user_id";
 }
 
 if(!e_QUERY || $action == "main"){
@@ -297,7 +358,6 @@ class users{
                 }else{
                         $query = "ORDER BY ".($sub_action ? $sub_action : "user_id")." ".($id ? $id : "DESC")."  LIMIT $from, $amount";
                 }
-
                 if($sql -> db_Select("user", "*", $query, ($_POST['searchquery'] ? 0 : "nowhere"))){
                         $text .= "<table class='fborder' style='width:100%'>
                         <tr>
@@ -353,7 +413,9 @@ class users{
                                                 $text .= "<option value='".e_SELF."?unban.$user_id'>".USRLAN_33."</option>";
                                         }else if($user_ban == 2){
                                                 $text .= "<option value='".e_SELF."?ban.$user_id'>".USRLAN_30."</option>
-                                                <option value='".e_SELF."?verify.$user_id'>".USRLAN_32."</option>";
+                                                <option value='".e_SELF."?verify.$user_id'>".USRLAN_32."</option>
+                                                <option value='".e_SELF."?resend.$user_id'>".USRLAN_112."</option>
+                                                <option value='".e_SELF."?test.$user_id'>".USRLAN_118."</option>";
                                         }else{
                                                 $text .= "<option value='".e_SELF."?ban.$user_id'>".USRLAN_30."</option>";
                                         }
@@ -463,7 +525,13 @@ class users{
                 <input class='tbox' type='text' name='im_width' size='10' value='".$pref['im_width']."' maxlength='5' /> (".USRLAN_48.")
                 </tr>
 
-				<tr>
+                <tr>
+                <td style='width:50%' class='forumheader3'>".USRLAN_49.":</td>
+                <td style='width:50%' class='forumheader3'>
+                <input class='tbox' type='text' name='im_height' size='10' value='".$pref['im_height']."' maxlength='5' /> (".USRLAN_50.")
+                </tr>
+
+                                <tr>
                 <td style='width:50%' class='forumheader3'>".USRLAN_93."<br /><span class='smalltext'>".USRLAN_94."</span></td>
                 <td style='width:50%' class='forumheader3'>
                 <input class='tbox' type='text' name='del_unv' size='10' value='".$pref['del_unv']."' maxlength='5' /> ".USRLAN_95."
@@ -486,7 +554,7 @@ class users{
 
         function show_extended(){
                 global $sql, $ns, $uf_name, $uf_type, $uf_value, $uf_default, $uf_visible, $uf_hide;
-				require_once(e_HANDLER."userclass_class.php");
+                                require_once(e_HANDLER."userclass_class.php");
 
                 $sql -> db_Select("core", " e107_value", " e107_name='user_entended'");
                 $row = $sql -> db_Fetch();
@@ -497,13 +565,13 @@ class users{
 
                 $text .="<form method='post' action='".e_SELF."?".e_QUERY."'>
                 <table style='width:97%' class='fborder'>
-                <td class='fcaption'>Name</td>
-                <td class='fcaption'>Type</td>
-                <td class='fcaption'>Values</td>
-				<td class='fcaption'>Default</td>
-				<td class='fcaption'>Applicable to</td>
-				<td class='fcaption'>Visible to</td>
-                <td class='fcaption'>Action</td>
+                <td class='fcaption'>".USRLAN_96."</td>
+                <td class='fcaption'>".USRLAN_97."</td>
+                <td class='fcaption'>".USRLAN_98."</td>
+                                <td class='fcaption'>".USRLAN_99."</td>
+                                <td class='fcaption'>".USRLAN_100."</td>
+                                <td class='fcaption'>".USRLAN_101."</td>
+                <td class='fcaption'>".USRLAN_102."</td>
                 \n";
 
                 if(!$row[0]){
@@ -517,20 +585,20 @@ class users{
                                 if($u_entended){
                                 // added by cameron..=============================
                                 $ut = explode("|",$u_entended);
-                                $u_name = ($ut[0] != "") ? $ut[0] : $u_entended;
+                                $u_name = ($ut[0] != "" ? str_replace("_"," ",$ut[0]) : $u_entended);
                                 $u_type = $ut[1];
                                 $u_value = $ut[2];
-								$u_default = $ut[3];
-								$u_visible = $ut[4];
-								$u_hide = $ut[5];
-										$text .= "<tr>
+                                $u_default = $ut[3];
+                                $u_visible = $ut[4];
+                                $u_hide = $ut[5];
+                                                                                $text .= "<tr>
                                         <td class='forumheader3' >".$u_name."&nbsp; </td>
                                         <td class='forumheader3' >".$u_type."&nbsp; </td>
                                         <td class='forumheader3' >".$u_value."&nbsp; </td>
-										<td class='forumheader3' >".$u_default."&nbsp; </td>
-										<td class='forumheader3' >".r_userclass_name($u_visible)."&nbsp; </td>
-										<td class='forumheader3' >".r_userclass_name($u_hide)."&nbsp; </td>
-                                        <td class='forumheader3' style='text-align:center;'><span class='button' style='height:16px; width:50%;'><a style='text-decoration:none' href='".e_SELF."?editext.$key'>Edit</a></span>&nbsp;<span class='button' style='height:16px; width:50%'><a style='text-decoration:none' href='".e_SELF."?delext.$key'>".USRLAN_29."</a></span>
+                                                                                <td class='forumheader3' >".$u_default."&nbsp; </td>
+                                                                                <td class='forumheader3' >".r_userclass_name($u_visible)."&nbsp; </td>
+                                                                                <td class='forumheader3' >".r_userclass_name($u_hide)."&nbsp; </td>
+                                        <td class='forumheader3' style='text-align:center;'><span class='button' style='height:16px; width:50%;'><a style='text-decoration:none' href='".e_SELF."?editext.$key'>".USRLAN_81."</a></span>&nbsp;<span class='button' style='height:16px; width:50%'><a style='text-decoration:none' href='".e_SELF."?delext.$key'>".USRLAN_29."</a></span>
                                         </td>
                                         </tr>";
                                         $c++;
@@ -548,12 +616,12 @@ class users{
 
 
                $text .="<tr>
-                <td style='width:30%' class='forumheader3'>Field Type:</td>
+                <td style='width:30%' class='forumheader3'>".USRLAN_103."</td>
                 <td style='width:70%' class='forumheader3' colspan='3'>
                 <select class='tbox' name='user_type'>";
 
      $typevalue = array("text","radio","dropdown","table");
-     $typename = array("Text Box","Radio Buttons","Drop-Down Menu","DB Table Field");
+     $typename = array(USRLAN_108,USRLAN_109,USRLAN_110,USRLAN_111);
 
      for ($i=0; $i<count($typevalue); $i++) {
      $selected = ($uf_type == $typevalue[$i])? " selected": "";
@@ -564,33 +632,32 @@ class users{
                 </select></tr>";
 
                 $text .= "<tr>
-                <td style='width:30%' class='forumheader3'>Values:</td>
+                <td style='width:30%' class='forumheader3'>".USRLAN_98."</td>
                 <td style='width:70%' class='forumheader3' colspan='3'>
                 <input class='tbox' type='text' name='user_value' size='40' value='$uf_value' /><br />
-                <span class='smalltext'>Enter values seperated by commas eg. value1,value2 etc<br>
-                For DB table use the format: dbtable,field-value,field-name.</span>
+                <span class='smalltext'>".USRLAN_105."</span>
                 </td>
                 </tr>
-					
-				<tr>
-				<td style='width:30%' class='forumheader3'>Default Value:</td>
+
+                                <tr>
+                                <td style='width:30%' class='forumheader3'>".USRLAN_104."</td>
                 <td style='width:70%' class='forumheader3' colspan='3'>
-				<input class='tbox' type='text' name='user_default' size='40' value='$uf_default' />
-				</td>
+                                <input class='tbox' type='text' name='user_default' size='40' value='$uf_default' />
+                                </td>
                 </tr>
 
-				<tr>
-				<td style='width:30%' class='forumheader3'>Applicable to:</td>
+                                <tr>
+                                <td style='width:30%' class='forumheader3'>".USRLAN_100."</td>
                 <td style='width:70%' class='forumheader3' colspan='3'>
-				".r_userclass("user_visible", $uf_visible)."<br /><span class='smalltext'>This will determine who will see this field in their usersettings.</span>
-				</td>
+                                ".r_userclass("user_visible", $uf_visible)."<br /><span class='smalltext'>".USRLAN_106."</span>
+                                </td>
                 </tr>
 
-				<tr>
-				<td style='width:30%' class='forumheader3'>Visible to:</td>
+                                <tr>
+                                <td style='width:30%' class='forumheader3'>".USRLAN_101."</td>
                 <td style='width:70%' class='forumheader3' colspan='3'>
-				".r_userclass("user_hide", $uf_hide)."<br /><span class='smalltext'>This will determine who can see the value in the user page.</span>
-				</td>
+                                ".r_userclass("user_hide", $uf_hide)."<br /><span class='smalltext'>".USRLAN_107."</span>
+                                </td>
                 </tr>";
 
 
@@ -603,7 +670,7 @@ class users{
                 ";
                 }else{
                 $text .="
-                <input class='button' type='submit' name='update_field' value='Update Extended Field' />
+                <input class='button' type='submit' name='update_field' value='".USRLAN_112."' />
                 ";
                 }
             // ======= end added by Cam.

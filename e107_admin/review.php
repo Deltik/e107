@@ -75,7 +75,7 @@ If(IsSet($_POST['update_review'])){
         $content_heading = $aj -> formtpa($_POST['content_heading'], "admin");
         $content_content = $aj -> formtpa($_POST['data'], "admin");
         $content_author = ($_POST['content_author'] && $_POST['content_author'] != ARLAN_84 ? $_POST['content_author']."^".$_POST['content_author_email'] : ADMINID);
-        $sql -> db_Update("content", " content_heading='$content_heading', content_subheading='$content_subheading', content_content='$content_content', content_parent='".$_POST['category']."', content_datestamp='".time()."', content_author='$content_author', content_comment='".$_POST['content_comment']."', content_summary='".$_POST['content_summary']."', content_review_score=".$_POST['content_rating'].", content_class='{$_POST['r_class']}' WHERE content_id='".$_POST['content_id']."'");
+        $sql -> db_Update("content", " content_heading='$content_heading', content_subheading='$content_subheading', content_content='$content_content', content_parent='".$_POST['category']."', content_datestamp='".time()."', content_author='$content_author', content_comment='".$_POST['content_comment']."', content_summary='".$_POST['content_summary']."', content_type='3', content_review_score=".$_POST['content_rating'].", content_class='{$_POST['r_class']}' WHERE content_id='".$_POST['content_id']."'");
         unset($action);
         $message = REVLAN_3;
         clear_cache("review");
@@ -96,7 +96,11 @@ if(IsSet($_POST['updateoptions'])){
         $pref['review_submit'] = $_POST['review_submit'];
         $pref['review_submit_class'] = $_POST['review_submit_class'];
         save_prefs();
-        $sql -> db_Update("links", "link_class=".($pref['review_submit'] ? "0" : "255")." WHERE link_url='subcontent.php?review' ");
+		if($pref['review_submit'] ){
+			$sql -> db_Update("links", "link_class=".$pref['review_submit_class']." WHERE link_url='subcontent.php?review' ");
+		}else{
+			$sql -> db_Update("links", "link_class='255' WHERE link_url='subcontent.php?review' ");
+		}
         $message = REVLAN_61;
 }
 
@@ -283,12 +287,7 @@ if($action == "create"){
         ".$rs -> form_open("post", e_SELF."?create", "dataform")."
 
         <table style='width:95%' class='fborder'>
-        <tr>
-        <td colspan='2' style='text-align:center' class='forumheader2'>
-        <input class='button' type='button' onClick='openwindow()'  value='".REVLAN_42."' />
-        </td>
-        </tr>
-
+        
         <tr>
         <td style='width:20%; vertical-align:top' class='forumheader3'><u>".REVLAN_43."</u>:</td>
         <td style='width:80%' class='forumheader3'>";
@@ -306,9 +305,13 @@ if($action == "create"){
         <tr>
         <td style='width:20%; vertical-align:top' class='forumheader3'>".REVLAN_51.":<br /><span class='smalltext'>(".REVLAN_52.")</span></td>
         <td style='width:80%' class='forumheader3'>
-        <input class='tbox' type='text' name='content_author' size='60' value='".($content_author ? $content_author : REVLAN_53)."' maxlength='100' ".($content_author ? "" : "onFocus=\"document.dataform.content_author.value='';\"")." /><br />
+        <a href=\"javascript:void(0);\" onclick=\"expandit(this);\" >".REVLAN_70."</a>\n
+        <span style=\"display: none;\" >
+                <br /><br />
+                <input class='tbox' type='text' name='content_author' size='60' value='".($content_author ? $content_author : REVLAN_53)."' maxlength='100' ".($content_author ? "" : "onFocus=\"document.dataform.content_author.value='';\"")." /><br />
         <input class='tbox' type='text' name='content_author_email' size='60' value='".($content_author_email ? $content_author_email : REVLAN_54)."' maxlength='100' ".($content_author_email ? "" : "onFocus=\"document.dataform.content_author_email.value='';\"")." /><br />
-        </td>
+        </span>
+                </td>
         </tr>
 
         <tr>

@@ -463,10 +463,12 @@ CREATE TABLE submitnews (
   submitnews_name varchar(100) NOT NULL default '',
   submitnews_email varchar(100) NOT NULL default '',
   submitnews_title varchar(200) NOT NULL default '',
+  submitnews_category tinyint(3) unsigned NOT NULL default '0',
   submitnews_item text NOT NULL,
   submitnews_datestamp int(10) unsigned NOT NULL default '0',
   submitnews_ip varchar(15) NOT NULL default '',
   submitnews_auth tinyint(3) unsigned NOT NULL default '0',
+  submitnews_file varchar(100) NOT NULL default '',
   PRIMARY KEY  (submitnews_id)
 ) TYPE=MyISAM;
 # --------------------------------------------------------
@@ -500,6 +502,7 @@ CREATE TABLE upload (
   upload_demo varchar(100) NOT NULL default '',
   upload_filesize int(10) unsigned NOT NULL default '0',
   upload_active tinyint(3) unsigned NOT NULL default '0',
+  upload_category tinyint(3) unsigned NOT NULL default '0',
   PRIMARY KEY  (upload_id)
 ) TYPE=MyISAM;
 

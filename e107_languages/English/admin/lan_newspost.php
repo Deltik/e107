@@ -66,6 +66,7 @@ define("NWSLAN_61", "deleted");
 define("NWSLAN_62", "Go to page: ");
 define("NWSLAN_63", "Search newsposts");
 
+
 define("NWSLAN_64", "Insert download: Upload files to e107_files/downloads");
 define("NWSLAN_65", "if image, tick to create thumbnail");
 define("NWSLAN_66", "Upload");
@@ -89,5 +90,18 @@ define("NWSLAN_82","Insert download");
 define("NWSLAN_83","Extended news post");
 define("NWSLAN_83","and");
 define("NWSLAN_84","Choose which visitors will see news item");
-define("NWSALAN_85", "submitted by");
+define("NWSLAN_85", "submitted by");
+
+define("NWSLAN_86", "Show News-Category Footer Menu");
+define("NWSLAN_87", "News Category Columns?");
+define("NWSLAN_88", "News posts to display per page?");
+define("NWSLAN_89", "Save News Preferences");
+define("NWSLAN_90", "News Preferences");
+define("NWSLAN_100", "Enable Image uploading on Submit News page");
+define("NWSLAN_101", "Automatic resizing of submitted image");
+define("NWSLAN_102", "width in pixels<br> or leave blank to disable.");
+define("NWSLAN_103", "re-Post");
+define("NWSLAN_104", "by"); 
+
+
 ?>

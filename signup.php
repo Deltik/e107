@@ -150,7 +150,7 @@ if(IsSet($_POST['register'])){
                 }
         }
 
-        // ========== End Added. ====================================================
+        // ========== End of verification.. ====================================================
 
         if(!preg_match('/^[-!#$%&\'*+\\.\/0-9=?A-Z^_`{|}~]{1,50}@([-0-9A-Z]+\.){1,50}([0-9A-Z]){2,4}$/i', $_POST['email'])){
                 message_handler("P_ALERT", LAN_106);
@@ -185,16 +185,37 @@ if(IsSet($_POST['register'])){
 
                 if($pref['user_reg_veri']){
                         $key = md5(uniqid(rand(),1));
-                        $sql -> db_Insert("user", "0, '".$username."', '".md5($_POST['password1'])."', '$key', '".$_POST['email']."',         '".$_POST['website']."', '".$_POST['icq']."', '".$_POST['aim']."', '".$_POST['msn']."', '".$_POST['location']."', '".$_POST['birthday']."', '".$_POST['signature']."', '".$_POST['image']."', '".$_POST['timezone']."', '".$_POST['hideemail']."', '".$time."', '0', '".$time."', '0', '0', '0', '0', '".$ip."', '2', '0', '', '', '', '0', '".$_POST['realname']."', '', '', '', '' ");
+                        $sql -> db_Insert("user", "0, \"".$username."\", \"".md5($_POST['password1'])."\", '$key', \"".$_POST['email']."\",         \"".$_POST['website']."\", \"".$_POST['icq']."\", \"".$_POST['aim']."\", \"".$_POST['msn']."\", \"".$_POST['location']."\", \"".$birthday."\", \"".$_POST['signature']."\", \"".$_POST['image']."\", \"".$_POST['timezone']."\", \"".$_POST['hideemail']."\", \"".$time."\", '0', \"".$time."\", '0', '0', '0', '0', '".$ip."', '2', '0', '', '', '', '0', \"".$_POST['realname']."\", '', '', '', '' ");
                         $sql -> db_Select("user", "*", "user_name='".$_POST['name']."' AND user_join='".$time."' ");
                         $row = $sql -> db_Fetch();
                         $id = $row['user_id'];
+
+
+
 
                         define("RETURNADDRESS", (substr(SITEURL, -1) == "/" ? SITEURL."signup.php?activate.".$id.".".$key : SITEURL."/signup.php?activate.".$id.".".$key));
 
                         $message = LAN_403.RETURNADDRESS.LAN_407." ".SITENAME."\n".SITEURL;
                         require_once(e_HANDLER."mail.php");
                         sendemail($_POST['email'], LAN_404." ".SITENAME, $message);
+        // ================== save extended fields as serialized data.
+
+        if($sql -> db_Select("core", " e107_value", " e107_name='user_entended'")){
+            $aj = new textparse;
+            $row = $sql -> db_Fetch();
+            $user_entended = unserialize($row[0]);
+            $c=0;
+            while(list($key, $u_entended) = each($user_entended)){
+                $val = $aj -> formtpa($_POST[str_replace(" ", "_", $u_entended)], "public");
+                $user_pref[$u_entended] = $val;
+                $c++;
+            }
+            $tmp = addslashes(serialize($user_pref));
+            $sql -> db_Update("user", "user_prefs='$tmp' WHERE user_id='".$id."' ");
+        }
+        // ==========================================================
+
+
                         require_once(HEADERF);
                         $text = LAN_405;
                         $ns -> tablerender("<div style='text-align:center'>".LAN_406."</div>", $text);
@@ -202,7 +223,7 @@ if(IsSet($_POST['register'])){
                         exit;
                 }else{
                 require_once(HEADERF);
-                $sql -> db_Insert("user", "0, '".$username."', '".md5($_POST['password1'])."', '$key', '".$_POST['email']."',         '".$_POST['website']."', '".$_POST['icq']."', '".$_POST['aim']."', '".$_POST['msn']."', '".$_POST['location']."', '".$_POST['birthday']."', '".$_POST['signature']."', '".$_POST['image']."', '".$_POST['timezone']."', '".$_POST['hideemail']."', '".$time."', '0', '".$time."', '0', '0', '0', '0', '".$ip."', '0', '0', '', '', '', '0', '".$_POST['realname']."', '', '', '', '' ");
+                $sql -> db_Insert("user", "0, '".$username."', '".md5($_POST['password1'])."', '$key', '".$_POST['email']."',         '".$_POST['website']."', '".$_POST['icq']."', '".$_POST['aim']."', '".$_POST['msn']."', '".$_POST['location']."', '".$birthday."', '".$_POST['signature']."', '".$_POST['image']."', '".$_POST['timezone']."', '".$_POST['hideemail']."', '".$time."', '0', '".$time."', '0', '0', '0', '0', '".$ip."', '0', '0', '', '', '', '0', '".$_POST['realname']."', '', '', '', '' ");
                 $ns -> tablerender("<div style='text-align:center'>".LAN_SIGNUP_8."</div>", LAN_107);
                 require_once(FOOTERF);
                 exit;

@@ -47,7 +47,9 @@ define("USRLAN_44", "Allow members to upload an avatar?");
 define("USRLAN_45", "Yes");
 define("USRLAN_46", "No");
 define("USRLAN_47", "Maximum avatar width (in pixels)");
-define("USRLAN_48", "default is 70");
+define("USRLAN_48", "default is 120");
+define("USRLAN_49", "Maximum avatar height (in pixels)");
+define("USRLAN_50", "default is 100");
 define("USRLAN_51", "Update Options");
 define("USRLAN_52", "Member Options");
 define("USRLAN_53", "Allow members to upload a photograph?");
@@ -95,4 +97,30 @@ define("USRLAN_93", "Delete unverified users");
 define("USRLAN_94", "Delete signups if unverified after this amount of time - leave blank to not use this option");
 define("USRLAN_95", "minutes");
 
+define("USRLAN_96", "Name");
+define("USRLAN_97", "Type");
+define("USRLAN_98", "Values");
+define("USRLAN_99", "Default");
+define("USRLAN_100", "Applicable to");
+define("USRLAN_101", "Visible to");
+define("USRLAN_102", "Action");
+
+define("USRLAN_103", "Field Type");
+define("USRLAN_104", "Default Value");
+define("USRLAN_105", "Enter values seperated by commas eg. value1,value2 etc <br> For DB table use the format: dbtable,field-value,field-name.");
+define("USRLAN_106", "This will determine who will see this field in their usersettings.");
+define("USRLAN_107", "This will determine who can see the value in the user page.");
+
+define("USRLAN_108", "Text Box");
+define("USRLAN_109", "Radio Buttons");
+define("USRLAN_110", "Drop-Down Menu");
+define("USRLAN_111", "DB Table Field");
+
+define("USRLAN_112", "Resend Email");
+define("USRLAN_113", "Registration details for");
+define("USRLAN_114", "Dear ".$_POST['resend_name']."\n\nWelcome to ".SITENAME."\nYour registration has been received and created.\n\nYour account is currently marked as being inactive, to activate your account please go to the following link ...\n\n");
+define("USRLAN_115", "\n\nThanks for your registration.\n\nFrom");
+define("USRLAN_116", "Please confirm that you wish to resend a confirmation email to:");
+define("USRLAN_117", "Click the button below to test the following email:");
+define("USRLAN_118", "Test Email"); 
 ?>

@@ -61,5 +61,12 @@ define("LAN_SIGNUP_1", "Min.");
 define("LAN_SIGNUP_2", "chars.");
 define("LAN_SIGNUP_4", "Your password must be at least ");
 define("LAN_SIGNUP_5", " characters long.");
+define("LAN_SIGNUP_6", "Your ");
+define("LAN_SIGNUP_7", " is required");
+
+define("LAN_USET_1", "Your avatar width is too large");
+define("LAN_USET_2", "Maximum allowable width is");
+define("LAN_USET_3", "Your avatar height is too large");
+define("LAN_USET_4", "Maximum allowable height is");
 
 ?>
