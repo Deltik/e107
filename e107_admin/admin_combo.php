@@ -142,6 +142,7 @@ $submitted_links = $sql -> db_Select("tmp", "*", "tmp_ip='submitted_link' ");
 $submitted_news = $sql -> db_Select("submitnews", "*", "submitnews_auth ='0' ");
 $submitted_articles = $sql -> db_Select("content", "*", "content_type ='15' ");
 $submitted_reviews = $sql -> db_Select("content", "*", "content_type ='16' ");
+$reported_posts = $sql -> db_Select("tmp", "*", "tmp_ip='reported_post' ");
 
 $text = "<div style='text-align:center'>
 <table style='width:95%'>
@@ -152,11 +153,13 @@ $text = "<div style='text-align:center'>
 $text .= $permicon.ADLAN_110.": ".$members."<br />";
 $text .= $permicon.ADLAN_111.": ".$unverified."<br />";
 $text .= $permicon.ADLAN_112.": ".$banned."<br />";
-                                                         
+
 $text .= ($submitted_news ? $permicon2."<a href='".e_ADMIN."newspost.php?sn'>".ADLAN_107.": $submitted_news</a>" : $permicon.ADLAN_107.": 0")."<br />";
 $text .= ($submitted_articles ? $permicon2."<a href='".e_ADMIN."article.php?sa'>".ADLAN_123.": $submitted_articles</a>" : $permicon.ADLAN_123.": ".$submitted_articles)."<br />";
 $text .= ($submitted_reviews ? $permicon2."<a href='".e_ADMIN."review.php?sa'>".ADLAN_124.": $submitted_reviews</a>" : $permicon.ADLAN_124.": ".$submitted_reviews)."<br />";
 $text .= ($submitted_links ? $permicon2."<a href='".e_ADMIN."links.php?sn'>".ADLAN_119.": $submitted_links</a>" : $permicon.ADLAN_119.": ".$submitted_links)."<br /><br />";
+
+$text .= ($reported_posts ? $permicon2."<a href='".e_ADMIN."forum.php?sr'>".ADLAN_125.": $reported_posts</a>" : $permicon.ADLAN_125.": ".$reported_posts)."<br /><br />";
 
 $text .= ($active_uploads ? $permicon2."<a href='".e_ADMIN."upload.php'>".ADLAN_108.": $active_uploads</a>" : $permicon.ADLAN_108.": ".$active_uploads)."<br />";
 
@@ -225,9 +228,8 @@ function comesafter ($s1, $s2) {
         return ($order);
 }
 
-?>
-
-<script type="text/javascript">
+function headerjs(){
+$script = "<script type=\"text/javascript\">
 function tdover(object) {
   if (object.className == 'td') object.className = 'forumheader5';
 }
@@ -235,4 +237,13 @@ function tdover(object) {
 function tdnorm(object) {
   if (object.className == 'forumheader5') object.className = 'td';
 }
-</script>
+
+</script>\n";
+
+ return $script;
+
+}
+
+
+?>
+

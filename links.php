@@ -25,6 +25,8 @@ if(IsSet($_POST['add_link']) && check_class($pref['link_submit_class'])){
 		$submitted_link = $_POST['cat_name']."^".$link_name."^".$link_url."^".$link_description."^".$link_button."^".USERNAME;
 		$sql -> db_Insert("tmp", "'submitted_link', '".time()."', '$submitted_link' ");
 		$ns -> tablerender(LAN_99, "<div style='text-align:center'>".LAN_100."</div>");
+	}else{
+		message_handler("ALERT", 5);
 	}
 }
 
@@ -52,7 +54,7 @@ if(e_QUERY == "submit" && check_class($pref['link_submit_class'])){
 		</tr>";
 	}
 
-	$text .= "<tr><td class='forumheader3' style='width:30%'>".LAN_94."</td><td class='forumheader3' style='width:30%'><input class='tbox' type='text' name='link_name' size='60' value='' maxlength='100' /></td></tr><tr><td class='forumheader3' style='width:30%'>".LAN_95."</td><td class='forumheader3' style='width:30%'><input class='tbox' type='text' name='link_url' size='60' value='' maxlength='200' /></td></tr><tr><td class='forumheader3' style='width:30%'>".LAN_96."</td><td class='forumheader3' style='width:30%'><textarea class='tbox' name='link_description' cols='59' rows='3'></textarea></td></tr><tr><td class='forumheader3' style='width:30%'>".LAN_97."</td><td class='forumheader3' style='width:30%'><input class='tbox' type='text' name='link_button' size='60' value='' maxlength='200' /></td></tr><tr><td colspan='2' style='text-align:center' class='forumheader'><input class='button' type='submit' name='add_link' value='".LAN_98."' /></td></tr></table></form></div>";
+	$text .= "<tr><td class='forumheader3' style='width:30%'><u>".LAN_94."</u></td><td class='forumheader3' style='width:30%'><input class='tbox' type='text' name='link_name' size='60' value='' maxlength='100' /></td></tr><tr><td class='forumheader3' style='width:30%'><u>".LAN_95."</u></td><td class='forumheader3' style='width:30%'><input class='tbox' type='text' name='link_url' size='60' value='' maxlength='200' /></td></tr><tr><td class='forumheader3' style='width:30%'><u>".LAN_96."</u></td><td class='forumheader3' style='width:30%'><textarea class='tbox' name='link_description' cols='59' rows='3'></textarea></td></tr><tr><td class='forumheader3' style='width:30%'>".LAN_97."</td><td class='forumheader3' style='width:30%'><input class='tbox' type='text' name='link_button' size='60' value='' maxlength='200' /></td></tr><tr><td colspan='2' style='text-align:center' class='forumheader3'><span class='smalltext'>".LAN_106."</span></td></tr><tr><td colspan='2' style='text-align:center' class='forumheader'><input class='button' type='submit' name='add_link' value='".LAN_98."' /></td></tr></table></form></div>";
 
 	$ns -> tablerender(LAN_92, $text);
 	require_once(FOOTERF);
@@ -93,14 +95,7 @@ if(isset($id)){
 		$sql -> db_Update("links", "link_refer=link_refer+1 WHERE link_id='$id' ");
 		$sql -> db_Select("links", "*", "link_id='$id AND link_class!=255' ");
 		$row = $sql -> db_Fetch(); extract($row);
-
-		if($link_open == 4){ // miniwindow
-			echo "<script type='text/javascript'>open_window('$link_url')</script>\n";
-		} elseif($link_open == 1){ // _blank
-			echo "<script type='text/javascript'>open_window('$link_url','full')</script>\n";
-		}else{
 			header("location:".$link_url);
-		}
 
 	}
 	$sql -> db_Select("link_category", "*", "link_category_id != '1' ");
@@ -115,21 +110,44 @@ if($category){
 
 		$sql2 = new db;
 		while(list($link_category_id, $link_category_name, $link_category_description) = $sql-> db_Fetch()){
-		if($sql2 -> db_Select("links", "*", "link_category ='$link_category_id' ORDER BY link_order ")){
+		if($link_total = $sql2 -> db_Select("links", "*", "link_category ='$link_category_id' ORDER BY link_order ")){
 			unset($text);
+			$link_activ = 0;
 			while($row = $sql2-> db_Fetch()){
 				extract($row);
 				if(!$link_class || check_class($link_class)){
+					$link_activ++;
 					$text .= "<table class='defaulttable' cellspacing='5'>";
+					// Caption
 					$caption = LAN_86." $link_category_name";
 					if($link_category_description != ""){
 						$caption .= " <i>[$link_category_description]</i>";
 					}
-
+					// Number of links displayed
+					$caption .= " (<b title=\"".(ADMIN ? LAN_Links_2 : LAN_Links_1)."\" >".$link_activ."</b>".(ADMIN ? "/<b title=\"".(ADMIN ? LAN_Links_1 : "" )."\" >".$link_total."</b>" : "").") ";
+					
+					// Body
 					if(isset($category)){
 						$link_append = "<a href='".e_SELF."?".$link_id.".cat.{$category}'>";
 					} else {
-						$link_append = "<a href='".e_SELF."?".$link_id."'>";
+
+					switch ($link_open) { 
+					case 1:
+						$link_append = "<a href='".e_SELF."?".$link_id."' rel='external'>";
+					break; 
+					case 2:
+					   $link_append = "<a href='".e_SELF."?".$link_id."'>";
+					break;
+					case 3:
+					   $link_append = "<a href='".e_SELF."?".$link_id."'>";
+					break;
+					case 4:
+						$link_append = "<a href=\"javascript:open_window('".e_SELF."?".$link_id."')\">";
+					break;
+					default:
+					   $link_append = "<a href='".e_SELF."?".$link_id."'>";
+					}
+
 					}
 
 					$text .= "\n<tr><td style='width:10%; vertical-align: top'>";
@@ -151,15 +169,16 @@ if($category){
 					<span class='smalltext'>[ ".LAN_88." $link_refer ]</span></td></tr>
 					</table>";
 				}
+						}
+			if($pref['link_submit'] && check_class($pref['link_submit_class'])){
+				$text .= "<a href='".e_SELF."?submit'>".LAN_101."</a>";
 			}
-			$ns -> tablerender($caption, $text);
+			if($link_activ > 0){$ns -> tablerender($caption, $text);}
+			$link_activ = 0;
 		}
 	}
 }
 
-if($pref['link_submit'] && check_class($pref['link_submit_class'])){
-	echo "<a href='".e_SELF."?submit'>".LAN_101."</a>";
-}
 
 
 

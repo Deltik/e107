@@ -1,73 +1,55 @@
 <?php
 // Settings ==========================================================
-
     $width = "540px";  // htmlarea width
     $height = "320px";  // htmlarea height
     $fullscreen = 1;   // Show Full-Screen Editor button. 0=no 1=yes
     $display_emoticons = 0; // Show Emoticons when enabled in e107 ?
-    $tableops = 1;  // Table operations.
-    $spelling = 1;  // Spell Checking.
-
+    $tableops = 1;  // Table operations Plugin.
+    $spelling = 0;  // Spell Checking Plugin.
+    $tidy = 0; // Html Tidy Plugin.
+    $context = 1; // Context Menu Plugin
  // ========================================================================
     $plgcnt =0; // do not change.
     $imagebut = (ADMIN) ? "insertimage" : "space"; // image button for  ADMINS only
     $popupeditor = $fullscreen == 1 ? "popupeditor":"space";
 
 // ==========================
-echo "<script> _editor_url = '".e_HANDLER."htmlarea/';
-                </script>\n";
-echo "<script type=\"text/javascript\" src=\"".e_HANDLER."htmlarea/htmlarea.js\"></script>\n";
+$areajs = "<script type=\"text/javascript\">\n _editor_url = '".e_HANDLER."htmlarea/';_editor_lang = 'en'; </script>\n";
+$areajs .= "<script type=\"text/javascript\" src=\"".e_HANDLER."htmlarea/htmlarea.js\"></script>\n";
+$areajs .= "<script type=\"text/javascript\" >\n";
+$areajs .= ($context==1) ? "HTMLArea.loadPlugin('ContextMenu');\n":"";
+$areajs .= ($tableops==1) ? "HTMLArea.loadPlugin('TableOperations');\n":"";
+$areajs .= ($spelling==1) ? "HTMLArea.loadPlugin('SpellChecker');\n":"";
+$areajs .= ($tidy==1) ? "HTMLArea.loadPlugin('HtmlTidy');\n":"";
 
-// Load plugins here.  ===
-echo "<script>\n";
+$areajs .= "var config = new HTMLArea.Config(); // create a new configuration object\n";
+$areajs .= htmlarea_emote(1);
+$areajs .= "config.width = '".$width."';\n
+            config.height = '".$height."';\n
+            config.statusBar = false;\n
+            config.killWordOnPaste = true;\n";
 
-    echo ($tableops==1) ? "HTMLArea.loadPlugin('TableOperations');\n":"";
-    echo ($spelling==1) ? "HTMLArea.loadPlugin('SpellChecker');\n":"";
+$areajs .=" config.pageStyle =
+            'body { background-color: white; font-size: 12px; border:1px solid black; color: black; font-family: tahoma, verdana, arial, sans-serif; } ' +
+            'p { font-width: bold; } ';";
 
+$areajs .=" config.editorURL = '".e_HANDLER."htmlarea/';
+            config.toolbar = [
+            ['fontname','fontsize','space','formatblock','space'],
+            ['bold','italic','underline','separator','copy', 'cut', 'paste','separator', 'justifyleft', 'justifycenter', 'justifyright', 'justifyfull', 'separator',";
 
-// Load Configuration.
-echo "
-        var config = new HTMLArea.Config(); // create a new configuration object
-
-
-
-    ".htmlarea_emote(1)."
-
-
-    config.width = '".$width."';
-    config.height = '".$height."';
-    config.statusBar = false;
-
-    config.pageStyle =
-    'body { background-color: white; font-size: 12px; border:1px solid black; color: black; font-family: tahoma, verdana, arial, sans-serif; } ' +
-    'p { font-width: bold; } ';
-    config.editorURL = '".e_HANDLER."htmlarea/';
-
-
-
-    config.toolbar = [
-    ['fontname',
-    'fontsize', 'space',
-    'formatblock', 'space',
-    ],
+// $areajs .= "'insertorderedlist', 'insertunorderedlist', 'outdent', 'indent', 'separator',";
+$areajs .= "'orderedlist', 'unorderedlist', 'outdent', 'indent', 'separator',";
+$areajs .= "'forecolor', 'hilitecolor', 'separator',
+            'inserthorizontalrule', 'createlink', '".$imagebut."', 'inserttable', 'separator','htmlmode', '".$popupeditor."'
+            ]";
+$areajs .= $display_emoticons ? ",[".htmlarea_emote(2)."]":"";
+$areajs .="];";
 
 
-   [ 'bold', 'italic', 'underline', 'separator','copy', 'cut', 'paste','separator', 'justifyleft', 'justifycenter', 'justifyright', 'justifyfull', 'separator',
+$areajs .= "</script>\n";
 
-  'insertorderedlist', 'insertunorderedlist', 'outdent', 'indent', 'separator',
-  'forecolor', 'hilitecolor', 'separator',
-  'inserthorizontalrule', 'createlink', '".$imagebut."', 'inserttable', 'separator','htmlmode', '".$popupeditor."'
-  ],
-  [".htmlarea_emote(2)."]
-
-    ];
-
-
-
-
-    </script>\n";
-
-
+ echo $areajs;
 
 // ==================================================
 function htmlarea($name){
@@ -82,23 +64,27 @@ function htmlarea($name){
     require_once(e_HANDLER."htmlarea/htmlarea.inc.php");
     htmlarea("post");
 */
-  global $tableops,$spelling,$plgcnt;
 
-echo "<script type=\"text/javascript\" defer=\"1\">
+  global $tableops,$spelling,$plgcnt, $context, $tidy;
 
- //  HTMLArea.replace('$name', config);   // old method.
-  var editor = new HTMLArea('$name', config);";
 
-echo ($tableops==1 && $plgcnt<1) ? " editor.registerPlugin('TableOperations');\n ":"";
-echo ($spelling==1 && $plgcnt<1) ? " editor.registerPlugin('SpellChecker');\n ":"";
+echo "\n<script type=\"text/javascript\" defer=\"defer\">\n";
+echo "var editor_$name = new HTMLArea('$name', config);";
+// echo "var editor_$name = new HTMLArea('$name');\n";
+echo ($context==1 && $plgcnt<1) ? " editor_$name.registerPlugin('ContextMenu');\n ":"";
+echo  ($tableops==1 && $plgcnt<1) ? " editor_$name.registerPlugin(TableOperations);\n ":"";
+echo ($spelling==1 && $plgcnt<1) ? " editor_$name.registerPlugin(SpellChecker);\n ":"";
+echo ($tidy==1 && $plgcnt<1) ? " editor_$name.registerPlugin(HtmlTidy);\n ":"";
+
+
         $plgcnt++;
-echo "
-
-  var check = '$name';
-  if(document.getElementById(check)){
-  editor.generate();
-  }
-</script>\n";
+echo "  setTimeout(function() {
+        var check = '$name';
+        if(document.getElementById(check)){
+        editor_$name.generate();
+        }
+       }, 10);
+       </script>\n";
 }
 
 // Build Custom Emoticon Buttons=================

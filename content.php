@@ -26,33 +26,40 @@ if(e_QUERY){
 	require_once(FOOTERF);
 	exit;
 }
+$query="";
 if($action == "content"){
+	$sub_action=intval($sub_action);
 	$query = "content_id='".$sub_action."' ";
-	$page = LAN_60.":";
+	$page = LAN_60." /";
 	}
 if($action == "article"){
 	if(is_numeric($sub_action)){
 		$query = "content_id='".$sub_action."' ";
-		$page = LAN_1.":";
+		$page = LAN_1." /";
 	}elseif($sub_action == "cat" ){
-		$query = "content_id='".$id."' ";
-		$page = LAN_1.": ".LAN_3.":";
+		if($id == "0"){
+			$page = LAN_57." / ".LAN_61;
+		}else{
+			$query = "content_id='".$id."' ";
+			$page = LAN_1." / ".LAN_3." /";
+		}
 	}else{		
 		$page = LAN_50;
 	}
 }
 if($action == "review"){
 	if(is_numeric($sub_action)){
-		$page = LAN_2.":";
+		$page = LAN_2." /";
 		$query = "content_id='".$sub_action."' ";
 	}elseif($sub_action == "cat"){
-		$page = LAN_2.": ".LAN_3.":";
+		$page = LAN_2." / ".LAN_3." /";
 		$query = "content_id='".$id."' ";
 	}else{		
 		$page = LAN_35;
 	}
 }
 if($query){
+//	echo $query; exit;
 if($sql -> db_Select("content", "*", $query)){ 
 	$row = $sql -> db_Fetch(); extract($row);
 	define("e_PAGETITLE", $page." ".$content_heading);
@@ -61,6 +68,10 @@ if($sql -> db_Select("content", "*", $query)){
 	define("e_PAGETITLE", $page);
 }
 
+$highlight_search = FALSE;
+if(IsSet($_POST['highlight_search'])){
+	$highlight_search = TRUE;
+}
 require_once(HEADERF);
 
 
@@ -79,7 +90,6 @@ require_once(e_HANDLER."comment_class.php");
 $cobj = new comment;
 require_once(e_HANDLER."rate_class.php");
 $rater = new rater;
-
 if(IsSet($_POST['commentsubmit'])){
 	$tmp = explode(".", e_QUERY);
 
@@ -89,12 +99,11 @@ if(IsSet($_POST['commentsubmit'])){
 	}else{
 		$row = $sql -> db_Fetch();
 		if($row[0] && (ANON===TRUE || USER===TRUE)){
-			$cobj -> enter_comment($_POST['author_name'], $_POST['comment'], "content", $sub_action);
+			$cobj -> enter_comment($_POST['author_name'], $_POST['comment'], "content", $sub_action, $pid, $_POST['subject']);
 			clear_cache("comment.content.{$sub_action}");
 		}
 	}
 }
-
 // content page -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 if($action == "content"){
 
@@ -115,7 +124,7 @@ if($action == "content"){
 		echo $aj -> formtparev($cache);
 	}else{
 		ob_start();
-		$text = ($content_parent ? $aj -> tpa($content_content, "nobreak", "admin") : $aj -> tpa($content_content, "off", "admin"));
+		$text = ($content_parent ? $aj -> tpa($content_content, "nobreak", "admin", $highlight_search) : $aj -> tpa($content_content, "off", "admin", $highlight_search));
 		$caption = $aj -> tpa($content_subheading, "off", "admin");
 		$ns -> tablerender($caption, $text);
 		
@@ -132,16 +141,16 @@ if($action == "content"){
 			ob_start();
 			unset($text);
 					if($comment_total = $sql -> db_Select("comments", "*",  "comment_item_id='$sub_action' AND comment_type='1' AND comment_pid='0' ORDER BY comment_datestamp")){
-					$width = 96;
+					$width = 0;
 					while($row = $sql -> db_Fetch()){
 					if($pref['nested_comments']){
-						$text = $cobj -> render_comment($row, $table, $action, $id, $width, $subject);		
+						$text = $cobj -> render_comment($row, "content" , "comment", $sub_action, $width, $content_heading);			
 						$ns -> tablerender(LAN_5, $text);	
 						}else{
-							$text .= $cobj -> render_comment($row, $table, $action, $id, $width, $subject);
+							$text .= $cobj -> render_comment($row, "content" , "comment", $sub_action, $width, $content_heading);	
 						}
 				}
-				 if(!$pref['nested_comments']){$ns -> tablerender(LAN_5, $text);	}
+				if(!$pref['nested_comments']){$ns -> tablerender(LAN_5, $text);	}
 				if($pref['cachestatus']){
 					$cache = $aj -> formtpa(ob_get_contents(), "admin");
 					set_cache("comment.content.$sub_action", $cache);
@@ -161,7 +170,8 @@ if($action == "content"){
 if($action == "review"){
 
 	if(is_numeric($sub_action)){
-		if($cache = retrieve_cache("review.item.$sub_action")){
+		$cachestr = ($id ? "review.item.$sub_action.$id" : "review.item.$sub_action");
+		if($cache = retrieve_cache($cachestr)){
 			echo $aj -> formtparev($cache);
 		}else{
 			ob_start();
@@ -196,9 +206,34 @@ if($action == "review"){
 				<span class='smalltext'>".LAN_43."$user_name".LAN_44."$datestamp</span>
 				<br /><br />
 				$content_summary
-				<br /><br />
-				".$aj -> tpa($content_content, "off", "admin")."
-				<br /><br />
+				<br /><br />";
+			
+				$content_content = $aj -> tpa($content_content, "off", "admin", $highlight_search);
+				$reviewpages = explode("[newpage]",$content_content);
+				$totalpages = count($reviewpages);
+				if(strstr($content_content, "{EMAILPRINT}") || $content_pe_icon){
+					$content_content = str_replace("{EMAILPRINT}", $textemailprint, $content_content);
+					$epflag = TRUE;
+				}
+
+				if($totalpages > 1){
+					$text .=  $reviewpages[(!$id ? 0 : $id)]."<br /><br />";
+					if($id != 0){ $text .= "<a href='content.php?review.$sub_action.".($id-1)."'>".LAN_25." <<</a> "; }
+					for($c=1; $c<= $totalpages; $c++){
+						$text .= ($c == ($id+1) ? "<span style='text-decoration: underline;'>$c</span>&nbsp;&nbsp;" : "<a href='content.php?review.$sub_action.".($c-1)."'>$c</a>&nbsp;&nbsp;");
+					}
+					if(($id+1) != $totalpages){ $text .= "<a href='content.php?review.$sub_action.".($id+1)."'>>> ".LAN_26."</a> "; }
+					if($epflag){ $text .= $textemailprint; }
+					$content_heading .= ", ".LAN_63." ".($id+1);
+					$cachestr = ($id ? "review.item.$sub_action.$id" : "review.item.$sub_action");
+
+				}else{
+					$text .= $content_content."\n<br />\n";
+					if($epflag){ $text .= $textemailprint; }
+					$cachestr = "review.item.$sub_action";
+					$comflag = TRUE;
+				}
+				$text .= "<br /><br />
 				".LAN_42.": 
 				<table style='width:".($content_review_score*2)."px'>
 				<tr class='border'>
@@ -219,20 +254,20 @@ if($action == "review"){
 			$row = $sql -> db_Fetch(); extract($row);
 		}
 
-	if($content_comment){
+		if($content_comment){
 			if($cache = retrieve_cache("comment.content.$sub_action")){
 				echo $aj -> formtparev($cache);
 			}else{
 				ob_start();
 				unset($text);
-					if($comment_total = $sql -> db_Select("comments", "*",  "comment_item_id='$sub_action' AND comment_type='1' AND comment_pid='0' ORDER BY comment_datestamp")){
-					$width = 96;
+			if($comment_total = $sql -> db_Select("comments", "*",  "comment_item_id='$sub_action' AND comment_type='1' AND comment_pid='0' ORDER BY comment_datestamp")){
+					$width = 0;
 					while($row = $sql -> db_Fetch()){
 					if($pref['nested_comments']){
-						$text = $cobj -> render_comment($row, $table, $action, $id, $width, $subject);		
+						$text = $cobj -> render_comment($row, "content" , "comment", $sub_action, $width, $content_heading);		
 						$ns -> tablerender(LAN_5, $text);	
 						}else{
-							$text .= $cobj -> render_comment($row, $table, $action, $id, $width, $subject);
+							$text .= $cobj -> render_comment($row, "content" , "comment", $sub_action, $width, $content_heading);	
 						}
 				}
 				 if(!$pref['nested_comments']){$ns -> tablerender(LAN_5, $text);	}
@@ -247,7 +282,6 @@ if($action == "review"){
 			}
 		$cobj -> form_comment("comment", "content", $sub_action, $content_heading);
 		}
-
 		require_once(FOOTERF);
 		exit;
 	}
@@ -400,7 +434,15 @@ if($action == "review"){
 
 			while($row = $sql -> db_Fetch()){
 				extract($row);
-				$total = $sql2 -> db_Select("content", "*", "content_parent=$content_id AND content_type=3");
+				$total = $sql2 -> db_Select("content", "content_class", "content_parent=$content_id AND content_type=3");
+				if($total){
+					while($row2 = $sql2 -> db_Fetch()){
+						extract($row2);
+						if(!check_class($content_class)){
+							$total = $total - 1;
+						}
+					}
+				}
 				$text .= "<tr>
 				<td class='forumheader3' style='width:10%; text-align:center' rowspan='2'>
 				".($content_summary ? "<a href='".e_SELF."?review.cat.$content_id'><img src='".e_IMAGE."link_icons/".$content_summary."' alt='' style='vertical-align:middle; border:0' /></a>" : "&nbsp;")."
@@ -408,10 +450,18 @@ if($action == "review"){
 				<td class='forumheader' style='width:90%'><b><a href='".e_SELF."?review.cat.$content_id'>$content_heading</a></b></td>
 				</tr>
 				<tr>
-				<td class='forumheader3'>$content_subheading  <span class='smalltext'>( $total ".($total>1 ? LAN_33 : LAN_34)." )</span></td>
+				<td class='forumheader3'>$content_subheading  <span class='smalltext'>( $total ".($total==1 ? LAN_34 : LAN_33)." )</span></td>
 				</tr>\n";
 			}
-			if($total = $sql -> db_Select("content", "*", "content_type=3 AND content_parent=0")){
+			$total = $sql2 -> db_Select("content", "*", "content_type=3 AND content_parent=0");
+				if($total){
+					while($row2 = $sql2 -> db_Fetch()){
+						extract($row2);
+						if(!check_class($content_class)){
+							$total = $total - 1;
+						}
+					}
+				}
 				$text .= "<tr>
 				<td class='forumheader3' style='width:10%; text-align:center' rowspan='2'>
 				&nbsp;
@@ -419,9 +469,8 @@ if($action == "review"){
 				<td class='forumheader' style='width:90%'><b><a href='".e_SELF."?review.cat.0'>".LAN_61."</a></b></td>
 				</tr>
 				<tr>
-				<td class='forumheader3'><span class='smalltext'>( $total ".($total>1 ? LAN_33 : LAN_34)." )</span></td>
+				<td class='forumheader3'><span class='smalltext'>( $total ".($total == 1 ? LAN_34 : LAN_33)." )</span></td>
 				</tr>\n";
-			}
 			$text .= "</table>\n</div>\n";
 			$ns -> tablerender(LAN_35, $text);
 
@@ -460,7 +509,6 @@ if($action == "article"){
 				$sql2 -> db_Select("content", "content_id, content_summary", "content_id=$category");
 				list($content_id_, $content_summary_) = $sql2-> db_Fetch();
 				$datestamp = ereg_replace(" -.*", "", $gen->convert_date($content_datestamp, "long"));
-
 				if(is_numeric($content_author)){
 					$sql2 -> db_Select("user", "*", "user_id=$content_author");
 					$row = $sql2 -> db_Fetch(); extract($row);
@@ -478,7 +526,7 @@ if($action == "article"){
 				$content_summary
 				<br /><br />";
 			
-				$content_content = $aj -> tpa($content_content, "off", "admin");
+				$content_content = $aj -> tpa($content_content, "off", "admin", $highlight_search);
 				$articlepages = explode("[newpage]",$content_content);
 				$totalpages = count($articlepages);
 				if(strstr($content_content, "{EMAILPRINT}") || $content_pe_icon){
@@ -552,7 +600,7 @@ if($action == "article"){
 			}
 			$ns -> tablerender(LAN_42, $text);
 		}
-		
+	
 		if($content_comment && $comflag){
 			if($cache = retrieve_cache("comment.content.$sub_action")){
 				echo $aj -> formtparev($cache);
@@ -560,13 +608,13 @@ if($action == "article"){
 				ob_start();
 				unset($text);
 				if($comment_total = $sql -> db_Select("comments", "*",  "comment_item_id='$sub_action' AND comment_type='1' AND comment_pid='0' ORDER BY comment_datestamp")){
-					$width = 96;
+					$width = 0;
 					while($row = $sql -> db_Fetch()){
 					if($pref['nested_comments']){
-						$text = $cobj -> render_comment($row, $table, $action, $id, $width, $subject);		
+						$text = $cobj -> render_comment($row, "content" , "comment", $sub_action, $width, $content_heading);		
 						$ns -> tablerender(LAN_5, $text);	
 						}else{
-							$text .= $cobj -> render_comment($row, $table, $action, $id, $width, $subject);
+							$text .= $cobj -> render_comment($row, "content" , "comment", $sub_action, $width, $content_heading);	
 						}
 				}
 				 if(!$pref['nested_comments']){$ns -> tablerender(LAN_5, $text);	}
@@ -715,7 +763,15 @@ if($action == "article"){
 			<table class='fborder' style='width:95%'>\n";
 			while($row = $sql -> db_Fetch()){
 				extract($row);
-				$total = $sql2 -> db_Select("content", "*", "content_parent=$content_id AND content_type=0");
+				$total = $sql2 -> db_Select("content", "content_class", "content_parent=$content_id AND content_type=0");
+				if($total){
+					while($row2 = $sql2 -> db_Fetch()){
+						extract($row2);
+						if(!check_class($content_class)){
+							$total = $total - 1;
+						}
+					}
+				}
 				$text .= "<tr>
 				<td class='forumheader3' style='width:10%; text-align:center' rowspan='2'>
 				".($content_summary ? "<a href='".e_SELF."?article.cat.$content_id'><img src='".e_IMAGE."link_icons/".$content_summary."' alt='' style='vertical-align:middle; border:0' /></a>" : "&nbsp;")."
@@ -723,11 +779,19 @@ if($action == "article"){
 				<td class='forumheader' style='width:90%'><b><a href='".e_SELF."?article.cat.$content_id'>$content_heading</a></b></td>
 				</tr>
 				<tr>
-				<td class='forumheader3'>$content_subheading  <span class='smalltext'>( $total ".($total>1 ? LAN_48 : LAN_49)." )</span></td>
+				<td class='forumheader3'>$content_subheading  <span class='smalltext'>( $total ".($total==1 ? LAN_49 : LAN_48)." )</span></td>
 				</tr>\n";
 			}
 
-			if($total = $sql -> db_Select("content", "*", "content_type=0 AND content_parent=0")){
+			    $total = $sql2 -> db_Select("content", "*", "content_type=0 AND content_parent=0");
+				if($total){
+					while($row2 = $sql2 -> db_Fetch()){
+						extract($row2);
+						if(!check_class($content_class)){
+							$total = $total - 1;
+						}
+					}
+				}
 				$text .= "<tr>
 				<td class='forumheader3' style='width:10%; text-align:center' rowspan='2'>
 				&nbsp;
@@ -735,9 +799,8 @@ if($action == "article"){
 				<td class='forumheader' style='width:90%'><b><a href='".e_SELF."?article.cat.0'>".LAN_61."</a></b></td>
 				</tr>
 				<tr>
-				<td class='forumheader3'><span class='smalltext'>( $total ".($total>1 ? LAN_48 : LAN_49)." )</span></td>
+				<td class='forumheader3'><span class='smalltext'>( $total ".($total==1 ? LAN_49 : LAN_48)." )</span></td>
 				</tr>\n";
-			}
 
 			$text .= "</table>\n</div>\n";
 			$ns -> tablerender(LAN_50, $text);

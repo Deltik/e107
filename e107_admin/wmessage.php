@@ -13,7 +13,7 @@
 +---------------------------------------------------------------+
 */
 require_once("../class2.php");
-if(!getperms("M")){ header("location:../index.php"); exit;}
+if(!getperms("M")){ header("location:".e_BASE."index.php"); exit;}
 require_once("auth.php");
 require_once(e_HANDLER."ren_help.php");
 $aj = new textparse;
@@ -37,13 +37,13 @@ list($id, $membermessage, $wm_active2) = $sql-> db_Fetch();
 list($id, $adminmessage, $wm_active3) = $sql-> db_Fetch();
 
 
-$guestmessage = $aj -> editparse($guestmessage);
-$membermessage = $aj -> editparse($membermessage);
-$adminmessage = $aj -> editparse($adminmessage);
+$guestmessage = $aj -> formtparev($aj -> editparse($guestmessage));
+$membermessage = $aj -> formtparev($aj -> editparse($membermessage));
+$adminmessage = $aj -> formtparev($aj -> editparse($adminmessage));
 
 $text = "
 <div style='text-align:center'>
-<form method='post' action='".$_SERVER['PHP_SELF']."'  name='wmform'>
+<form method='post' action='".e_SELF."'  id='wmform'>
 <table style='width:85%' class='fborder'>
 <tr>";
 
@@ -52,17 +52,17 @@ $text .= "
 <td style='width:20%' class='forumheader3'>".WMGLAN_1.": <br />
 ".WMGLAN_6.":";
 if($wm_active1){
-	$text .= "<input type='checkbox' name='wm_active1' value='1'  checked>";
+	$text .= "<input type='checkbox' name='wm_active1' value='1'  checked='checked' />";
 }else{
-	$text .= "<input type='checkbox' name='wm_active1' value='1'>";
+	$text .= "<input type='checkbox' name='wm_active1' value='1' />";
 }
 $text .= "</td>
 <td style='width:60%' class='forumheader3'>
 <textarea class='tbox' name='guestmessage' cols='70' rows='10'>$guestmessage</textarea>
 <br />
-<input class='helpbox' type='text' name='helpb' size='100' />
+<input class='helpbox' type='text' name='helpguest' size='100' />
 <br />
-".ren_help("addtext1")."
+".ren_help(1,"addtext1","help1")."
 </td>
 
 </tr>
@@ -71,33 +71,37 @@ $text .= "</td>
 <td style='width:20%' class='forumheader3'>".WMGLAN_2.": <br />
 ".WMGLAN_6.":";
 if($wm_active2){
-	$text .= "<input type='checkbox' name='wm_active2' value='1'  checked>";
+	$text .= "<input type='checkbox' name='wm_active2' value='1'  checked='checked' />";
 }else{
-	$text .= "<input type='checkbox' name='wm_active2' value='1'>";
+	$text .= "<input type='checkbox' name='wm_active2' value='1' />";
 }
 $text .= "</td>
 <td style='width:60%' class='forumheader3'>
 <textarea class='tbox' name='membermessage' cols='70' rows='10'>$membermessage</textarea>
 <br />
-".ren_help("addtext2")."
+<input class='helpbox' type='text' name='helpmember' size='100' />
+<br />
+".ren_help(1,"addtext2","help2")."
 </td>
-
+</tr>
 
 <tr>
 <td style='width:20%' class='forumheader3'>".WMGLAN_3.": <br />
 ".WMGLAN_6.": ";
 
 if($wm_active3){
-	$text .= "<input type='checkbox' name='wm_active3' value='1'  checked>";
+	$text .= "<input type='checkbox' name='wm_active3' value='1'  checked='checked' />";
 }else{
-	$text .= "<input type='checkbox' name='wm_active3' value='1'>";
+	$text .= "<input type='checkbox' name='wm_active3' value='1' />";
 }
 
 $text .= "</td>
 <td style='width:60%' class='forumheader3'>
 <textarea class='tbox' name='adminmessage' cols='70' rows='10'>$adminmessage</textarea>
 <br />
-".ren_help("addtext3")."
+<input class='helpbox' type='text' name='helpadmin' size='100' />
+<br />
+".ren_help(1,"addtext3","help3")."
 </td>
 </tr>
 
@@ -116,19 +120,25 @@ $ns -> tablerender(WMGLAN_5, $text);
 ?>
 <script type="text/javascript">
 function addtext1(sc){
-	document.wmform.guestmessage.value += sc;
+	document.getElementById('wmform').guestmessage.value += sc;
 }
 function addtext2(sc){
-	document.wmform.membermessage.value += sc;
+	document.getElementById('wmform').membermessage.value += sc;
 }
 function addtext3(sc){
-	document.wmform.adminmessage.value += sc;
+	document.getElementById('wmform').adminmessage.value += sc;
 }
 function fclear(){
 	document.newspostform.message.value = "";
 }
-function help(help){
-	document.wmform.helpb.value = help;
+function help1(help){
+	document.getElementById('wmform').helpguest.value = help;
+}
+function help2(help){
+	document.getElementById('wmform').helpmember.value = help;
+}
+function help3(help){
+	document.getElementById('wmform').helpadmin.value = help;
 }
 </script>
 <?php

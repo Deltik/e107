@@ -1,8 +1,4 @@
 <?php
-if(IsSet($_POST['fjsubmit'])){
-	header("location:forum_viewforum.php?".$_POST['forumjump']);
-	exit;
-}
 /*
 +---------------------------------------------------------------+
 |	e107 website system
@@ -16,8 +12,12 @@ if(IsSet($_POST['fjsubmit'])){
 |	GNU General Public License (http://gnu.org).
 +---------------------------------------------------------------+
 */
-require_once("class2.php");
 
+require_once("class2.php");
+if(IsSet($_POST['fjsubmit'])){
+	header("location:".e_BASE."forum_viewforum.php?".$_POST['forumjump']);
+	exit;
+}
 if(!e_QUERY){
 	header("Location:".e_BASE."forum.php");
 	exit;
@@ -54,6 +54,7 @@ if(!$FORUM_VIEW_START){
 
 $sql -> db_Select("forum", "*", "forum_id='".$forum_id."' ");
 $row = $sql-> db_Fetch(); extract($row);
+define("e_PAGETITLE", LAN_01." / ".$row['forum_name']);
 
 if($forum_class && !check_class($forum_class) || !$forum_parent){ header("Location:".e_BASE."forum.php"); exit;}
 
@@ -150,16 +151,32 @@ $SEARCH = "
 <p>
 <input class='tbox' type='text' name='searchquery' size='20' value='' maxlength='50' />
 <input class='button' type='submit' name='searchsubmit' value='".LAN_180."' />
+<input type='hidden' name='searchtype' value='7' />
 </p>
 </form>";
 
 $PERMS = 
 (USER == TRUE || ANON == TRUE ? LAN_204." - ".LAN_206." - ".LAN_208 : LAN_205." - ".LAN_207." - ".LAN_209);
 
-
+$sticky_threads = 0;$stuck = FALSE;
+$reg_threads = 0;$unstuck = FALSE;
 if($sql -> db_Select("forum_t", "*",  "thread_forum_id='".$forum_id."' AND thread_parent='0' ORDER BY thread_s DESC, thread_lastpost DESC, thread_datestamp DESC LIMIT $from, $view")){
 	$sql2 = new db; $sql3 = new db; $gen = new convert;
 	while($row= $sql -> db_Fetch()){
+		if($row['thread_s']){
+			$sticky_threads ++;
+		}
+		if($sticky_threads == "1" && !$stuck){
+			$forum_view_forum .= "<tr><td class='forumheader'>&nbsp;</td><td colspan='5'  class='forumheader'><span class='mediumtext'><b>".LAN_411."</b></span></td></tr>";
+			$stuck = TRUE;
+		}
+		if(!$row['thread_s']){
+			$reg_threads ++;
+		}
+		if($reg_threads == "1" && !$unstuck && $stuck){
+			$forum_view_forum .= "<tr><td class='forumheader'>&nbsp;</td><td colspan='5'  class='forumheader'><span class='mediumtext'><b>".LAN_412."</b></span></td></tr>";
+			$unstuck = TRUE;
+		}
 		$forum_view_forum .= parse_thread($row);
 	}
 }else{
@@ -224,7 +241,7 @@ function parse_thread($row){
 
 	$THREADDATE = $gen->convert_date($thread_datestamp, "forum");
 	$ICON = ($newflag ? IMAGE_new_small : IMAGE_nonew_small);
-	if($replies >= $pref['forum_popular'] && $replies != "None"){
+	if($REPLIES >= $pref['forum_popular'] && $REPLIES != "None"){
 		$ICON = ($newflag ? IMAGE_new_popular : IMAGE_nonew_popular);
 	}
 

@@ -79,7 +79,6 @@ if(IsSet($id)){
 }
 
 $users_total = $sql -> db_Count("user");
-
 $text = "<div style='text-align:center'>
 ".LAN_138." ".$users_total."<br /><br />
 <form method='post' action='".e_SELF."'>
@@ -88,34 +87,34 @@ $text = "<div style='text-align:center'>
 
 if($records == 10){
         $text .= "<select name='records' class='tbox'>
-<option selected>10</option>
-<option>20</option>
-<option>30</option>
+<option value='10' selected='selected'>10</option>
+<option value='20'>20</option>
+<option value='30'>30</option>
 </select>  ";
 }else if($records == 20){
         $text .= "<select name='records' class='tbox'>
-<option>10</option>
-<option selected>20</option>
-<option>30</option>
+<option value='10'>10</option>
+<option value='20' selected='selected'>20</option>
+<option value='30'>30</option>
 </select>  ";
 }else{
         $text .= "<select name='records' class='tbox'>
-<option>10</option>
-<option>20</option>
-<option selected>30</option>
+<option value='10'>10</option>
+<option value='20'>20</option>
+<option value='30' selected='selected'>30</option>
 </select>  ";
 }
 $text .= LAN_139;
 
 if($order == "ASC"){
         $text .= "<select name='order' class='tbox'>
-<option>".LAN_420."</option>
-<option selected>".LAN_421."</option>
+<option value='DESC'>".LAN_420."</option>
+<option value='ASC' selected='selected'>".LAN_421."</option>
 </select>";
 }else{
         $text .= "<select name='order' class='tbox'>
-<option selected>".LAN_420."</option>
-<option>".LAN_421."</option>
+<option value='DESC' selected='selected'>".LAN_420."</option>
+<option value='ASC'>".LAN_421."</option>
 </select>";
 }
 
@@ -163,6 +162,7 @@ function renderuser($row, $user_entended, $mode="verbose"){
         extract($row);
         $aj = new textparse;
         $gen = new convert;
+		$pm_installed = ($pref['pm_title'] ? TRUE : FALSE);
         if($mode != "verbose"){
                 $datestamp = $gen->convert_date($user_join, "short");
                 return "
@@ -173,14 +173,16 @@ function renderuser($row, $user_entended, $mode="verbose"){
                 <td class='forumheader3' style='width:20%'>$datestamp</td>
                 </tr>";
         }else{
-
+                                $user_data = $user_id.".".$user_name;
                 $chatposts = $sql -> db_Count("chatbox");
                 $commentposts = $sql -> db_Count("comments");
                 $forumposts = $sql -> db_Count("forum_t");
-
-                $chatper = round(($user_chats/$chatposts)*100,2);
-                $commentper = round(($user_comments/$commentposts)*100,2);
-                $forumper = round(($user_forums/$forumposts)*100,2);
+                                $actual_forums = $sql -> db_Count("forum_t", "(*)", "WHERE thread_user='$user_data'");
+                                $actual_chats = $sql -> db_Count("chatbox", "(*)", "WHERE cb_nick='$user_data'");
+                                $actual_comments = $sql -> db_Count("forum_t", "(*)", "WHERE comment_author='$user_data'");
+                $chatper = round(($actual_chats/$chatposts)*100,2);
+                $commentper = round(($actual_comments/$commentposts)*100,2);
+                $forumper = round(($actual_forums/$forumposts)*100,2);
                 require_once(e_HANDLER."level_handler.php");
 
                 $ldata = get_level($user_id, $user_forums, $user_comments, $user_chats, $user_visits, $user_join, $user_admin, $user_perms, $pref);
@@ -200,7 +202,7 @@ function renderuser($row, $user_entended, $mode="verbose"){
                 <div style='text-align:center'>
                 <table style='width:95%' class='fborder'>
                 <tr><td colspan='2' class='fcaption' style='text-align:center'>".LAN_142." ".$user_id.": ".$user_name."</td></tr>
-                <tr><td rowspan='8' class='forumheader3' style='width:20%; vertical-align:middle; text-align:center'>";
+                <tr><td rowspan='".($pm_installed && $id != USERID ? 9 : 8)."' class='forumheader3' style='width:20%; vertical-align:middle; text-align:center'>";
 
                 if($user_sess && file_exists(e_FILE."public/avatars/".$user_sess)){
                         $str .= "<img src='".e_FILE."public/avatars/".$user_sess."' alt='' />";
@@ -233,21 +235,20 @@ function renderuser($row, $user_entended, $mode="verbose"){
                 </td></tr>
 
                 <td style='width:80%'class='forumheader3'>
-                        <table style='width:100%'><tr><td style='width:30%'> <img src='".e_IMAGE."generic/aim.png' alt=''  style='vertical-align:middle' /> ".LAN_116."</td><td style='width:70%; text-align:right'>".($user_aim ? $user_aim : "<i>".LAN_401."</i>")."</td></tr></table>
+                        <table style='width:100%'><tr><td style='width:30%'> <img src='".e_IMAGE."generic/aim.png' alt=''  style='vertical-align:middle' /> ".LAN_116."</td><td style='width:70%; text-align:right'>".($user_aim ? $aj -> tpa($user_aim) : "<i>".LAN_401."</i>")."</td></tr></table>
                 </td></tr>
 
                 <td style='width:80%'class='forumheader3'>
-                        <table style='width:100%'><tr><td style='width:30%'> <img src='".e_IMAGE."generic/msn.png' alt=''  style='vertical-align:middle' /> ".LAN_117."</td><td style='width:70%; text-align:right'>".($user_msn ? $user_msn : "<i>".LAN_401."</i>")."</td></tr></table>
+                        <table style='width:100%'><tr><td style='width:30%'> <img src='".e_IMAGE."generic/msn.png' alt=''  style='vertical-align:middle' /> ".LAN_117."</td><td style='width:70%; text-align:right'>".($user_msn ? $aj -> tpa($user_msn) : "<i>".LAN_401."</i>")."</td></tr></table>
                 </td></tr>
 
                 <td style='width:80%'class='forumheader3'>
-                        <table style='width:100%'><tr><td style='width:30%'> <img src='".e_IMAGE."generic/hme.png' alt=''  style='vertical-align:middle' /> ".LAN_144."</td><td style='width:70%; text-align:right'>".($user_homepage ? "<a href=\"javascript:open_window('".$user_homepage."')\">$user_homepage</a>" : "<i>".LAN_401."</i>")."</td></tr></table>
+                        <table style='width:100%'><tr><td style='width:30%'> <img src='".e_IMAGE."generic/hme.png' alt=''  style='vertical-align:middle' /> ".LAN_144."</td><td style='width:70%; text-align:right'>".($user_homepage ? "<a href='".$user_homepage."' rel='external';>$user_homepage</a>" : "<i>".LAN_401."</i>")."</td></tr></table>
                 </td></tr>
 
                 <td style='width:80%'class='forumheader3'>
-                        <table style='width:100%'><tr><td style='width:30%'> <img src='".e_IMAGE."generic/location.png' alt=''  style='vertical-align:middle' /> ".LAN_119."</td><td style='width:70%; text-align:right'>".($user_location ? $user_location : "<i>".LAN_401."</i>")."</td></tr></table>
+                        <table style='width:100%'><tr><td style='width:30%'> <img src='".e_IMAGE."generic/location.png' alt=''  style='vertical-align:middle' /> ".LAN_119."</td><td style='width:70%; text-align:right'>".($user_location ? $aj -> tpa($user_location) : "<i>".LAN_401."</i>")."</td></tr></table>
                 </td></tr>";
-
 
                 if($user_birthday != "" && $user_birthday != "0000-00-00" && ereg ("([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})", $user_birthday, $regs)){
                                 $user_birthday = "$regs[3].$regs[2].$regs[1]";
@@ -257,9 +258,16 @@ function renderuser($row, $user_entended, $mode="verbose"){
 
                 $str .= "<td style='width:80%'class='forumheader3'>
                         <table style='width:100%'><tr><td style='width:30%'> <img src='".e_IMAGE."generic/bday.png' alt=''  style='vertical-align:middle' /> ".LAN_118."</td><td style='width:70%; text-align:right'>$user_birthday</td></tr></table>
-                </td></tr>
+                </td></tr>";
+						
+				if($pm_installed && $id != USERID){
+					$str .= "
+				<td style='width:80%'class='forumheader3'>
+                        <table style='width:100%'><tr><td style='width:30%'> ".e107_parse("{CODE=pm_menu.sendpm.{$id}}")." ".LAN_425."</td><td style='width:70%; text-align:right'>".e107_parse("{CODE=pm_menu.sendpmtext.{$id}}")."</td></tr></table>
+                </td></tr>";
+				}
 
-                ".($user_signature ? "<tr><td colspan='2' class='forumheader3' style='text-align:center'><i>".$aj -> tpa($user_signature)."</i></td></tr>" : "");
+                $str .= ($user_signature ? "<tr><td colspan='2' class='forumheader3' style='text-align:center'><i>".$aj -> tpa($user_signature)."</i></td></tr>" : "");
 
 
 
@@ -276,12 +284,13 @@ function renderuser($row, $user_entended, $mode="verbose"){
                         $str .= "<tr><td colspan='2' class='forumheader'>".LAN_410."</td></tr>";
 
                         $user_prefs = unserialize($user_prefs);
+                 
                         while(list($key, $u_entended) = each($user_entended)){
-							$ut = explode("|", $u_entended);
-							if(!$ut[5] || check_class($ut[5])==TRUE){
+                                                        $ut = explode("|", $u_entended);
+                                                        if(!$ut[5] || check_class($ut[5])==TRUE){
                                 $str .= "<tr><td style='width:40%' class='forumheader3'>".user_extended_name($u_entended)."</td>
-                                <td style='width:60%' class='forumheader3'>".($user_prefs[$u_entended] ? $user_prefs[$u_entended] : "<i>".LAN_401."</i>")."</td></tr>";
-							}
+                                <td style='width:60%' class='forumheader3'>".($user_prefs["ue_{$key}"] ? $user_prefs["ue_{$key}"] : "<i>".LAN_401."</i>")."</td></tr>";
+                                                        }
                         }
                 }
 
@@ -307,26 +316,26 @@ function renderuser($row, $user_entended, $mode="verbose"){
                 <td style='width:70%'class='forumheader3'>$user_comments ( ".$commentper."% )</td>
                 </tr>";
 
-				if($user_comments){
-					$str .= "
-					<tr>
-					<td colspan='2' class='forumheader3'><a href='".e_BASE."userposts.php?0.comments.".$user_id."'>".LAN_423."</a></td>
-					</tr>";
-				}
-				$str .= "
+                                if($user_comments){
+                                        $str .= "
+                                        <tr>
+                                        <td colspan='2' class='forumheader3'><a href='".e_BASE."userposts.php?0.comments.".$user_id."'>".LAN_423."</a></td>
+                                        </tr>";
+                                }
+                                $str .= "
 
                 <tr>
                 <td style='width:30%'class='forumheader3'>".LAN_149."</td>
                 <td style='width:70%'class='forumheader3'>$user_forums ( ".$forumper."% )</td>
                 </tr>";
 
-				if($user_forums){
-					$str .= "
-					<tr>
-					<td colspan='2' class='forumheader3'><a href='".e_BASE."userposts.php?0.forums.".$user_id."'>".LAN_424."</a></td>
-					</tr>";
-				}
-				$str .= "
+                                if($user_forums){
+                                        $str .= "
+                                        <tr>
+                                        <td colspan='2' class='forumheader3'><a href='".e_BASE."userposts.php?0.forums.".$user_id."'>".LAN_424."</a></td>
+                                        </tr>";
+                                }
+                                $str .= "
 
                 <tr>
                 <td style='width:30%'class='forumheader3'>".LAN_146."</td>

@@ -109,11 +109,11 @@ if(IsSet($_POST['updateoptions'])){
         $pref['article_submit'] = $_POST['article_submit'];
         $pref['article_submit_class'] = $_POST['article_submit_class'];
         save_prefs();
-		if($pref['article_submit'] ){
-			$sql -> db_Update("links", "link_class=".$pref['article_submit_class']." WHERE link_url='subcontent.php?article' ");
-		}else{
-			$sql -> db_Update("links", "link_class='255' WHERE link_url='subcontent.php?article' ");
-		}
+                if($pref['article_submit'] ){
+                        $sql -> db_Update("links", "link_class=".$pref['article_submit_class']." WHERE link_url='subcontent.php?article' ");
+                }else{
+                        $sql -> db_Update("links", "link_class='255' WHERE link_url='subcontent.php?article' ");
+                }
         $message = ARLAN_92;
 }
 
@@ -143,12 +143,19 @@ if(IsSet($_POST['preview'])){
         $ns -> tablerender($content_heading, $text);
         echo "<br /><br />";
         // make form friendly ...
-        $content_heading = $aj -> formtparev($_POST['content_heading']);
+        /* Before bug fixing for apostroph
+                $content_heading = $aj -> formtparev($_POST['content_heading']);
         $content_subheading = $aj -> formtparev($_POST['content_subheading']);
         $data = $aj -> formtparev(str_replace("../", "", $_POST['data']));
         $content_summary = $aj -> formtparev($_POST['content_summary']);
+                */
+                $content_heading = $aj -> formtpa($_POST['content_heading']);
+        $content_subheading = $aj -> formtpa($_POST['content_subheading']);
+        $data = $aj -> formtpa(str_replace("../", "", $_POST['data']));
+        $content_summary = $aj -> formtpa($_POST['content_summary']);
+
         $content_parent = $_POST['category'];
-		$content_class = $_POST['a_class'];
+                $content_class = $_POST['a_class'];
 }
 
 
@@ -173,12 +180,13 @@ if($action == "cat"){
                 </tr>";
                 while($row = $sql -> db_Fetch()){
                         extract($row);
+                                                $delete_heading = str_replace("&#39;", "\'", $content_heading);
                         $text .= "<tr>
                         <td style='width:5%; text-align:center' class='forumheader3'>".($content_summary ? "<img src='".e_IMAGE."link_icons/$content_summary' alt='' style='vertical-align:middle' />" : "&nbsp;")."</td>
                         <td style='width:75%' class='forumheader3'>$content_heading [$content_subheading]</td>
                         <td style='width:20%; text-align:center' class='forumheader3'>
-                        ".$rs -> form_button("submit", "category_edit", ARLAN_61, "onClick=\"document.location='".e_SELF."?cat.edit.$content_id'\"")."
-                        ".$rs -> form_button("submit", "category_delete", ARLAN_62, "onClick=\"confirm_('cat', '$content_heading', $content_id);\"")."
+                        ".$rs -> form_button("submit", "category_edit", ARLAN_61, "onclick=\"document.location='".e_SELF."?cat.edit.$content_id'\"")."
+                        ".$rs -> form_button("submit", "category_delete", ARLAN_62, "onclick=\"confirm_('cat', '$delete_heading', $content_id);\"")."
                         </td>
                         </tr>";
                 }
@@ -218,12 +226,12 @@ if($action == "cat"){
         <td class='forumheader3' style='width:70%'>
         ".$rs -> form_text("category_button", 60, $content_summary, 100)."
         <br />
-        <input class='button' type ='button' style=''width: 35px'; cursor:hand' size='30' value='".ARLAN_67."' onClick='expandit(this)'>
-        <div style='display:none' style=&{head};>";
+        <input class='button' type ='button' style='cursor:hand' size='30' value='".ARLAN_67."' onclick='expandit(this)' />
+        <div style='{head}; display:none'>";
         while(list($key, $icon) = each($iconlist)){
                 $text .= "<a href='javascript:addtext2(\"$icon\")'><img src='".e_IMAGE."link_icons/".$icon."' style='border:0' alt='' /></a> ";
         }
-        $text .= "</td>
+        $text .= "</div></td>
         </tr>
         <tr>
         <td class='forumheader3' style='width:30%'><span class='defaulttext'>".ARLAN_68."</span></td>
@@ -231,12 +239,12 @@ if($action == "cat"){
         </tr>
         <tr><td colspan='2' style='text-align:center' class='forumheader'>";
         if($id){
-                $text .= "<input class='button' type='submit' name='update_category' value='".ARLAN_69."'>
+                $text .= "<input class='button' type='submit' name='update_category' value='".ARLAN_69."' />
                 ".$rs -> form_button("submit", "category_clear", "".ARLAN_70."").
                 $rs -> form_hidden("category_id", $id)."
                 </td></tr>";
         }else{
-                $text .= "<input class='button' type='submit' name='create_category' value='".ARLAN_71."'></td></tr>";
+                $text .= "<input class='button' type='submit' name='create_category' value='".ARLAN_71."' /></td></tr>";
         }
         $text .= "</table>
         ".$rs -> form_close()."
@@ -249,38 +257,86 @@ if($action == "cat"){
 
 
 // ##### Display scrolling list of existing articles --------------------------------------------------------------------------------------------------------------------------
-if(!$action || $action == "confirm"){
-        $sql2 = new db;
-        $text = "<div style='border : solid 1px #000; padding : 4px; width : auto; height : 200px; overflow : auto; '>";
-        if($article_total = $sql -> db_Select("content", "*", "content_type='0' ORDER BY content_datestamp DESC")){
-                $text .= "<table class='fborder' style='width:100%'>
-                <tr>
-                <td style='width:5%' class='forumheader2'>&nbsp;</td>
-                <td style='width:50%' class='forumheader2'>".ARLAN_20."</td>
-                <td style='width:45%' class='forumheader2'>".ARLAN_60."</td>
-                </tr>";
-                while($row = $sql -> db_Fetch()){
-                        extract($row);
-                        unset($cs);
-                        if($sql2 -> db_Select("content", "content_summary", "content_id=$content_parent")){
-                                $row = $sql2 -> db_Fetch(); $cs = $row[0];
-                        }
-                        $text .= "<tr>
-                        <td style='width:5%; text-align:center' class='forumheader3'>".($cs ? "<img src='".e_IMAGE."link_icons/$cs' alt='' style='vertical-align:middle' />" : "&nbsp;")."</td>
-                        <td style='width:75%' class='forumheader3'><a href='".e_BASE."content.php?article.$content_id'>$content_heading</a> [$content_subheading]</td>
-                        <td style='width:20%; text-align:center' class='forumheader3'>
-                        ".$rs -> form_button("submit", "main_edit", ARLAN_61, "onClick=\"document.location='".e_SELF."?create.edit.$content_id'\"")."
-                        ".$rs -> form_button("submit", "main_delete", ARLAN_62, "onClick=\"confirm_('create', '$content_heading', $content_id)\"")."
-                        </td>
-                        </tr>";
-                }
-                $text .= "</table>";
-        }else{
-                $text .= "<div style='text-align:center'>".ARLAN_14."</div>";
-        }
-        $text .= "</div>";
-        $ns -> tablerender(ARLAN_72, $text);
-}
+if(!$action || $action == "confirm" || $action == 'c'){
+
+	$text = "";
+	// -------- SHOW FIRST LETTERS FIRSTNAMES ------------------------------------
+	$sql = new db;
+	$distinctfirstletter = $sql -> db_Select("content", "DISTINCT(LEFT(content_heading,1)) as letter", "content_type='0' ORDER BY content_heading ASC ");
+	
+	if ($distinctfirstletter != 1){
+
+		$text .= "<table class='fborder' style='width:100%'>
+		<form method='post' action='".e_SELF."'>
+		<tr><td colspan='2' class='forumheader'>".ARLAN_31."</td></tr>
+		<tr><td colspan='2' class='forumheader3'>";
+
+		while($row = $sql-> db_Fetch()){
+		extract($row);
+			$text .= "<input class='button' style='width:20' type='submit' name='letter' value='".strtoupper($letter)."'>";
+		}
+
+		$text .= "
+		<input class='button' style='width:20' type='submit' name='letter' value='all'>
+		</td></tr>
+		</form>
+		</table>";
+	}
+	// ---------------------------------------------------------------------------
+
+	// -------- CHECK FOR FIRST LETTER SUBMISSION --------------------------------
+	$sql = new db;
+	$letter=$_POST['letter'];
+	if ($_POST['letter'] != "" && $_POST['letter'] != "all" ) {
+		$letter = $_POST['letter'];
+		$query = "content_type='0' AND content_heading LIKE '".$letter."%' ORDER BY content_datestamp DESC";
+	} else {
+		if($sub_action){
+			$cat=intval($sub_action);
+			if($cat=="none"){$cat='0';}
+			$query = "content_type='0' AND content_parent={$cat} ORDER BY content_datestamp DESC";
+		} else {
+			$query = "content_type='0' ORDER BY content_datestamp DESC";
+		}
+	}
+	// ---------------------------------------------------------------------------
+
+	$sql2 = new db;
+	$text .= "<div style='border : solid 1px #000; padding : 4px; width : auto; height : 400px; overflow : auto; '>";
+	if($article_total = $sql -> db_Select("content", "*", $query)){
+		if($article_total < 50 || $letter || $cat){
+			$text .= "<table class='fborder' style='width:100%'>
+			<tr>
+			<td style='width:5%' class='forumheader2'>&nbsp;</td>
+			<td style='width:50%' class='forumheader2'>".ARLAN_20."</td>
+			<td style='width:45%' class='forumheader2'>".ARLAN_60."</td>
+			</tr>";
+			while($row = $sql -> db_Fetch()){
+				extract($row);
+				unset($cs);
+				$delete_heading = str_replace("&#39;", "\'", $content_heading);
+				if($sql2 -> db_Select("content", "content_summary", "content_id=$content_parent")){
+					$row = $sql2 -> db_Fetch(); $cs = $row[0];
+				}
+				$text .= "<tr>
+				<td style='width:5%; text-align:center' class='forumheader3'>".($cs ? "<img src='".e_IMAGE."link_icons/$cs' alt='' style='vertical-align:middle' />" : "&nbsp;")."</td>
+				<td style='width:75%' class='forumheader3'><a href='".e_BASE."content.php?article.$content_id'>$content_heading</a> [$content_subheading]</td>
+				<td style='width:20%; text-align:center' class='forumheader3'>
+				".$rs -> form_button("submit", "main_edit", ARLAN_61, "onclick=\"document.location='".e_SELF."?create.edit.$content_id'\"")."
+				".$rs -> form_button("submit", "main_delete", ARLAN_62, "onclick=\"confirm_('create', '$delete_heading', $content_id)\"")."
+				</td>
+				</tr>";
+			}
+			$text .= "</table>";
+		} else {
+			$text .= "<br /><div style='text-align:center'>".ARLAN_32."</div>";
+		}
+	} else {
+		$text .= "<div style='text-align:center'>".ARLAN_14."</div>";
+	}
+	$text .= "</div>";
+	$ns -> tablerender(ARLAN_72, $text);
+	}
 
 // ##### End ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -315,12 +371,12 @@ if($action == "create"){
         }
 
         require_once(e_HANDLER."userclass_class.php");
-        	
+
         $text = "<div style='text-align:center'>
         ".$rs -> form_open("post", e_SELF."?".e_QUERY."", "dataform")."
 
         <table style='width:95%' class='fborder'>
-        
+
         <tr>
         <td style='width:20%; vertical-align:top' class='forumheader3'>".ARLAN_74.":</td>
         <td style='width:80%' class='forumheader3'>";
@@ -341,8 +397,8 @@ if($action == "create"){
                 <a href=\"javascript:void(0);\" onclick=\"expandit(this);\" >".ARLAN_100."</a>\n
         <span style=\"display: none;\" >
                 <br /><br />
-                <input class='tbox' type='text' name='content_author' size='60' value='".($content_author ? $content_author : ARLAN_84)."' maxlength='100' ".($content_author ? "" : "onFocus=\"if(document.dataform.content_author.value=='".ARLAN_84."'){document.dataform.content_author.value='';}\"")." /><br />
-        <input class='tbox' type='text' name='content_author_email' size='60' value='".($content_author_email ? $content_author_email : ARLAN_85)."' maxlength='100' ".($content_author_email ? "" : "onFocus=\"if(document.dataform.content_author_email.value=='".ARLAN_85."'){document.dataform.content_author_email.value='';}\"")." /><br />
+                <input class='tbox' type='text' name='content_author' size='60' value='".($content_author ? $content_author : ARLAN_84)."' maxlength='100' ".($content_author ? "" : "onfocus=\"if(document.dataform.content_author.value=='".ARLAN_84."'){document.dataform.content_author.value='';}\"")." /><br />
+        <input class='tbox' type='text' name='content_author_email' size='60' value='".($content_author_email ? $content_author_email : ARLAN_85)."' maxlength='100' ".($content_author_email ? "" : "onfocus=\"if(document.dataform.content_author_email.value=='".ARLAN_85."'){document.dataform.content_author_email.value='';}\"")." /><br />
         </span>
                 </td>
         </tr>
@@ -388,13 +444,13 @@ if($action == "create"){
         <tr>
         <td colspan='2' class='forumheader3'>".ARLAN_21.":&nbsp;&nbsp;".
 
-        ($content_comment ? ARLAN_22.": <input type='radio' name='content_comment' value='1' checked>".ARLAN_23.": <input type='radio' name='content_comment' value='0'>" : ARLAN_22.": <input type='radio' name='content_comment' value='1'>".ARLAN_23.": <input type='radio' name='content_comment' value='0' checked>")."
+        ($content_comment ? ARLAN_22.": <input type='radio' name='content_comment' value='1' checked='checked' />".ARLAN_23.": <input type='radio' name='content_comment' value='0' />" : ARLAN_22.": <input type='radio' name='content_comment' value='1' />".ARLAN_23.": <input type='radio' name='content_comment' value='0' checked='checked' />")."
         </td>
         </tr>
 
         <tr>
         <td colspan='2' class='forumheader3'>".ARLAN_24.":&nbsp;&nbsp;".
-        ($content_pe_icon ? ARLAN_25.": <input type='radio' name='add_icons' value='1' checked>".ARLAN_26.": <input type='radio' name='add_icons' value='0'>" : ARLAN_25.": <input type='radio' name='add_icons' value='1'>".ARLAN_26.": <input type='radio' name='add_icons' value='0' checked>")."
+        ($content_pe_icon ? ARLAN_25.": <input type='radio' name='add_icons' value='1' checked='checked' />".ARLAN_26.": <input type='radio' name='add_icons' value='0' />" : ARLAN_25.": <input type='radio' name='add_icons' value='1' />".ARLAN_26.": <input type='radio' name='add_icons' value='0' checked='checked' />")."
         </td>
         </tr>
 
@@ -408,7 +464,7 @@ if($action == "create"){
         <tr style='vertical-align:top'>
         <td colspan='2'  style='text-align:center' class='forumheader'>".
         (!$_POST['preview'] ? "<input class='button' type='submit' name='preview' value='".ARLAN_28."' />" : "<input class='button' type='submit' name='preview' value='".ARLAN_27."' />")." ".
-        ($sub_action == "edit" || $_POST['editp']? "<input class='button' type='submit' name='update_article' value='".ADLAN_81." ".ARLAN_20."' />\n<input type='hidden' name='content_id' value='$id'>" : ($sub_action == "sa" ? "<input class='button' type='submit' name='sa_article' value='".ARLAN_98."' />" : "<input class='button' type='submit' name='create_article' value='".ADLAN_85." ".ARLAN_20."' />"))."
+        ($sub_action == "edit" || $_POST['editp']? "<input class='button' type='submit' name='update_article' value='".ADLAN_81." ".ARLAN_20."' />\n<input type='hidden' name='content_id' value='$id' />" : ($sub_action == "sa" ? "<input class='button' type='submit' name='sa_article' value='".ARLAN_98."' />" : "<input class='button' type='submit' name='create_article' value='".ADLAN_85." ".ARLAN_20."' />"))."
         </td>
         </tr>
         </table>
@@ -431,8 +487,8 @@ if($action == "opt"){
         ".ARLAN_86."<br />
         <span class='smalltext'>".ARLAN_87."</span>
         </td>
-        <td style='width:30%' class='forumheader2' style='text-align:center'>".
-        ($pref['article_submit'] ? "<input type='checkbox' name='article_submit' value='1' checked>" : "<input type='checkbox' name='article_submit' value='1'>")."
+        <td class='forumheader2' style='width:30%;text-align:center'>".
+        ($pref['article_submit'] ? "<input type='checkbox' name='article_submit' value='1' checked='checked' />" : "<input type='checkbox' name='article_submit' value='1' />")."
         </td>
         </tr>
 
@@ -441,7 +497,7 @@ if($action == "opt"){
         ".ARLAN_88."<br />
         <span class='smalltext'>".ARLAN_89."</span>
         </td>
-        <td style='width:30%' class='forumheader2' style='text-align:center'>".r_userclass("article_submit_class", $pref['article_submit_class'])."</td>
+        <td class='forumheader2' style='width:30%; text-align:center'>".r_userclass("article_submit_class", $pref['article_submit_class'])."</td>
         </tr>
 
         <tr style='vertical-align:top'>
@@ -475,8 +531,8 @@ if($action == "sa"){
                         <td style='width:5%; text-align:center; vertical-align:top' class='forumheader3'>$content_id</td>
                         <td style='width:75%' class='forumheader3'><b>".$aj -> tpa($content_heading)."</b> [".$aj -> tpa($content_subheading)."]<br />$content_author ($content_author_email)</td>
                         <td style='width:20%; text-align:center; vertical-align:top' class='forumheader3'>
-                        ".$rs -> form_button("submit", "category_edit", ARLAN_97, "onClick=\"document.location='".e_SELF."?create.sa.$content_id'\"")."
-                        ".$rs -> form_button("submit", "category_delete", ARLAN_62, "onClick=\"confirm_('sa', '$content_heading', $content_id);\"")."
+                        ".$rs -> form_button("submit", "category_edit", ARLAN_97, "onclick=\"document.location='".e_SELF."?create.sa.$content_id'\"")."
+                        ".$rs -> form_button("submit", "category_delete", ARLAN_62, "onclick=\"confirm_('sa', '$content_heading', $content_id);\"")."
                         </td>
                         </tr>\n";
                 }
@@ -490,38 +546,63 @@ if($action == "sa"){
 
 // ##### Display options --------------------------------------------------------------------------------------------------------------------------------------------------------
 
-$text = "<div style='text-align:center'>";
-if(e_QUERY && $action != "confirm"){
-        $text .= "<a href='".e_SELF."'><div class='border'><div class='forumheader'>".ARLAN_76."</div></div></a>";
-}
-if($action != "create"){
-        $text .= "<a href='".e_SELF."?create'><div class='border'><div class='forumheader'>".ARLAN_77."</div></div></a>";
-}
-if($action != "cat"){
-        $text .= "<a href='".e_SELF."?cat'><div class='border'><div class='forumheader'>".ARLAN_78."</div></div></a>";
-}
-if($action != "opt"){
-        $text .= "<a href='".e_SELF."?opt'><div class='border'><div class='forumheader'>".ARLAN_60."</div></div></a>";
-}
-if($action != "sa"){
-        $text .= "<a href='".e_SELF."?sa'><div class='border'><div class='forumheader'>".ARLAN_93."</div></div></a>";
-}
-$text .= "</div>";
-$ns -> tablerender(ARLAN_79, $text);
+function article_adminmenu(){
 
+                global $action,$sql,$sub_action;
+                $act=$action;
+                if($act==""){$act="main";}
+                $var['main']['text']=ARLAN_76;
+                $var['main']['link']=e_SELF;
+
+                $var['create']['text']=ARLAN_77;
+                $var['create']['link']=e_SELF."?create";
+
+                $var['cat']['text']=ARLAN_78;
+                $var['cat']['link']=e_SELF."?cat";
+
+                $var['opt']['text']=ARLAN_60;
+                $var['opt']['link']=e_SELF."?opt";
+                if($sql -> db_Select("content", "*", "content_type ='15' ")){
+                        $var['sa']['text']=ARLAN_93;
+                        $var['sa']['link']=e_SELF."?sa";
+                }
+
+                show_admin_menu(ARLAN_79,$act,$var);
+
+					unset($var);
+					$var=array();
+					if($sql -> db_Select("content","content_id,content_heading","content_type='6'")){
+				 		$var['cnone']['text']=ARLAN_75;
+				 		$var['cnone']['link']=e_SELF."?c.none";
+					 	while($row = $sql -> db_Fetch()){
+					 		extract($row);
+							$txt = substr($content_heading,0,15);
+							if(strlen($content_heading)>15){
+								$txt .= " ...";
+							}
+					 		$var['c'.$content_id]['text']=$txt;
+					 		$var['c'.$content_id]['link']=e_SELF."?c.{$content_id}";
+					 	}
+					 	show_admin_menu(ARLAN_78,'c'.$sub_action,$var);
+					 }
+					
+
+
+}
 // ##### End ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 require_once("footer.php");
-?>
-<script type="text/javascript">
+
+function headerjs(){
+$script = "<script type=\"text/javascript\">
 function addtext2(sc){
         document.dataform.category_button.value = sc;
 }
 
-</script>
-<?php
-echo "<script type=\"text/javascript\">
+</script>\n";
+
+$script .= "<script type=\"text/javascript\">
 function confirm_(mode, content_heading, content_id){
         if(mode == 'cat'){
                 var x=confirm(\"".ARLAN_80." [ID \" + content_id + \": \" + content_heading + \"]\");
@@ -536,4 +617,8 @@ if(x)
         }
 }
 </script>";
+return $script;
+
+}
 ?>
+

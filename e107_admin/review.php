@@ -59,7 +59,7 @@ if(IsSet($_POST['create_review'])){
                 $content_heading = $aj -> formtpa($_POST['content_heading'], "admin");
                 $content_content = $aj -> formtpa($_POST['data'], "admin");
                 $content_author = (!$_POST['content_author'] || $_POST['content_author'] == REVLAN_53 ? ADMINID : $_POST['content_author']."^".$_POST['content_author_email']);
-                 $sql -> db_Insert("content", "0, '".$content_heading."', '".$content_subheading."', '$content_content', '".$_POST['category']."', '".time()."', '".$content_author."', '".$_POST['content_comment']."', '".$_POST['content_summary']."', '3', ".$_POST['content_rating'].",0 ,".$_POST['r_class']);
+                 $sql -> db_Insert("content", "0, '".$content_heading."', '".$content_subheading."', '$content_content', '".$_POST['category']."', '".time()."', '".$content_author."', '".$_POST['content_comment']."', '".$_POST['content_summary']."', '3', ".$_POST['content_rating'].",".$_POST['add_icons']." ,".$_POST['r_class']);
                 unset($content_heading, $content_subheading, $data, $content_summary);
                 $message = REVLAN_1;
                 clear_cache("review");
@@ -75,7 +75,7 @@ If(IsSet($_POST['update_review'])){
         $content_heading = $aj -> formtpa($_POST['content_heading'], "admin");
         $content_content = $aj -> formtpa($_POST['data'], "admin");
         $content_author = ($_POST['content_author'] && $_POST['content_author'] != ARLAN_84 ? $_POST['content_author']."^".$_POST['content_author_email'] : ADMINID);
-        $sql -> db_Update("content", " content_heading='$content_heading', content_subheading='$content_subheading', content_content='$content_content', content_parent='".$_POST['category']."', content_datestamp='".time()."', content_author='$content_author', content_comment='".$_POST['content_comment']."', content_summary='".$_POST['content_summary']."', content_type='3', content_review_score=".$_POST['content_rating'].", content_class='{$_POST['r_class']}' WHERE content_id='".$_POST['content_id']."'");
+        $sql -> db_Update("content", " content_heading='$content_heading', content_subheading='$content_subheading', content_content='$content_content', content_parent='".$_POST['category']."', content_datestamp='".time()."', content_author='$content_author', content_comment='".$_POST['content_comment']."', content_summary='".$_POST['content_summary']."', content_type='3', content_review_score=".$_POST['content_rating'].", content_pe_icon=".$_POST['add_icons'].", content_class='{$_POST['r_class']}' WHERE content_id='".$_POST['content_id']."'");
         unset($action);
         $message = REVLAN_3;
         clear_cache("review");
@@ -87,7 +87,7 @@ If(IsSet($_POST['sa_article'])){
         $content_heading = $aj -> formtpa($_POST['content_heading'], "admin");
         $content_content = $aj -> formtpa($_POST['data'], "admin");
         $content_author = ($_POST['content_author'] && $_POST['content_author'] != ARLAN_84 ? $_POST['content_author']."^".$_POST['content_author_email'] : ADMINID);
-        $sql -> db_Update("content", " content_heading='$content_heading', content_subheading='$content_subheading', content_content='$content_content', content_parent='".$_POST['category']."', content_author='$content_author', content_comment='".$_POST['content_comment']."', content_summary='".$_POST['content_summary']."',  content_type='3', content_review_score=".$_POST['content_rating'].", content_class='{$_POST['r_class']}' WHERE content_id='".$_POST['content_id']."'");
+        $sql -> db_Update("content", " content_heading='$content_heading', content_subheading='$content_subheading', content_content='$content_content', content_parent='".$_POST['category']."', content_author='$content_author', content_comment='".$_POST['content_comment']."', content_summary='".$_POST['content_summary']."',  content_type='3', content_review_score=".$_POST['content_rating'].", content_pe_icon=".$_POST['add_icons'].", content_class='{$_POST['r_class']}' WHERE content_id='".$_POST['content_id']."'");
         unset($action);
         $message = REVLAN_68;
 }
@@ -96,11 +96,11 @@ if(IsSet($_POST['updateoptions'])){
         $pref['review_submit'] = $_POST['review_submit'];
         $pref['review_submit_class'] = $_POST['review_submit_class'];
         save_prefs();
-		if($pref['review_submit'] ){
-			$sql -> db_Update("links", "link_class=".$pref['review_submit_class']." WHERE link_url='subcontent.php?review' ");
-		}else{
-			$sql -> db_Update("links", "link_class='255' WHERE link_url='subcontent.php?review' ");
-		}
+                if($pref['review_submit'] ){
+                        $sql -> db_Update("links", "link_class=".$pref['review_submit_class']." WHERE link_url='subcontent.php?review' ");
+                }else{
+                        $sql -> db_Update("links", "link_class='255' WHERE link_url='subcontent.php?review' ");
+                }
         $message = REVLAN_61;
 }
 
@@ -142,8 +142,8 @@ if($action == "cat"){
                         <td style='width:5%; text-align:center' class='forumheader3'>".($content_summary ? "<img src='".e_IMAGE."link_icons/$content_summary' alt='' style='vertical-align:middle' />" : "&nbsp;")."</td>
                         <td style='width:75%' class='forumheader3'>$content_heading [$content_subheading]</td>
                         <td style='width:20%; text-align:center' class='forumheader3'>
-                        ".$rs -> form_button("submit", "category_edit", REVLAN_30, "onClick=\"document.location='".e_SELF."?cat.edit.$content_id'\"")."
-                        ".$rs -> form_button("submit", "category_delete", REVLAN_31, "onClick=\"confirm_('cat');\"")."
+                        ".$rs -> form_button("submit", "category_edit", REVLAN_30, "onclick=\"document.location='".e_SELF."?cat.edit.$content_id'\"")."
+                        ".$rs -> form_button("submit", "category_delete", REVLAN_31, "onclick=\"confirm_('cat');\"")."
                         </td>
                         </tr>";
                 }
@@ -183,12 +183,12 @@ if($action == "cat"){
         <td class='forumheader3' style='width:70%'>
         ".$rs -> form_text("category_button", 60, $content_summary, 100)."
         <br />
-        <input class='button' type ='button' style=''width: 35px'; cursor:hand' size='30' value='".REVLAN_36."' onClick='expandit(this)'>
-        <div style='display:none' style=&{head};>";
+        <input class='button' type ='button' style='cursor:hand' size='30' value='".REVLAN_36."' onclick='expandit(this)' />
+        <div style='display:none;{head} ' >";
         while(list($key, $icon) = each($iconlist)){
                 $text .= "<a href='javascript:addtext2(\"$icon\")'><img src='".e_IMAGE."link_icons/".$icon."' style='border:0' alt='' /></a> ";
         }
-        $text .= "</td>
+        $text .= "</div></td>
         </tr>
         <tr>
         <td class='forumheader3' style='width:30%'><span class='defaulttext'>".REVLAN_37."</span></td>
@@ -196,12 +196,12 @@ if($action == "cat"){
         </tr>
         <tr><td colspan='2' style='text-align:center' class='forumheader'>";
         if($id){
-                $text .= "<input class='button' type='submit' name='update_category' value='".REVLAN_38."'>
+                $text .= "<input class='button' type='submit' name='update_category' value='".REVLAN_38."' />
                 ".$rs -> form_button("submit", "category_clear", REVLAN_69).
                 $rs -> form_hidden("category_id", $id)."
                 </td></tr>";
         }else{
-                $text .= "<input class='button' type='submit' name='create_category' value='".REVLAN_39."'></td></tr>";
+                $text .= "<input class='button' type='submit' name='create_category' value='".REVLAN_39."' /></td></tr>";
         }
         $text .= "</table>
         ".$rs -> form_close()."
@@ -234,8 +234,8 @@ if(!$action || $action == "confirm"){
                         <td style='width:5%; text-align:center' class='forumheader3'>".($cs ? "<img src='".e_IMAGE."link_icons/$cs' alt='' style='vertical-align:middle' />" : "&nbsp;")."</td>
                         <td style='width:75%' class='forumheader3'><a href='".e_BASE."content.php?review.$content_id'>$content_heading</a> [".preg_replace("/-.*-/", "", $content_subheading)."]</td>
                         <td style='width:20%; text-align:center' class='forumheader3'>
-                        ".$rs -> form_button("submit", "main_edit", REVLAN_30, "onClick=\"document.location='".e_SELF."?create.edit.$content_id'\"")."
-                        ".$rs -> form_button("submit", "main_delete", REVLAN_31, "onClick=\"confirm_('create')\"")."
+                        ".$rs -> form_button("submit", "main_edit", REVLAN_30, "onclick=\"document.location='".e_SELF."?create.edit.$content_id'\"")."
+                        ".$rs -> form_button("submit", "main_delete", REVLAN_31, "onclick=\"confirm_('create')\"")."
                         </td>
                         </tr>";
                 }
@@ -287,9 +287,9 @@ if($action == "create"){
         ".$rs -> form_open("post", e_SELF."?create", "dataform")."
 
         <table style='width:95%' class='fborder'>
-        
+
         <tr>
-        <td style='width:20%; vertical-align:top' class='forumheader3'><u>".REVLAN_43."</u>:</td>
+        <td style='width:20%; vertical-align:top' class='forumheader3'><span style='text-decoration:underline'>".REVLAN_43."</span>:</td>
         <td style='width:80%' class='forumheader3'>";
 
         $sql -> db_Select("content", "*", "content_type=10 ");
@@ -308,14 +308,14 @@ if($action == "create"){
         <a href=\"javascript:void(0);\" onclick=\"expandit(this);\" >".REVLAN_70."</a>\n
         <span style=\"display: none;\" >
                 <br /><br />
-                <input class='tbox' type='text' name='content_author' size='60' value='".($content_author ? $content_author : REVLAN_53)."' maxlength='100' ".($content_author ? "" : "onFocus=\"document.dataform.content_author.value='';\"")." /><br />
-        <input class='tbox' type='text' name='content_author_email' size='60' value='".($content_author_email ? $content_author_email : REVLAN_54)."' maxlength='100' ".($content_author_email ? "" : "onFocus=\"document.dataform.content_author_email.value='';\"")." /><br />
+                <input class='tbox' type='text' name='content_author' size='60' value='".($content_author ? $content_author : REVLAN_53)."' maxlength='100' ".($content_author ? "" : "onfocus=\"document.dataform.content_author.value='';\"")." /><br />
+        <input class='tbox' type='text' name='content_author_email' size='60' value='".($content_author_email ? $content_author_email : REVLAN_54)."' maxlength='100' ".($content_author_email ? "" : "onfocus=\"document.dataform.content_author_email.value='';\"")." /><br />
         </span>
                 </td>
         </tr>
 
         <tr>
-        <td style='width:20%; vertical-align:top' class='forumheader3'><u>".REVLAN_12."</u>:</td>
+        <td style='width:20%; vertical-align:top' class='forumheader3'><span style='text-decoration:underline'>".REVLAN_12."</span>:</td>
         <td style='width:80%' class='forumheader3'>
         <input class='tbox' type='text' name='content_heading' size='60' value='$content_heading' maxlength='100' />
 
@@ -336,7 +336,7 @@ if($action == "create"){
         </tr>
 
         <tr>
-        <td style='width:20%' class='forumheader3'><u>".REVLAN_15."</u>: </td>
+        <td style='width:20%' class='forumheader3'><span style='text-decoration:underline'>".REVLAN_15."</span>: </td>
         <td style='width:80%' class='forumheader3'>
         <textarea class='tbox' id='data' name='data' cols='70' rows='30' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'>$data</textarea>";
 
@@ -358,7 +358,7 @@ if($action == "create"){
         <select name='content_rating' class='tbox'>
         <option value='0'>".REVLAN_17." ...</option>";
         for($a=1; $a<=100; $a++){
-                $text .= ($content_rating == $a ? "<option value='$a' selected>$a</option>" : "<option value='$a'>$a</option>");
+                $text .= ($content_rating == $a ? "<option value='$a' selected='selected'>$a</option>" : "<option value='$a'>$a</option>");
         }
         $text .= "</select>
         </td>
@@ -371,21 +371,27 @@ if($action == "create"){
 
 
         if($content_comment == "0"){
-                $text .= REVLAN_19.": <input type='radio' name='content_comment' value='1'>
-                ".REVLAN_20.": <input type='radio' name='content_comment' value='0' checked>";
+                $text .= REVLAN_19.": <input type='radio' name='content_comment' value='1' />
+                ".REVLAN_20.": <input type='radio' name='content_comment' value='0' checked='checked' />";
         }else{
-                $text .= REVLAN_19.": <input type='radio' name='content_comment' value='1' checked>
-                ".REVLAN_20.": <input type='radio' name='content_comment' value='0'>";
+                $text .= REVLAN_19.": <input type='radio' name='content_comment' value='1' checked='checked' />
+                ".REVLAN_20.": <input type='radio' name='content_comment' value='0' />";
         }
 
         $text .= "</td></tr>";
 
         $text.="
-        <td style='width:20%' class='forumheader3'>".REVLAN_21.":</td>
+        <tr>
+        <td  class='forumheader3'>".REVLAN_71.":&nbsp;&nbsp;</td><td class='forumheader3'>".
+        ($content_pe_icon ? REVLAN_72.": <input type='radio' name='add_icons' value='1' checked='checked' />".REVLAN_73.": <input type='radio' name='add_icons' value='0' />" : REVLAN_72.": <input type='radio' name='add_icons' value='1' />".REVLAN_73.": <input type='radio' name='add_icons' value='0' checked='checked' />")."
+        </td>
+        </tr>
+
+        <tr><td style='width:20%' class='forumheader3'>".REVLAN_21.":</td>
         <td style='width:80%' class='forumheader3'>".r_userclass("r_class",$content_class)."
         ";
 
-        $text.="
+        $text.="</td></tr>
         <tr style='vertical-align:top'>
         <td colspan='2' style='text-align:center' class='forumheader'>
         ";
@@ -425,8 +431,8 @@ if($action == "opt"){
         ".REVLAN_55."<br />
         <span class='smalltext'>".REVLAN_56."</span>
         </td>
-        <td style='width:30%' class='forumheader2' style='text-align:center'>".
-        ($pref['review_submit'] ? "<input type='checkbox' name='review_submit' value='1' checked>" : "<input type='checkbox' name='review_submit' value='1'>")."
+        <td class='forumheader2' style='width:30%;text-align:center'>".
+        ($pref['review_submit'] ? "<input type='checkbox' name='review_submit' value='1' checked='checked' />" : "<input type='checkbox' name='review_submit' value='1' />")."
         </td>
         </tr>
 
@@ -435,7 +441,7 @@ if($action == "opt"){
         ".REVLAN_57."<br />
         <span class='smalltext'>".REVLAN_58."</span>
         </td>
-        <td style='width:30%' class='forumheader2' style='text-align:center'>".r_userclass("review_submit_class", $pref['review_submit_class'])."</td>
+        <td class='forumheader2' style='width:30%;text-align:center'>".r_userclass("review_submit_class", $pref['review_submit_class'])."</td>
         </tr>
 
         <tr style='vertical-align:top'>
@@ -470,8 +476,8 @@ if($action == "sa"){
                         <td style='width:5%; text-align:center; vertical-align:top' class='forumheader3'>$content_id</td>
                         <td style='width:75%' class='forumheader3'><b>".$aj -> tpa($content_heading)."</b> [".$aj -> tpa($content_subheading)."]<br />$content_author ($content_author_email)</td>
                         <td style='width:20%; text-align:center; vertical-align:top' class='forumheader3'>
-                        ".$rs -> form_button("submit", "category_edit", REVLAN_66, "onClick=\"document.location='".e_SELF."?create.sa.$content_id'\"")."
-                        ".$rs -> form_button("submit", "category_delete", REVLAN_9, "onClick=\"confirm_('sa', $content_id);\"")."
+                        ".$rs -> form_button("submit", "category_edit", REVLAN_66, "onclick=\"document.location='".e_SELF."?create.sa.$content_id'\"")."
+                        ".$rs -> form_button("submit", "category_delete", REVLAN_9, "onclick=\"confirm_('sa', $content_id);\"")."
                         </td>
                         </tr>\n";
                 }
@@ -483,39 +489,46 @@ if($action == "sa"){
         $ns -> tablerender(REVLAN_62, $text);
 }
 
-// ##### Display options --------------------------------------------------------------------------------------------------------------------------------------------------------
-
-$text = "<div style='text-align:center'>";
-if(e_QUERY && $action != "confirm"){
-        $text .= "<a href='".e_SELF."'><div class='border'><div class='forumheader'>".REVLAN_45."</div></div></a>";
-}
-if($action != "create"){
-        $text .= "<a href='".e_SELF."?create'><div class='border'><div class='forumheader'>".REVLAN_46."</div></div></a>";
-}
-if($action != "cat"){
-        $text .= "<a href='".e_SELF."?cat'><div class='border'><div class='forumheader'>".REVLAN_47."</div></div></a>";
-}
-if($action != "opt"){
-        $text .= "<a href='".e_SELF."?opt'><div class='border'><div class='forumheader'>".REVLAN_29."</div></div></a>";
-}
-if($action != "sa"){
-        $text .= "<a href='".e_SELF."?sa'><div class='border'><div class='forumheader'>".REVLAN_62."</div></div></a>";
-}
-$text .= "</div>";
-$ns -> tablerender(REVLAN_48, $text);
-
 // ##### End ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+function review_adminmenu(){
+
+                global $action,$sql;
+                $act=$action;
+                if($act==""){$act="main";}
+                $var['main']['text']=REVLAN_45;
+                $var['main']['link']=e_SELF;
+
+                $var['create']['text']=REVLAN_46;
+                $var['create']['link']=e_SELF."?create";
+
+                $var['cat']['text']=REVLAN_47;
+                $var['cat']['link']=e_SELF."?cat";
+
+                $var['opt']['text']=REVLAN_29;
+                $var['opt']['link']=e_SELF."?opt";
+                if($sql -> db_Select("content", "*", "content_type ='16' ")){
+                        $var['sa']['text']=REVLAN_62;
+                        $var['sa']['link']=e_SELF."?sa";
+                }
+
+                show_admin_menu(REVLAN_48,$act,$var);
+}
 
 require_once("footer.php");
-?>
-<script type="text/javascript">
+
+function headerjs(){
+
+$headerjs = "<script type=\"text/javascript\">
 function addtext2(sc){
         document.dataform.category_button.value = sc;
 }
-</script>
-<?php
-echo "<script type=\"text/javascript\">
+</script>\n";
+
+
+
+
+$headerjs .= "<script type=\"text/javascript\">
 function confirm_(mode){
         if(mode == 'cat'){
                 var x=confirm(\"".REVLAN_49."\");
@@ -530,4 +543,6 @@ if(x)
         }
 }
 </script>";
+ return $headerjs;
+}
 ?>

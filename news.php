@@ -22,7 +22,7 @@ if($NEWSHEADER){
 }
 
 if(Empty($pref['newsposts']) ? define("ITEMVIEW", 15) : define("ITEMVIEW", $pref['newsposts']));
-if(file_exists("install.php")){ echo "<div class='installe' style='text-align:center'><b>*** ".LAN_00."</div><br /><br />"; }
+if(file_exists("install.php") && ADMIN){ echo "<div class='installe' style='text-align:center'><b>*** ".LAN_00."</div><br /><br />"; }
 
 if(!is_object($aj)){ $aj = new textparse; }
 
@@ -79,7 +79,7 @@ if($action == "extend"){
         $extend_id = substr(e_QUERY, (strpos(e_QUERY, ".")+1));
         $sql -> db_Select("news", "*", "news_id='$extend_id' AND (news_start=0 || news_start < ".time().") AND (news_end=0 || news_end>".time().")");
         list($news['news_id'], $news['news_title'], $news['data'], $news['news_extended'], $news['news_datestamp'], $news['admin_id'], $news_category, $news['news_allow_comments'],  $news['news_start'], $news['news_end'], $news['news_class']) = $sql -> db_Fetch();
-        if(!check_class($news['news_class'])){ header("location: news.php"); }
+        if(!check_class($news['news_class'])){ header("location:".e_BASE."news.php"); }
         $sql -> db_Select("news_category", "*",  "category_id='$news_category' ");
         list($news['category_id'], $news['category_name'], $news['category_icon']) = $sql-> db_Fetch();
         $news['comment_total'] = $sql -> db_Count("comments", "(*)",  "WHERE comment_item_id='".$news['news_id']."' AND comment_type='0' ");
@@ -103,13 +103,13 @@ if(!defined("WMFLAG")){
         list($wm_member, $membermessage, $wm_active2) = $sql-> db_Fetch();
         list($wm_admin, $adminmessage, $wm_active3) = $sql-> db_Fetch();
         if(ADMIN == TRUE && $wm_active3){
-                $adminmessage = $aj -> tpa($adminmessage, "on");
+                $adminmessage = $aj -> tpa($adminmessage, "on","admin");
                 $ns -> tablerender("", "<div style='text-align:center'><b>Administrators</b><br />".$adminmessage."</div>", "wm");
-        }else if(USER == TRUE && $wm_active2){
-                $membermessage = $aj -> tpa($membermessage, "on");
+        }else if(USER == TRUE && $wm_active2 && !ADMIN){
+                $membermessage = $aj -> tpa($membermessage, "on","admin");
                 $ns -> tablerender("", "<div style='text-align:center'>".$membermessage."</div>", "wm");
-        }else if(USER == FALSE && $wm_active1){
-                $guestmessage = $aj -> tpa($guestmessage, "on");
+        }else if(USER == FALSE && $wm_active1 && !ADMIN){
+                $guestmessage = $aj -> tpa($guestmessage, "on","admin");
                 $ns -> tablerender("", "<div style='text-align:center'>".$guestmessage."</div>", "wm");
         }
 }
@@ -117,9 +117,11 @@ if(!defined("WMFLAG")){
 
 
 if($action == "list"){
+		$sub_action=intval($sub_action);
         $news_total = $sql -> db_Count("news", "(*)", "WHERE news_category=$sub_action");
         $query = "news_class<255 AND (news_start=0 || news_start < ".time().") AND (news_end=0 || news_end>".time().") AND news_render_type!=2 AND news_category=$sub_action ORDER BY ".$order." DESC LIMIT $from,".ITEMVIEW;
 }else if($action == "item"){
+		$sub_action=intval($sub_action);
         $news_total = $sql -> db_Count("news", "(*)", "WHERE news_class<255 AND (news_start=0 || news_start < ".time().") AND (news_end=0 || news_end>".time().") AND news_render_type!=2" );
         $query = "news_id=$sub_action AND news_class<255 AND (news_start=0 || news_start < ".time().") AND (news_end=0 || news_end>".time().")";
 }else if(strstr(e_QUERY, "month")){

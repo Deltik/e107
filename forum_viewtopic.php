@@ -1,8 +1,4 @@
 <?php
-if(IsSet($_POST['fjsubmit'])){
-	header("location:forum_viewforum.php?".$_POST['forumjump']);
-	exit;
-}
 /*
 +---------------------------------------------------------------+
 |	e107 website system
@@ -16,15 +12,22 @@ if(IsSet($_POST['fjsubmit'])){
 |	GNU General Public License (http://gnu.org).
 +---------------------------------------------------------------+
 */
-require_once("class2.php");
 
+require_once("class2.php");
+if(IsSet($_POST['fjsubmit'])){
+	header("location:".e_BASE."forum_viewforum.php?".$_POST['forumjump']);
+	exit;
+}
+$highlight_search = FALSE;
+if(IsSet($_POST['highlight_search'])){
+	$highlight_search = TRUE;
+}
 define("IMAGE_reply", (file_exists(THEME."forum/reply.png") ? "<img src='".THEME."forum/reply.png' alt='' style='border:0' />" : "<img src='".e_IMAGE."forum/reply.png' alt='' style='border:0' />"));
 define("IMAGE_newthread", (file_exists(THEME."forum/newthread.png") ? "<img src='".THEME."forum/newthread.png' alt='' style='border:0' />" : "<img src='".e_IMAGE."forum/newthread.png' alt='' style='border:0' />"));
-define("IMAGE_rank_moderator_image", ($pref['rank_moderator_image'] && file_exists(e_IMAGE."forum/".$pref['rank_moderator_image']) ? "<img src='".e_IMAGE."forum/".$pref['rank_moderator_image']."' alt='' />" : "<img src='".e_IMAGE."forum/moderator.png' alt='' />"));
-define("IMAGE_rank_main_admin_image", ($pref['rank_main_admin_image'] && file_exists(e_IMAGE."forum/".$pref['rank_main_admin_image']) ? "<img src='".e_IMAGE."forum/".$pref['rank_main_admin_image']."' alt='' />" : "<img src='".e_IMAGE."forum/main_admin.png' alt='' />"));
-define("IMAGE_rank_admin_image", ($pref['rank_admin_image'] && file_exists(e_IMAGE."forum/".$pref['rank_admin_image']) ? "<img src='".e_IMAGE."forum/".$pref['rank_admin_image']."' alt='' />" : "<img src='".e_IMAGE."forum/admin.png' alt='' />"));
-define("IMAGE_profile", (file_exists(THEME."forum/profile.png") ? "<img src='".THEME."forum/profile.png' alt='".LAN_398."' style='border:0' />" : "<img src='".e_IMAGE."forum/profile.png' alt='".LAN_398."' style='border:0' />"));
-define("IMAGE_email", (file_exists(THEME."forum/email.png") ? "<img src='".THEME."forum/email.png' alt='".LAN_397."' style='border:0' />" : "<img src='".e_IMAGE."forum/email.png' alt='".LAN_397."' style='border:0' />"));
+//define("IMAGE_profile", (file_exists(THEME."forum/profile.png") ? "<img src='".THEME."forum/profile.png' alt='".LAN_398."' style='border:0' />" : "<img src='".e_IMAGE."forum/profile.png' alt='".LAN_398."' style='border:0' />"));
+define("IMAGE_rank_moderator_image", ($pref['rank_moderator_image'] && file_exists(THEME."forum/".$pref['rank_moderator_image']) ? "<img src='".THEME."forum/".$pref['rank_moderator_image']."' alt='' />" : "<img src='".e_IMAGE."forum/moderator.png' alt='' />"));
+define("IMAGE_rank_main_admin_image", ($pref['rank_main_admin_image'] && file_exists(THEME."forum/".$pref['rank_main_admin_image']) ? "<img src='".THEME."forum/".$pref['rank_main_admin_image']."' alt='' />" : "<img src='".e_IMAGE."forum/main_admin.png' alt='' />"));
+define("IMAGE_rank_admin_image", ($pref['rank_admin_image'] && file_exists(THEME."forum/".$pref['rank_admin_image']) ? "<img src='".THEME."forum/".$pref['rank_admin_image']."' alt='' />" : "<img src='".e_IMAGE."forum/admin.png' alt='' />"));
 define("IMAGE_pm", (file_exists(THEME."forum/pm.png") ? "<img src='".THEME."forum/pm.png' alt='".LAN_399."' style='border:0' />" : "<img src='".e_IMAGE."forum/pm.png' alt='".LAN_399."' style='border:0' />"));
 define("IMAGE_website", (file_exists(THEME."forum/website.png") ? "<img src='".THEME."forum/website.png' alt='".LAN_396."' style='border:0' />" : "<img src='".e_IMAGE."forum/website.png' alt='".LAN_396."' style='border:0' />"));
 define("IMAGE_edit", (file_exists(THEME."forum/edit.png") ? "<img src='".THEME."forum/edit.png' alt='".LAN_400."' style='border:0' />" : "<img src='".e_IMAGE."forum/edit.png' alt='".LAN_400."' style='border:0' />"));
@@ -34,6 +37,8 @@ define("IMAGE_admin_delete", (file_exists(THEME."forum/admin_delete.png") ? "<im
 define("IMAGE_admin_move", (file_exists(THEME."forum/admin_move.png") ? "<img src='".THEME."forum/admin_move.png' alt='".LAN_408."' style='border:0' />" : "<img src='".e_IMAGE."forum/admin_move.png' alt='".LAN_408."' style='border:0' />"));
 define("IMAGE_new", (file_exists(THEME."forum/new.png") ? "<img src='".THEME."forum/new.png' alt='' style='float:left' />" : "<img src='".e_IMAGE."forum/new.png' alt='' style='float:left' />"));
 define("IMAGE_post", (file_exists(THEME."forum/post.png") ? "<img src='".THEME."forum/post.png' alt='' style='border:0' />" : "<img src='".e_IMAGE."forum/post.png' alt='' style='border:0' />"));
+define("IMAGE_report", (file_exists(THEME."forum/report.png") ? "<img src='".THEME."forum/report.png' alt='".LAN_413."' style='border:0' />" : "<img src='".e_IMAGE."forum/report.png' alt='".LAN_413."' style='border:0' />"));
+
 
 if(!e_QUERY){
 	header("Location:".e_BASE."forum.php");
@@ -66,7 +71,69 @@ if($action == "untrack" && USER){
 	header("location:".e_SELF."?".$forum_id.".".$thread_id);
 	exit;
 }
+if($action == "report"){
+	$aj = new textparse();
+	if(IsSet($_POST['report_thread'])){	
+		$user = $_POST['user'];$report_thread_id = $_POST['report_thread_id'];$report_thread_name = $_POST['report_thread_name'];
+		if($pref['reported_post_email']){
+			require_once(e_HANDLER."mail.php");
+			$report_add = $aj -> tpa($_POST['report_add']);
+			$report = LAN_422.SITENAME." : ".(substr(SITEURL, -1) == "/" ? SITEURL : SITEURL."/")."forum_viewtopic.php?".$forum_id.".".$report_thread_id."#".$thread_id."\n".LAN_425.$user."\n".$report_add;
+			$subject = LAN_421." ".SITENAME;
+			sendemail(SITEADMINEMAIL, $subject, $report);
+		}
+		$reported_post = $forum_id."^".$report_thread_id."^".$thread_id."^".$report_thread_name."^".$user;
+		$sql -> db_Insert("tmp", "'reported_post', '".time()."', '$reported_post' ");
+        define("e_PAGETITLE", LAN_01." / ".LAN_428);
+		require_once(HEADERF);	
+		$text = LAN_424."<br /><a href='forum_viewtopic.php?".$forum_id.".".$report_thread_id."#".$thread_id."'>".LAN_429."</a";
+		$ns -> tablerender(LAN_414, $text);
+	}else{
+		$number = $thread_id;
+		$sql -> db_Select("forum_t", "*", "thread_id='".$thread_id."' ");
+		$row = $sql -> db_Fetch();
+		if($row['thread_parent']){
+			$sql2 = new db;
+			$sql2 -> db_Select("forum_t", "*", "thread_id = $thread_parent");
+			list($thread_id, $thread_name) = $sql2 -> db_Fetch();
+		}else{
+			$thread_name = $row['thread_name'];
+		}
+		$report_thread_id = $thread_id;
+		define("e_PAGETITLE", LAN_01." / ".LAN_426." ".$thread_name);
+		require_once(HEADERF);	
+		$user = (USER ? USERNAME : LAN_194);
+		$text = "<form action='".e_BASE."forum_viewtopic.php?".e_QUERY."' method='post'> <table style='width:100%'>
+		<tr>
+		<td  style='width:50%' >
+		".LAN_415.": ".$thread_name." <a href='forum_viewtopic.php?".$forum_id.".".$thread_id."#".$number."'><span class='smalltext'>".LAN_420." </span>
+		</a>
+		</td>
+		<td style='text-align:center;width:50%'>
+		</td>
+		</tr>
+		<tr>
+		<td>".LAN_417."<br />".LAN_418."
+		</td>
+		<td style='text-align:center;'>
+		<textarea cols='40' rows='10' class='tbox' name='report_add'></textarea>
+		</td>
+		</tr>
+		<tr>
+		<td colspan='2' style='text-align:center;'><br />
+		<input type ='hidden' name='user' value='$user' />
+		<input type ='hidden' name='report_thread_id' value='$report_thread_id' />
+		<input type ='hidden' name='report_thread_name' value='$thread_name' />
+		<input class='button' type='submit' name='report_thread' value='".LAN_419."' />
+		</td>
+		</tr>
+		</table>";
+		$ns -> tablerender(LAN_414, $text);
+	}
 
+	require_once(FOOTERF);
+	exit;
+}
 $pm_installed = ($pref['pm_title'] ? TRUE : FALSE);
 
 $gen = new convert;
@@ -76,14 +143,16 @@ $sql -> db_Update("forum_t", "thread_views=thread_views+1 WHERE thread_id='$thre
 
 $sql -> db_Select("forum", "*", "forum_id='".$forum_id."' ");
 $row = $sql-> db_Fetch(); extract($row);
+$fname = $row['forum_name'];
 
 if(($forum_class && !check_class($forum_class)) || ($forum_class == 254 && !USER)){ header("Location:".e_BASE."forum.php"); exit;}
 
-require_once(HEADERF);
-require_once(e_HANDLER."level_handler.php");
-
 $sql -> db_Select("forum_t", "*", "thread_id='".$thread_id."' ORDER BY thread_datestamp DESC ");
 $row = $sql-> db_Fetch("no_strip"); extract($row);
+define("e_PAGETITLE", LAN_01." / ".$fname." / ".$row['thread_name']);
+
+require_once(HEADERF);
+require_once(e_HANDLER."level_handler.php");
 
 define("MODERATOR", (preg_match("/".preg_quote(ADMINNAME)."/", $forum_moderators) && getperms("A") ? TRUE : FALSE));
 
@@ -202,8 +271,9 @@ if(!$post_author_id || !$sql -> db_Select("user", "*", "user_id='".$post_author_
 	}
 	
 	$JOINED = ($user_perms == "0" ? "" : LAN_06." ".$gen->convert_date($user_join, "forum")."<br />");
-	$LOCATION = ($user_location ? LAN_07.": ".$user_location : "");
-	$WEBSITE = ($user_homepage ? LAN_08.": ".$user_homepage : "");
+	$LOCATION = ($user_location ? LAN_07.": ".$user_location."<br />" : "");
+	$CUSTOMTITLE = ($user_customtitle ? $aj -> tpa($user_customtitle)."<br />" : "");
+	$WEBSITE = ($user_homepage ? LAN_08.": ".$user_homepage."<br />" : "");
 	$POSTS = LAN_67." ".$user_forums."<br />";
 	$VISITS = LAN_09.": ".$user_visits;
 
@@ -212,24 +282,24 @@ if(!$post_author_id || !$sql -> db_Select("user", "*", "user_id='".$post_author_
 	$LEVEL = $ldata[1];
 
 	$SIGNATURE = ($user_signature ? "<br /><hr style='width:15%; text-align:left'><span class='smalltext'>".$aj -> tpa($user_signature) : "");
-	$PROFILEIMG = "<a href='user.php?id.".$user_id."'>".IMAGE_profile."</a>";
-	$EMAILIMG = (!$user_hideemail ? "<a href='mailto:$user_email'>".IMAGE_email."</a>" : "");
+	
+	$PROFILEIMG = (USER ? e107_parse("{CODE=CORE.profile.{$user_id}}","admin") : "");
+	$EMAILIMG = (!$user_hideemail ? e107_parse("{CODE=CORE.emailto.{$user_email}}","admin") : "");
 
-	$PRIVMESSAGE = ($pm_installed && $post_author_id && (!USERCLASS || check_class($pref['pm_userclass'])) ? "<a href='".e_PLUGIN."pm_menu/pm.php?send.$post_author_id'>".IMAGE_pm."</a>" : "");
+	$PRIVMESSAGE = e107_parse("{CODE=pm_menu.sendpm.{$post_author_id}}");
 
 	$WEBSITEIMG = ($user_homepage && $user_homepage != "http://" ? "<a href='$user_homepage'>".IMAGE_website."</a>" : "");
 	$RPG = rpg($user_join, $user_forums);
 	
 }
 
-
-
-$EDITIMG = ($post_author_name == USERNAME && $thread_active ? "<a href='forum_post.php?edit.".$forum_id.".".$thread_id."'>".IMAGE_edit."</a> " : "");
+$EDITIMG = ($post_author_id != "0" && $post_author_name == USERNAME && $thread_active ? "<a href='forum_post.php?edit.".$forum_id.".".$thread_id."'>".IMAGE_edit."</a> " : "");
 if($thread_active){
 	$QUOTEIMG = "<a href='forum_post.php?quote.".$forum_id.".".$thread_id."'>".IMAGE_quote."</a>";
 }else{
 	$T_ACTIVE = TRUE;
 }
+$REPORTIMG = (USER ? "<a href='forum_viewtopic.php?".$forum_id.".".$thread_id.".".$from.".report'>".IMAGE_report."</a> " : "");
 if(MODERATOR){
 	$MODOPTIONS = "<a href='forum_post.php?edit.".$forum_id.".".$thread_id."'>".IMAGE_admin_edit."</a>\n<a style='cursor:pointer; cursor:hand' onClick=\"confirm_('thread', $forum_id, $thread_id, '')\"'>".IMAGE_admin_delete."</a>\n<a href='".e_ADMIN."forum_conf.php?move.".$forum_id.".".$thread_id."'>".IMAGE_admin_move."</a>";
 }
@@ -242,9 +312,8 @@ if(USER){
 	}
 }
 
-$THREADDATESTAMP = "<a id='anchor_$thread_id'>".IMAGE_post."</a> ".$gen->convert_date($thread_datestamp, "forum");
-$thread_thread = wrap($thread_thread);
-$POST = $aj -> tpa($thread_thread, "forum");
+$THREADDATESTAMP = "<a id='$thread_id'>".IMAGE_post."</a> ".$gen->convert_date($thread_datestamp, "forum");
+$POST = $aj -> tpa($thread_thread, "forum", "off", $highlight_search);
 if(ADMIN && $iphost){ $POST .= "<br />".$iphost; }
 $TOP = "<a href='".e_SELF."?".e_QUERY."#top'>".LAN_10."</a>";
 $FORUMJUMP = forumjump();
@@ -276,12 +345,12 @@ if($sql -> db_Select("forum_t", "*", "thread_parent='".$thread_id."' ORDER BY th
 		if(!$post_author_id || !$sql2 -> db_Select("user", "*", "user_id='".$post_author_id."' ")){	// guest
 			$POSTER = "<b>".$post_author_name."</b>";
 			$AVATAR = "<br /><span class='smallblacktext'>".LAN_194."</span>";
-			unset($JOINED, $LOCATION, $WEBSITE, $POSTS, $VISITS, $MEMBERID, $SIGNATURE, $RPG, $LEVEL, $PRIVMESSAGE, $PROFILEIMG, $EMAILIMG, $WEBSITEIMG);
+			unset($JOINED, $LOCATION, $CUSTOMTITLE, $WEBSITE, $POSTS, $VISITS, $MEMBERID, $SIGNATURE, $RPG, $LEVEL, $PRIVMESSAGE, $PROFILEIMG, $EMAILIMG, $WEBSITEIMG);
 		}else{	// regged member - get member info
 			unset($iphost);
 			
 			$row = $sql2 -> db_Fetch(); extract($row);
-			$POSTER = "<a href='user.php?id.".$post_author_id."'><b>".$post_author_name."</b></a>";
+			$POSTER =  "<a href='user.php?id.".$post_author_id."'><b>".$post_author_name."</b></a>";
 			if($user_image){
 				require_once(e_HANDLER."avatar_handler.php");
 				$AVATAR = "<div class='spacer'><img src='".avatar($user_image)."' alt='' /></div><br />";
@@ -290,8 +359,9 @@ if($sql -> db_Select("forum_t", "*", "thread_parent='".$thread_id."' ORDER BY th
 			}
 			
 			$JOINED = ($user_perms == "0" ? "" : LAN_06.": ".$gen->convert_date($user_join, "forum")."<br />");
-			$LOCATION = ($user_location ? LAN_07.": ".$user_location : "");
-			$WEBSITE = ($user_homepage ? LAN_08.": ".$user_homepage : "");
+			$LOCATION = ($user_location ? LAN_07.": ".$user_location."<br />" : "");
+			$CUSTOMTITLE = ($user_customtitle ? $aj -> tpa($user_customtitle)."<br />" : "");
+			$WEBSITE = ($user_homepage ? LAN_08.": ".$user_homepage."<br />" : "");
 			$POSTS = LAN_67." ".$user_forums."<br />";
 			$VISITS = LAN_09.": ".$user_visits;
 			
@@ -300,20 +370,20 @@ if($sql -> db_Select("forum_t", "*", "thread_parent='".$thread_id."' ORDER BY th
 			$LEVEL = $ldata[1];
 
 			$SIGNATURE = ($user_signature ? "<br /><hr style='width:15%; text-align:left'><span class='smalltext'>".$aj -> tpa($user_signature) : "");
-			$PROFILEIMG = "<a href='user.php?id.".$user_id."'>".IMAGE_profile."</a>";
-			$EMAILIMG = (!$user_hideemail ? "<a href='mailto:$user_email'>".IMAGE_email."</a>" : "");
+			$PROFILEIMG = (USER ? e107_parse("{CODE=CORE.profile.{$user_id}}","admin") : "");
+			$EMAILIMG = (!$user_hideemail ? e107_parse("{CODE=CORE.emailto.{$user_email}}","admin") : "");
 
-			$PRIVMESSAGE = ($pm_installed && $post_author_id && (!USERCLASS || check_class($pref['pm_userclass'])) ? "<a href='".e_PLUGIN."pm_menu/pm.php?send.$post_author_id'>".IMAGE_pm."</a>" : "");
+			$PRIVMESSAGE = e107_parse("{CODE=pm_menu.sendpm.{$post_author_id}}");
 
 			$WEBSITEIMG = ($user_homepage && $user_homepage != "http://" ? "<a href='$user_homepage'>".IMAGE_website."</a>" : "");
 			$RPG = rpg($user_join, $user_forums);
 			
 		}
-
-		$EDITIMG = ($post_author_name == USERNAME && $thread_active ? "<a href='forum_post.php?edit.".$forum_id.".".$thread_id."'>".IMAGE_edit."</a> " : "");
+		$EDITIMG = ($post_author_id != "0" && $post_author_name == USERNAME && $thread_active ? "<a href='forum_post.php?edit.".$forum_id.".".$thread_id."'>".IMAGE_edit."</a> " : "");
 		if(!$T_ACTIVE){
 			$QUOTEIMG = "<a href='forum_post.php?quote.".$forum_id.".".$thread_id."'>".IMAGE_quote."</a>";
 		}
+		$REPORTIMG = (USER ? "<a href='forum_viewtopic.php?".$forum_id.".".$thread_id.".".$from.".report'>".IMAGE_report."</a> " : "");
 		if(MODERATOR){
 			$MODOPTIONS = "<a href='forum_post.php?edit.".$forum_id.".".$thread_id."'>".IMAGE_admin_edit."</a>\n<a style='cursor:pointer; cursor:hand' onClick=\"confirm_('reply', $forum_id, $thread_id, '$post_author_name')\"'>".IMAGE_admin_delete."</a>\n<a href='".e_ADMIN."forum_conf.php?move.".$forum_id.".".$thread_id."'>".IMAGE_admin_move."</a>";
 		}
@@ -326,9 +396,8 @@ if($sql -> db_Select("forum_t", "*", "thread_parent='".$thread_id."' ORDER BY th
 			}
 		}
 
-		$THREADDATESTAMP = "<a id='anchor_$thread_id'>".IMAGE_post."</a> ".$gen->convert_date($thread_datestamp, "forum");
-		$thread_thread = wrap($thread_thread);
-		$POST = $aj -> tpa($thread_thread, "forum");
+		$THREADDATESTAMP = "<a id='$thread_id'>".IMAGE_post."</a> ".$gen->convert_date($thread_datestamp, "forum");
+		$POST = $aj -> tpa($thread_thread, "forum", "off", $highlight_search);
 		if(ADMIN && $iphost){ $POST .= "<br />".$iphost; }
 
 		$forrep .= preg_replace("/\{(.*?)\}/e", '$\1', $FORUMREPLYSTYLE);
@@ -360,25 +429,6 @@ function forumjump(){
 	}
 	$text .= "</select> <input class='button' type='submit' name='fjsubmit' value='".LAN_03."' />&nbsp;&nbsp;&nbsp;&nbsp;<a href='".e_SELF."?".$_SERVER['QUERY_STRING']."#top'>".LAN_10."</a></p></form>";
 	return $text;
-}
-
-function wrap($data){
-	$wrapcount = 100;
-	$message_array = explode(" ", $data);
-	for($i=0; $i<=(count($message_array)-1); $i++){
-		if(strlen($message_array[$i]) > $wrapcount){
-			if(substr($message_array[$i], 0, 7) == "http://"){
-				$url = str_replace("http://", "", $message_array[$i]);  
-				$url = explode("/", $url);  
-				$url = $url[0];
-				$message_array[$i] = "<a href='".$message_array[$i]."'>[".$url."]</a>";
-			}else{
-				$message_array[$i] = preg_replace("/([^\s]{".$wrapcount."})/", "$1<br />", $message_array[$i]);
-			}
-		}
-	}
-	$data = implode(" ",$message_array);
-	return $data;
 }
 
 function rpg($user_join, $user_forums){

@@ -2,6 +2,9 @@
 
 define("PAGE_NAME", "Forum"); 
 
+define("LAN_01", "Forums");
+define("LAN_02", "Replying to: ");
+define("LAN_03", "New Thread");
 define("LAN_1", "Normal");
 define("LAN_2", "Sticky");
 define("LAN_3", "Announcement");
@@ -32,8 +35,9 @@ define("LAN_78", "Update Reply");
 define("LAN_94", "Posted by");
 define("LAN_95", "Unauthorised");
 define("LAN_96", "You are not authorised to edit this forum post.");
-define("LAN_100", "First Post");
-define("LAN_101", "Last 10 posts");
+define("LAN_100", "Thread Topic");
+define("LAN_101", "Latest ");
+define("LAN_102", " replies");
 define("LAN_103", "Review complete thread. (Will open a new window.)");
 define("LAN_133", "Thankyou");
 define("LAN_174", "Signup");
@@ -75,4 +79,11 @@ define("LAN_403", "announcement");
 define("LAN_404", "sticky");
 define("LAN_405", "Forums");
 define("LAN_406", "Re:");
+
+//v.616
+define("LAN_407", "Redirect");
+define("LAN_408", "If your browser does not support meta redirection please click");
+define("LAN_409", "HERE");
+define("LAN_410", "to be redirected");
+
 ?>

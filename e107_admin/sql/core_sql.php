@@ -69,7 +69,7 @@ CREATE TABLE cache (
 
 CREATE TABLE chatbox (
   cb_id int(10) unsigned NOT NULL auto_increment,
-  cb_nick varchar(20) NOT NULL default '',
+  cb_nick varchar(30) NOT NULL default '',
   cb_message text NOT NULL,
   cb_datestamp int(10) unsigned NOT NULL default '0',
   cb_blocked tinyint(3) unsigned NOT NULL default '0',
@@ -84,14 +84,16 @@ CREATE TABLE chatbox (
 
 CREATE TABLE comments (
   comment_id int(10) unsigned NOT NULL auto_increment,
+  comment_pid int(10) unsigned NOT NULL default '0',
   comment_item_id int(10) unsigned NOT NULL default '0',
+  comment_subject varchar(100) NOT NULL default '',
   comment_author varchar(100) NOT NULL default '',
   comment_author_email varchar(200) NOT NULL default '',
   comment_datestamp int(10) unsigned NOT NULL default '0',
   comment_comment text NOT NULL,
   comment_blocked tinyint(3) unsigned NOT NULL default '0',
   comment_ip varchar(20) NOT NULL default '',
-  comment_type tinyint(3) unsigned NOT NULL default '0',
+  comment_type varchar(10) NOT NULL default '0',
   PRIMARY KEY  (comment_id)
 ) TYPE=MyISAM;
 # --------------------------------------------------------
@@ -148,6 +150,7 @@ CREATE TABLE download (
   download_datestamp int(10) unsigned NOT NULL default '0',
   download_thumb varchar(150) NOT NULL default '',
   download_image varchar(150) NOT NULL default '',
+  download_comment tinyint(3) unsigned NOT NULL default '0',
   PRIMARY KEY  (download_id),
   UNIQUE KEY download_name (download_name)
 ) TYPE=MyISAM;
@@ -515,6 +518,7 @@ CREATE TABLE upload (
 CREATE TABLE user (
   user_id int(10) unsigned NOT NULL auto_increment,
   user_name varchar(100) NOT NULL default '',
+  user_customtitle varchar(100) NOT NULL default '',
   user_password varchar(32) NOT NULL default '',
   user_sess varchar(32) NOT NULL default '',
   user_email varchar(100) NOT NULL default '',
@@ -560,6 +564,7 @@ CREATE TABLE userclass_classes (
   userclass_id tinyint(3) unsigned NOT NULL default '0',
   userclass_name varchar(100) NOT NULL default '',
   userclass_description varchar(250) NOT NULL default '',
+  userclass_editclass tinyint(3) unsigned NOT NULL default '0',
   PRIMARY KEY  (userclass_id)
 ) TYPE=MyISAM;
 # --------------------------------------------------------
@@ -583,6 +588,7 @@ CREATE TABLE parser (
   parser_id int(10) unsigned NOT NULL auto_increment,
   parser_pluginname varchar(100) NOT NULL default '',
   parser_regexp varchar(100) NOT NULL default '',
-  PRIMARY KEY  (parser_id)
+  PRIMARY KEY  (parser_id),
+  UNIQUE KEY parser_regexp (parser_regexp)
 ) TYPE=MyISAM;
 # --------------------------------------------------------

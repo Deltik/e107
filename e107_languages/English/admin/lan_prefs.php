@@ -24,7 +24,7 @@ define("PRFLAN_21", "Date display options");
 define("PRFLAN_22", "Short date format");
 define("PRFLAN_23", "Long date format");
 define("PRFLAN_24", "Forum date format");
-define("PRFLAN_25", "For more information on date formats see the <a href='http://www.php.net/manual/en/function.strftime.php' target='_blank'>strftime function page at php.net</a>");
+define("PRFLAN_25", "For more information on date formats see the <a href='http://www.php.net/manual/en/function.strftime.php' rel='external'>strftime function page at php.net</a>");
 define("PRFLAN_26", "Time offset");
 define("PRFLAN_27", "Example, if you set this to +2, all times on your site will have two hours added to them");
 define("PRFLAN_28", "User registration/posting");
@@ -46,7 +46,7 @@ define("PRFLAN_43", "Filter words");
 define("PRFLAN_44", "words to censor, seperate with a comma");
 define("PRFLAN_45", "Use COPPA on signup page?");
 define("PRFLAN_46", "for more info on COPPA see <a href='http://www.cdt.org/legislation/105th/privacy/coppa.html'>here</a>");
-define("PRFLAN_47", "Security & Protection");
+define("PRFLAN_47", "Security &amp; Protection");
 define("PRFLAN_48", "User Tracking method");
 define("PRFLAN_49", "Cookies");
 define("PRFLAN_50", "Sessions");
@@ -88,7 +88,12 @@ define("PRFLAN_81", "Enable Image-code verification during login.");
 define("PRFLAN_82", "Restrict Search page to members");
 
 define("PRFLAN_83", "example");
-define("PRFLAN_84", "Disable Right Mouse-Click");   
+define("PRFLAN_85", "If a theme does not show up make sure it was uploaded correctly and read permissions are assigned.");
+define("PRFLAN_86", "Click here to verify language files");
+
+
+define("PRFLAN_87", "Comments");
+define("PRFLAN_88", "Click here to view nested comments");
 
 define("CUSTSIG_1", "Settings Saved!");
 define("CUSTSIG_2", "Real Name:");
@@ -106,4 +111,8 @@ define("CUSTSIG_13", "Fields");
 define("CUSTSIG_14", "Display");
 define("CUSTSIG_15", "Required");
 define("CUSTSIG_16", "Minimum Length for Passwords");
+
+
+define("PRFLAN_89", "Site Header:");
+define("PRFLAN_90", "Click here to force Internet Explorer to use standards mode. Default is quirks mode.");
 ?>

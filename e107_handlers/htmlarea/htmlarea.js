@@ -9,7 +9,7 @@
 // Version 3.0 developed by Mihai Bazon.
 //   http://dynarch.com/mishoo
 //
-// $Id: htmlarea.js,v 1.5 2004/04/16 01:04:15 chavo Exp $
+// $Id: htmlarea.js,v 1.7 2004/05/09 20:43:38 e107coders Exp $
 
 if (typeof _editor_url == "string") {
         // Leave exactly one backslash at the end of _editor_url
@@ -108,6 +108,9 @@ HTMLArea.Config = function () {
         this.imgURL = "images/";
         this.popupURL = "popups/";
 
+        // remove tags (these have to be a regexp, or null if this functionality is not desired)
+        this.htmlRemoveTags = null;
+
         /** CUSTOMIZING THE TOOLBAR
          * -------------------------
          *
@@ -127,7 +130,7 @@ HTMLArea.Config = function () {
 
                 [ "justifyleft", "justifycenter", "justifyright", "justifyfull", "separator",
                   "lefttoright", "righttoleft", "separator",
-                  "insertorderedlist", "insertunorderedlist", "outdent", "indent", "separator",
+                  "orderedlist", "unorderedlist", "outdent", "indent", "separator",
                   "forecolor", "hilitecolor", "separator",
                   "inserthorizontalrule", "createlink", "insertimage", "inserttable", "htmlmode", "separator",
                   "popupeditor", "separator", "showhelp", "about" ]
@@ -197,8 +200,8 @@ HTMLArea.Config = function () {
                 justifycenter: [ "Justify Center", "ed_align_center.gif", false, function(e) {e.execCommand("justifycenter");} ],
                 justifyright: [ "Justify Right", "ed_align_right.gif", false, function(e) {e.execCommand("justifyright");} ],
                 justifyfull: [ "Justify Full", "ed_align_justify.gif", false, function(e) {e.execCommand("justifyfull");} ],
-                insertorderedlist: [ "Ordered List", "ed_list_num.gif", false, function(e) {e.execCommand("insertorderedlist");} ],
-                insertunorderedlist: [ "Bulleted List", "ed_list_bullet.gif", false, function(e) {e.execCommand("insertunorderedlist");} ],
+                orderedlist: [ "Ordered List", "ed_list_num.gif", false, function(e) {e.execCommand("insertorderedlist");} ],
+                unorderedlist: [ "Bulleted List", "ed_list_bullet.gif", false, function(e) {e.execCommand("insertunorderedlist");} ],
                 outdent: [ "Decrease Indent", "ed_indent_less.gif", false, function(e) {e.execCommand("outdent");} ],
                 indent: [ "Increase Indent", "ed_indent_more.gif", false, function(e) {e.execCommand("indent");} ],
                 forecolor: [ "Font Color", "ed_color_fg.gif", false, function(e) {e.execCommand("forecolor");} ],
@@ -415,6 +418,7 @@ HTMLArea.prototype._createToolbar = function () {
                 var cmd = null;
                 var customSelects = editor.config.customSelects;
                 var context = null;
+                var tooltip = "";
                 switch (txt) {
                     case "fontsize":
                     case "fontname":
@@ -436,6 +440,9 @@ HTMLArea.prototype._createToolbar = function () {
                         if (typeof dropdown != "undefined") {
                                 options = dropdown.options;
                                 context = dropdown.context;
+                                if (typeof dropdown.tooltip != "undefined") {
+                                        tooltip = dropdown.tooltip;
+                                }
                         } else {
                                 alert("ERROR [createSelect]:\nCan't find the requested dropdown definition");
                         }
@@ -443,6 +450,7 @@ HTMLArea.prototype._createToolbar = function () {
                 }
                 if (options) {
                         el = document.createElement("select");
+                        el.title = tooltip;
                         var obj = {
                                 name        : txt, // field name
                                 element : el,        // the UI element (SELECT)
@@ -658,6 +666,24 @@ HTMLArea.prototype.generate = function () {
                                 }
                         }
                 };
+                if (typeof f.onreset == "function") {
+                        var funcref = f.onreset;
+                        if (typeof f.__msh_prevOnReset == "undefined") {
+                                f.__msh_prevOnReset = [];
+                        }
+                        f.__msh_prevOnReset.push(funcref);
+                }
+                f.onreset = function() {
+                        editor.setHTML(editor._textArea.value);
+                        editor.updateToolbar();
+                        var a = this.__msh_prevOnReset;
+                        // call previous reset methods if they were there.
+                        if (typeof a != "undefined") {
+                                for (var i in a) {
+                                        a[i]();
+                                }
+                        }
+                };
         }
 
         // add a handler for the "back/forward" case -- on body.unload we save
@@ -673,6 +699,11 @@ HTMLArea.prototype.generate = function () {
 
         // create the IFRAME
         var iframe = document.createElement("iframe");
+
+        // workaround for the HTTPS problem
+        // iframe.setAttribute("src", "javascript:void(0);");
+        iframe.src = _editor_url + "popups/blank.html";
+
         htmlarea.appendChild(iframe);
 
         this._iframe = iframe;
@@ -846,11 +877,10 @@ HTMLArea.prototype.setMode = function(mode) {
         this._editMode = mode;
         this.focusEditor();
 
-        for (var i in editor.plugins) {
-                var plugin = editor.plugins[i].instance;
+        for (var i in this.plugins) {
+                var plugin = this.plugins[i].instance;
                 if (typeof plugin.onMode == "function") plugin.onMode(mode);
         }
-
 };
 
 HTMLArea.prototype.setFullHTML = function(html) {
@@ -1217,6 +1247,7 @@ HTMLArea.prototype.updateToolbar = function(noStatus) {
                                 btn.state("active", (el.style.direction == ((cmd == "righttoleft") ? "rtl" : "ltr")));
                         break;
                     default:
+                        cmd = cmd.replace(/(un)?orderedlist/i, "insert$1orderedlist");
                         try {
                                 btn.state("active", (!text && doc.queryCommandState(cmd)));
                         } catch (e) {}
@@ -1617,7 +1648,7 @@ HTMLArea.prototype.execCommand = function(cmdID, UI, param) {
                         {
                                 window.open(this.popupURL("fullscreen.html"), "ha_fullscreen",
                                             "toolbar=no,location=no,directories=no,status=no,menubar=no," +
-                                            "scrollbars=no,resizable=yes,width=800,height=600");
+                                            "scrollbars=no,resizable=yes,width=640,height=480");
                         }
                 } else {
                         window.open(this.popupURL("fullscreen.html"), "ha_fullscreen",
@@ -2008,6 +2039,8 @@ HTMLArea.getHTML = function(root, outputRoot, editor) {
                 var closed;
                 var i;
                 var root_tag = (root.nodeType == 1) ? root.tagName.toLowerCase() : '';
+                if (outputRoot)
+                        outputRoot = !(editor.config.htmlRemoveTags && editor.config.htmlRemoveTags.test(root_tag));
                 if (HTMLArea.is_ie && root_tag == "head") {
                         if (outputRoot)
                                 html += "<head>";
@@ -2052,7 +2085,7 @@ HTMLArea.getHTML = function(root, outputRoot, editor) {
                                         //
                                         // Using Gecko the values of href and src are converted to absolute links
                                         // unless we get them using nodeValue()
-                                        if (typeof root[a.nodeName] != "undefined" && name != "href" && name != "src") {
+                                        if (typeof root[a.nodeName] != "undefined" && name != "href" && name != "src" && !/^on/.test(name)) {
                                                 value = root[a.nodeName];
                                         } else {
                                                 value = a.nodeValue;
@@ -2089,7 +2122,13 @@ HTMLArea.getHTML = function(root, outputRoot, editor) {
                 // If a text node is alone in an element and all spaces, replace it with an non breaking one
                 // This partially undoes the damage done by moz, which translates '&nbsp;'s into spaces in the data element
                 if ( !root.previousSibling && !root.nextSibling && root.data.match(/^\s*$/i) ) html = '&nbsp;';
-                else html = HTMLArea.htmlEncode(root.data);
+                else html = /^script|style$/i.test(root.parentNode.tagName) ? root.data : HTMLArea.htmlEncode(root.data);
+                break;
+            case 4: // Node.CDATA_SECTION_NODE
+                // FIXME: it seems we never get here, but I believe we should..
+                //        maybe a browser problem?--CDATA sections are converted to plain text nodes and normalized
+                // CDATA sections should go "as is" without further encoding
+                html = "<![CDATA[" + root.data + "]]>";
                 break;
             case 8: // Node.COMMENT_NODE
                 html = "<!--" + root.data + "-->";

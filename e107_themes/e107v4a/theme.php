@@ -127,7 +127,7 @@ $NEWSSTYLE = "
 {NEWSBODY}
 {EXTENDED}
 <div class='alttd' style='text-align:right'>
-Posted by {NEWSAUTHOR}on{NEWSDATE}
+Posted by {NEWSAUTHOR} on {NEWSDATE}
  | 
 {NEWSCOMMENTS}
  | 
@@ -236,7 +236,7 @@ $COMMENTSTYLE = "
 <table style='width:100%'>
 <tr>
 <td colspan='2' class='alttd'>
-<img src='".THEME."images/bullet2.gif' alt='bullet' /> 
+{SUBJECT}
 <b>
 {USERNAME}
 </b>
@@ -254,6 +254,8 @@ $COMMENTSTYLE = "
 {COMMENTS}
 <br />
 {JOINED}
+<br />
+{REPLY}
 </span>
 </td>
 <td style='width:70%; vertical-align:top'>

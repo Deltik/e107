@@ -29,11 +29,6 @@ function urljump(url){
 	top.window.location = url; 
 }
 
-function dblclick(){
-	window.scrollTo(0,0)
-}
-if (document.layers) {document.captureEvents(Event.ONDBLCLICK);}
-document.ondblclick=dblclick;
 function open_window(url,type) {
 	if('full' == type){
 		pwindow = window.open(url);
@@ -66,10 +61,6 @@ function setCheckboxes(the_form, do_check){
     }
 	return true;
 }
-image1 = new Image(); image1.src = "../e107_images/generic/e107.gif";
-image2 = new Image(); image2.src = "../e107_images/generic/hme.png";
-image3 = new Image(); image3.src = "../e107_images/generic/location.png";
-image4 = new Image(); image4.src = "../e107_images/generic/rname.png";
 
 var ref=""+escape(top.document.referrer);
 var colord = window.screen.colorDepth; 
@@ -136,7 +127,19 @@ function addtext(text){
 }
 
 function help(help){
-	document.dataform.helpb.value = help;
+	document.getElementById('dataform').helpb.value = help;
 }
+function externalLinks() { 
+ if (!document.getElementsByTagName) return; 
+ var anchors = document.getElementsByTagName("a"); 
+ for (var i=0; i<anchors.length; i++) { 
+   var anchor = anchors[i]; 
+   if (anchor.getAttribute("href") && 
+       anchor.getAttribute("rel") == "external") 
+     anchor.target = "_blank"; 
+ } 
+} 
+
+
 
 //-->

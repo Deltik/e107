@@ -104,7 +104,7 @@ define("FORLAN_97", "Parent deleted");
 
 define("FORLAN_98", "Rank Name");
 define("FORLAN_99", "number of points before level change");
-define("FORLAN_100", "upload images to e107_images/forum/");
+define("FORLAN_100", "upload images to e107_themes/Your_Theme/forum/");
 define("FORLAN_101", "Main Site Admin");
 define("FORLAN_102", "Threshold");
 define("FORLAN_103", "Site Admin");
@@ -118,6 +118,25 @@ define("FORLAN_108", " deleted");
 define("FORLAN_109", "days:");
 define("FORLAN_110", "Prune");
 define("FORLAN_111", "deactivate");
-define("FORLAN_110", "Prune");
-define("FORLAN_110", "Prune");
+
+define("FORLAN_112", "Enable Redirect");
+define("FORLAN_113", "Tick this to make browser redirect to forum page after replying");
+define("FORLAN_114", "User Custom Title");
+define("FORLAN_115", "Tick this to allow users to change their Custom Title");
+define("FORLAN_116", "Reported Posts");
+define("FORLAN_117", "This will delete the record of the reported post. Not the post itself.");
+define("FORLAN_118", "Reported post deleted");
+define("FORLAN_119", "Clicking links will open forum in a new window.");
+define("FORLAN_120", "Tick this to allow users to change their Custom Title");
+define("FORLAN_121", "No reported posts");
+define("FORLAN_122", "Click here to email admin when someone reports a forum post");
+define("FORLAN_123", "Forum Rules");
+define("WMGLAN_1", "Rules for Guests");
+define("WMGLAN_2", "Rules for Members");
+define("WMGLAN_3", "Rules for Administrators");
+define("WMGLAN_4", "Submit");
+define("WMGLAN_5", "Set Forum Rules");
+define("WMGLAN_6", "Activate?");
+define("FORLAN_124", "Links in new window");
+define("FORLAN_125", "Tick here to make all links open in a new window (<i>this will apply sitewide</i>). ");
 ?>

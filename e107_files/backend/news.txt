@@ -1,9 +1,0 @@
-
-http://www.2sdw.com/CVS/e107/comment.php?3
-
-Test
-http://www.2sdw.com/CVS/e107/comment.php?2
-
-Welcome to e107
-http://www.2sdw.com/CVS/e107/comment.php?1
-

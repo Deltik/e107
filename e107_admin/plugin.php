@@ -13,9 +13,10 @@
 +---------------------------------------------------------------+
 */
 require_once("../class2.php");
-if(!getperms("Z")){ header("location:".e_HTTP."index.php"); exit; }
+if(!getperms("Z")){ header("location:".e_BASE."index.php"); exit; }
 require_once("auth.php");
 require_once(e_HANDLER."parser_handler.php");
+
 
 //        check for new plugins, create entry in plugin table ...
 $handle=opendir(e_PLUGIN);
@@ -48,7 +49,7 @@ while($row = $sql -> db_fetch()){
 
 if(strstr(e_QUERY, "uninstall")){
         $tmp = explode(".", e_QUERY);
-        $id = $tmp[1]; unset($tmp);
+        $id = intval($tmp[1]); unset($tmp);
 
         $sql -> db_Select("plugin", "*", "plugin_id='$id' ");
         $row = $sql -> db_Fetch(); extract($row);
@@ -62,7 +63,7 @@ if(strstr(e_QUERY, "uninstall")){
 </td>
 </tr>
 </table>
-<input type='hidden' name='id' value='$id'>
+<input type='hidden' name='id' value='$id' />
 </form>
 </div>";
         $ns -> tablerender(EPL_ADLAN_3, $text);
@@ -79,7 +80,7 @@ if(IsSet($_POST['confirm'])){
         $id = $_POST['id'];
         $sql -> db_Select("plugin", "*", "plugin_id='$id' ");
         $row = $sql -> db_Fetch(); extract($row);
-        if($plugin_installflag){
+        if($plugin_installflag){  //Uninstall Plugin
                 include(e_PLUGIN.$plugin_path."/plugin.php");
                 if(is_array($eplug_tables)){
                         while(list($key, $e_table) = each($eplug_table_names)){
@@ -100,6 +101,16 @@ if(IsSet($_POST['confirm'])){
                         save_prefs();
                         $text .= EPL_ADLAN_29."<br />";
                 }
+                                        if($eplug_module){
+                                                $mods=explode(",",$pref['modules']);
+                                                foreach($mods as $k => $v){
+                                                        if($v == $eplug_folder){unset($mods[$k]);}
+                                                }
+                                                $pref['modules'] = implode(",",$mods);
+                  save_prefs();
+                }
+
+
                 if(is_array($eplug_user_prefs)){
                         $sql = new db;
                         $sql -> db_Select("core", " e107_value", " e107_name='user_entended'");
@@ -173,6 +184,16 @@ if(strstr(e_QUERY, "install")){
                         $text .= EPL_ADLAN_20."<br />";
 
                 }
+                                        if($eplug_module){
+                                                $mods = explode(",",$pref['modules']);
+                                                if(!in_array($eplug_folder,$mods)){
+                                                        $mods[]=$eplug_folder;
+                                                }
+                                                $pref['modules'] = implode(",",$mods);
+                  save_prefs();
+               }
+
+
                 if(is_array($eplug_user_prefs)){
                         $sql = new db;
                         $sql -> db_Select("core", " e107_value", " e107_name='user_entended'");
@@ -325,7 +346,7 @@ $text = "<div style='text-align:center'>
 $sql -> db_Select("plugin");
 while($row = $sql -> db_Fetch()){
         extract($row);
-        unset($eplug_name, $eplug_version, $eplug_author, $eplug_logo, $eplug_url, $eplug_email, $eplug_description, $eplug_compatible, $eplug_readme, $eplug_folder, $eplug_table_names);
+        unset($eplug_module, $eplug_parse, $eplug_name, $eplug_version, $eplug_author, $eplug_logo, $eplug_url, $eplug_email, $eplug_description, $eplug_compatible, $eplug_readme, $eplug_folder, $eplug_table_names);
         include(e_PLUGIN.$plugin_path."/plugin.php");
 
         if(is_array($eplug_table_names) || is_array($eplug_prefs)  || is_array($eplug_user_prefs) || is_array($eplug_parse)){
@@ -342,14 +363,14 @@ while($row = $sql -> db_Fetch()){
         <td class='forumheader3' style='width:30%; text-align:center; vertical-align:middle'>".($eplug_logo && $eplug_logo != "button.png" ? "<img src='".e_PLUGIN.$eplug_folder."/".$eplug_logo."' alt='' /><br /><br />" : "")."
 
 
-        $img <b>$plugin_name</b><br />version $plugin_version<br />
+        $img <b>$plugin_name</b><br />version $plugin_version<br /></td>
         <td class='forumheader3' style='width:70%'><b>".EPL_ADLAN_12."</b>: $eplug_author<br />[ ".EPL_EMAIL.": $eplug_email | ".EPL_WEBSITE.": $eplug_url ]<br />
         <b>".EPL_ADLAN_14."</b>: $eplug_description<br /><b>Requires</b> : $eplug_compatible <br />\n";
         if($eplug_readme){
                 $text .= "[ <a href='".e_PLUGIN.$eplug_folder."/".$eplug_readme."'>".$eplug_readme."</a> ]<br />";
         }
-        if(is_array($eplug_table_names) || is_array($eplug_prefs)  || is_array($eplug_user_prefs) || is_array($eplug_parse)){
-                $text .= "<b>".EPL_OPTIONS."</b>: [ ".($plugin_installflag ? "<a href='".e_SELF."?uninstall.$plugin_id'> ".EPL_ADLAN_1."</a>" : "<a href='".e_SELF."?install.$plugin_id'>".EPL_ADLAN_0."</a>")." ]";
+        if($eplug_module || is_array($eplug_table_names) || is_array($eplug_prefs)  || is_array($eplug_user_prefs) || is_array($eplug_parse)){
+                $text .= "<b>".EPL_OPTIONS."</b>: [ ".($plugin_installflag ? "<a href='".e_SELF."?uninstall.$plugin_id' title='".EPL_ADLAN_1."'> ".EPL_ADLAN_1."</a>" : "<a href='".e_SELF."?install.$plugin_id' title='".EPL_ADLAN_0."'>".EPL_ADLAN_0."</a>")." ]";
         }else{
                 if($eplug_menu_name){
                         $text .= EPL_NOINSTALL.str_replace("..", "", e_PLUGIN.$plugin_path)."/ ".EPL_DIRECTORY;
@@ -358,24 +379,25 @@ while($row = $sql -> db_Fetch()){
                 }
         }
         if($plugin_version != $eplug_version && $plugin_installflag){
-                $text .= " [ <a href='".e_SELF."?upgrade.$plugin_id'>".EPL_UPGRADE."</a> ]";
+                $text .= " [ <a href='".e_SELF."?upgrade.$plugin_id' title='".EPL_UPGRADE." to v".$eplug_version."'>".EPL_UPGRADE."</a> ]";
         }
         $text .= "</td>
         </tr>";
 }
 
 $text .= "</table>
-<br />
+<div><br />
 <img src='".e_IMAGE."generic/uninstalled.png' alt='' /> ".EPL_ADLAN_23."&nbsp;&nbsp;
 <img src='".e_IMAGE."generic/installed.png' alt='' /> ".EPL_ADLAN_22."&nbsp;&nbsp;
 <img src='".e_IMAGE."generic/upgrade.png' alt='' /> ".EPL_ADLAN_24."&nbsp;&nbsp;
-<img src='".e_IMAGE."generic/noinstall.png' alt='' /> ".EPL_ADLAN_25."</div>";
+<img src='".e_IMAGE."generic/noinstall.png' alt='' /> ".EPL_ADLAN_25."</div></form></div>";
 
 $ns -> tablerender(Plugins, $text);
 // ----------------------------------------------------------
 
 
 
+//echo "pref-modules = [{$pref['modules']}]";
 
 
 require_once("footer.php");

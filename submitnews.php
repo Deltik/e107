@@ -15,21 +15,40 @@
 
 
 require_once("class2.php");
+
 require_once(HEADERF);
+if($pref['subnews_htmlarea']){
+        require_once(e_HANDLER."htmlarea/htmlarea.inc.php");
+        htmlarea("item");
+}
+if(!isset($pref['subnews_class'])){
+        $pref['subnews_class']="0";
+}
+if(!check_class($pref['subnews_class'])){
+        $ns -> tablerender(NWSLAN_12,NWSLAN_11);
+        require_once(FOOTERF);
+        exit;
+}
+
+$author_name=textparse::tpj($_POST['author_name'],TRUE);
+$author_email=check_email($_POST['author_email']);
+
+
 
 if(IsSet($_POST['submit'])){
-        if($_POST['item'] == ""){
-        $message .= "You must include some text in the News Item";
-        $error = TRUE;
-        }
 
         if($_POST['itemtitle'] == ""){
-        $message .= "You must include a title";
+        $message .= SUBNEWSLAN_1;
         $error = TRUE;
         }
 
-                $user = (USER ? USERNAME : $_POST['author_name']);
-                $email = (USER ? USEREMAIL : $_POST['author_email']);
+        if($_POST['item'] == ""){
+        $message .= SUBNEWSLAN_2;
+        $error = TRUE;
+        }
+
+                $user = (USER ? USERNAME : $author_name);
+                $email = (USER ? USEREMAIL : $author_email);
 
                 if($user && $email){
 
@@ -43,6 +62,7 @@ if(IsSet($_POST['submit'])){
 
                         $itemtitle = $aj -> formtpa($_POST['itemtitle'], "public");
                         $item = $aj -> formtpa($_POST['item'], "public");
+                        $item = str_replace("src=&quot;e107_images","src=&quot;".SITEURL."e107_images",$item);
 
 
 // Process File Upload    =================================================
@@ -59,12 +79,12 @@ if($_FILES['file_userfile']){
         }
 
         if($uploaded && $fileext != "jpg" && $fileext != "gif" && $fileext != "png"){
-            $message = "Your attachment must be either a jpg, gif or png file";
+            $message = SUBNEWSLAN_3;
             $error = TRUE;
         }
 
         if($filesize > $pref['upload_maxfilesize']){
-            $message = "File too Large";
+            $message = SUBNEWSLAN_4;
             $error = TRUE;
         }
 
@@ -88,16 +108,24 @@ if($_FILES['file_userfile']){
 
   // ==========================================================
                if($error == FALSE){
-                $sql -> db_Insert("submitnews", "0, '$user', '$email', '$itemtitle', '".$_POST['cat_id']."','$item', '".time()."', '$ip', '0', '$newname' ");
+                if(!file_exists(e_IMAGE."newspost_images/". $newname)){$newname = ""; }
+                $sql -> db_Insert("submitnews", "0, '$user', '$email', '$itemtitle', '".intval($_POST['cat_id'])."','$item', '".time()."', '$ip', '0', '$newname' ");
                 $ns -> tablerender(LAN_133, "<div style='text-align:center'>".LAN_134."</div>");
                 require_once(FOOTERF);
                 exit;
                 }else{
                 require_once(e_HANDLER."message_handler.php");
-                message_handler("ALERT", "",$message);
+                message_handler("P_ALERT",$message);
                 }
         }
 }
+// ==============================================================
+
+
+
+
+
+
 
 
 $text = "<div style='text-align:center'>
@@ -134,16 +162,16 @@ $text .= " <tr>
 <tr>
 <td style='width:20%' class='forumheader3'>".LAN_135."</td>
 <td style='width:80%' class='forumheader3'>
-<textarea class='tbox' name='item' cols='70' rows='10'></textarea>
+<textarea class='tbox' id='item' name='item' cols='70' rows='10'></textarea>
 </td>
 </tr>\n";
 
 if($pref['subnews_attach']){
     $text .="
     <tr>
-    <td style='width:20%' class='forumheader3'>Image File<br><span class='smalltext'>(jpg, gif or png)</span></td>
+    <td style='width:20%' class='forumheader3'>Image File<br /><span class='smalltext'>(jpg, gif or png)</span></td>
     <td style='width:80%' class='forumheader3'>
-    <input class='tbox' type='file' name='file_userfile[]' style='width:90%' >
+    <input class='tbox' type='file' name='file_userfile[]' style='width:90%' />
     </td>
     </tr>\n";
 }

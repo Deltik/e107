@@ -57,11 +57,11 @@ $HEADER = "
 <td class='thinblackline'></td>
 </tr>
 </table>
-<table style='width:100%' >
+<table >
 <tr> 
 <td style='padding:10px;width:15%; vertical-align: top;'>
 {SETSTYLE=menu1}
-(SITELINKS=menu}
+{SITELINKS=menu}
 {MENU=1}
 <br />
 </td>
@@ -110,7 +110,7 @@ $NEWSHEADER = "
 <tr> 
 <td style='width:15%; vertical-align: top;'>
 {SETSTYLE=menu1}
-(SITELINKS=menu}
+{SITELINKS=menu}
 {MENU=1}
 <br />
 </td>
@@ -239,16 +239,15 @@ function tablestyle($caption, $text){
 }
 
 $COMMENTSTYLE = "
-<div style='text-align:center'>
-<table style='width:95%'>
+<table style='width:100%'>
 <tr>
-<td colspan='2' class='alttd9'>
-<img src='".THEME."images/bullet2.gif' alt='' /> 
+<td colspan='2' class='forumheader3'>
+{SUBJECT}
 <b>
 {USERNAME}
 </b>
- | 
- {TIMEDATE}
+|
+{TIMEDATE}
 </td>
 </tr>
 <tr>
@@ -261,13 +260,14 @@ $COMMENTSTYLE = "
 <br />
 {JOINED}
 </span>
+<br/>
+{REPLY}
 </td>
 <td style='width:70%; vertical-align:top'>
 {COMMENT}
 </td>
 </tr>
 </table>
-</div>
 <br />";
 
 $POLLSTYLE = <<< EOF

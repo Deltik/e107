@@ -8,8 +8,10 @@
 |	GNU General Public License (http://gnu.org).
 +---------------------------------------------------------------+
 */
-function e107core_parse($match){
-	
+@include(e_LANGUAGEDIR.e_LAN."/lan_parser_functions.php");
+@include(e_LANGUAGEDIR."English/lan_parser_functions.php");
+function e107core_parse($match,$referrer){
+	global $pref;
 }
 
 ?>

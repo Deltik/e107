@@ -44,4 +44,24 @@ define("LAN_409", "Are you sure you want to delete this thread and any replies?"
 define("LAN_410", "Are you sure you want to delete this reply?");
 define("LAN_411", "posted by ");
 
+//v.616
+define("LAN_412", "Title");
+define("LAN_413", "Report");
+define("LAN_414", "Report this thread to a moderator");
+define("LAN_415", "Thread title");
+define("LAN_416", "Enter your report");
+define("LAN_417", "The admin will be made aware of this thread. You may post a message explaining what you found to be objectionable.");
+define("LAN_418", "<b>Do not</b> use this form to contact the admin for any other reason.");
+define("LAN_419", "Send Report");
+define("LAN_420", "Click to view post");
+define("LAN_421", "Forum thread report from");
+define("LAN_422", "This post has been reported from site ");
+define("LAN_423", "Message could not be sent. ");
+define("LAN_424", "Post has been reported to moderator.<br />Thank You.");
+define("LAN_425", "Message from: ");
+define("LAN_426", "Reporting post in topic: ");
+define("LAN_427", "Error sending mail");
+define("LAN_428", "Post has been reported");
+define("LAN_429", "Click here to return to forum");
+
 ?>

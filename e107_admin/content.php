@@ -39,51 +39,51 @@ if(e_QUERY){
 $aj = new textparse;
 
 If(IsSet($_POST['submit'])){
-	if($_POST['data'] != ""){
-		$content_subheading = $aj -> formtpa($_POST['content_subheading'], "admin");
-		$content_heading = $aj -> formtpa($_POST['content_heading'], "admin");
-		$content_content = $aj -> formtpa($_POST['data'], "admin");
-		$sql -> db_Insert("content", "0, '".$content_heading."', '".$content_subheading."', '$content_content', '".$_POST['auto_line_breaks']."', '".time()."', '".ADMINID."', '".$_POST['content_comment']."', '', '1', 0, 0,  {$_POST['c_class']}");
-		if($_POST['content_heading']){
-			$sql -> db_Select("content", "*", "ORDER BY content_datestamp DESC LIMIT 0,1 ", $mode="no_where");
-			list($content_id, $content_heading) = $sql-> db_Fetch();
-			$sql -> db_Insert("links", "0, '".$content_heading."', 'content.php?content.$content_id', '', '', '1', '0', '0', '0', {$_POST['c_class']} ");
-			clear_cache("sitelinks");
-			$message = CNTLAN_24;
-		} else {
-			$sql -> db_Select("content", "*", "ORDER BY content_datestamp DESC LIMIT 0,1 ", $mode="no_where");
-			list($content_id, $content_heading) = $sql-> db_Fetch();
-			$message = CNTLAN_23." - 'article.php?".$content_id.".255'.";
-		}
-		clear_cache("content");
-		unset($content_heading, $content_subheading, $content_content, $content_parent);
-	} else {
-		$message = CNTLAN_1;
-	}
+        if($_POST['data'] != ""){
+                $content_subheading = $aj -> formtpa($_POST['content_subheading'], "admin");
+                $content_heading = $aj -> formtpa($_POST['content_heading'], "admin");
+                $content_content = $aj -> formtpa($_POST['data'],"admin");
+                $sql -> db_Insert("content", "0, '".$content_heading."', '".$content_subheading."', '$content_content', '".$_POST['auto_line_breaks']."', '".time()."', '".ADMINID."', '".$_POST['content_comment']."', '', '1', 0, 0,  {$_POST['c_class']}");
+                if($_POST['content_heading']){
+                        $sql -> db_Select("content", "*", "ORDER BY content_datestamp DESC LIMIT 0,1 ", $mode="no_where");
+                        list($content_id, $content_heading) = $sql-> db_Fetch();
+                        $sql -> db_Insert("links", "0, '".$content_heading."', 'content.php?content.$content_id', '', '', '1', '0', '0', '0', {$_POST['c_class']} ");
+                        clear_cache("sitelinks");
+                        $message = CNTLAN_24;
+                } else {
+                        $sql -> db_Select("content", "*", "ORDER BY content_datestamp DESC LIMIT 0,1 ", $mode="no_where");
+                        list($content_id, $content_heading) = $sql-> db_Fetch();
+                        $message = CNTLAN_23." - 'article.php?".$content_id.".255'.";
+                }
+                clear_cache("content");
+                unset($content_heading, $content_subheading, $content_content, $content_parent);
+        } else {
+                $message = CNTLAN_1;
+        }
 }
 
 if(IsSet($_POST['update'])){
-	$content_subheading = $aj -> formtpa($_POST['content_subheading'], "admin");
-	$content_heading = $aj -> formtpa($_POST['content_heading'], "admin");
-	$content_content = $aj -> formtpa($_POST['data'], "admin");
-	$sql -> db_Update("content", " content_heading='$content_heading', content_subheading='$content_subheading', content_content='$content_content', content_parent='".$_POST['auto_line_breaks']."',  content_comment='".$_POST['content_comment']."', content_type='1', content_class='{$_POST['c_class']}' WHERE content_id='".$_POST['content_id']."'");
-	$sql -> db_Update("links", "link_class='".$_POST['c_class']."' WHERE link_name='$content_heading' ");
-	unset($content_heading, $content_subheading, $content_content, $content_parent);
-	$message = CNTLAN_2;
-	clear_cache("content");
-	clear_cache("sitelinks");
+        $content_subheading = $aj -> formtpa($_POST['content_subheading'], "admin");
+        $content_heading = $aj -> formtpa($_POST['content_heading'], "admin");
+        $content_content = $aj -> formtpa($_POST['data'], "admin");
+        $sql -> db_Update("content", " content_heading='$content_heading', content_subheading='$content_subheading', content_content='$content_content', content_parent='".$_POST['auto_line_breaks']."',  content_comment='".$_POST['content_comment']."', content_type='1', content_class='{$_POST['c_class']}' WHERE content_id='".$_POST['content_id']."'");
+        $sql -> db_Update("links", "link_class='".$_POST['c_class']."' WHERE link_name='$content_heading' ");
+        unset($content_heading, $content_subheading, $content_content, $content_parent);
+        $message = CNTLAN_2;
+        clear_cache("content");
+        clear_cache("sitelinks");
 }
 
 if($action == "delete"){
-	$sql = new db;
-	$sql -> db_Select("content", "*", "content_id=$sub_action");
-	$row = $sql -> db_Fetch(); extract($row);
-	$sql -> db_Delete("links", "link_name='".$content_heading."' ");
-	$sql -> db_Delete("content", "content_id=$sub_action");
-	$message = CNTLAN_20;
-	unset($content_heading, $content_subheading, $content_content);
-	clear_cache("content");
-	clear_cache("sitelinks");
+        $sql = new db;
+        $sql -> db_Select("content", "*", "content_id=$sub_action");
+        $row = $sql -> db_Fetch(); extract($row);
+        $sql -> db_Delete("links", "link_name='".$content_heading."' ");
+        $sql -> db_Delete("content", "content_id=$sub_action");
+        $message = CNTLAN_20;
+        unset($content_heading, $content_subheading, $content_content);
+        clear_cache("content");
+        clear_cache("sitelinks");
 }
 
 if(IsSet($message)){
@@ -100,22 +100,22 @@ if(!$content_total = $sql -> db_Select("content", "*", "content_type='254' OR co
 <td style='width:65%' class='forumheader2'>".CNTLAN_25."</td>
 <td style='width:30%' class='forumheader2'>".CNTLAN_26."</td>
 
-
 </tr>";
 
         while($row = $sql -> db_Fetch()){
                 extract($row);
-                $text .= "<td style='width:5%; text-align:center' class='forumheader3'>$content_id</td>
-                <td style='width:65%' class='forumheader3'>$content_heading</td>
+                $content_title = ($content_heading) ? $content_heading : $content_subheading;
+                $text .= "<tr><td style='width:5%; text-align:center' class='forumheader3'>$content_id</td>
+                <td style='width:65%' class='forumheader3'>$content_title</td>
                 <td style='width:30%; text-align:center' class='forumheader3'>
-                ".$rs -> form_button("submit", "main_edit", CNTLAN_6, "onClick=\"document.location='".e_SELF."?edit.$content_id'\"")."
-                ".$rs -> form_button("submit", "main_delete", CNTLAN_7, "onClick=\"confirm_($content_id)\"")."
+                ".$rs -> form_button("submit", "main_edit_{$content_id}", CNTLAN_6, "onclick=\"document.location='".e_SELF."?edit.$content_id'\"")."
+                ".$rs -> form_button("submit", "main_delete_{$content_id}", CNTLAN_7, "onclick=\"confirm_($content_id)\"")."
 
                 </td>\n</tr>";
         }
         $text .= "</table>\n";
 }
-$text .= "</div>";
+$text .= "</div></div>";
 
 $ns -> tablerender(CNTLAN_5, $text);
 
@@ -132,7 +132,7 @@ if($action == "edit"){
 $article_total = $sql -> db_Select("content", "*", "content_type='254' OR content_type='255' OR content_type='1' ");
 
 $text = "<div style='text-align:center'>
-<form method='post' action='".e_SELF."' name='dataform'>
+<form method='post' action='".e_SELF."' id='dataform'>
 <table style='width:80%' class='fborder'>
 
 <tr>
@@ -149,9 +149,10 @@ $text = "<div style='text-align:center'>
 </td>
 </tr>
 <tr>
-<td style='width:20%' class='forumheader3'><u>".CNTLAN_12."</u>: </td>
-<td style='width:80%' class='forumheader3'>
-<textarea class='tbox' id='data' name='data' cols='70' rows='30' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'>$content_content</textarea>";
+<td style='width:20%' class='forumheader3'><span style='text-decoration: underline'>".CNTLAN_12.": </span></td>
+<td style='width:80%' class='forumheader3'>";
+$insertjs = (!$pref['htmlarea'])? "onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'":"";
+$text .="<textarea class='tbox' id='data' name='data' style='width:100%' rows='30' cols='60' $insertjs >$content_content</textarea>";
 
 if(!$pref['htmlarea']){
     $text .="
@@ -170,11 +171,11 @@ $text .="
 <td style='width:80%' class='forumheader3'>";
 
 if($content_parent){
-        $text .= CNTLAN_14.": <input type='radio' name='auto_line_breaks' value='0'>
-        ".CNTLAN_15.": <input type='radio' name='auto_line_breaks' value='1' checked>";
+        $text .= CNTLAN_14.": <input type='radio' name='auto_line_breaks' value='0' />
+        ".CNTLAN_15.": <input type='radio' name='auto_line_breaks' value='1' checked='checked' />";
 }else{
-        $text .= CNTLAN_14.": <input type='radio' name='auto_line_breaks' value='0' checked>
-        ".CNTLAN_15.": <input type='radio' name='auto_line_breaks' value='1'>";
+        $text .= CNTLAN_14.": <input type='radio' name='auto_line_breaks' value='0' checked='checked' />
+        ".CNTLAN_15.": <input type='radio' name='auto_line_breaks' value='1' />";
 }
 $text .= "<span class='smalltext'>".CNTLAN_22."</span>
 </td></tr>
@@ -184,11 +185,11 @@ $text .= "<span class='smalltext'>".CNTLAN_22."</span>
 
 
 if(!$content_comment){
-        $text .= CNTLAN_14.": <input type='radio' name='content_comment' value='1'>
-        ".CNTLAN_15.": <input type='radio' name='content_comment' value='0' checked>";
+        $text .= CNTLAN_14.": <input type='radio' name='content_comment' value='1' />
+        ".CNTLAN_15.": <input type='radio' name='content_comment' value='0' checked='checked' />";
 }else{
-        $text .= CNTLAN_14.": <input type='radio' name='content_comment' value='1' checked>
-        ".CNTLAN_15.": <input type='radio' name='content_comment' value='0'>";
+        $text .= CNTLAN_14.": <input type='radio' name='content_comment' value='1' checked='checked' />
+        ".CNTLAN_15.": <input type='radio' name='content_comment' value='0' />";
 }
 
 
@@ -208,7 +209,7 @@ $text.="
 
 if($action == "edit"){
         $text .= "<input class='button' type='submit' name='update' value='".CNTLAN_16."' />
-        <input type='hidden' name='content_id' value='$content_id'>";
+        <input type='hidden' name='content_id' value='$content_id' />";
 }else{
         $text .= "<input class='button' type='submit' name='submit' value='".CNTLAN_17."' />";
 }

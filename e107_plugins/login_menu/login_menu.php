@@ -11,6 +11,7 @@ if($use_imagecode){
 	$sec_img = new secure_image;
 }
 
+$sql2 = new db;
 $text = "";
 	if(USER == TRUE || ADMIN == TRUE){
 		if(ADMIN == TRUE){
@@ -23,23 +24,118 @@ $text = "";
 		if(!$sql -> db_Select("online", "*", "online_ip='$ip' AND online_user_id='0' ")){
 			$sql -> db_Delete("online", "online_ip='$ip' AND online_user_id='0' ");
 		}
+
 		$new_total = 0;
 		$time = USERLV;
-		$new_news = $sql -> db_Count("news", "(*)", "WHERE news_datestamp>'".$time."' ");$new_total = $new_total + $new_news;
-		if(!$new_news){ $new_news = LOGIN_MENU_L26; }			
-		$new_comments = $sql -> db_Count("comments", "(*)", "WHERE comment_datestamp>'".$time."' "); $new_total = $new_total + $new_comments;
+		$new_news = $sql -> db_Select("news", "*", "news_datestamp>$time  ORDER BY news_datestamp DESC");
+		while($row = $sql -> db_Fetch()){
+			extract($row);
+				if(!check_class($news_class)){
+					$new_news = $new_news - 1;
+				}
+		}
+		$new_total = $new_total + $new_news;
+		if(!$new_news){ $new_news = LOGIN_MENU_L26; }	
+
+		$new_comments=0;
+		if($comments = $sql -> db_Select("comments", "*", "comment_datestamp>$time ORDER BY comment_datestamp DESC ")){
+			while($row = $sql -> db_Fetch()){
+				extract($row);
+				switch($comment_type){
+					case 0:	// news
+						$sql2 -> db_Select("news", "*", "news_id=$comment_item_id ");
+						$row = $sql2 -> db_Fetch(); extract($row);
+						if(check_class($news_class)){
+							$new_comments++;
+						}
+					break;
+					case 1:	//	article, review or content page
+						$sql2 -> db_Select("content", "content_heading, content_type, content_class", "content_id=$comment_item_id ");
+						$row = $sql2 -> db_Fetch(); 
+						extract($row);
+						if(check_class($content_class)){
+							$new_comments++;
+						}
+					break;
+					case 2: //	downloads
+						$mp = MPREFIX;
+						$qry = "SELECT download_name, {$mp}download_category.download_category_class FROM {$mp}download LEFT JOIN {$mp}download_category ON {$mp}download.download_category={$mp}download_category.download_category_id WHERE {$mp}download.download_id={$comment_item_id}";
+						$sql2 -> db_Select_gen($qry);
+						$row = $sql2 -> db_Fetch(); 
+						extract($row);
+						if(check_class($download_category_class)){
+							$new_comments++;
+						}
+					break;
+					case 3: //	faq
+						$sql2 -> db_Select("faq", "faq_question", "faq_id=$comment_item_id ");
+						$row = $sql2 -> db_Fetch(); extract($row);
+						$new_comments++;
+					break;
+					case 4:	//	poll comment
+						$sql2 -> db_Select("poll", "*", "poll_id=$comment_item_id ");
+						$row = $sql2 -> db_Fetch(); extract($row);
+						$new_comments++;
+					break;
+					case 6:	//	bugtracker
+						$sql2 -> db_Select("bugtrack", "bugtrack_summary", "bugtrack_id=$comment_item_id ");
+						$row = $sql2 -> db_Fetch(); extract($row);
+						$new_comments++;
+					break;
+				}
+			}
+		}
+		$handle=opendir(e_PLUGIN);
+			while(false !== ($file = readdir($handle))){
+			if($file != "." && $file != ".." && is_dir(e_PLUGIN.$file)){
+				$plugin_handle=opendir(e_PLUGIN.$file."/");
+				while(false !== ($file2 = readdir($plugin_handle))){
+					if($file2 == "e_comment.php"){
+						require_once(e_PLUGIN.$file."/".$file2);
+						if($comment_type == $e_plug_table){
+							$new_comments++;
+							break 2;
+						}
+					}
+				}
+			}
+		}
+		$new_total = $new_total + $new_comments;
 		if(!$new_comments){ $new_comments = LOGIN_MENU_L26; }
-		$new_chat = $sql -> db_Count("chatbox", "(*)", "WHERE cb_datestamp>'".$time."' "); $new_total = $new_total + $new_chat;
-		if(!$new_chat){ $new_chat = LOGIN_MENU_L26; }
-		$new_forum = $sql -> db_Count("forum_t", "(*)", "WHERE thread_datestamp>'".$time."' "); $new_total = $new_total + $new_forum;
+		$display_chats = TRUE;
+		if($sql -> db_Select("menus", "menu_class", "menu_name='chatbox_menu' AND menu_location!='0'")){
+			list($menus['menu_class']) = $sql -> db_Fetch();
+			if(check_class($menus['menu_class'])){
+				$new_chat = $sql -> db_Count("chatbox", "(*)", "WHERE cb_datestamp>'".$time."' "); $new_total = $new_total + $new_chat;
+			}else{				
+				$display_chats = FALSE;
+			}
+		}else{
+			$display_chats = FALSE; 
+		}
+		if(!$new_chat){ $new_chat = ($display_chats ? LOGIN_MENU_L26 : ""); }
+
+		$new_forum = $sql -> db_Select("forum_t", "*", "thread_datestamp>$time ORDER BY thread_datestamp DESC");
+		while($row = $sql -> db_Fetch()){
+			extract($row);
+			$sql2 -> db_Select("forum", "*", "forum_id=$thread_forum_id");
+			$row = $sql2 -> db_Fetch(); extract($row);
+			if(!check_class($forum_class)){
+				$new_forum = $new_forum - 1;
+			}
+		}
+		$new_total = $new_total + $new_forum;
 		if(!$new_forum){ $new_forum = LOGIN_MENU_L26; }
+
 		$new_users = $sql -> db_Count("user", "(*)", "WHERE user_join>'".$time."' "); $new_total = $new_total + $new_users;
 		if(!$new_users){ $new_users = LOGIN_MENU_L26; }
 
 		$text .= "<br /><br />\n<span class='smalltext'>\n".LOGIN_MENU_L25." 
-		$new_news ".($new_news == 1 ? LOGIN_MENU_L14 : LOGIN_MENU_L15).", 
-		$new_chat ".($new_chat == 1 ? LOGIN_MENU_L16 : LOGIN_MENU_L17).", 
-		$new_comments ".($new_comments == 1 ? LOGIN_MENU_L18 : LOGIN_MENU_L19).", 
+		$new_news ".($new_news == 1 ? LOGIN_MENU_L14 : LOGIN_MENU_L15).", ";
+		if($display_chats == TRUE){
+			$text .= $new_chat ." ".($new_chat == 1 ? LOGIN_MENU_L16 : LOGIN_MENU_L17).", ";
+		}
+		$text .= $new_comments ." ".($new_comments == 1 ? LOGIN_MENU_L18 : LOGIN_MENU_L19).", 
 		$new_forum ".($new_forum == 1 ? LOGIN_MENU_L20 : LOGIN_MENU_L21)." ".LOGIN_MENU_L27." 
 		$new_users ".($new_users == 1 ? LOGIN_MENU_L22 : LOGIN_MENU_L23).".</span>";
 		if($new_total){

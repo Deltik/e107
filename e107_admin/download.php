@@ -2,7 +2,7 @@
 /*
 +---------------------------------------------------------------+
 |        e107 website system
-|        /admin/newspost.php
+|        /admin/download.php
 |
 |        ©Steve Dunstan 2001-2002
 |        http://e107.org
@@ -62,11 +62,14 @@ if(IsSet($_POST['submit_download'])){
 
 
 if(IsSet($_POST['updateoptions'])){
-        $pref['download_view'] = $_POST['download_view'];
-        $pref['download_sort'] = $_POST['download_sort'];
-        $pref['download_order'] = $_POST['download_order'];
-        save_prefs();
-        $message = DOWLAN_65;
+	$pref['download_php'] = $_POST['download_php'];
+	$pref['download_view'] = $_POST['download_view'];
+	$pref['download_sort'] = $_POST['download_sort'];
+	$pref['download_order'] = $_POST['download_order'];
+	$pref['agree_flag'] = $_POST['agree_flag'];
+	$pref['agree_text'] = $aj -> formtpa($_POST['agree_text']);
+	save_prefs();
+	$message = DOWLAN_65;
 }
 
 if($action == "dlm"){
@@ -82,6 +85,7 @@ if($action == "create"){
 if($action == "cat"){
         if($sub_action == "confirm"){
                 if($sql -> db_Delete("download_category", "download_category_id='$id' ")){
+                                                                $sql -> db_Delete("download_category","download_category_parent='{$id}' ");
                         $download -> show_message(DOWLAN_49." #".$id." ".DOWLAN_36);
                         $download -> show_categories($sub_action, $id);
                 }
@@ -109,46 +113,73 @@ if(!e_QUERY || $action == "main"){
 
 if($action == "opt"){
         global $pref, $ns;
+          $agree_flag = $pref['agree_flag'];
+          $agree_text = $pref['agree_text'];
         $text = "<div style='text-align:center'>
         <form method='post' action='".e_SELF."?".e_QUERY."'>\n
         <table style='width:auto' class='fborder'>
-        <tr>
 
+
+          <tr>
+          <td style='width:70%' class='forumheader3'>".DOWLAN_69."</td>
+        <td class='forumheader3' style='width:30%;text-align:left'>";
+        $c = $pref['download_php'] ? " checked = 'checked' " : "";
+        $text .= "<input type='checkbox' class='tbox' name='download_php' value='1' {$c} /> <span class='smalltext'>".DOWLAN_70."</span></td>
+          </tr>
+
+
+
+
+        <tr>
         <td style='width:70%' class='forumheader3'>
         ".DOWLAN_55."
         </td>
-        <td style='width:30%' class='forumheader3' style='text-align:center'>
+        <td class='forumheader3' style='width:30%;text-align:left'>
         <select name='download_view' class='tbox'>".
-        ($pref['download_view'] == 5 ? "<option selected>5</option>" : "<option>5</option>").
-        ($pref['download_view'] == 10 ? "<option selected>10</option>" : "<option>10</option>").
-        ($pref['download_view'] == 15 ? "<option selected>15</option>" : "<option>15</option>").
-        ($pref['download_view'] == 20 ? "<option selected>20</option>" : "<option>20</option>").
-    ($pref['download_view'] == 50 ? "<option selected>50</option>" : "<option>50</option>")."
+        ($pref['download_view'] == 5 ? "<option selected='selected'>5</option>" : "<option>5</option>").
+        ($pref['download_view'] == 10 ? "<option selected='selected'>10</option>" : "<option>10</option>").
+        ($pref['download_view'] == 15 ? "<option selected='selected'>15</option>" : "<option>15</option>").
+        ($pref['download_view'] == 20 ? "<option selected='selected'>20</option>" : "<option>20</option>").
+    ($pref['download_view'] == 50 ? "<option selected='selected'>50</option>" : "<option>50</option>")."
         </select>
         </td>
         </tr>
 
-        <td style='width:70%' class='forumheader3'>
+        <tr><td style='width:70%' class='forumheader3'>
         ".DOWLAN_56."
         </td>
-        <td style='width:30%' class='forumheader3' style='text-align:center'>
+        <td class='forumheader3' style='width:30%;text-align:left'>
 
         <select name='download_order' class='tbox'>".
-        ($pref['download_order'] == "download_datestamp" ? "<option value='download_datestamp' selected>".DOWLAN_58."</option>" : "<option value='download_datestamp'>".DOWLAN_58."</option>").
-        ($pref['download_order'] == "download_requested" ? "<option value='download_requested' selected>".DOWLAN_57."</option>" : "<option value='download_requested'>".DOWLAN_57."</option>").
-        ($pref['download_order'] == "download_name" ? "<option value='download_name' selected>".DOWLAN_59."</option>" : "<option value='download_name'>".DOWLAN_59."</option>").
-        ($pref['download_order'] == "download_author" ? "<option value='download_author' selected>".DOWLAN_60."</option>" : "<option value='download_author'>".DOWLAN_60."</option>")."
+        ($pref['download_order'] == "download_datestamp" ? "<option value='download_datestamp' selected='selected'>".DOWLAN_58."</option>" : "<option value='download_datestamp'>".DOWLAN_58."</option>").
+        ($pref['download_order'] == "download_requested" ? "<option value='download_requested' selected='selected'>".DOWLAN_57."</option>" : "<option value='download_requested'>".DOWLAN_57."</option>").
+        ($pref['download_order'] == "download_name" ? "<option value='download_name' selected='selected'>".DOWLAN_59."</option>" : "<option value='download_name'>".DOWLAN_59."</option>").
+        ($pref['download_order'] == "download_author" ? "<option value='download_author' selected='selected'>".DOWLAN_60."</option>" : "<option value='download_author'>".DOWLAN_60."</option>")."
         </select>
         </td>
         </tr>
-        <td style='width:70%' class='forumheader3'>
+        <tr><td style='width:70%' class='forumheader3'>
         ".DOWLAN_61."
         </td>
-        <td style='width:30%' class='forumheader3' style='text-align:center'>
+        <td class='forumheader3' style='width:30%;text-align:left'>
         <select name='download_sort' class='tbox'>".
-        ($pref['download_sort'] == "ASC" ? "<option value='ASC' selected>".DOWLAN_62."</option>" : "<option value='ASC'>".DOWLAN_62."</option>").
-        ($pref['download_sort'] == "DESC" ? "<option value='DESC' selected>".DOWLAN_63."</option>" : "<option value='DESC'>".DOWLAN_63."</option>")."
+        ($pref['download_sort'] == "ASC" ? "<option value='ASC' selected='selected'>".DOWLAN_62."</option>" : "<option value='ASC'>".DOWLAN_62."</option>").
+        ($pref['download_sort'] == "DESC" ? "<option value='DESC' selected='selected'>".DOWLAN_63."</option>" : "<option value='DESC'>".DOWLAN_63."</option>")."
         </select>
+        </td>
+        </tr>
+
+          <tr>
+          <td style='width:70%' class='forumheader3'>".DOWLAN_100."</td>
+        <td class='forumheader3' style='width:30%;text-align:left'>".
+          ($agree_flag ? "<input type='checkbox' name='agree_flag' value='1' checked='checked' />" : "<input type='checkbox' name='agree_flag' value='1' />")."</td>
+          </tr>
+
+          <tr><td style='width:70%' class='forumheader3'>
+        ".DOWLAN_101."
+        </td>
+        <td class='forumheader3' style='width:30%;text-align:left'>
+          <textarea class='tbox' name='agree_text' cols='59' rows='10'>$agree_text</textarea>
         </td>
         </tr>
 
@@ -164,32 +195,33 @@ if($action == "opt"){
         $ns -> tablerender(DOWLAN_54, $text);
 }
 
-$download -> show_options($action);
+//$download -> show_options($action);
 
 require_once("footer.php");
+function headerjs(){
+$headerjs = "<script type=\"text/javascript\">
 
-echo "<script type=\"text/javascript\">
+    function addtext2(str){
+            document.getElementById('download_category_icon').value = str;
+    }
 
-function addtext2(str){
-        document.dlform.download_category_icon.value = str;
+
+    function confirm_(mode, download_id){
+            if(mode == 'cat'){
+                    var x=confirm(\"".DOWLAN_34." [ID: \" + download_id + \"]\");
+            }else{
+                    var x=confirm(\"".DOWLAN_33." [ID: \" + download_id + \"]\");
+            }
+    if(x)
+            if(mode == 'cat'){
+                    window.location='".e_SELF."?cat.confirm.' + download_id;
+            }else{
+                    window.location='".e_SELF."?main.confirm.' + download_id;
+            }
+    }
+    </script>";
+return $headerjs;
 }
-
-
-function confirm_(mode, download_id){
-        if(mode == 'cat'){
-                var x=confirm(\"".DOWLAN_34." [ID: \" + download_id + \"]\");
-        }else{
-                var x=confirm(\"".DOWLAN_33." [ID: \" + download_id + \"]\");
-        }
-if(x)
-        if(mode == 'cat'){
-                window.location='".e_SELF."?cat.confirm.' + download_id;
-        }else{
-                window.location='".e_SELF."?main.confirm.' + download_id;
-        }
-}
-</script>";
-
 exit;
 
 class download{
@@ -215,10 +247,10 @@ class download{
                                 extract($row);
                                 $text .= "<tr>
                                 <td style='width:5%' class='forumheader3'>$download_id</td>
-                                <td style='width:75%' class='forumheader3'>$download_name</a></td>
+                                <td style='width:75%' class='forumheader3'>$download_name</td>
                                 <td style='width:20%; text-align:center' class='forumheader3'>
-                                ".$rs -> form_button("submit", "main_edit", DOWLAN_8, "onClick=\"document.location='".e_SELF."?create.edit.$download_id'\"")."
-                                ".$rs -> form_button("submit", "main_delete", DOWLAN_9, "onClick=\"confirm_('create', $download_id)\"")."
+                                ".$rs -> form_button("submit", "main_edit_$download_id", DOWLAN_8, "onclick=\"document.location='".e_SELF."?create.edit.$download_id'\"")."
+                                ".$rs -> form_button("submit", "main_delete_$download_id", DOWLAN_9, "onclick=\"confirm_('create', $download_id)\"")."
                                 </td>
                                 </tr>";
                         }
@@ -251,22 +283,22 @@ class download{
         }
 
         function show_options($action){
-                global $sql, $rs, $ns;
-                $text = "<div style='text-align:center'>";
-                if(e_QUERY && $action != "main"){
-                        $text .= "<a href='".e_SELF."'><div class='border'><div class='forumheader'><img src='".e_IMAGE."generic/location.png' style='vertical-align:middle; border:0' alt='' /> ".DOWLAN_29."</div></div></a>";
-                }
-                if($action != "opt"){
-                        $text .= "<a href='".e_SELF."?opt'><div class='border'><div class='forumheader'><img src='".e_IMAGE."generic/location.png' style='vertical-align:middle; border:0' alt='' /> ".DOWLAN_28."</div></div></a>";
-                }
-                if($action != "create"){
-                        $text .= "<a href='".e_SELF."?create'><div class='border'><div class='forumheader'><img src='".e_IMAGE."generic/location.png' style='vertical-align:middle; border:0' alt='' /> ".DOWLAN_30."</div></div></a>";
-                }
-                if($action != "cat" && getperms("Q")){
-                        $text .= "<a href='".e_SELF."?cat'><div class='border'><div class='forumheader'><img src='".e_IMAGE."generic/location.png' style='vertical-align:middle; border:0' alt='' /> ".DOWLAN_31."</div></div></a>";
-                }
-                $text .= "</div>";
-                $ns -> tablerender(DOWLAN_32, $text);
+
+                                if($action==""){$action="main";}
+                                        $var['main']['text']=DOWLAN_29;
+                                        $var['main']['link']=e_SELF;
+
+                                        $var['opt']['text']=DOWLAN_28;
+                                        $var['opt']['link']=e_SELF."?opt";
+
+                                        $var['create']['text']=DOWLAN_30;
+                                        $var['create']['link']=e_SELF."?create";
+
+                                        $var['cat']['text']=DOWLAN_31;
+                                        $var['cat']['link']=e_SELF."?cat";
+                                        $var['cat']['perm']="Q";
+                                        show_admin_menu(DOWLAN_32,$action,$var);
+
         }
 
         function create_download($sub_action, $id){
@@ -289,15 +321,14 @@ class download{
                         if($sql -> db_Select("upload", "*", "upload_id='$id' ")){
                                 $row = $sql-> db_Fetch();
                                 extract($row);
-                                                                $download_category = $upload_category;
-                                $download_name = $upload_name.($upload_version ? " - " . $upload_version : "");
+                                $download_category = $upload_category;
+                                $download_name = $upload_name.($upload_version ? " v" . $upload_version : "");
                                 $download_url = $upload_file;
                                 $download_author_email = $upload_email;
                                 $download_author_website = $upload_website;
                                 $download_description = $upload_description;
                                 $download_image = $upload_ss;
                                 $download_filesize = $upload_filesize;
-                                $file_array[] = $download_url;
                                 $image_array[] = $upload_ss;
                                 $download_author = substr($upload_poster, (strpos($upload_poster, ".")+1));
                         }
@@ -305,7 +336,7 @@ class download{
 
                 $text = "
                 <div style='text-align:center'>
-                <form method='post' action='".e_SELF."?".e_QUERY."' name='myform'>
+                <form method='post' action='".e_SELF."?".e_QUERY."' id='myform'>
                 <table style='width:85%' class='fborder'>
                 <tr>
                 <td style='width:20%' class='forumheader3'>".DOWLAN_11.":</td>
@@ -316,7 +347,7 @@ class download{
                 while($row = $sql -> db_Fetch()){
                         extract($row);
                         if($download_category_id == $download_category){
-                                $text .= "<option value='$download_category_id' selected>".$download_category_name."</option>\n";
+                                $text .= "<option value='$download_category_id' selected='selected'>".$download_category_name."</option>\n";
                         }else{
                                 $text .= "<option value='$download_category_id'>".$download_category_name."</option>\n";
                         }
@@ -326,13 +357,14 @@ class download{
                 </tr>
 
                 <tr>
-                <td style='width:20%; vertical-align:top' class='forumheader3'><u>".DOWLAN_12."</u>:</td>
+                <td style='width:20%; vertical-align:top' class='forumheader3'><span style='text-decoration:underline'>".DOWLAN_12."</span>:</td>
                 <td style='width:80%' class='forumheader3'>
                 <input class='tbox' type='text' name='download_name' size='60' value='$download_name' maxlength='200' />
                 </td>
                 </tr>
 
-                <td style='width:20%; vertical-align:top' class='forumheader3'><u>".DOWLAN_13."</u>:</td>
+                <tr>
+                <td style='width:20%; vertical-align:top' class='forumheader3'><span style='text-decoration:underline'>".DOWLAN_13."</span>:</td>
                 <td style='width:80%' class='forumheader3'>
                 <select name='download_url' class='tbox'>
                 <option></option>
@@ -340,13 +372,27 @@ class download{
 
                 $counter = 0;
                 while(IsSet($file_array[$counter])){
-                        if(eregi($file_array[$counter],$download_url)){
-                                $text .= "<option selected>".$file_array[$counter]."</option>\n";
+
+                        if(eregi($download_url,$file_array[$counter])){
+                        $selected = " selected='selected'";
+                        $found = 1;
                         }else{
-                                $text .= "<option>".$file_array[$counter]."</option>\n";
+                        $selected = "";
                         }
+
+                        $text .= "<option value='".$file_array[$counter]."' $selected>".$file_array[$counter]."</option>\n";
                         $counter++;
                 }
+
+                $etext = " - (".DOWLAN_68.")";
+                if(file_exists(e_FILE."public/".$download_url) ){
+                $etext= "";
+                }
+
+                if(!$found && $download_url){
+                $text .= "<option value='".$download_url."' selected='selected'>".$download_url.$etext."</option>\n";
+                }
+
                 $text .= "</select>
                 <br />
                 <span class='smalltext'> ".DOWLAN_14.": ";
@@ -386,7 +432,7 @@ class download{
                 </tr>
 
                 <tr>
-                <td style='width:20%' class='forumheader3'><u>".DOWLAN_18."</u>: </td>
+                <td style='width:20%' class='forumheader3'><span style='text-decoration:underline'>".DOWLAN_18."</span>: </td>
                 <td style='width:80%' class='forumheader3'>
                 <textarea class='tbox' name='download_description' cols='70' rows='5'>$download_description</textarea>
                 </td>
@@ -401,7 +447,7 @@ class download{
                 $counter = 0;
                 while(IsSet($image_array[$counter])){
                         if($image_array[$counter] == $download_image){
-                                $text .= "<option selected>".$image_array[$counter]."</option>\n";
+                                $text .= "<option selected='selected'>".$image_array[$counter]."</option>\n";
                         }else{
                                 $text .= "<option>".$image_array[$counter]."</option>\n";
                         }
@@ -420,7 +466,7 @@ class download{
                 $counter = 0;
                 while(IsSet($thumb_array[$counter])){
                         if($thumb_array[$counter] == $download_thumb){
-                                $text .= "<option selected>".$thumb_array[$counter]."</option>\n";
+                                $text .= "<option selected='selected'>".$thumb_array[$counter]."</option>\n";
                         }else{
                                 $text .= "<option>".$thumb_array[$counter]."</option>\n";
                         }
@@ -436,11 +482,28 @@ class download{
 
 
                 if($download_active == "0"){
-                        $text .= DOWLAN_22.": <input type='radio' name='download_active' value='1'>
-                        ".DOWLAN_23.": <input type='radio' name='download_active' value='0' checked>";
+                        $text .= DOWLAN_22.": <input type='radio' name='download_active' value='1' />
+                        ".DOWLAN_23.": <input type='radio' name='download_active' value='0' checked='checked' />";
                 }else{
-                        $text .= DOWLAN_22.": <input type='radio' name='download_active' value='1' checked>
-                        ".DOWLAN_23.": <input type='radio' name='download_active' value='0'>";
+                        $text .= DOWLAN_22.": <input type='radio' name='download_active' value='1' checked='checked' />
+                        ".DOWLAN_23.": <input type='radio' name='download_active' value='0' />";
+                }
+
+                $text .= "</td>
+                </tr>
+
+
+                <tr>
+                <td style='width:20%' class='forumheader3'>".DOWLAN_102.":</td>
+                <td style='width:80%' class='forumheader3'>";
+
+
+                if($download_comment == "0"){
+                        $text .= DOWLAN_22.": <input type='radio' name='download_comment' value='1' />
+                        ".DOWLAN_23.": <input type='radio' name='download_comment' value='0' checked='checked' />";
+                }else{
+                        $text .= DOWLAN_22.": <input type='radio' name='download_comment' value='1' checked='checked' />
+                        ".DOWLAN_23.": <input type='radio' name='download_comment' value='0' />";
                 }
 
                 $text .= "</td>
@@ -478,7 +541,11 @@ class download{
                         $filesize = $_POST['download_filesize_external'];
                 }else{
                         $durl = $_POST['download_url'];
-                        $filesize = ($_POST['download_filesize_external'] ? $_POST['download_filesize_external'] : filesize($DOWNLOADS_DIRECTORY.$_POST['download_url']));
+                        if(preg_match("#^/#",$DOWNLOADS_DIRECTORY) || preg_match("#.:#",$DOWNLOADS_DIRECTORY)){
+                        $filesize = filesize($DOWNLOADS_DIRECTORY.$durl);
+                        }else{
+                        $filesize = filesize(e_BASE.$DOWNLOADS_DIRECTORY.$durl);
+                        }
                 }
 
                 if(!$filesize){
@@ -490,11 +557,11 @@ class download{
                 $_POST['download_description'] = $aj -> formtpa($_POST['download_description'], "admin");
 
                 if($id){
-                        $sql -> db_Update("download", "download_name='".$_POST['download_name']."', download_url='".$durl."', download_author='".$_POST['download_author']."', download_author_email='".$_POST['download_author_email']."', download_author_website='".$_POST['download_author_website']."', download_description='".$_POST['download_description']."', download_filesize='".$filesize."', download_category='".$_POST['download_category']."', download_active='".$_POST['download_active']."', download_datestamp='".time()."', download_thumb='".$_POST['download_thumb']."', download_image='".$_POST['download_image']."' WHERE download_id=$id");
+                        $sql -> db_Update("download", "download_name='".$_POST['download_name']."', download_url='".$durl."', download_author='".$_POST['download_author']."', download_author_email='".$_POST['download_author_email']."', download_author_website='".$_POST['download_author_website']."', download_description='".$_POST['download_description']."', download_filesize='".$filesize."', download_category='".$_POST['download_category']."', download_active='".$_POST['download_active']."', download_datestamp='".time()."', download_thumb='".$_POST['download_thumb']."', download_image='".$_POST['download_image']."', download_comment='".$_POST['download_comment']."' WHERE download_id=$id");
                         $this->show_message(DOWLAN_2);
                 }else{
 
-                        $sql -> db_Insert("download", "0, '".$_POST['download_name']."', '".$durl."', '".$_POST['download_author']."', '".$_POST['download_author_email']."', '".$_POST['download_author_website']."', '".$_POST['download_description']."', '".$filesize."', '0', '".$_POST['download_category']."', '".$_POST['download_active']."', '".time()."', '".$_POST['download_thumb']."', '".$_POST['download_image']."' ");
+                        $sql -> db_Insert("download", "0, '".$_POST['download_name']."', '".$durl."', '".$_POST['download_author']."', '".$_POST['download_author_email']."', '".$_POST['download_author_website']."', '".$_POST['download_description']."', '".$filesize."', '0', '".$_POST['download_category']."', '".$_POST['download_active']."', '".time()."', '".$_POST['download_thumb']."', '".$_POST['download_image']."', '".$_POST['download_comment']."' ");
                         $this->show_message(DOWLAN_1);
                 }
         }
@@ -522,11 +589,11 @@ class download{
                                 extract($row);
                                 $text .= "<tr>
                                 <td style='width:5%; text-align:center' class='forumheader'>".($download_category_icon ? "<img src='".e_IMAGE."download_icons/$download_category_icon' style='vertical-align:middle; border:0' alt='' />" : "&nbsp;")."</td>
-                                <td colspan='2' style='width:70%' class='forumheader'><b>$download_category_name</b></a></td>
+                                <td colspan='2' style='width:70%' class='forumheader'><b>$download_category_name</b></td>
 
                                 <td style='width:20%; text-align:center' class='forumheader'>
-                                ".$rs -> form_button("submit", "main_edit", DOWLAN_8, "onClick=\"document.location='".e_SELF."?cat.edit.$download_category_id'\"")."
-                                ".$rs -> form_button("submit", "main_delete", DOWLAN_9, "onClick=\"confirm_('cat', $download_category_id)\"")."
+                                ".$rs -> form_button("submit", "main_edit_$download_category_id", DOWLAN_8, "onclick=\"document.location='".e_SELF."?cat.edit.$download_category_id'\"")."
+                                ".$rs -> form_button("submit", "main_delete_$download_category_id", DOWLAN_9, "onclick=\"confirm_('cat', $download_category_id)\"")."
                                 </td>
                                 </tr>";
                                 $parent_id = $download_category_id;
@@ -542,8 +609,8 @@ class download{
                                                 <td style='width:70%' class='forumheader3'>$download_category_name<br /><span class='smalltext'>$download_category_description</span></td>
                                                 <td style='width:5%; text-align:center' class='forumheader3'>$files</td>
                                                 <td style='width:20%; text-align:center' class='forumheader3'>
-                                                ".$rs -> form_button("submit", "main_edit", DOWLAN_8, "onClick=\"document.location='".e_SELF."?cat.edit.$download_category_id'\"")."
-                                                ".$rs -> form_button("submit", "main_delete", DOWLAN_9, "onClick=\"confirm_('cat', $download_category_id)\"")."
+                                                ".$rs -> form_button("submit", "main_edit_$download_category_id", DOWLAN_8, "onclick=\"document.location='".e_SELF."?cat.edit.$download_category_id'\"")."
+                                                ".$rs -> form_button("submit", "main_delete_$download_category_id", DOWLAN_9, "onclick=\"confirm_('cat', $download_category_id)\"")."
                                                 </td>
                                                 </tr>";
                                                 $sub_parent_id = $download_category_id;
@@ -556,8 +623,8 @@ class download{
                                                                 <td style='width:70%' class='forumheader3'>&nbsp;&nbsp;&nbsp;&nbsp;".DOWLAN_53.": $download_category_name<br />&nbsp;&nbsp;&nbsp;&nbsp;<span class='smalltext'>$download_category_description</span></td>
                                                                 <td style='width:5%; text-align:center' class='forumheader3'>$files</td>
                                                                 <td style='width:20%; text-align:center' class='forumheader3'>
-                                                                ".$rs -> form_button("submit", "main_edit", DOWLAN_8, "onClick=\"document.location='".e_SELF."?cat.edit.$download_category_id'\"")."
-                                                                ".$rs -> form_button("submit", "main_delete", DOWLAN_9, "onClick=\"confirm_('cat', $download_category_id)\"")."
+                                                                ".$rs -> form_button("submit", "main_edit_$download_category_id", DOWLAN_8, "onclick=\"document.location='".e_SELF."?cat.edit.$download_category_id'\"")."
+                                                                ".$rs -> form_button("submit", "main_delete_$download_category_id", DOWLAN_9, "onclick=\"confirm_('cat', $download_category_id)\"")."
                                                                 </td>
                                                                 </tr>";
                                                         }
@@ -591,8 +658,9 @@ class download{
                         }
                 }
 
+                                        $frm_action = (isset($_POST['add_category'])) ? e_SELF."?cat" : e_SELF."?".e_QUERY;
                 $text = "<div style='text-align:center'>
-                <form method='post' action='".e_SELF."?".e_QUERY."' name='dlform'>
+                <form method='post' action='{$frm_action}' id='dlform'>
                 <table style='width:auto' class='fborder'>
                 <tr>
                 <td style='width:30%' class='forumheader3'>".DOWLAN_37.": </td>
@@ -612,12 +680,12 @@ class download{
                                 $sql2 -> db_Select("download_category", "download_category_parent", "download_category_id='$cat_parent'", TRUE);
                                 $row = $sql2 -> db_Fetch(); extract($row);
                                 if(!$download_category_parent || !$cat_parent){
-                                        $text .= ($main_category_parent == $cat_id ? "<option value='$cat_id' selected>".$cat_name."</option>" : "<option value='$cat_id'>".$cat_name."</option>");
+                                        $text .= ($main_category_parent == $cat_id ? "<option value='$cat_id' selected='selected'>".$cat_name."</option>" : "<option value='$cat_id'>".$cat_name."</option>");
                                 }
                         }
                         $text .= "</select>";
                 }
-                $text .= "<tr>
+                $text .= "</td></tr><tr>
                 <td style='width:30%' class='forumheader3'>".DOWLAN_12.": </td>
                 <td style='width:70%' class='forumheader3'>
                 <input class='tbox' type='text' name='download_category_name' size='40' value='$download_category_name' maxlength='100' />
@@ -634,11 +702,11 @@ class download{
                 <tr>
                 <td style='width:30%' class='forumheader3'>".DOWLAN_41.": </td>
                 <td style='width:70%' class='forumheader3'>
-                <input class='tbox' type='text' name='download_category_icon' size='60' value='$download_category_icon' maxlength='100' />
+                <input class='tbox' type='text' id='download_category_icon' name='download_category_icon' size='60' value='$download_category_icon' maxlength='100' />
 
                 <br />
-                <input class='button' type ='button' style=''width: 35px'; cursor:hand' size='30' value='".DOWLAN_42."' onClick='expandit(this)'>
-                <div style='display:none' style=&{head};>";
+                <input class='button' type ='button' style='cursor:hand' size='30' value='".DOWLAN_42."' onclick='expandit(this)' />
+                <div style='display:none;{head}' >";
 
 
 
@@ -647,7 +715,7 @@ class download{
                 }
 
                 $text .= "
-                </td>
+                </div></td>
                 </tr>
 
                 <tr>
@@ -659,7 +727,7 @@ class download{
 
                 <tr style='vertical-align:top'>
                 <td colspan='2' style='text-align:center' class='forumheader'>";
-                if($id && $sub_action == "edit"){
+                if($id && $sub_action == "edit" && !isset($_POST['add_category'])){
                         $text .= "<input class='button' type='submit' name='add_category' value='".DOWLAN_46."' /> ";
                 }else{
                         $text .= "<input class='button' type='submit' name='add_category' value='".DOWLAN_45."' />";
@@ -692,13 +760,6 @@ class download{
                         $sql -> db_Delete("tmp", "tmp_time='$id' ");
                 }
         }
-
-
-
-
-
-
-
 }
 
 function getfiles($dir,$sub=0){
@@ -717,11 +778,20 @@ function getfiles($dir,$sub=0){
                         if(is_file($pathdir.$file)){
                                 $t_array[] = str_replace($search, $replace, $pathdir.$file);
                         }else{
+                                                                                if(!preg_match("#^CVS#",$patchdir.$file)){
                                 getfiles(str_replace("../", "", $pathdir.$file)."/");
+                               }
                         }
                 }
         }
         closedir($dh);
         return $t_array;
 }
+
+function download_adminmenu($parms){
+        global $download;
+        global $action;
+        $download -> show_options($action);
+}
+
 ?>

@@ -1,6 +1,9 @@
 <?php
 
+require_once("../class2.php");
+
 $dbupdate=array(	
+						"615_to_616" => LAN_UPDATE_8." .615 ".LAN_UPDATE_9." .616",
 						"614_to_615" => LAN_UPDATE_8." .614 ".LAN_UPDATE_9." .615",
 						"613b_to_614" => LAN_UPDATE_8." .613b ".LAN_UPDATE_9." .614",
 						"611_to_612" => LAN_UPDATE_8." .611 ".LAN_UPDATE_9." .612",
@@ -24,6 +27,32 @@ function update_check(){
 		<input class='button' type='submit' value='".ADLAN_122."' />
 		</form></div>";
 		$ns -> tablerender(ADLAN_122,$txt);
+	}
+}
+
+function update_615_to_616($type){
+	global $sql;
+	if($type=="do"){
+		mysql_query("INSERT INTO ".MPREFIX."wmessage VALUES (4, 'This text (if activated) will appear on a page when \"Forum Rules\" link is clicked on.', '0')");
+		mysql_query("INSERT INTO ".MPREFIX."wmessage VALUES (5, 'Member rules ----- This text (if activated) will appear on a page when \"Forum Rules\" link is clicked on - only logged in members will see this.', '0')");
+		mysql_query("INSERT INTO ".MPREFIX."wmessage VALUES (6, 'Administrator rules ----- This text (if activated) will appear on a page when \"Forum Rules\" link is clicked on - only logged in administrators will see this.', '0')");
+		mysql_query("ALTER TABLE ".MPREFIX."download ADD download_comment TINYINT( 3 ) UNSIGNED NOT NULL ");
+		mysql_query("ALTER TABLE ".MPREFIX."chatbox CHANGE cb_nick cb_nick VARCHAR( 30 ) NOT NULL ");
+		mysql_query("ALTER TABLE ".MPREFIX."comments CHANGE comment_type comment_type VARCHAR( 10 ) DEFAULT '0' NOT NULL ");
+ 		mysql_query("ALTER TABLE ".MPREFIX."comments ADD comment_pid INT( 10 ) UNSIGNED DEFAULT '0' NOT NULL AFTER comment_id ");
+		mysql_query("ALTER TABLE ".MPREFIX."comments ADD comment_subject VARCHAR( 100 ) NOT NULL AFTER comment_item_id ");
+		mysql_query("ALTER TABLE ".MPREFIX."user ADD user_customtitle VARCHAR( 100 ) NOT NULL AFTER user_name ");
+		mysql_query("ALTER TABLE ".MPREFIX."parser ADD UNIQUE (parser_regexp)");
+		mysql_query("ALTER TABLE ".MPREFIX."userclass_classes ADD userclass_editclass TINYINT( 3 ) UNSIGNED NOT NULL ");
+		update_extended_616();
+	} else {
+		global $mySQLdefaultdb;
+		$fields = mysql_list_fields($mySQLdefaultdb,MPREFIX."userclass_classes");
+		$columns = mysql_num_fields($fields);
+		for ($i = 0; $i < $columns; $i++) {
+	   	if("userclass_editclass" == mysql_field_name($fields, $i)){return TRUE;}
+		}
+		return FALSE;
 	}
 }
 
@@ -87,6 +116,7 @@ function update_611_to_612($type){
 		return FALSE;
 	}
 }
+
 function update_603_to_604($type){
 	global $sql;
 	if($type=="do"){
@@ -105,6 +135,34 @@ function update_603_to_604($type){
 		}
 		return FALSE;
 	}
+}
+
+function update_extended_616(){
+	global $sql, $ns;
+	$sql2 = new db;
+	if($sql2 -> db_Select("core", " e107_value", " e107_name='user_entended'")){
+		$row = $sql2 -> db_Fetch();
+		$user_extended = unserialize($row[0]);
+		if(count($user_extended)){
+			if($sql -> db_Select("user","user_id,user_prefs")){
+				while($row = $sql -> db_Fetch()){
+					$uid = $row[0];
+					$user_pref = unserialize($row[1]);
+					foreach($user_extended as $key => $v){
+						list($fname,$null)=explode("|",$v,2);
+						$fname = $v;
+						if(isset($user_pref[$fname])){
+							$user_pref["ue_{$key}"]=$user_pref[$fname];
+							unset($user_pref[$fname]);
+						}
+					}
+					$tmp = addslashes(serialize($user_pref));
+					$sql2 -> db_Update("user", "user_prefs='$tmp' WHERE user_id=$uid");
+				}
+			}
+		}
+	}
+	$ns -> tablerender("Extended Users","Updated extended user field data");
 }
 
 ?>
