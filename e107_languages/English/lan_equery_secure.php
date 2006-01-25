@@ -1,5 +1,14 @@
 <?php
-
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system - Language File.
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/lan_equery_secure.php,v $
+|     $Revision: 1.1 $
+|     $Date: 2004/09/21 19:11:56 $
+|     $Author: e107coders $
++----------------------------------------------------------------------------+
+*/
 define("EQSEC_LAN1", "You are being redirected to an admin function, possible database modifications could occur");
 define("EQSEC_LAN2", "Please confirm this action:");
 define("EQSEC_LAN3", "No referer");

@@ -1,5 +1,14 @@
 <?php
-
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system - Language File.
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/lan_ren_help.php,v $
+|     $Revision: 1.4 $
+|     $Date: 2005/04/11 14:35:57 $
+|     $Author: stevedunstan $
++----------------------------------------------------------------------------+
+*/
 define("LANHELP_1", "Black");
 define("LANHELP_2", "Blue");
 define("LANHELP_3", "Brown");
@@ -22,8 +31,8 @@ define("LANHELP_18", "Large");
 define("LANHELP_19", "Larger");
 define("LANHELP_20", "Massive");
 
-define("LANHELP_21", "Color ..");
-define("LANHELP_22", "Size ..");
+define("LANHELP_21", "Click to open color dialog ...");
+define("LANHELP_22", "Click to open size dialog ...");
 
 define("LANHELP_23", "Insert link: [link]http://mysite.com[/link] or  [link=http://yoursite.com]Visit My Site[/link]");
 define("LANHELP_24", "Bold text: [b]This text will be bold[/b]", "font-weight:bold; width: 20px");
@@ -36,8 +45,9 @@ define("LANHELP_30", "Right align: [right]This text will be right aligned[/right
 define("LANHELP_31", "Blockquote text: [blockquote]This text will be blockquoted (indented)[/blockquote]");
 define("LANHELP_32", "Code - preformatted text: [code]\$foo = bah;[/code]");
 define("LANHELP_33", "HTML - removes linebreaks from text: [html]&lt;table&gt;&lt;tr&gt;&lt;td&gt; etc[/html]");
-define("LANHELP_34", "Insert newpage tag, splits article into more than one page");
-
+define("LANHELP_34", "[newpage] or [newpage=title] Insert newpage tag, splits article into more than one page");
 define("LANHELP_35", "hyperlink url");
+define("LANHELP_36", "Unordered: [list]line1*line2*line3[/list] Ordered: [list=type]line1*line2*line3[/list]");
+
 
 ?>

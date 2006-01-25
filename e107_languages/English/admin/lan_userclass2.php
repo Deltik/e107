@@ -1,5 +1,14 @@
 <?php
-
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system - Language File.
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/lan_userclass2.php,v $
+|     $Revision: 1.2 $
+|     $Date: 2005/04/02 21:08:06 $
+|     $Author: e107coders $
++----------------------------------------------------------------------------+
+*/
 define("UCSLAN_1", "Cleared all users from class.");
 define("UCSLAN_2", "Class users updated.");
 define("UCSLAN_3", "Class deleted.");
@@ -9,8 +18,8 @@ define("UCSLAN_6", "Class saved to database.");
 define("UCSLAN_7", "No user classes yet.");
 define("UCSLAN_8", "Existing Classes");
 
-define("UCSLAN_9", "Edit");
-define("UCSLAN_10", "Delete");
+// define("UCSLAN_9", "Edit");
+// define("UCSLAN_10", "Delete");
 define("UCSLAN_11", "tick to confirm");
 define("UCSLAN_12", "Class Name");
 define("UCSLAN_13", "Class Description");

@@ -1,29 +1,31 @@
 <?php
 /*
 +---------------------------------------------------------------+
-|	e107 website system
-|	©Steve Dunstan 2001-2002
-|	http://e107.org
-|	jalist@e107.org
+| e107 website system
+| ©Steve Dunstan 2001-2002
+| http://e107.org
+| jalist@e107.org
 |
-|	Plugin : Integrity-Checker
-|	Version: 0.01 (first release)
-|	©HeX0R 2004
-|	http://h3x0r.ath.cx
-|	hex0r@h3x0r.ath.cx
+| Plugin : Integrity-Checker
+| Version: 0.01 (first release)
+| ©HeX0R 2004
+| http://h3x0r.ath.cx
+| hex0r@h3x0r.ath.cx
 
-|	Released under the terms and conditions of the
-|	GNU General Public License (http://gnu.org).
+| Released under the terms and conditions of the
+| GNU General Public License (http://gnu.org).
 +---------------------------------------------------------------+
 */
+
+if (!defined('e107_INIT')) { exit; }
+
 // Plugin info -------------------------------------------------------------------------------------------------------
 $eplug_name = "Integrity Check";
 $eplug_version = "0.03";
 $eplug_author = "HeX0R";
-$eplug_logo = "/images/integ.gif";
 $eplug_url = "http://h3x0r.ath.cx";
 $eplug_email = "hex0r@h3x0r.ath.cx";
-$eplug_description = "Integrity Check is a plugin that checks checksums of your files, helping to find corrupted files.";
+$eplug_description = "This plugin checks the checksums of your files, helping to find corrupted files.";
 $eplug_compatible = "e107v6";
 $eplug_readme = "";
 
@@ -34,11 +36,12 @@ $eplug_folder = "integrity_check";
 $eplug_menu_name = "";
 
 // Name of the admin configuration file --------------------------------------------------------------------------
-$eplug_conffile = "integrity_check.php";
+$eplug_conffile = "admin_integrity_check.php";
 
 // Icon image and caption text ------------------------------------------------------------------------------------
-$eplug_icon = $eplug_folder."/images/integ.gif";
-$eplug_caption =  "Check Integrity";
+$eplug_icon = $eplug_folder."/images/integrity_32.png";
+$eplug_icon_small = $eplug_folder."/images/integrity_16.png";
+$eplug_caption = "Check Integrity";
 
 // List of preferences -----------------------------------------------------------------------------------------------
 
@@ -67,4 +70,4 @@ $upgrade_alter_tables = "";
 
 $eplug_upgrade_done = "Integrity-Check-Plugin successfully updated!";
 
-?>	
+?>

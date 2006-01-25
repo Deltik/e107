@@ -1,5 +1,14 @@
 <?php
-
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system - Language File.
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/lan_user.php,v $
+|     $Revision: 1.4 $
+|     $Date: 2005/04/06 03:53:00 $
+|     $Author: mcfly_e107 $
++----------------------------------------------------------------------------+
+*/
 define("PAGE_NAME", "Members");
 
 define("LAN_20", "Error");
@@ -28,7 +37,7 @@ define("LAN_400", "That is not a valid user.");
 define("LAN_401", "no information");
 define("LAN_402", "Member Profile");
 define("LAN_403", "Site Stats");
-define("LAN_404", "Last visited site");
+define("LAN_404", "Last visit");
 define("LAN_405", "days ago");
 define("LAN_406", "Rating");
 define("LAN_407", "none");
@@ -43,16 +52,15 @@ define("LAN_415", "next member");
 define("LAN_416", "You must be logged in to access this page");
 define("LAN_417", "Main site administrator");
 define("LAN_418", "Site administrator");
-
 define("LAN_419", "Show");
 define("LAN_420", "DESC");
 define("LAN_421", "ASC");
 define("LAN_422", "Go");
 define("LAN_423", "Click here to View User Comments");
 define("LAN_424", "Click here to View Forum Posts");
-
-
 define("LAN_425", "Send Private Message");
+define("LAN_426", "ago");
 
+define("USERLAN_1", "Peer Rating");
 
 ?>

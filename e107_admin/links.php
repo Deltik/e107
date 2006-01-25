@@ -10,678 +10,666 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107/e107_admin/links.php,v $
-|     $Revision: 1.25 $
-|     $Date: 2004/08/31 13:57:21 $
-|     $Author: loloirie $
+|     $Source: /cvsroot/e107/e107_0.7/e107_admin/links.php,v $
+|     $Revision: 1.53 $
+|     $Date: 2005/12/25 01:26:59 $
+|     $Author: sweetas $
 +----------------------------------------------------------------------------+
 */
 
-require_once("../class2.php");
-if(!getperms("I")){ header("location:".e_BASE."index.php"); }
+require_once('../class2.php');
+if (!getperms('I')) {
+	header('location:'.e_BASE.'index.php');
+}
 
-require_once(e_HANDLER."textparse/basic.php");
-$etp = new e107_basicparse;
+$e_sub_cat = 'links';
 
-require_once("auth.php");
-require_once(e_HANDLER."userclass_class.php");
-require_once(e_HANDLER."form_handler.php");
+if (!is_object($tp)) $tp = new e_parse;
+
+// ----- Presets.----------
+require_once(e_HANDLER."preset_class.php");
+$pst = new e_preset;
+$pst->form = "linkform";
+$pst->page = "links.php?create";
+$pst->id = "admin_links";
+require_once('auth.php');
+// --------------------
+$pst->save_preset();
+
+require_once(e_HANDLER.'userclass_class.php');
+require_once(e_HANDLER.'form_handler.php');
+
 $rs = new form;
-$aj = new textparse;
 $linkpost = new links;
 
-$deltest = array_flip($_POST);
-
-if(e_QUERY){
-        $tmp = explode(".", e_QUERY);
-        $action = $tmp[0];
-        $sub_action = $tmp[1];
-        $id = $tmp[2];
-        unset($tmp);
+if (e_QUERY) {
+	$tmp = explode('.', e_QUERY);
+	$action = $tmp[0];
+	$sub_action = $tmp[1];
+	$id = $tmp[2];
+	unset($tmp);
 }
-if(preg_match("#(.*?)_delete_(\d+)#",$deltest[$etp->unentity(LCLAN_10)],$matches))
+
+foreach(array_keys($_POST) as $k)
 {
-        $delete = $matches[1];
-        $del_id = $matches[2];
-}
-
-if(preg_match("#create_sn_(\d+)#",$deltest[$etp->unentity(LCLAN_14)],$matches))
-{
-	$action='create';
-	$sub_action='sn';
-	$id=$matches[1];
-}
-
-// ##### Main loop -----------------------------------------------------------------------------------------------------------------------
-
-if($action == "dec" && strpos($_SERVER['HTTP_REFERER'],"links"))
-{
-        $qs = explode(".", e_QUERY);
-        $action = $qs[0];
-        $linkid = $qs[1];
-        $link_order = $qs[2];
-        $location = $qs[3];
-        $sql -> db_Update("links", "link_order=link_order-1 WHERE link_order='".($link_order+1)."' AND link_category='$location' ");
-        $sql -> db_Update("links", "link_order=link_order+1 WHERE link_id='$linkid' AND link_category='$location' ");
-        clear_cache("sitelinks");
-        header("location: ".e_ADMIN."links.php?order");
-        exit;
-}
-
-if($action == "inc" && strpos($_SERVER['HTTP_REFERER'],"links"))
-{
-        $qs = explode(".", e_QUERY);
-        $action = $qs[0];
-        $linkid = $qs[1];
-        $link_order = $qs[2];
-        $location = $qs[3];
-        $sql -> db_Update("links", "link_order=link_order+1 WHERE link_order='".($link_order-1)."' AND link_category='$location' ");
-        $sql -> db_Update("links", "link_order=link_order-1 WHERE link_id='$linkid' AND link_category='$location' ");
-        clear_cache("sitelinks");
-        header("location: ".e_ADMIN."links.php?order");
-        exit;
-}
-
-if(IsSet($_POST['create_category'])){
-        $_POST['link_category_name'] = $aj -> formtpa($_POST['link_category_name'], "admin");
-        $sql -> db_Insert("link_category", " '0', '".$_POST['link_category_name']."', '".$_POST['link_category_description']."', '".$_POST['link_category_icon']."'");
-        $linkpost -> show_message(LCLAN_51);
-}
-
-if(IsSet($_POST['update_category'])){
-        $_POST['category_name'] = $aj -> formtpa($_POST['category_name'], "admin");
-        $sql -> db_Update("link_category", "link_category_name ='".$_POST['link_category_name']."', link_category_description='".$_POST['link_category_description']."',  link_category_icon='".$_POST['link_category_icon']."' WHERE link_category_id='".$_POST['link_category_id']."'");
-        $linkpost -> show_message(LCLAN_52);
-}
-
-if(IsSet($_POST['update_order'])){
-        extract($_POST);
-        while(list($key, $id) = each($link_order)){
-                $tmp = explode(".", $id);
-                $sql -> db_Update("links", "link_order=".$tmp[1]." WHERE link_id=".$tmp[0]);
-        }
-        clear_cache("sitelinks");
-        $linkpost -> show_message(LCLAN_6);
-}
-
-if(IsSet($_POST['updateoptions'])){
-        $pref['linkpage_categories'] = $_POST['linkpage_categories'];
-        $pref['link_submit'] = $_POST['link_submit'];
-        $pref['link_submit_class'] = $_POST['link_submit_class'];
-        $pref['linkpage_screentip'] = $_POST['linkpage_screentip'];
-        save_prefs();
-        $linkpost -> show_message(LCLAN_1);
-}
-
-if($action == "order"){
-        $linkpost -> set_order();
-}
-
-if($delete == 'main')
-{
-        if($sql -> db_Delete("links", "link_id='$del_id' "))
-        {
-                clear_cache("sitelinks");
-                $linkpost -> show_message(LCLAN_53." #".$del_id." ".LCLAN_54);
-        }
-}
-
-if($delete == 'category')
-{
-        if($sql -> db_Delete("link_category", "link_category_id='$del_id' "))
-        {
-                $linkpost -> show_message(LCLAN_55." #".$del_id." ".LCLAN_54);
-                unset($id);
-        }
-}
-
-if($delete == "sn")
-{
-	if($sql -> db_Delete("tmp", "tmp_time='$del_id' "))
+	if (preg_match("#(.*?)_delete_(\d+)(.*)#", $k, $matches))
 	{
-		$linkpost -> show_message(LCLAN_77);
+		$delete = $matches[1];
+		$del_id = $matches[2];
 	}
 }
 
-if($action == "sn")
+if(isset($_POST['generate_sublinks']) && isset($_POST['sublink_type']) && $_POST['sublink_parent'] !="" ){
+
+	$subtype = $_POST['sublink_type'];
+	$sublink = $linkpost->sublink_list($subtype);
+    if(!is_object($sql2)){
+    	$sql2 = new db;
+	}
+
+	$sql -> db_Select("links", "*", "link_id = '".$_POST['sublink_parent']."'");
+	$par = $sql-> db_Fetch();
+	extract($par);
+
+	$sql -> db_Select($sublink['table'], "*", $sublink['query']);
+	$count = 1;
+	while($row = $sql-> db_Fetch()){
+		$subcat = $row[($sublink['fieldid'])];
+		$name = $row[($sublink['fieldname'])];
+		$subname = "submenu.$link_name.$name";
+		$suburl = str_replace("#",$subcat,$sublink['url']);
+		$subicon = ($sublink['fieldicon']) ? $row[($sublink['fieldicon'])] : $link_button;
+		$subdiz = ($sublink['fielddiz']) ? $row[($sublink['fielddiz'])] : $link_description;
+		$subparent = $_POST['sublink_parent'];
+
+		if($sql2->db_Insert("links", "0, '$subname', '$suburl', '$subdiz', '$subicon', '$link_category', '$count', '$subparent', '$link_open', '$link_class' ")){
+			$message .= LAN_CREATED. " ($name)<br />";
+		}else{
+			$message .= LAN_CREATED_FAILED. " ($name)<br />";
+		}
+		$count++;
+	}
+
+    if($message){
+		$ns -> tablerender(LAN_CREATED, $message);
+	}
+}
+
+if (isset($_POST['inc'])) {
+	$qs = explode(".", $_POST['inc']);
+	$linkid = $qs[0];
+	$link_order = $qs[1];
+	$sql->db_Update("links", "link_order=link_order+1 WHERE link_order='".($link_order-1)."'");
+	$sql->db_Update("links", "link_order=link_order-1 WHERE link_id='".$linkid."'");
+}
+
+if (isset($_POST['dec'])) {
+	$qs = explode(".", $_POST['dec']);
+	$linkid = $qs[0];
+	$link_order = $qs[1];
+	$sql->db_Update("links", "link_order=link_order-1 WHERE link_order='".($link_order+1)."'");
+	$sql->db_Update("links", "link_order=link_order+1 WHERE link_id='".$linkid."'");
+}
+
+if (isset($_POST['update'])) {
+
+	foreach ($_POST['link_order'] as $loid) {
+		$tmp = explode(".", $loid);
+		$sql->db_Update("links", "link_order=".$tmp[1]." WHERE link_id=".$tmp[0]);
+	}
+	foreach ($_POST['link_class'] as $lckey => $lcid) {
+	 	$sql->db_Update("links", "link_class='".$lcid."' WHERE link_id=".$lckey);
+	}
+	$e107cache->clear("sitelinks");
+	$linkpost->show_message(LAN_UPDATED);
+}
+
+if (isset($_POST['updateoptions'])) {
+	$pref['linkpage_screentip'] = $_POST['linkpage_screentip'];
+	$pref['sitelinks_expandsub'] = $_POST['sitelinks_expandsub'];
+	save_prefs();
+	$linkpost->show_message(LCLAN_1);
+}
+
+if ($delete == 'main')
 {
-	$linkpost -> show_submitted($sub_action, $id);
+	if($sql->db_Select("links", "link_id, link_name, link_order", "link_id='".$del_id."'")){
+		$row = $sql->db_Fetch();
+		$msg = $linkpost->delete_link($row);
+
+		if($msg){
+			$e107cache->clear("sitelinks");
+			$linkpost->show_message($msg);
+		}
+	}
+}
+
+if (isset($_POST['add_link'])) {
+	$linkpost->submit_link($sub_action, $_POST['link_id']);
+	unset($id);
+}
+
+$linkArray = $linkpost->getLinks();
+
+if ($action == 'create') {
+	$linkpost->create_link($sub_action, $id);
 }
 
 
-if(IsSet($_POST['add_link'])){
-        $linkpost -> submit_link($sub_action, $id);
-        unset($id);
+if (!e_QUERY || $action == 'main') {
+	$linkpost->show_existing_items();
 }
 
-if($action == "create"){
-        $linkpost -> create_link($sub_action, $id);
+if ($action == 'opt') {
+	$linkpost->show_pref_options();
 }
 
-if(!e_QUERY || $action == "main"){
-        $linkpost -> show_existing_items();
+if($action == "sublinks"){
+  $linkpost->show_sublink_generator();
 }
 
-if($action == "cat"){
-        $linkpost -> show_categories($sub_action, $id);
-}
-
-
-if($action == "opt"){
-        $linkpost -> show_pref_options();
-}
-
-
-
-//$linkpost -> show_options($action);
-
-require_once("footer.php");
-function headerjs(){
-global $etp;
-$headerjs  = "<script type=\"text/javascript\">
-function addtext(sc){
-        document.getElementById('linkform').link_button.value = sc;
-}
-function addtext2(sc){
-        document.getElementById('linkform').link_category_icon.value = sc;
-}
-</script>\n";
-
-$headerjs .= "<script type=\"text/javascript\">
-function confirm_(mode, link_id){
-        if(mode == 'cat'){
-                return confirm(\"".$etp->unentity(LCLAN_56)." [ID: \" + link_id + \"]\");
-        }else if(mode == 'sn'){
-                return confirm(\"".$etp->unentity(LCLAN_57)." [ID: \" + link_id + \"]\");
-        }else{
-                return confirm(\"".$etp->unentity(LCLAN_58)." [ID: \" + link_id + \"]\");
-        }
-}
-</script>";
-return $headerjs;
-}
-
+require_once('footer.php');
 exit;
 
-// ##### End ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-class links{
-
-        function show_existing_items(){
-                global $sql;
-                if($sql -> db_Select("link_category")){
-                        while($row = $sql -> db_Fetch()){
-                                extract($row);
-                                $cat[$link_category_id] = $link_category_name;
-                        }
-                }else{
-                        $sql -> db_Insert("link_category", "0, 'Main', 'Any links with this category will be displayed in main navigation bar.', '' ");
-                        $sql -> db_Insert("link_category", "0, 'Misc', 'Miscellaneous links.', '' ");
-                }
-
-                // ##### Display scrolling list of existing links ---------------------------------------------------------------------------------------------------------
-                global $sql, $rs, $ns, $aj;
-                $text = "<div style='text-align:center'><div style='border : solid 1px #000; padding : 4px; width : auto; height : 400px; overflow : auto; '>";
-                if($link_total = $sql -> db_Select("links", "*", "ORDER BY link_category, link_id ASC", "nowhere")){
-                        $text .= "<table class='fborder' style='width:100%'>
-                        <tr>
-                        <td style='width:5%' class='forumheader2'>ID</td>
-                        <td style='width:10%' class='forumheader2'>".LCLAN_59."</td>
-                        <td style='width:50%' class='forumheader2'>".LCLAN_53."</td>
-                        <td style='width:18%' class='forumheader2'>".LCLAN_60."</td>
-                        </tr>";
-                        while($row = $sql -> db_Fetch()){
-                                extract($row);
-                                $text .= "<tr>
-                                <td style='width:5%' class='forumheader3'>$link_id</td>
-                                <td style='width:10%' class='forumheader3'>".$cat[$link_category]."</td>
-                                <td style='width:50%' class='forumheader3'><a href='".e_BASE."comment.php?comment.news.$link_id'></a>$link_name</td>
-                                <td style='width:25%; text-align:center' class='forumheader3'>".
-                                $rs -> form_open("post", e_SELF,"myform_{$link_id}","",""," onsubmit=\"return confirm_('create',$link_id)\"")."<div>".
-                                $rs -> form_button("button", "main_edit_{$link_id}", LCLAN_9, "onclick=\"document.location='".e_SELF."?create.edit.$link_id'\"")."
-
-                                ".$rs -> form_button("submit", "main_delete_{$link_id}", LCLAN_10)."
-                                </div>".$rs -> form_close()."
-
-                                </td>
-                                </tr>";
-                        }
-//                                $rs -> form_button("submit", "main_delete_{$link_id}", LCLAN_10, "onclick=\"confirm_('create', $link_id)\"")."
-                        $text .= "</table>";
-                }else{
-                        $text .= "<div style='text-align:center'>".LCLAN_61."</div>";
-                }
-                $text .= "</div></div>";
-                $ns -> tablerender(LCLAN_8, $text);
-        }
-
-        function show_options($action){
-                global $sql;
-                // ##### Display options ---------------------------------------------------------------------------------------------------------
-                if($action==""){$action="main";}
-                $var['main']['text']=LCLAN_62;
-                $var['main']['link']=e_SELF;
-
-                $var['create']['text']=LCLAN_63;
-                $var['create']['link']=e_SELF."?create";
-
-                $var['order']['text']=LCLAN_64;
-                $var['order']['link']=e_SELF."?order";
-
-                $var['cat']['text']=LCLAN_65;
-                $var['cat']['link']=e_SELF."?cat";
-                $var['cat']['perm']="8";
-                if($sql -> db_Select("tmp", "*", "tmp_ip='submitted_link' ")){
-                        $var['sn']['text']=LCLAN_66;
-                        $var['sn']['link']=e_SELF."?sn";
-                }
-
-                $var['opt']['text']=LCLAN_67;
-                $var['opt']['link']=e_SELF."?opt";
-
-                $var['sub']['text']=LCLAN_83;
-                $var['sub']['link']="submenusgen.php";
-
-                show_admin_menu(LCLAN_68,$action,$var);
-        }
-
-        function show_message($message){
-                // ##### Display comfort ---------------------------------------------------------------------------------------------------------
-                global $ns;
-                $ns -> tablerender("", "<div style='text-align:center'><b>".$message."</b></div>");
-                if($message==LCLAN_3){echo "<script>\nfunction zou(){\nwindow.location='links.php';\n}\nsetTimeout(\"zou()\",10);\n</script>";}
-        }
-
-
-        function create_link($sub_action, $id){
-                global $sql, $rs, $ns;
-
-                if($sub_action == "edit" && !$_POST['submit']){
-                        if($sql -> db_Select("links", "*", "link_id='$id' ")){
-                                $row = $sql-> db_Fetch();
-                                extract($row);
-                        }
-                }
-
-                if($sub_action == "sn"){
-                        if($sql -> db_Select("tmp", "*", "tmp_time='$id'")){
-                                $row = $sql-> db_Fetch();
-                                extract($row);
-                                $submitted = explode("^", $tmp_info);
-                                $link_category = $submitted[0];
-                                $link_name = $submitted[1];
-                                $link_url = $submitted[2];
-                                $link_description = $submitted[3]."\n[i]".LCLAN_82." ".$submitted[5]."[/i]";
-                                $link_button = $submitted[4];
-                        }
-                }
-
-
-
-                $handle=opendir(e_IMAGE."link_icons");
-                while ($file = readdir($handle)){
-                        if($file != "." && $file != ".." && $file != "/"){
-                                $iconlist[] = $file;
-                        }
-                }
-                closedir($handle);
-
-                $text = "<div style='text-align:center'>
-                <form method='post' action='".e_SELF."?".e_QUERY."' id='linkform'>
-                <table style='width:95%' class='fborder'>
-                <tr>
-                <td style='width:30%' class='forumheader3'>".LCLAN_12.": </td>
-                <td style='width:70%' class='forumheader3'>";
-
-                if(!$link_cats = $sql -> db_Select("link_category")){
-                        $text .= LCLAN_13."<br />";
-                }else{
-                        $text .= "
-                        <select name='cat_id' class='tbox'>";
-
-                        while(list($cat_id, $cat_name, $cat_description) = $sql-> db_Fetch()){
-                                if($link_category == $cat_id || ($cat_id == $linkid && $action == "add")){
-                                        $text .= "<option value='$cat_id' selected='selected'>".$cat_name."</option>";
-                                }else{
-                                        $text .= "<option value='$cat_id'>".$cat_name."</option>";
-                                }
-                        }
-                        $text .= "</select>";
-                }
-                $text .= "</td></tr><tr>
-                <td style='width:30%' class='forumheader3'>".LCLAN_15.": </td>
-                <td style='width:70%' class='forumheader3'>
-                <input class='tbox' type='text' name='link_name' size='60' value='$link_name' maxlength='100' />
-                </td>
-                </tr>
-
-                <tr>
-                <td style='width:30%' class='forumheader3'>".LCLAN_16.": </td>
-                <td style='width:70%' class='forumheader3'>
-                <input class='tbox' type='text' name='link_url' size='60' value='$link_url' maxlength='200' />
-                </td>
-                </tr>
-
-                <tr>
-                <td style='width:30%' class='forumheader3'>".LCLAN_17.": </td>
-                <td style='width:70%' class='forumheader3'>
-                <textarea class='tbox' name='link_description' cols='59' rows='3'>$link_description</textarea>
-                </td>
-                </tr>
-
-                <tr>
-                <td style='width:30%' class='forumheader3'>".LCLAN_18.": </td>
-                <td style='width:70%' class='forumheader3'>
-                <input class='tbox' type='text' name='link_button' size='60' value='$link_button' maxlength='100' />
-
-                <br />
-                <input class='button' type ='button' style='cursor:hand' size='30' value='".LCLAN_39."' onclick='expandit(this)' />
-                <div style='display:none;{head}'>";
-
-
-
-                while(list($key, $icon) = each($iconlist)){
-                        $text .= "<a href='javascript:addtext(\"$icon\")'><img src='".e_IMAGE."link_icons/".$icon."' style='border:0' alt='' /></a> ";
-                }
-
-// 0 = same window
-// 1 = _blank
-// 2 = _parent
-// 3 = _top
-// 4 = miniwindow
-
-                $text .= "</div></td>
-                </tr>
-                <tr>
-                <td style='width:30%' class='forumheader3'>".LCLAN_19.": </td>
-                <td style='width:70%' class='forumheader3'>
-                <select name='linkopentype' class='tbox'>".
-                ($link_open == 0 ? "<option value='0' selected='selected'>".LCLAN_20."</option>" : "<option value='0'>".LCLAN_20."</option>").
-                ($link_open == 1 ? "<option value='1' selected='selected'>".LCLAN_23."</option>" : "<option value='1'>".LCLAN_23."</option>").
-                ($link_open == 4 ? "<option value='4' selected='selected'>".LCLAN_24."</option>" : "<option value='4'>".LCLAN_24."</option>")."
-                </select>
-                </td>
-                </tr>
-                <tr>
-                <td style='width:30%' class='forumheader3'>".LCLAN_25.":<br /><span class='smalltext'>(".LCLAN_26.")</span></td>
-                <td style='width:70%' class='forumheader3'>".r_userclass("link_class",$link_class,"off","public,guest,nobody,member,admin,classes")."
-
-                </td></tr>
-
-
-                <tr style='vertical-align:top'>
-                <td colspan='2' style='text-align:center' class='forumheader'>";
-                if($id && $sub_action == "edit"){
-                        $text .= "<input class='button' type='submit' name='add_link' value='".LCLAN_27."' />\n<input type='hidden' name='link_id' value='$link_id'>";
-                }else{
-                        $text .= "<input class='button' type='submit' name='add_link' value='".LCLAN_28."' />";
-                }
-                $text .= "</td>
-                </tr>
-                </table>
-                </form>
-                </div>";
-                $ns -> tablerender("<div style='text-align:center'>".LCLAN_29."</div>", $text);
-
-        }
-
-
-        function submit_link($sub_action, $id){
-                // ##### Format and submit link ---------------------------------------------------------------------------------------------------------
-                global $aj, $sql;
-                $link_name = $aj -> formtpa($_POST['link_name'], "admin");
-                $link_url = $aj -> formtpa($_POST['link_url'], "admin");
-                $link_description = $aj -> formtpa($_POST['link_description'], "admin");
-                $link_button = $aj -> formtpa($_POST['link_button'], "admin");
-
-                $link_t = $sql -> db_Count("links", "(*)", "WHERE link_category='".$_POST['cat_id']."'");
-
-                if($id && $sub_action != "sn"){
-                        $sql -> db_Update("links", "link_name='$link_name', link_url='$link_url', link_description='$link_description', link_button= '$link_button', link_category='".$_POST['cat_id']."', link_open='".$_POST['linkopentype']."', link_class='".$_POST['link_class']."' WHERE link_id='$id'");
-                        clear_cache("sitelinks");
-                        $this->show_message(LCLAN_3);
-                }else{
-                        $sql -> db_Insert("links", "0, '$link_name', '$link_url', '$link_description', '$link_button', '".$_POST['cat_id']."', '".($link_t+1)."', '0', '".$_POST['linkopentype']."', '".$_POST['link_class']."'");
-                        clear_cache("sitelinks");
-                        $this->show_message(LCLAN_2);
-                }
-                if($sub_action == "sn"){
-                        $sql -> db_Delete("tmp", "tmp_time='$id' ");
-                }
-        }
-
-
-        function set_order(){
-                global $sql, $ns, $aj;
-                $text = "<div style='text-align:center'>
-                <form method='post' action='".e_SELF."?order'>
-                <table style='width:85%' class='fborder'>";
-
-                $sql -> db_Select("link_category");
-                $sql2 = new db;
-                while(list($link_category_id, $link_category_name, $link_category_description) = $sql-> db_Fetch()){
-                        if($lamount = $sql2 -> db_Select("links", "*", "link_category ='$link_category_id' ORDER BY link_order ASC ")){
-                                $text .= "<tr><td colspan='3' class='forumheader'>$link_category_name ".LCLAN_59."</td></tr>";
-                                while(list($link_id, $link_name, $link_url, $link_description, $link_button, $link_category, $link_order, $link_refer) = $sql2-> db_Fetch()){
-                                        $text .= "<tr>\n<td style='width:30%' class='forumheader3'>".$link_order." - ".$link_name."</td>\n<td style='width:30%; text-align:center' class='forumheader3'>\n<select name='link_order[]' class='tbox'>";
-                                        for($a=1; $a<= $lamount; $a++){
-                                                $text .= ($link_order == $a ? "<option value='$link_id.$a' selected='selected'>$a</option>\n" : "<option value='$link_id.$a'>$a</option>\n");
-                                        }
-
-                                        $text .= "</select> <select name='activate' onchange='urljump(this.options[selectedIndex].value)' class='tbox'>
-                                        <option value='links.php' selected='selected'></option>
-                                        <option value='links.php?inc.".$link_id.".".$link_order.".".$link_category."'>".LCLAN_30."</option>
-                                        <option value='links.php?dec.".$link_id.".".$link_order.".".$link_category."'>".LCLAN_31."</option>
-                                        </select>
-                                        </td>
-                                        <td style='width:40%' class='forumheader3'>&nbsp;".$aj->tpa($link_description)."</td>
-                                        </tr>";
-                                }
-                        }
-                }
-                $text .= "
-                <tr>
-                <td colspan='3' style='text-align:center' class='forumheader'>
-                <input class='button' type='submit' name='update_order' value='".LCLAN_32."' />
-                </td>
-                </tr>
-                </table>
-                </form>
-                </div>";
-
-                $ns -> tablerender(LCLAN_33, $text);
-        }
-
-
-
-        function show_categories($sub_action, $id){
-                // ##### Display scrolling list of existing categories ---------------------------------------------------------------------------------------------------------
-                global $sql, $rs, $ns, $aj;
-                $text = "<div style='border : solid 1px #000; padding : 4px; width :auto; height : 200px; overflow : auto; '>\n";
-                if($category_total = $sql -> db_Select("link_category")){
-                        $text .= "<table class='fborder' style='width:100%'>
-                        <tr>
-                        <td style='width:5%' class='forumheader2'>&nbsp;</td>
-                        <td style='width:75%' class='forumheader2'>".LCLAN_59."</td>
-                        <td style='width:20%; text-align:center' class='forumheader2'>".LCLAN_60."</td>
-                        </tr>";
-                        while($row = $sql -> db_Fetch()){
-                                extract($row);
-
-                                $text .= "<tr>
-                                <td style='width:5%; text-align:center' class='forumheader3'>".($link_category_icon ? "<img src='".e_IMAGE."link_icons/$link_category_icon' alt='' style='vertical-align:middle' />" : "&nbsp;")."</td>
-                                <td style='width:75%' class='forumheader3'>$link_category_name<br /><span class='smalltext'>$link_category_description</span></td>
-                                <td style='width:20%; text-align:center' class='forumheader3'>
-                                ".$rs -> form_button("submit", "category_edit_{$link_category_id}", LCLAN_9, "onclick=\"document.location='".e_SELF."?cat.edit.$link_category_id'\"")."
-
-                                ".$rs -> form_open("post", e_SELF,"","",""," onsubmit=\"return confirm_('cat',$link_category_id)\"")."
-                                ".$rs -> form_button("submit", "category_delete_{$link_category_id}", LCLAN_10)."
-                                ".$rs -> form_close()."
-
-                                </td>
-                                </tr>\n";
-                        }
-//                                ".$rs -> form_button("submit", "category_delete_{$link_category_id}", LCLAN_10, "onclick=\"confirm_('cat', '$link_category_id');\"")."
-                        $text .= "</table>";
-                }else{
-                        $text .= "<div style='text-align:center'>".LCLAN_69."</div>";
-                }
-                $text .= "</div>";
-                $ns -> tablerender(LCLAN_70, $text);
-
-                unset($link_category_name, $link_category_description, $link_category_icon);
-
-                $handle=opendir(e_IMAGE."link_icons");
-                while ($file = readdir($handle)){
-                        if($file != "." && $file != ".."){
-                                $iconlist[] = $file;
-                        }
-                }
-                closedir($handle);
-
-                if($sub_action == "edit"){
-                        if($sql -> db_Select("link_category", "*", "link_category_id ='$id' ")){
-                                $row = $sql -> db_Fetch(); extract($row);
-                        }
-                }
-
-                $text = "<div style='text-align:center'>
-                ".$rs -> form_open("post", e_SELF."?cat", "linkform")."
-                <table class='fborder' style='width:auto'>
-                <tr>
-                <td class='forumheader3' style='width:30%'><span class='defaulttext'>".LCLAN_71."</span></td>
-                <td class='forumheader3' style='width:70%'>".$rs -> form_text("link_category_name", 50, $link_category_name, 200)."</td>
-                </tr>
-                <tr>
-                <td class='forumheader3' style='width:30%'><span class='defaulttext'>".LCLAN_72."</span></td>
-                <td class='forumheader3' style='width:70%'>".$rs -> form_text("link_category_description", 60, $link_category_description, 200)."</td>
-                </tr>
-                <tr>
-                <td class='forumheader3' style='width:30%'><span class='defaulttext'>".LCLAN_73."</span></td>
-                <td class='forumheader3' style='width:70%'>
-                ".$rs -> form_text("link_category_icon", 60, $link_category_icon, 100)."
-                <br />
-                <input class='button' type ='button' style='cursor:hand' size='30' value='".LCLAN_80."' onclick='expandit(this)' />
-                <div style='display:none'>";
-                while(list($key, $icon) = each($iconlist)){
-                        $text .= "<a href='javascript:addtext2(\"$icon\")'><img src='".e_IMAGE."link_icons/".$icon."' style='border:0' alt='' /></a> ";
-                }
-                $text .= "</div></td>
-                </tr>
-
-                <tr><td colspan='2' style='text-align:center' class='forumheader'>";
-                if($id){
-                        $text .= "<input class='button' type='submit' name='update_category' value='".LCLAN_74."'>
-                        ".$rs -> form_button("submit", "category_clear", LCLAN_81).
-                        $rs -> form_hidden("link_category_id", $id)."
-                        </td></tr>";
-                }else{
-                        $text .= "<input class='button' type='submit' name='create_category' value='".LCLAN_75."' /></td></tr>";
-                }
-                $text .= "</table>
-                ".$rs -> form_close()."
-                </div>";
-
-                $ns -> tablerender(LCLAN_75, $text);
-        }
-
-
-        function show_submitted($sub_action, $id){
-                global $sql, $rs, $ns, $aj;
-                $text = "<div style='border : solid 1px #000; padding : 4px; width :auto; height : 200px; overflow : auto; '>\n";
-                if($submitted_total = $sql -> db_Select("tmp", "*", "tmp_ip='submitted_link' ")){
-                        $text .= "<table class='fborder' style='width:100%'>
-                        <tr>
-                        <td style='width:50%' class='forumheader2'>".LCLAN_53."</td>
-                        <td style='width:30%' class='forumheader2'>".LCLAN_45."</td>
-                        <td style='width:20%; text-align:center' class='forumheader2'>".LCLAN_60."</td>
-                        </tr>";
-                        while($row = $sql -> db_Fetch()){
-                                extract($row);
-                                $submitted = explode("^", $tmp_info);
-                                if(!strstr($submitted[2], "http")){ $submitted[2] = "http://".$submitted[2]; }
-                                $text .= "<tr>
-                                <td style='width:50%' class='forumheader3'><a href='".$submitted[2]."' rel='external'>".$submitted[2]."</a></td>
-                                <td style='width:30%' class='forumheader3'>".$submitted[5]."</td>
-                                <td style='width:20%; text-align:center; vertical-align:top' class='forumheader3'><div>
-                                ".$rs -> form_open("post", e_SELF."?sn","submitted_links")."
-                                ".$rs -> form_button("submit", "create_sn_{$tmp_time}", LCLAN_14, "onclick=\"document.location='".e_SELF."?create.sn.$tmp_time'\"")."
-                                ".$rs -> form_button("submit", "sn_delete_{$tmp_time}", LCLAN_10, "onclick=\"confirm_('sn', $tmp_time);\"")."
-                                </div>".$rs -> form_close()."
-                                </td>
-                                </tr>\n";
-                        }
-                        $text .= "</table>";
-                }else{
-                        $text .= "<div style='text-align:center'>".LCLAN_76."</div>";
-                }
-                $text .= "</div>";
-                $ns -> tablerender(LCLAN_66, $text);
-        }
-
-        function show_pref_options(){
-                global $pref, $ns;
-                $text = "<div style='text-align:center'>
-                <form method='post' action='".e_SELF."?".e_QUERY."'>\n
-                <table style='width:auto' class='fborder'>
-                <tr>
-                <td style='width:70%' class='forumheader3'>
-                ".LCLAN_40."<br />
-                <span class='smalltext'>".LCLAN_34."</span>
-                </td>
-                <td class='forumheader2' style='width:30%;text-align:center'>".
-                ($pref['linkpage_categories'] ? "<input type='checkbox' name='linkpage_categories' value='1' checked='checked' />" : "<input type='checkbox' name='linkpage_categories' value='1' />")."
-                </td>
-                </tr>
-
-                <tr>
-                <td style='width:70%' class='forumheader3'>
-                ".LCLAN_78."<br />
-                <span class='smalltext'>".LCLAN_79."</span>
-                </td>
-                <td class='forumheader2' style='width:30%;text-align:center'>".
-                ($pref['linkpage_screentip'] ? "<input type='checkbox' name='linkpage_screentip' value='1' checked='checked' />" : "<input type='checkbox' name='linkpage_screentip' value='1' />")."
-                </td>
-                </tr>
-
-                <tr>
-                <td style='width:70%' class='forumheader3'>
-                ".LCLAN_41."<br />
-                <span class='smalltext'>".LCLAN_42."</span>
-                </td>
-                <td class='forumheader2' style='width:30%;text-align:center'>".
-                ($pref['link_submit'] ? "<input type='checkbox' name='link_submit' value='1' checked='checked' />" : "<input type='checkbox' name='link_submit' value='1' />")."
-                </td>
-                </tr>
-
-                <tr>
-                <td style='width:70%' class='forumheader3'>
-                ".LCLAN_43."<br />
-                <span class='smalltext'>".LCLAN_44."</span>
-                </td>
-                <td class='forumheader2' style='width:30%;text-align:center'>".r_userclass("link_submit_class", $pref['link_submit_class'])."</td>
-                </tr>
-
-                <tr style='vertical-align:top'>
-                <td colspan='2'  style='text-align:center' class='forumheader'>
-                <input class='button' type='submit' name='updateoptions' value='".LCLAN_35."' />
-                </td>
-                </tr>
-
-                </table>
-                </form>
-                </div>";
-                $ns -> tablerender(LCLAN_36, $text);
-        }
-
+// End ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+class links
+{
+	var $link_total;
+	
+	function getLinks()
+	{
+		global $sql;
+		if($this->link_total = $sql->db_Select("links", "*", "ORDER BY link_order, link_id ASC", "nowhere"))
+		{
+			while($row = $sql->db_Fetch())
+			{
+				$ret[$row['link_parent']][] = $row;
+			}
+		}
+		return $ret;
+	}
+
+
+	function linkName($text)
+	{
+		if(substr($text, 0, 8) == "submenu.")
+		{
+			$tmp = explode(".",$text);
+			return $tmp[2];
+		}
+		else
+		{
+			return $text;
+		}
+	}
+
+	function dropdown($curval="", $id=0, $indent=0)
+	{
+		global $linkArray;
+		if(0 == $indent) {$ret = "<option value=''>".LINKLAN_3."</option>\n";}
+		foreach($linkArray[$id] as $l)
+		{
+			$s = ($l['link_id'] == $curval ? " selected='selected' " : "" );
+			$ret .= "<option value='{$l['link_id']}|".$this->linkName($l['link_name'])."' {$s}>".str_pad("", $indent*36, "&nbsp;").$this->linkName($l['link_name'])."</option>\n";
+			if(array_key_exists($l['link_id'], $linkArray))
+			{
+				$ret .= $this->dropdown($curval, $l['link_id'], $indent+1);
+			}
+		}
+		return $ret;
+	}
+			
+
+	function existing($id=0, $level=0)
+	{
+		global $linkArray;
+		$ret = "";
+		foreach($linkArray[$id] as $l)
+		{
+			$s = ($l['link_parent'] == $curval ? " selected='selected' " : "" );
+			$ret .= $this->display_row($l, $level);
+			if(array_key_exists($l['link_id'], $linkArray))
+			{
+				$ret .= $this->existing($l['link_id'], $level+1);
+			}
+		}
+		return $ret;
+	}
+
+	function show_existing_items()
+	{
+		global $sql, $rs, $ns, $tp, $linkArray;
+		if (count($linkArray))
+		{
+			$text = $rs->form_open("post", e_SELF, "myform_{$link_id}", "", "");
+			$text .= "<div style='text-align:center'>
+				<table class='fborder' style='".ADMIN_WIDTH."'>
+				<tr>
+				<td class='fcaption' style='width:5%'>".LCLAN_89."</td>
+				<td class='fcaption' style='width:60%'>".LCLAN_90."</td>
+				<td class='fcaption' style='width:15%'>".LAN_OPTIONS."</td>
+				<td class='fcaption' style='width:10%'>".LCLAN_95."</td>
+				<td class='fcaption' style='width:5%'>".LCLAN_91."</td>
+				<td class='fcaption' style='width:5%'>".LAN_ORDER."</td>
+				</tr>";
+				$text .= $this->existing(0);
+				
+			$text .= "<tr>
+				<td class='forumheader' colspan='6' style='text-align:center'><input class='button' type='submit' name='update' value='".LAN_UPDATE."' /></td>
+				</tr>";
+			$text .= "</table></div>";
+			$text .= $rs->form_close();
+		} else {
+			$text .= "<div style='text-align:center'>".LCLAN_61."</div>";
+		}
+		$ns->tablerender(LCLAN_8, $text);
+	}
+
+	function display_row($row2, $indent = FALSE) {
+		global $sql, $rs, $ns, $tp, $linkArray;
+		extract($row2);
+		if(strpos($link_name, "submenu.") !== FALSE || $link_parent !=0){
+			if(substr($link_name,0,8) == "submenu."){
+				$tmp = explode(".",$link_name);
+				$sublinkname = $tmp[2];
+			}else{
+			$sublinkname = $link_name;
+			}
+			$link_name = $sublinkname;
+		}
+
+		if ($indent) {
+			$subimage = "<img src='".e_IMAGE."admin_images/sublink.png' alt='' />";
+			$subspacer = ($indent > 1) ? " style='padding-left: ".(($indent - 1) * 16)."px'" : "";
+			$subindent = "<td".$subspacer.">".$subimage."</td>";
+		}
+
+				$text .= "<tr><td class='forumheader3' style='width:5%; text-align: center; vertical-align: middle' title='".$link_description."'>";
+				$text .= $link_button ? "<img src='".e_IMAGE."icons/".$link_button."' alt='' /> ":
+				"";
+				$text .= "</td><td style='width:60%' class='forumheader3' title='".$link_description."'>
+				<table cellspacing='0' cellpadding='0' border='0' style='width: 100%'>
+				<tr>
+				".$subindent."
+				<td style='width: 100%'>".$link_name."</td>
+				</tr>
+				</table>
+				</td>";
+				$text .= "<td style='width:15%; text-align:center; white-space: nowrap' class='forumheader3'>";
+				$text .= "<a href='".e_SELF."?create.sub.{$link_id}'><img src='".e_IMAGE."admin_images/sublink_16.png' title='".LINKLAN_10."' alt='".LINKLAN_10."' /></a>&nbsp;";
+				$text .= "<a href='".e_SELF."?create.edit.{$link_id}'>".ADMIN_EDIT_ICON."</a>&nbsp;";
+				$text .= "<input type='image' title='".LAN_DELETE."' name='main_delete_{$link_id}' src='".ADMIN_DELETE_ICON_PATH."' onclick=\"return jsconfirm('".$tp->toJS(LCLAN_58." [ $link_name ]")."') \" />";
+				$text .= "</td>";
+				$text .= "<td style='width:10%; text-align:center' class='forumheader3'>".r_userclass("link_class[".$link_id."]", $link_class, "off", "public,guest,nobody,member,admin,classes")."</td>";
+				$text .= "<td style='width:5%; text-align:center; white-space: nowrap' class='forumheader3'>";
+				$text .= "<input type='image' src='".e_IMAGE."admin_images/up.png' title='".LCLAN_30."' value='".$link_id.".".$link_order."' name='inc' />";
+				$text .= "<input type='image' src='".e_IMAGE."admin_images/down.png' title='".LCLAN_31."' value='".$link_id.".".$link_order."' name='dec' />";
+				$text .= "</td>";
+				$text .= "<td style='width:5%; text-align:center' class='forumheader3'>";
+				$text .= "<select name='link_order[]' class='tbox'>\n";
+				for($a = 1; $a <= $this->link_total; $a++) {
+					$selected = ($link_order == $a) ? "selected='selected'" : "";
+					$text .= "<option value='".$link_id.".".$a."' $selected>".$a."</option>\n";
+				}
+				$text .= "</select>";
+				$text .= "</td>";
+				$text .= "</tr>";
+
+	return $text;
+
+	}
+
+	function show_message($message) {
+		global $ns;
+		$ns->tablerender(LAN_UPDATE, "<div style='text-align:center'><b>".$message."</b></div>");
+	}
+
+	function create_link($sub_action, $id) {
+		global $sql, $rs, $ns, $pst;
+		$preset = $pst->read_preset("admin_links");
+		extract($preset);
+
+		if ($sub_action == "edit" && !$_POST['submit'])
+		{
+			if ($sql->db_Select("links", "*", "link_id='$id' "))
+			{
+				$row = $sql->db_Fetch();
+				extract($row);
+			}
+		}
+
+		if("sub" == $sub_action)
+		{
+			$link_parent = $id;
+		}
+
+		if(strpos($link_name, "submenu.") !== FALSE){
+			$tmp = explode(".",$link_name);
+			$link_name = $tmp[2];
+		}
+
+		$handle = opendir(e_IMAGE."icons");
+		while ($file = readdir($handle)) {
+			if ($file != "." && $file != ".." && $file != "/" && $file != "CVS") {
+				$iconlist[] = $file;
+			}
+		}
+		closedir($handle);
+
+		$text = "<div style='text-align:center'>
+			<form method='post' action='".e_SELF."' id='linkform'>
+			<table style='".ADMIN_WIDTH."' class='fborder'>";
+
+		$text .= "<tr>
+			<td style='width:30%' class='forumheader3'>".LINKLAN_2.": </td>
+			<td style='width:70%' class='forumheader3'>
+			<select class='tbox' name='link_parent' >";
+			$text .= $this->dropdown($link_parent);
+
+		$text .= "</select></td>
+			</tr>
+			<tr>
+			<td style='width:30%' class='forumheader3'>".LCLAN_15.": </td>
+			<td style='width:70%' class='forumheader3'>
+			<input class='tbox' type='text' name='link_name' size='60' value='$link_name' maxlength='100' />
+			</td>
+			</tr>
+
+			<tr>
+			<td style='width:30%' class='forumheader3'>".LCLAN_16.": </td>
+			<td style='width:70%' class='forumheader3'>
+			<input class='tbox' type='text' name='link_url' size='60' value='$link_url' maxlength='200' />
+			</td>
+			</tr>
+
+			<tr>
+			<td style='width:30%' class='forumheader3'>".LCLAN_17.": </td>
+			<td style='width:70%' class='forumheader3'>
+			<textarea class='tbox' name='link_description' cols='59' rows='3'>$link_description</textarea>
+			</td>
+			</tr>
+
+			<tr>
+			<td style='width:30%' class='forumheader3'>".LCLAN_18.": </td>
+			<td style='width:70%' class='forumheader3'>
+			<input class='tbox' type='text' id='link_button' name='link_button' size='42' value='$link_button' maxlength='100' />
+
+					<input class='button' type ='button' style='cursor:hand' size='30' value='".LCLAN_39."' onclick='expandit(this)' />
+			<div id='linkicn' style='display:none;{head}'>";
+
+		while (list($key, $icon) = each($iconlist)) {
+			$text .= "<a href=\"javascript:insertext('$icon','link_button','linkicn')\"><img src='".e_IMAGE."icons/".$icon."' style='border:0' alt='' /></a> ";
+		}
+
+		// 1 = _blank
+		// 2 = _parent   not in use.
+		// 3 = _top   not in use.
+		$linkop[0] = LCLAN_20;  // 0 = same window
+		$linkop[1] = LCLAN_23;
+		$linkop[4] = LCLAN_24;  // 4 = miniwindow  600x400
+		$linkop[5] = LINKLAN_1;  // 5 = miniwindow  800x600
+
+		$text .= "</div></td>
+			</tr>
+			<tr>
+			<td style='width:30%' class='forumheader3'>".LCLAN_19.": </td>
+			<td style='width:70%' class='forumheader3'>
+			<select name='linkopentype' class='tbox'>\n";
+			foreach($linkop as $key=>$val){
+				$selectd = ($link_open == $key) ? "selected='selected'" : "";
+				$text .= "<option value='$key' $selectd>".$val."</option>\n";
+			}
+
+			$text .="</select>
+			</td>
+			</tr>
+			<tr>
+			<td style='width:30%' class='forumheader3'>".LCLAN_12.": </td>
+			<td style='width:70%' class='forumheader3'>
+			<select name='linkrender' class='tbox'>";
+			$rentype = array("","Main","Alt","Alt", "Alt");
+			for ($i=1; $i<count($rentype); $i++) {
+				$sel = ($link_category == $i) ? "selected='selected'" : "";
+				$text .="<option value='$i' $sel>$i - ".$rentype[$i]."</option>";
+			};
+
+			$text .="</select><span class='smalltext'> ".LCLAN_96." {SITELINKS=flat:[rendertype number]}</span>
+			</td>
+			</tr>
+			<tr>
+			<td style='width:30%' class='forumheader3'>".LCLAN_25.":<br /><span class='smalltext'>(".LCLAN_26.")</span></td>
+			<td style='width:70%' class='forumheader3'>".r_userclass("link_class", $link_class, "off", "public,guest,nobody,member,admin,classes")."
+			</td></tr>
+
+			<tr style='vertical-align:top'>
+			<td colspan='2' style='text-align:center' class='forumheader'>";
+		if ($id && $sub_action == "edit") {
+			$text .= "<input class='button' type='submit' name='add_link' value='".LCLAN_27."' />\n<input type='hidden' name='link_id' value='$link_id'>";
+		} else {
+			$text .= "<input class='button' type='submit' name='add_link' value='".LCLAN_28."' />";
+		}
+		$text .= "</td>
+			</tr>
+			</table>
+			</form>
+			</div>";
+		$ns->tablerender(LCLAN_29, $text);
+	}
+
+	function submit_link($sub_action, $id) {
+		global $sql, $e107cache, $tp;
+		if(!is_object($tp)) {
+			$tp=new e_parse;
+		}
+		if($_POST['link_parent']){
+			$tmp = explode("|",$_POST['link_parent']);
+			$link_name = $tp->toDB(("submenu.".$tmp[1].".".$_POST['link_name']));
+			$parent_id = intval($tmp[0]);
+		}else{
+			$link_name = $tp->toDB($_POST['link_name']);
+			$parent_id = 0;
+		}
+		$link_url = $tp->toDB($_POST['link_url']);
+		$link_description = $tp->toDB($_POST['link_description']);
+		$link_button = $tp->toDB($_POST['link_button']);
+
+		$link_t = $sql->db_Count("links", "(*)");
+		if ($id) {
+			$sql->db_Update("links", "link_parent='$parent_id', link_name='$link_name', link_url='$link_url', link_description='$link_description', link_button= '$link_button', link_category='".$_POST['linkrender']."', link_open='".$_POST['linkopentype']."', link_class='".$_POST['link_class']."' WHERE link_id='$id'");
+			//rename all sublinks
+			if($sql->db_Select("links", "*", "link_parent='{$id}'"))
+			{
+				$childList = $sql->db_getList();
+				foreach($childList as $c)
+				{
+					$old = explode(".", $c['link_name'], 3);
+					$newname = "submenu.".$link_name.".".$old[2];
+					$sql->db_Update("links", "link_name = '{$newname}' WHERE link_id = '{$c['link_id']}'");
+				}
+			}
+
+			$e107cache->clear("sitelinks");
+			$this->show_message(LCLAN_3);
+		} else {
+			$sql->db_Insert("links", "0, '$link_name', '$link_url', '$link_description', '$link_button', ".$_POST['linkrender'].", ".($link_t+1).", ".$parent_id.", ".$_POST['linkopentype'].", ".$_POST['link_class']);
+			$e107cache->clear("sitelinks");
+			$this->show_message(LCLAN_2);
+		}
+	}
+
+	function show_pref_options() {
+		global $pref, $ns;
+		$text = "<div style='text-align:center'>
+			<form method='post' action='".e_SELF."?".e_QUERY."'>\n
+			<table style='".ADMIN_WIDTH."' class='fborder'>
+			<tr>
+			<td style='width:70%' class='forumheader3'>
+			".LCLAN_78."<br />
+			<span class='smalltext'>".LCLAN_79."</span>
+			</td>
+			<td class='forumheader3' style='width:30%;text-align:center'>". ($pref['linkpage_screentip'] ? "<input type='checkbox' name='linkpage_screentip' value='1' checked='checked' />" : "<input type='checkbox' name='linkpage_screentip' value='1' />")."
+			</td>
+			</tr>
+
+			<tr>
+			<td style='width:70%' class='forumheader3'>
+			".LCLAN_80."<br />
+			<span class='smalltext'>".LCLAN_81."</span>
+			</td>
+			<td class='forumheader3' style='width:30%;text-align:center'>". ($pref['sitelinks_expandsub'] ? "<input type='checkbox' name='sitelinks_expandsub' value='1' checked='checked' />" : "<input type='checkbox' name='sitelinks_expandsub' value='1' />")."
+			</td>
+			</tr>
+
+
+
+			<tr style='vertical-align:top'>
+			<td colspan='2' style='text-align:center' class='forumheader'>
+			<input class='button' type='submit' name='updateoptions' value='".LAN_UPDATE."' />
+			</td>
+			</tr>
+
+			</table>
+			</form>
+			</div>";
+		$ns->tablerender(LCLAN_88, $text);
+	}
+
+	function delete_link($linkInfo)	{
+		global $sql;
+
+		if ($sql->db_Select("links", "link_id", "link_order > '{$linkInfo['link_order']}'")){
+			$linkList = $sql->db_getList();
+			foreach($linkList as $l){
+				$sql->db_Update("links", "link_order = link_order -1 WHERE link_id = '{$l['link_id']}'");
+			}
+		}
+
+
+		if ($sql->db_Delete("links", "link_id='".$linkInfo['link_id']."'")){
+			// Update ophaned sublinks.
+			$sql->db_Update("links", "link_name = SUBSTRING_INDEX(link_name, '.', -1) , link_parent = '0', link_class='255' WHERE link_parent= '".$linkInfo['link_id']."'");
+
+			return LCLAN_53." #".$linkInfo['link_id']." ".LCLAN_54."<br />";
+		}else{
+        	return DELETED_FAILED;
+		}
+
+
+	}
+
+// -------------------------- Sub links generator ------------->
+
+function show_sublink_generator() {
+	global $ns,$sql;
+
+    $sublinks = $this->sublink_list();
+
+	$text = "<div style='text-align:center'>
+	<form method='post' action='".e_SELF."?".e_QUERY."'>\n
+	<table style='".ADMIN_WIDTH."' class='fborder'>
+
+	<tr>
+	<td style='width:50%' class='forumheader3'>
+	".LINKLAN_6."<br />
+	</td>
+	<td class='forumheader3' style='width:50%;text-align:center'>
+	<select name='sublink_type' class='tbox'>\n
+	<option value=''></option>";
+    foreach($sublinks as $key=>$type){
+    	$text .= "<option value='$key'>".$type['title']."</option>\n";
+	}
+	$text .="</select>\n
+	</td>
+	</tr>
+
+    	<tr>
+	<td style='width:50%' class='forumheader3'>
+	".LINKLAN_7."<br />
+	</td>
+	<td class='forumheader3' style='width:50%;text-align:center'>
+	<select name='sublink_parent' class='tbox'>\n
+	<option value=''></option>";
+    $sql -> db_Select("links", "*", "link_parent='0' ORDER BY link_name ASC");
+	while($row = $sql-> db_Fetch()){
+		$text .= "<option value='".$row['link_id']."'>".$row['link_name']."</option>\n";
+	}
+	$text .="</select>\n
+	</td>
+	</tr>
+
+	<tr style='vertical-align:top'>
+	<td colspan='2' style='text-align:center' class='forumheader'>
+	<input class='button' type='submit' name='generate_sublinks' value='".LINKLAN_5."' />
+	</td>
+	</tr>
+
+	</table>
+	</form>
+	</div>";
+	$ns->tablerender("Sublinks Generator", $text);
+}
+
+
+
+function sublink_list($name=""){
+    global $sql,$PLUGINS_DIRECTORY;
+	$sublink_type['news']['title'] = LINKLAN_8; // "News Categories";
+	$sublink_type['news']['table'] = "news_category";
+	$sublink_type['news']['query'] = "category_id !='-2' ORDER BY category_name ASC";
+	$sublink_type['news']['url'] = "news.php?cat.#";
+	$sublink_type['news']['fieldid'] = "category_id";
+	$sublink_type['news']['fieldname'] = "category_name";
+	$sublink_type['news']['fieldicon'] = "category_icon";
+
+	$sublink_type['downloads']['title'] = LINKLAN_9; //"Download Categories";
+	$sublink_type['downloads']['table'] = "download_category";
+	$sublink_type['downloads']['query'] = "download_category_parent ='0' ORDER BY download_category_name ASC";
+	$sublink_type['downloads']['url'] =   "download.php?list.#";
+	$sublink_type['downloads']['fieldid'] = "download_category_id";
+	$sublink_type['downloads']['fieldname'] = "download_category_name";
+	$sublink_type['downloads']['fieldicon'] = "download_category_icon";
+
+
+	if ($sql -> db_Select("plugin", "plugin_path", "plugin_installflag = '1'")) {
+		while ($row = $sql -> db_Fetch()) {
+			$sublink_plugs[] = $row['plugin_path'];
+		}
+	}
+
+	foreach ($sublink_plugs as $plugin_id) {
+		if (is_readable(e_PLUGIN.$plugin_id.'/e_linkgen.php')) {
+		  	require_once(e_PLUGIN.$plugin_id.'/e_linkgen.php');
+		}
+	}
+    if($name){
+    	return $sublink_type[$name];
+	}
+
+	return $sublink_type;
 
 }
 
-function links_adminmenu(){
-        global $linkpost;
-        global $action;
-        $linkpost -> show_options($action);
+}
+
+function links_adminmenu() {
+	global $action;
+	if ($action == "") {
+		$action = "main";
+	}
+	$var['main']['text'] = LCLAN_62;
+	$var['main']['link'] = e_SELF;
+
+	$var['create']['text'] = LCLAN_63;
+	$var['create']['link'] = e_SELF."?create";
+
+	$var['opt']['text'] = LAN_OPTIONS;
+	$var['opt']['link'] = e_SELF."?opt";
+
+	$var['sub']['text'] = LINKLAN_4;
+	$var['sub']['link'] = e_SELF."?sublinks";
+
+	show_admin_menu(LCLAN_68, $action, $var);
 }
 
 ?>

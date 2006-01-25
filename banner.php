@@ -1,128 +1,125 @@
 <?php
 /*
-+---------------------------------------------------------------+
-|        e107 website system
-|        /banner.php
++ ----------------------------------------------------------------------------+
+|     e107 website system
 |
-|        ©Steve Dunstan 2001-2002
-|        http://e107.org
-|        jalist@e107.org
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
 |
-|        Released under the terms and conditions of the
-|        GNU General Public License (http://gnu.org).
-+---------------------------------------------------------------+
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/banner.php,v $
+|     $Revision: 1.13 $
+|     $Date: 2005/12/24 22:53:38 $
+|     $Author: sweetas $
++----------------------------------------------------------------------------+
 */
 require_once("class2.php");
-
-if(e_QUERY){
-        $sql -> db_Select("banner", "*", "banner_id='".e_QUERY."' ");
-        $row = $sql -> db_Fetch(); extract($row);
-        $ip = getip();
-        $newip = (preg_match("/".$ip."\^/", $banner_ip) ? $banner_ip : $banner_ip.$ip."^");
-        $sql -> db_Update("banner", "banner_clicks=banner_clicks+1, banner_ip='$newip' WHERE banner_id='".e_QUERY."' ");
-        header("location: ".$banner_clickurl);
-        exit;
+require_once(e_HANDLER."form_handler.php");
+$rs = new form;
+	
+if (e_QUERY) {
+	$query_string = intval(e_QUERY);
+	$sql->db_Select("banner", "*", "banner_id = '{$query_string}' ");
+	$row = $sql->db_Fetch();
+	$ip = $e107->getip();
+	$newip = (strpos($row['banner_ip'], "{$ip}^") !== FALSE) ? $row['banner_ip'] : "{$row['banner_ip']}{$ip}^";
+	$sql->db_Update("banner", "banner_clicks = banner_clicks + 1, `banner_ip` = '{$newip}' WHERE `banner_id` = '{$query_string}'");
+	header("Location: {$row['banner_clickurl']}");
+	exit;
 }
-
+	
 require_once(HEADERF);
-
-if(IsSet($_POST['clientsubmit'])){
-
-        if(!$sql -> db_Select("banner", "*", "banner_clientlogin='".$_POST['clientlogin']."' AND banner_clientpassword='".$_POST['clientpassword']."' ")){
-                $ns -> tablerender("Error", "<br /><div style='text-align:center'>".LAN_20."</div><br />");
-                require_once(FOOTERF);
-                exit;
-        }
-
-        $row = $sql -> db_Fetch(); extract($row);
-
-        $banner_total = $sql -> db_Select("banner", "*", "banner_clientname='$banner_clientname' ");
-
-        $text = "<table class='fborder' style='width:98%'>
-        <tr><td colspan='7' style='text-align:center' class='fcaption'>".LAN_21."</td></tr>
-        <tr>
-        <td class='forumheader' style='text-align:center'><span class='smallblacktext'>".LAN_22."</span></td>
-        <td class='forumheader' style='text-align:center'><span class='smallblacktext'>".LAN_23."</span></td>
-        <td class='forumheader' style='text-align:center'><span class='smallblacktext'>".LAN_24."</span></td>
-        <td class='forumheader' style='text-align:center'><span class='smallblacktext'>".LAN_25."</span></td>
-        <td class='forumheader' style='text-align:center'><span class='smallblacktext'>".LAN_26."</span></td>
-        <td class='forumheader' style='text-align:center'><span class='smallblacktext'>".LAN_27."</span></td>
-        <td class='forumheader' style='text-align:center'><span class='smallblacktext'>".LAN_28."</span></td>
-        </tr>";
-
-        if(!$banner_total){
-                $text .= "<tr>
-                <td colspan='7' class='forumheader2' style='text-align:center'>".LAN_29."</td>";
-        }else{
-                while($row = $sql-> db_Fetch()){
-                        extract($row);
-
-                        $clickpercentage = ($banner_clicks && $banner_impressions ? round(($banner_clicks / $banner_impressions) * 100)."%" : "-");
-                        $impressions_left = ($banner_impurchased ? $banner_impurchased - $banner_impressions : LAN_30);
-                        $impressions_purchased = ($banner_impurchased ? $banner_impurchased : LAN_30);
-
-                        $start_date = ($banner_startdate ? strftime("%d %B %Y", $banner_startdate) : LAN_31);
-                        $end_date = ($banner_enddate ? strftime("%d %B %Y", $banner_enddate) : LAN_31);
-
-                        $text.="<tr>
-                        <td class='forumheader3' style='text-align:center'>".$banner_clientname."</td>
-                        <td class='forumheader3' style='text-align:center'>".$banner_id."</td>
-                        <td class='forumheader3' style='text-align:center'>".$banner_clicks."</td>
-                        <td class='forumheader3' style='text-align:center'>".$clickpercentage."</td>
-                        <td class='forumheader3' style='text-align:center'>".$banner_impressions."</td>
-                        <td class='forumheader3' style='text-align:center'>".$impressions_purchased."</td>
-                        <td class='forumheader3' style='text-align:center'>".$impressions_left."</td>
-                        </tr>
-                        <td colspan='7' class='forumheader3' style='text-align:center'>
-
-                        ".LAN_36. ($banner_active ? LAN_32 : "<b>".LAN_33."</b>")." |
-
-                        ".LAN_36. $start_date.", ".LAN_34.": ".$end_date."</td></tr>";
-
-                        if($banner_ip){
-                                $tmp = explode("^", $banner_ip);
-                                $text .= "<tr><td class='forumheader3'>
-                                ".LAN_35.": ".(count($tmp)-1)."</td>
-                                <td colspan='6' class='forumheader3'>";
-                                for($a=0; $a<=(count($tmp)-2); $a++){
-                                        $text .= $tmp[$a]."<br />";
-                                }
-                        }
-
-
-                        $text .= "</td>
-                        <tr><td colspan='8'>&nbsp;</td></tr>";
-                }
-        }
-
-        $text .= "</table>";
-
-        echo $text;
-
-        require_once(FOOTERF);
-        exit;
+	
+if (isset($_POST['clientsubmit'])) {
+	
+	$clean_login = $tp -> toDB($_POST['clientlogin']);
+	$clean_password = $tp -> toDB($_POST['clientpassword']);
+	
+	if (!$sql->db_Select("banner", "*", "`banner_clientlogin` = '{$clean_login}' AND `banner_clientpassword` = '{$clean_password}'")) {
+		$ns->tablerender(LAN_38, "<br /><div style='text-align:center'>".LAN_20."</div><br />");
+		require_once(FOOTERF);
+		exit;
+	}
+	 
+	$row = $sql->db_Fetch();
+	$banner_total = $sql->db_Select("banner", "*", "`banner_clientname` = '{$row['banner_clientname']}'");
+	 
+	if (!$banner_total) {
+		$ns->tablerender(LAN_38, "<br /><div style='text-align:center'>".LAN_29."</div><br />");
+		require_once(FOOTERF);
+		exit;
+	} else {
+		while ($row = $sql->db_Fetch()) {
+			 
+			$start_date = ($row['banner_startdate'] ? strftime("%d %B %Y", $row['banner_startdate']) : LAN_31);
+			$end_date = ($row['banner_enddate'] ? strftime("%d %B %Y", $row['banner_enddate']) : LAN_31);
+			 
+			$BANNER_TABLE_CLICKPERCENTAGE = ($row['banner_clicks'] && $row['banner_impressions'] ? round(($row['banner_clicks'] / $row['banner_impressions']) * 100)."%" : "-");
+			$BANNER_TABLE_IMPRESSIONS_LEFT = ($row['banner_impurchased'] ? $row['banner_impurchased'] - $row['banner_impressions'] : LAN_30);
+			$BANNER_TABLE_IMPRESSIONS_PURCHASED = ($row['banner_impurchased'] ? $row['banner_impurchased'] : LAN_30);
+			$BANNER_TABLE_CLIENTNAME = $row['banner_clientname'];
+			$BANNER_TABLE_BANNER_ID = $row['banner_id'];
+			$BANNER_TABLE_BANNER_CLICKS = $row['banner_clicks'];
+			$BANNER_TABLE_BANNER_IMPRESSIONS = $row['banner_impressions'];
+			$BANNER_TABLE_ACTIVE = LAN_36.($row['banner_active'] != "255" ? LAN_32 : "<b>".LAN_33."</b>");
+			$BANNER_TABLE_STARTDATE = LAN_37." ".$start_date;
+			$BANNER_TABLE_ENDDATE = LAN_34." ".$end_date;
+			
+			if ($row['banner_ip']) {
+				$tmp = explode("^", $row['banner_ip']);
+				$BANNER_TABLE_IP_LAN = LAN_35.": ".(count($tmp)-1);
+				for($a = 0; $a <= (count($tmp)-2); $a++) {
+					$BANNER_TABLE_IP .= $tmp[$a]."<br />";
+				}
+			}
+			 
+			if (!$BANNER_TABLE) {
+				if (file_exists(THEME."banner_template.php")) {
+					require_once(THEME."banner_template.php");
+				} else {
+					require_once(e_BASE.$THEMES_DIRECTORY."templates/banner_template.php");
+				}
+			}
+			$textstring .= preg_replace("/\{(.*?)\}/e", '$\1', $BANNER_TABLE);
+		}
+	}
+	 
+	if (!$BANNER_TABLE) {
+		if (file_exists(THEME."banner_template.php")) {
+			require_once(THEME."banner_template.php");
+		} else {
+			require_once(e_BASE.$THEMES_DIRECTORY."templates/banner_template.php");
+		}
+	}
+	$textstart = preg_replace("/\{(.*?)\}/e", '$\1', $BANNER_TABLE_START);
+	$textend = preg_replace("/\{(.*?)\}/e", '$\1', $BANNER_TABLE_END);
+	$text = $textstart.$textstring.$textend;
+	 
+	echo $text;
+	 
+	require_once(FOOTERF);
+	exit;
 }
-
-$text = "<div style='align:center'>\n
-<form method='post' action='".e_SELF."'>\n
-<table style='width:40%'>
-<tr>
-<td style='width:15%' class='defaulttext'>".LAN_16."</td>
-<td><input class='tbox' type='text' name='clientlogin' size='30' value='$id' maxlength='20' />\n</td>
-</tr>
-<tr>
-<td style='width:15%' class='defaulttext'>".LAN_17."</td>
-<td><input class='tbox' type='password' name='clientpassword' size='30' value='' maxlength='20' />\n</td>
-</tr>
-<tr>
-<td style='width:15%'></td>
-<td>
-<input class='button' type='submit' name='clientsubmit' value='".LAN_18."' />
-</td>
-</tr>
-</table></form></div>";
-$ns -> tablerender(LAN_19, $text);
+	
+	
+$BANNER_LOGIN_TABLE_LOGIN = $rs->form_text("clientlogin", 30, $id, 20, "tbox");
+$BANNER_LOGIN_TABLE_PASSW = $rs->form_password("clientpassword", 30, "", 20, "tbox");
+$BANNER_LOGIN_TABLE_SUBMIT = $rs->form_button("submit", "clientsubmit", LAN_18);
+	
+if (!$BANNER_LOGIN_TABLE) {
+	if (file_exists(THEME."banner_template.php")) {
+		require_once(THEME."banner_template.php");
+	} else {
+		require_once(e_BASE.$THEMES_DIRECTORY."templates/banner_template.php");
+	}
+}
+$text = preg_replace("/\{(.*?)\}/e", '$\1', $BANNER_LOGIN_TABLE);
+$ns->tablerender(LAN_19, $text);
+	
+	
 require_once(FOOTERF);
-
-
+	
 ?>

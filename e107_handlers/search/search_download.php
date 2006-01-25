@@ -1,25 +1,66 @@
 <?php
-// search module for User.
-$c = 0;
-if($results = $sql -> db_Select("download", "download_id, download_category, download_name, download_author, download_description, download_author_website", "download_name REGEXP('".$query."') OR download_author REGEXP('".$query."') OR download_description  REGEXP('".$query."') OR download_author_website REGEXP('".$query."') ")){
-        while(list($download_id, $download_category, $download_name, $download_author, $download_description, $download_author_website) = $sql -> db_Fetch()){
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_handlers/search/search_download.php,v $
+|     $Revision: 1.10 $
+|     $Date: 2005/12/28 14:50:24 $
+|     $Author: sweetas $
++----------------------------------------------------------------------------+
+*/
 
-                $download_name = parsesearch($download_name, $query);
+if (!defined('e107_INIT')) { exit; }
 
-                $download_author = parsesearch($download_author, $query);
-
-                $download_description = parsesearch($download_description , $query);
-
-                $download_author_website = parsesearch($download_author_website, $query);
-
-
-				$action = "download.php?view.".$download_id."";
-				$text .= "<form method='post' action='$action' id='download_".$c."'>
-				<input type='hidden' name='highlight_search' value='1' /><input type='hidden' name='search_query' value='$query' /><img src='".THEME."images/bullet2.gif' alt='bullet' /> <b><a href='javascript:document.getElementById(\"download_".$c."\").submit()'>$download_name</a></b></form><br />$download_description<br /><br />";
-				$c ++;
-
-        }
-}else{
-        $text .= LAN_198;
+// advanced 
+$advanced_where = "";
+if (isset($_GET['cat']) && is_numeric($_GET['cat'])) {
+	$advanced_where .= " d.download_category='".$_GET['cat']."' AND";
 }
+
+if (isset($_GET['time']) && is_numeric($_GET['time'])) {
+	$advanced_where .= " d.download_datestamp ".($_GET['on'] == 'new' ? '>=' : '<=')." '".(time() - $_GET['time'])."' AND";
+}
+
+if (isset($_GET['author']) && $_GET['author'] != '') {
+	$advanced_where .= " (d.download_author = '".$tp -> toDB($_GET['author'])."') AND";
+}
+
+if (isset($_GET['match']) && $_GET['match']) {
+	$search_fields = array('d.download_name');
+} else {
+	$search_fields = array('d.download_name', 'd.download_description', 'd.download_author', 'd.download_author_website');
+}
+
+// basic
+$return_fields = 'd.download_id, d.download_category, download_category_id, d.download_name, d.download_description, d.download_author, d.download_author_website, d.download_datestamp, d.download_class, c.download_category_name, c.download_category_class';
+$weights = array('1.2', '0.6', '0.6', '0.4');
+$no_results = LAN_198;
+$where = "download_active = '1' AND d.download_class IN (".USERCLASS_LIST.") AND c.download_category_class IN (".USERCLASS_LIST.") AND".$advanced_where;
+$order = array('download_datestamp' => DESC);
+$table = "download AS d LEFT JOIN #download_category AS c ON d.download_category = c.download_category_id";
+
+$ps = $sch -> parsesearch($table, $return_fields, $search_fields, $weights, 'search_downloads', $no_results, $where, $order);
+$text .= $ps['text'];
+$results = $ps['results'];
+
+function search_downloads($row) {
+	global $con;
+	$datestamp = $con -> convert_date($row['download_datestamp'], "long");
+	$res['link'] = "download.php?view.".$row['download_id'];
+	$res['pre_title'] = $row['download_category_name']." | ";
+	$res['title'] = $row['download_name'];
+	$res['pre_summary'] = "<div class='smalltext'><a href='download.php'>".LAN_197."</a> -> <a href='download.php?list.".$row['download_category_id']."'>".$row['download_category_name']."</a></div>";
+	$res['summary'] = $row['download_description'];
+	$res['detail'] = LAN_SEARCH_15." ".$row['download_author']." | ".LAN_SEARCH_66.": ".$datestamp;
+	return $res;
+}
+
 ?>

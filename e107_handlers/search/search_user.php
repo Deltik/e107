@@ -1,16 +1,50 @@
 <?php
-// search module for User.
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_handlers/search/search_user.php,v $
+|     $Revision: 1.7 $
+|     $Date: 2005/12/14 17:37:34 $
+|     $Author: sweetas $
++----------------------------------------------------------------------------+
+*/
 
-if($results = $sql -> db_Select("user", "user_id, user_name, user_email, user_homepage, user_location, user_signature", "user_name REGEXP('".$query."') OR user_email REGEXP('".$query."') OR user_homepage  REGEXP('".$query."') OR user_location REGEXP('".$query."') OR user_signature REGEXP('".$query."') ")){
-	while(list($user_id, $user_name, $user_email, $user_homepage, $user_location, $user_signature) = $sql -> db_Fetch()){
-		$user_name = parsesearch($user_name, $query);
-		$user_email = parsesearch($user_email, $query);
-		$user_homepage = parsesearch($user_homepage , $query);
-		$user_signature = parsesearch($user_signature, $query);
-		$user_location = parsesearch($user_location, $query);
-		$text .= "<img src=\"".THEME."images/bullet2.gif\" alt=\"bullet\" /> <a href=\"user.php?id.".$user_id."\">".$user_name."</a><br />";
-	}
-}else{
-	$text .= LAN_198;
+if (!defined('e107_INIT')) { exit; }
+
+// advanced 
+$advanced_where = "";
+if (isset($_GET['time']) && is_numeric($_GET['time'])) {
+	$advanced_where .= " user_join ".($_GET['on'] == 'new' ? '>=' : '<=')." '".(time() - $_GET['time'])."' AND";
 }
+
+// basic
+$return_fields = 'user_id, user_name, user_email, user_signature, user_join';
+$search_fields = array('user_name', 'user_email', 'user_signature');
+$weights = array('1.2', '0.6', '0.6', '0.6', '0.6');
+$no_results = LAN_198;
+$where = $advanced_where;
+$order = array('user_join' => DESC);
+
+$ps = $sch -> parsesearch('user', $return_fields, $search_fields, $weights, 'search_user', $no_results, $where, $order);
+$text .= $ps['text'];
+$results = $ps['results'];
+
+function search_user($row) {
+	global $con;
+	$res['link'] = "user.php?id.".$row['user_id'];
+	$res['pre_title'] = $row['user_id']." | ";
+	$res['title'] = $row['user_name'];
+	$res['summary'] = $row['user_signature'] ?  LAN_SEARCH_72.": ".$row['user_signature'] : LAN_SEARCH_73;
+	$res['detail'] = LAN_SEARCH_74.": ".$con -> convert_date($row['user_join'], "long");
+	return $res;
+}
+
 ?>

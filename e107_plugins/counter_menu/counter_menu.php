@@ -1,31 +1,81 @@
 <?php
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_plugins/counter_menu/counter_menu.php,v $
+|     $Revision: 1.15 $
+|     $Date: 2005/12/28 20:44:18 $
+|     $Author: streaky $
++----------------------------------------------------------------------------+
+*/
+if (!defined('e107_INIT')) { exit; }
+
 $text = "";
-if($pref['log_activate']){
-
-$date = date("Y-m-d");
-$self = substr(strrchr($_SERVER['PHP_SELF'], "/"), 1);
-$sql -> db_Select("stat_counter", "*", "counter_date='$date' AND counter_url='$self' ");
-$row = $sql -> db_Fetch();
-$text = COUNTER_L2.": ".($row['counter_total'] ? $row['counter_total'] : "0")." (unique:".($row['counter_unique'] ? $row['counter_unique'] : "0").")";
-$temp = mysql_query("SELECT sum(counter_total) FROM ".MPREFIX."stat_counter WHERE counter_url='$self' ");
-$temp = mysql_fetch_array($temp);
-$total_page_views = $temp[0];
-$temp = mysql_query("SELECT sum(counter_unique) FROM ".MPREFIX."stat_counter WHERE counter_url='$self' ");
-$temp = mysql_fetch_array($temp);
-$total_unique_views = $temp[0];
-$text .= "<br />".COUNTER_L3.": ".($total_page_views ? $total_page_views : "0")." (unique:".($total_unique_views ? $total_unique_views : "0").")";
-$sql -> db_Select("stat_counter", "*", "counter_url='$self' ORDER BY counter_total DESC");
-$row = $sql -> db_Fetch();
-$text .= "<br />".COUNTER_L4.": ".($row['counter_total'] ? $row['counter_total'] : "0")." (unique:".($row['counter_unique'] ? $row['counter_unique'] : "0").")";
-
-$ns -> tablerender(COUNTER_L1, $text);
+if (isset($pref['statActivate']) && $pref['statActivate'] == true) {
+	$pageName = preg_replace("/(\?.*)|(\_.*)|(\.php)/", "", basename (e_SELF));
+	$logfile = e_PLUGIN."log/logs/logp_".date("z.Y", time()).".php";
+	if(!is_readable($logfile))
+	{
+		if(ADMIN && !$pref['statCountAdmin'])
+		{
+			$text = COUNTER_L1;
+		}
+		$total = 1;
+		$unique = 1;
+		$siteTotal = 1;
+		$siteUnique = 1;
+		$totalever = 1;
+		$uniqueever = 1;
+	} else {
+		$text = "";
+		require($logfile);
+		if($sql -> db_Select("logstats", "*", "log_id='statTotal' OR log_id='statUnique' OR log_id='pageTotal'"))
+		{
+			while($row = $sql -> db_Fetch())
+			{
+				if($row['log_id'] == "statTotal")
+				{
+					$siteTotal += $row['log_data'];
+				}
+				else if($row['log_id'] == "statUnique")
+				{
+					$siteUnique += $row['log_data'];
+				}
+				else
+				{
+					$dbPageInfo = unserialize($row['log_data']);
+					$totalPageEver = ($dbPageInfo[$pageName]['ttlv'] ? $dbPageInfo[$pageName]['ttlv'] : 0);
+					$uniquePageEver = ($dbPageInfo[$pageName]['unqv'] ? $dbPageInfo[$pageName]['unqv'] : 0);
+				}
+			}
+		}
+		$pageName = preg_replace("/(\?.*)|(\_.*)|(\.php)/", "", basename (e_SELF));
+		$total = ($pageInfo[$pageName]['ttl'] ? $pageInfo[$pageName]['ttl'] : 0);
+		$unique = ($pageInfo[$pageName]['unq'] ? $pageInfo[$pageName]['unq'] : 0);
+		$totalever = ($pageInfo[$pageName]['ttlv'] ? $pageInfo[$pageName]['ttlv'] : 0) + $totalPageEver + $total;
+		$uniqueever = ($pageInfo[$pageName]['unqv'] ? $pageInfo[$pageName]['unqv'] : 0) + $uniquePageEver + $unique;
+	}
+	$text .= "<b>".COUNTER_L2."</b><br />".COUNTER_L3.": $total<br />".COUNTER_L5.": $unique<br /><br />
+	<b>".COUNTER_L4."</b><br />".COUNTER_L3.": $totalever<br />".COUNTER_L5.": $uniqueever<br /><br />
+	<b>".COUNTER_L6."</b><br />".COUNTER_L3.": $siteTotal<br />".COUNTER_L5.": $siteUnique";
+	$ns->tablerender(COUNTER_L7, $text, 'counter');
+	unset($dbPageInfo);
 }
-
-if(!$pref['log_activate'] && ADMIN){
-	$text .= "<br /><br /><span class='smalltext'>".COUNTER_L5."</span><br />
-	<a href='".e_ADMIN."log.php'>".COUNTER_L6."</a>";
-	
-	$ns -> tablerender(COUNTER_L1, $text);
+else
+{
+	if(ADMIN)
+	{
+		$text .= "<span class='smalltext'>".COUNTER_L8."</span>";
+		$ns->tablerender(COUNTER_L7, $text, 'counter');
+	}
 }
 
 ?>

@@ -3,88 +3,97 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|    	Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107/class2.php,v $
-|     $Revision: 1.94 $
-|     $Date: 2004/09/03 15:40:55 $
+|     $Source: /cvsroot/e107/e107_0.7/class2.php,v $
+|     $Revision: 1.254 $
+|     $Date: 2006/01/14 19:31:26 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
+// Find out if register globals is enabled and destroy them if so
 
-//unset any globals created by register_globals being turned ON
-while (list($global) = each($GLOBALS)){
-        if (!preg_match('/^(_POST|_GET|_COOKIE|_SERVER|_FILES|GLOBALS|HTTP.*|_REQUEST)$/', $global)){
-                unset($$global);
-        }
-}
-unset($global);
+while (@ob_end_clean());  // destroy all ouput buffering
+ob_start();             // start our own.
 
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-//ob_start ("ob_gzhandler")
-ob_start ();
-$timing_start = explode(' ', microtime());
-error_reporting(E_ERROR | E_WARNING | E_PARSE);
+$register_globals = true;
+if(function_exists('ini_get')) {
+	$register_globals = ini_get('register_globals');
+}
 
-if(!$mySQLserver){
-        @include("e107_config.php");
-        $a=0; $p="";
-        while(!$mySQLserver && $a<5){
-                $a++;
-                $p.="../";
-                @include($p."e107_config.php");
-        }
-        if(!defined("e_HTTP")){ header("Location:install.php"); exit; }
+// Destroy! (if we need to)
+if($register_globals == true){
+	while (list($global) = each($GLOBALS)) {
+		if (!preg_match('/^(_POST|_GET|_COOKIE|_SERVER|_FILES|GLOBALS|HTTP.*|_REQUEST|retrieve_prefs|eplug_admin)$/', $global)) {
+			unset($$global);
+		}
+	}
+	unset($global);
 }
-// e107_config.php upgrade - paths should have been in there from the beginning !
-if(!$ADMIN_DIRECTORY && !$DOWNLOADS_DIRECTORY){
-echo "<div style='text-align:center; font: 12px Verdana, Tahoma'><b>To complete the upgrade, copy the following text into your e107_config.php file: </b><br /><br />";
-echo chr(36)."ADMIN_DIRECTORY = \"e107_admin/\";<br />
-".chr(36)."FILES_DIRECTORY = \"e107_files/\";<br />
-".chr(36)."IMAGES_DIRECTORY = \"e107_images/\"; <br />
-".chr(36)."THEMES_DIRECTORY = \"e107_themes/\"; <br />
-".chr(36)."PLUGINS_DIRECTORY = \"e107_plugins/\"; <br />
-".chr(36)."HANDLERS_DIRECTORY = \"e107_handlers/\"; <br />
-".chr(36)."LANGUAGES_DIRECTORY = \"e107_languages/\"; <br />
-".chr(36)."HELP_DIRECTORY = \"e107_docs/help/\";  <br />
-".chr(36)."DOWNLOADS_DIRECTORY =  \"e107_files/downloads/\";\n";
-echo "</div>";
-exit;
-}
-// =====================
 
-$link_prefix="";
-$url_prefix=substr($_SERVER['PHP_SELF'],strlen(e_HTTP),strrpos($_SERVER['PHP_SELF'],"/")+1-strlen(e_HTTP));
-$tmp=explode("?",$url_prefix);
-$num_levels=substr_count($tmp[0],"/");
-for($i=1;$i<=$num_levels;$i++){
-        $link_prefix.="../";
+if(isset($retrieve_prefs) && is_array($retrieve_prefs)) {
+	foreach ($retrieve_prefs as $key => $pref_name) {
+		 $retrieve_prefs[$key] = preg_replace("/\W/", '', $pref_name);
+	}
+} else {
+	unset($retrieve_prefs);
 }
-if(strstr($_SERVER['QUERY_STRING'], "'") || strstr($_SERVER['QUERY_STRING'], ";") ){ die("Access denied."); }
-// if( strstr($_SERVER['QUERY_STRING'], "&")){ die("Access denied."); }
-if(preg_match("/\[(.*?)\].*?/i", $_SERVER['QUERY_STRING'], $matches)){
-define("e_MENU", $matches[1]);
-        define("e_QUERY", str_replace($matches[0], "", eregi_replace("&|/?PHPSESSID.*", "", $_SERVER['QUERY_STRING'])));
-}else{
-        define("e_QUERY", eregi_replace("&|/?PHPSESSID.*", "", $_SERVER['QUERY_STRING']));
+
+// setup error handling first of all.
+$error_handler = new error_handler();
+set_error_handler(array(&$error_handler, "handle_error"));
+
+// Honest global beginning point for processing time
+$eTimingStart = microtime();
+$start_ob_level = ob_get_level();
+
+define("e107_INIT", TRUE);
+
+// setup some php options
+ini_set('magic_quotes_runtime',     0);
+ini_set('magic_quotes_sybase',      0);
+ini_set('arg_separator.output',     '&amp;');
+ini_set('session.use_only_cookies', 1);
+ini_set('session.use_trans_sid',    0);
+
+// Grab e107_config, get directory paths, and create the $e107 object
+@include_once(realpath(dirname(__FILE__).'/e107_config.php'));
+if(!isset($ADMIN_DIRECTORY)){
+	// e107_config.php is either empty, not valid or doesn't exist so redirect to installer..
+	header("Location: install.php");
 }
-if(strstr(e_MENU, "debug")){ error_reporting(E_ALL); }
+
+// clever stuff that figures out where the paths are on the fly.. no more need fo hard-coded e_HTTP :)
+e107_require_once(realpath(dirname(__FILE__).'/'.$HANDLERS_DIRECTORY).'/e107_class.php');
+$e107_paths = compact('ADMIN_DIRECTORY', 'FILES_DIRECTORY', 'IMAGES_DIRECTORY', 'THEMES_DIRECTORY', 'PLUGINS_DIRECTORY', 'HANDLERS_DIRECTORY', 'LANGUAGES_DIRECTORY', 'HELP_DIRECTORY', 'DOWNLOADS_DIRECTORY');
+$e107 = new e107($e107_paths, realpath(dirname(__FILE__)));
+
+$inArray = array("'", ";", "/**/", "/UNION/", "/SELECT/", "AS ");
+if (strpos($_SERVER['PHP_SELF'], "trackback") === false) {
+	foreach($inArray as $res) {
+		if(stristr($_SERVER['QUERY_STRING'], $res)) {
+			die("Access denied.");
+		}
+	}
+}
+
+if (preg_match("#\[(.*?)](.*)#", $_SERVER['QUERY_STRING'], $matches)) {
+	define("e_MENU", $matches[1]);
+	define("e_QUERY", $matches[2]);
+} else {
+	define("e_MENU", "");
+	define("e_QUERY", $_SERVER['QUERY_STRING']);
+}
+$e_QUERY = e_QUERY;
+
+define("e_TBQS", $_SERVER['QUERY_STRING']);
 $_SERVER['QUERY_STRING'] = e_QUERY;
-define('e_BASE',$link_prefix);
-define("e_ADMIN", e_BASE.$ADMIN_DIRECTORY);
-define("e_IMAGE", e_BASE.$IMAGES_DIRECTORY);
-define("e_THEME", e_BASE.$THEMES_DIRECTORY);
-define("e_PLUGIN", (defined("CORE_PATH") ? e_BASE.SUBDIR_SITE."/".$PLUGINS_DIRECTORY : e_BASE.$PLUGINS_DIRECTORY));
-define("e_FILE", e_BASE.$FILES_DIRECTORY);
-define("e_HANDLER", e_BASE.$HANDLERS_DIRECTORY);
-define("e_LANGUAGEDIR", e_BASE.$LANGUAGES_DIRECTORY);
-define("e_DOCS", e_BASE.$HELP_DIRECTORY);
-define("e_DOCROOT",$_SERVER['DOCUMENT_ROOT']."/");
+
 define("e_UC_PUBLIC", 0);
 define("e_UC_READONLY", 251);
 define("e_UC_GUEST", 252);
@@ -93,1044 +102,1216 @@ define("e_UC_ADMIN", 254);
 define("e_UC_NOBODY", 255);
 define("ADMINDIR", $ADMIN_DIRECTORY);
 
-if(!@include(e_HANDLER."errorhandler_class.php")){
-        echo "<div style='text-align:center; font: 12px Verdana, Tahoma'>Path error</div>";
-        exit;
+// All debug objects and constants are defined in the debug handler
+if (strpos(e_MENU, 'debug=') !== FALSE || isset($_COOKIE['e107_debug_level'])) {
+	require_once(e_HANDLER.'debug_handler.php');
+	$db_debug = new e107_db_debug;
+} else {
+	define('E107_DEBUG_LEVEL',0);
 }
-set_error_handler("error_handler");
-if(!$mySQLuser){ header("location:install.php"); exit; }
+
+if(isset($db_debug) && is_object($db_debug)) {
+	$db_debug->Mark_Time('Start: Init ErrHandler');
+}
+
+// e107_config.php upgrade check
+if (!$ADMIN_DIRECTORY && !$DOWNLOADS_DIRECTORY) {
+	message_handler("CRITICAL_ERROR", 8, ": generic, ", "e107_config.php");
+	exit;
+}
+
+@require_once(e_HANDLER.'traffic_class.php');
+$eTraffic=new e107_traffic; // We start traffic counting ASAP
+$eTraffic->Calibrate($eTraffic);
+
 define("MPREFIX", $mySQLprefix);
 
-@require_once(e_HANDLER."message_handler.php");
-@require_once(e_HANDLER."mysql_class.php");
+e107_require_once(e_HANDLER."mysql_class.php");
+e107_require_once(e_HANDLER.'e_parse_class.php');
 
-$sql = new db;
-$sql -> db_SetErrorReporting(FALSE);
-$merror = $sql -> db_Connect($mySQLserver, $mySQLuser, $mySQLpassword, $mySQLdefaultdb);
+$tp = new e_parse;
 
-if($merror == "e1"){ message_handler("CRITICAL_ERROR", 6,  ": generic, ", "class2.php"); exit;
-}else if($merror == "e2"){ message_handler("CRITICAL_ERROR", 7,  ": generic, ", "class2.php"); exit;}
+$sql =& new db;
+$sql2 =& new db;
 
-// New parser code #########
-$parsethis=array();
-if($sql -> db_Select("parser", "parser_pluginname,parser_regexp", "")){
-        while($row = $sql -> db_Fetch('nostrip')){
-                $parsethis[$row['parser_regexp']]=$row['parser_pluginname'];
-        }
+$sql->db_SetErrorReporting(FALSE);
+
+$sql->db_Mark_Time('Start: SQL Connect');
+$merror=$sql->db_Connect($mySQLserver, $mySQLuser, $mySQLpassword, $mySQLdefaultdb);
+$sql->db_Mark_Time('Start: Prefs, misc tables');
+
+require_once(e_HANDLER.'admin_log_class.php');
+$admin_log = new e_admin_log();
+
+if ($merror == "e1") {
+	message_handler("CRITICAL_ERROR", 6, ": generic, ", "class2.php");
+	exit;
 }
-// End parser code #########
-
-$sql -> db_Select("core", "*", "e107_name='pref' ");
-$row = $sql -> db_Fetch();
-
-$tmp = stripslashes($row['e107_value']);
-$pref=unserialize($tmp);
-foreach($pref as $key => $prefvalue){
-        $pref[$key] = textparse::formtparev($prefvalue);
-}
-if(!is_array($pref)){
-        $pref=unserialize($row['e107_value']);
-        if(!is_array($pref)){
-                ($sql -> db_Select("core", "*", "e107_name='pref' ") ? message_handler("CRITICAL_ERROR", 1,  __LINE__, __FILE__) : message_handler("CRITICAL_ERROR", 2,  __LINE__, __FILE__));
-                if($sql -> db_Select("core", "*", "e107_name='pref_backup' ")){
-                        $row = $sql -> db_Fetch(); extract($row);
-                        $tmp = addslashes(serialize($e107_value ));
-                        $sql -> db_Update("core", "e107_value='$tmp' WHERE e107_name='pref' ");
-                        message_handler("CRITICAL_ERROR", 3,  __LINE__, __FILE__);
-                }else{
-                message_handler("CRITICAL_ERROR", 4,  __LINE__, __FILE__);
-                exit;
-        }
-}
+else if ($merror == "e2") {
+	message_handler("CRITICAL_ERROR", 7, ": generic, ", "class2.php");
+	exit;
 }
 
-if(!$pref['cookie_name']){ $pref['cookie_name'] = "e107cookie"; }
-//if($pref['user_tracking'] == "session"){ @require_once(e_HANDLER."session_handler.php"); }        // if your server session handling is misconfigured uncomment this line and comment the next to use custom session handler
-if($pref['user_tracking'] == "session"){ session_start(); }
+/* New compatabilty mode.
+At a later date add a check to load e107 compat mode by $pref
+PHP Compatabilty should *always* be on. */
+e107_require_once(e_HANDLER."php_compatibility_handler.php");
+e107_require_once(e_HANDLER."e107_Compat_handler.php");
+
+
+e107_require_once(e_HANDLER."pref_class.php");
+$sysprefs = new prefs;
+
+// Extract core prefs from the database
+e107_require_once(e_HANDLER.'cache_handler.php');
+e107_require_once(e_HANDLER.'arraystorage_class.php');
+$eArrayStorage = new ArrayData();
+
+$sql->db_Mark_Time('Start: Extracting Core Prefs');
+$PrefCache = ecache::retrieve('SitePrefs', 24 * 60, true);
+if(!$PrefCache){
+	// No cache of the prefs array, going for the db copy..
+	$retrieve_prefs[] = 'SitePrefs';
+	$sysprefs->ExtractPrefs($retrieve_prefs, TRUE);
+	$PrefData = $sysprefs->get('SitePrefs');
+	$pref = $eArrayStorage->ReadArray($PrefData);
+	if(!$pref){
+		$admin_log->log_event("Core Prefs Error", "Core is attempting to restore prefs from automatic backup.", E_LOG_WARNING);
+		// Try for the automatic backup..
+		$PrefData = $sysprefs->get('SitePrefs_Backup');
+		$pref = $eArrayStorage->ReadArray($PrefData);
+		if(!$pref){
+			// No auto backup, try for the 'old' prefs system.
+			$PrefData = $sysprefs->get('pref');
+			$pref = unserialize($PrefData);
+			if(!is_array($pref)){
+				message_handler("CRITICAL_ERROR", 3, __LINE__, __FILE__);
+				// No old system, so point in the direction of resetcore :(
+				message_handler("CRITICAL_ERROR", 4, __LINE__, __FILE__);
+				$admin_log->log_event("Core Prefs Error", "Core could not restore from automatic backup. Execution halted.", E_LOG_FATAL);
+				exit;
+			} else {
+				// old prefs found, remove old system, and update core with new system
+				$PrefOutput = $eArrayStorage->WriteArray($pref);
+				if(!$sql->db_Update('core', "e107_value='{$PrefOutput}' WHERE e107_name='SitePrefs'")){
+					$sql->db_Insert('core', "'SitePrefs', '{$PrefOutput}'");
+				}
+				if(!$sql->db_Update('core', "e107_value='{$PrefOutput}' WHERE e107_name='SitePrefs_Backup'")){
+					$sql->db_Insert('core', "'SitePrefs_Backup', '{$PrefOutput}'");
+				}
+				$sql->db_Delete('core', "`e107_name` = 'pref'");
+			}
+		} else {
+			message_handler("CRITICAL_ERROR", 3, __LINE__, __FILE__);
+			// auto backup found, use backup to restore the core
+			if(!$sql->db_Update('core', "`e107_value` = '".addslashes($PrefData)."' WHERE `e107_name` = 'SitePrefs'")){
+				$sql->db_Insert('core', "'SitePrefs', '".addslashes($PrefData)."'");
+			}
+		}
+	}
+	// write pref cache array
+	$PrefCache = $eArrayStorage->WriteArray($pref, false);
+	// store the prefs in cache if cache is enabled
+	ecache::set('SitePrefs', $PrefCache);
+} else {
+	// cache of core prefs was found, so grab all the useful core rows we need
+	$sysprefs->DefaultIgnoreRows .= '|SitePrefs';
+	$sysprefs->prefVals['core']['SitePrefs'] = $PrefCache;
+	$sysprefs->ExtractPrefs($retrieve_prefs, TRUE);
+	$pref = $eArrayStorage->ReadArray($PrefCache);
+}
+
+// extract menu prefs
+$menu_pref = unserialize(stripslashes($sysprefs->get('menu_pref')));
+
+$sql->db_Mark_Time('(Extracting Core Prefs Done)');
+
+define("SITEURLBASE", ($pref['ssl_enabled'] == '1' ? "https://" : "http://").$_SERVER['HTTP_HOST']);
+define("SITEURL", SITEURLBASE.e_HTTP);
+
+// if a cookie name pref isn't set, make one :)
+if (!$pref['cookie_name']) {
+	$pref['cookie_name'] = "e107cookie";
+}
+
+// start a session if session based login is enabled
+if ($pref['user_tracking'] == "session") {
+	session_start();
+}
 
 define("e_SELF", ($pref['ssl_enabled'] ? "https://".$_SERVER['HTTP_HOST'].($_SERVER['PHP_SELF'] ? $_SERVER['PHP_SELF'] : $_SERVER['SCRIPT_FILENAME']) : "http://".$_SERVER['HTTP_HOST'].($_SERVER['PHP_SELF'] ? $_SERVER['PHP_SELF'] : $_SERVER['SCRIPT_FILENAME'])));
 
-$sql -> db_Select("core", "*", "e107_name='menu_pref' ");
-$row = $sql -> db_Fetch();
-$tmp = stripslashes($row['e107_value']);
-$menu_pref=unserialize($tmp);
+
+// if the option to force users to use a particular url for the site is enabled, redirect users there
+if($pref['redirectsiteurl'] && $pref['siteurl']) {
+	$siteurl = SITEURLBASE."/";
+	if (strpos($pref['siteurl'], $siteurl) === FALSE && strpos(e_SELF, ADMINDIR) === FALSE) {
+		$location = str_replace($siteurl, $pref['siteurl'], e_SELF).(e_QUERY ? "?".e_QUERY : "");
+		header("Location: {$location}");
+		exit();
+	}
+}
 
 $page = substr(strrchr($_SERVER['PHP_SELF'], "/"), 1);
 define("e_PAGE", $page);
 
-if($pref['frontpage'] && $pref['frontpage_type'] == "splash"){
-        $ip = getip();
-        if(!$sql -> db_Count("online", "(*)", "WHERE online_ip='{$ip}' ")){
-                online();
-                if(is_numeric($pref['frontpage'])){
-                        header("location:".e_BASE."article.php?".$pref['frontpage'].".255");
-                        exit;
-                } else if(eregi("http", $pref['frontpage'])) {
-                        header("location: ".$pref['frontpage']);
-                        exit;
-                } else {
-                        header("location: ".e_BASE.$pref['frontpage'].".php");
-                        exit;
-                }
-        }
+// sort out the users language selection
+if (isset($_POST['setlanguage']) || isset($_GET['elan'])) {
+	if($_GET['elan']){  // query support, for language selection splash pages. etc
+	$_POST['sitelanguage'] = $_GET['elan'];
+	}
+	$sql->mySQLlanguage = $_POST['sitelanguage'];
+	if ($pref['user_tracking'] == "session") {
+		$_SESSION['e107language_'.$pref['cookie_name']] = $_POST['sitelanguage'];
+	} else {
+		setcookie('e107language_'.$pref['cookie_name'], $_POST['sitelanguage'], time() + 86400, "/");
+		$_COOKIE['e107language_'.$pref['cookie_name']] = $_POST['sitelanguage'];
+		if (strpos(e_SELF, e_ADMIN) === FALSE) {
+			$locat = (!$_GET['elan'] && e_QUERY) ? e_SELF."?".e_QUERY : e_SELF;
+			header("Location:".$locat);
+		}
+	}
 }
 
-if($pref['cachestatus']){
-        require_once(e_HANDLER."cache_handler.php");
-        $e107cache = new ecache;
+$user_language='';
+// Multi-language options.
+if (isset($pref['multilanguage']) && $pref['multilanguage']) {
+
+	if ($pref['user_tracking'] == "session") {
+		$user_language=$_SESSION['e107language_'.$pref['cookie_name']];
+		$sql->mySQLlanguage=($user_language) ? $user_language : "";
+	} else {
+		$user_language=$_COOKIE['e107language_'.$pref['cookie_name']];
+		$sql->mySQLlanguage=($user_language) ? $user_language : "";
+	}
+
+	// Get Language List for rights checking.
+	$handle=opendir(e_LANGUAGEDIR);
+	while ($file = readdir($handle)) {
+		if (is_dir(e_LANGUAGEDIR.$file) && $file !="." && $file !=".." && $file !="CVS") {
+			$lanlist[] = $file;
+		}
+	}
+	closedir($handle);
+	$tmplan = implode(",",$lanlist);
 }
 
-function retrieve_cache($query){
-        global $e107cache;
-        if(!is_object($e107cache)){return FALSE;}
-   return $e107cache -> retrieve($query);
+define("e_LANLIST",(isset($tmplan) ? $tmplan : ""));
+
+$sql->db_Mark_Time('(Start: Pref/multilang done)');
+
+$language=(isset($_COOKIE['e107language_'.$pref['cookie_name']]) ? $_COOKIE['e107language_'.$pref['cookie_name']] : ($pref['sitelanguage'] ? $pref['sitelanguage'] : "English"));
+define("e_LAN", $language);
+define("USERLAN", ($user_language && (strpos(e_SELF, $PLUGINS_DIRECTORY) !== FALSE || (strpos(e_SELF, $ADMIN_DIRECTORY) === FALSE && file_exists(e_LANGUAGEDIR.$user_language."/lan_".e_PAGE)) || (strpos(e_SELF, $ADMIN_DIRECTORY) !== FALSE && file_exists(e_LANGUAGEDIR.$user_language."/admin/lan_".e_PAGE)) || file_exists(dirname($_SERVER['SCRIPT_FILENAME'])."/languages/".$user_language."/lan_".e_PAGE)    || (    (strpos(e_SELF, $ADMIN_DIRECTORY) == FALSE) && (strpos(e_SELF, $PLUGINS_DIRECTORY) == FALSE) && file_exists(e_LANGUAGEDIR.$user_language."/".$user_language.".php")  )   ) ? $user_language : FALSE));
+define("e_LANGUAGE", (!USERLAN || !defined("USERLAN") ? $language : USERLAN));
+
+e107_include(e_LANGUAGEDIR.e_LANGUAGE."/".e_LANGUAGE.".php");
+e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/".e_LANGUAGE."_custom.php");
+
+define("MAGIC_QUOTES_GPC", (ini_get('magic_quotes_gpc') ? TRUE : FALSE));
+
+// online user tracking class
+$e_online = new e_online();
+
+// cache class
+$e107cache = new ecache;
+
+if (isset($pref['del_unv']) && $pref['del_unv'] && $pref['user_reg_veri'] != 2) {
+	$threshold=(time() - ($pref['del_unv'] * 60));
+	$sql->db_Delete("user", "user_ban = 2 AND user_join < '{$threshold}' ");
 }
 
-function set_cache($query, $text){
-        global $e107cache;
-        if(!is_object($e107cache)){return FALSE;}
-        $e107cache -> set($query,$text);
+e107_require_once(e_HANDLER."override_class.php");
+$override=new override;
+
+e107_require_once(e_HANDLER."event_class.php");
+$e_event=new e107_event;
+
+if (isset($pref['notify']) && $pref['notify'] == true) {
+	e107_require_once(e_HANDLER.'notify_class.php');
 }
 
-function clear_cache($query){
-        global $e107cache;
-        if(!is_object($e107cache)){return FALSE;}
-        return $e107cache -> clear($query);
+$sql -> db_Mark_Time('Start: Init session');
+init_session();
+
+if (isset($pref['modules']) && $pref['modules']) {
+	$mods=explode(",", $pref['modules']);
+	foreach ($mods as $mod) {
+		if (is_readable(e_PLUGIN."{$mod}/module.php")) {
+			require_once(e_PLUGIN."{$mod}/module.php");
+		}
+	}
 }
 
-if($pref['del_unv']){
-        $threshold = (time() - ($pref['del_unv']*60));
-        $sql -> db_Delete("user", "user_ban = 2 AND user_join<'$threshold' ");
-}
-if($pref['modules']){
-        $mods = explode(",",$pref['modules']);
-        foreach($mods as $mod){
-                if(file_exists(e_PLUGIN."{$mod}/module.php")){
-                        @require_once(e_PLUGIN."{$mod}/module.php");
-                }
-        }
+//###########  Module redefinable functions ###############
+if (!function_exists('checkvalidtheme')) {
+	function checkvalidtheme($theme_check) {
+		// arg1 = theme to check
+		global $ADMIN_DIRECTORY, $tp, $e107;
+
+		if (strpos(e_QUERY, "themepreview") !== FALSE) {
+			list($action, $id) = explode('.', e_QUERY);
+			require_once(e_HANDLER."theme_handler.php");
+			$themeArray = themeHandler :: getThemes("id");
+			define("PREVIEWTHEME", e_THEME.$themeArray[$id]."/");
+			define("PREVIEWTHEMENAME", $themeArray[$id]);
+			define("THEME", e_THEME.$themeArray[$id]."/");
+			define("THEME_ABS", e_THEME_ABS.$themeArray[$id]."/");
+			return;
+		}
+		if (@fopen(e_THEME.$theme_check."/theme.php", "r")) {
+			define("THEME", e_THEME.$theme_check."/");
+			define("THEME_ABS", e_THEME_ABS.$theme_check."/");
+			$e107->site_theme = $theme_check;
+		} else {
+			function search_validtheme() {
+				global $e107;
+				$th=substr(e_THEME, 0, -1);
+				$handle=opendir($th);
+				while ($file = readdir($handle)) {
+					if (is_dir(e_THEME.$file) && is_readable(e_THEME.$file.'/theme.php')) {
+						closedir($handle);
+						$e107->site_theme = $file;
+						return $file;
+					}
+				}
+				closedir($handle);
+			}
+			$e107tmp_theme = search_validtheme();
+			define("THEME", e_THEME.$e107tmp_theme."/");
+			define("THEME_ABS", e_THEME_ABS.$e107tmp_theme."/");
+			if (ADMIN && strpos(e_SELF, $ADMIN_DIRECTORY) === FALSE) {
+				echo '<script>alert("'.$tp->toJS(CORE_LAN1).'")</script>';
+			}
+		}
+		$themes_dir = $e107->e107_dirs["THEMES_DIRECTORY"];
+		$e107->http_theme_dir = "{$e107->server_path}{$themes_dir}{$e107->site_theme}/";
+	}
 }
 
-//###########  Module redifinable functions ###############
-if(!function_exists('checkvalidtheme')){
-        function checkvalidtheme($theme_check){
-                // arg1 = theme to check
-                global $ADMIN_DIRECTORY;
-                if(@fopen(e_THEME.$theme_check."/theme.php", r)){
-                        define("THEME", e_THEME.$theme_check."/");
-                }else {
-                        @require_once(e_HANDLER."debug_handler.php");
-                        @require_once(e_HANDLER."textparse/basic.php");
-                        $etp = new e107_basicparse;
-                        $e107tmp_theme = search_validtheme();
-                        define("THEME", e_THEME.$e107tmp_theme."/");
-                        if(ADMIN && !strstr(e_SELF, $ADMIN_DIRECTORY)){echo '<script>alert("'.$etp->unentity(CORE_LAN1).'")</script>';}
-                }
-        }
-}
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-if(!class_exists('convert')){
-        class convert{
-                function convert_date($datestamp, $mode="long"){
-                        /*
-                        # Date convert
-                        # - parameter #1:                string $datestamp, unix stamp
-                        # - parameter #2:                string $mode, date format, default long
-                        # - return                                parsed text
-                        # - scope                                        public
-                        */
-                        global $pref;
+if (!class_exists('e107_table')) {
+	class e107table {
+		function tablerender($caption, $text, $mode = "default", $return = false) {
+			/*
+			# Render style table
+			# - parameter #1:                string $caption, caption text
+			# - parameter #2:                string $text, body text
+			# - return                                null
+			# - scope                                        public
+			*/
+			global $override;
 
-                        $datestamp += (TIMEOFFSET*3600);
-                        if($mode == "long"){
-                                return strftime($pref['longdate'], $datestamp);
-                        }else if($mode == "short"){
-                                return strftime($pref['shortdate'], $datestamp);
-                        }else {
-                                return strftime($pref['forumdate'], $datestamp);
-                        }
-                }
-        }
-}
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-if(!class_exists('e107_table')){
-        class e107table{
-                function tablerender($caption, $text, $mode="default", $return=FALSE){
-                        /*
-                        # Render style table
-                        # - parameter #1:                string $caption, caption text
-                        # - parameter #2:                string $text, body text
-                        # - return                                null
-                        # - scope                                        public
-                        */
-                        if(function_exists("theme_tablerender")){
-                                $result = call_user_func("theme_tablerender",$caption,$text,$mode,$return);
-                                if($result == "return"){return;}
-                                extract($result);
-                        }
-                        if($return){
-                                ob_end_flush();
-                                ob_start();
-                                tablestyle($caption, $text, $mode);
-                                $ret = ob_get_contents();
-                                ob_end_clean();
-                                return($ret);
-                        }else {
-                                tablestyle($caption, $text, $mode);
-                        }
-                }
-        }
+			if ($override_tablerender = $override->override_check('tablerender')) {
+				$result=call_user_func($override_tablerender, $caption, $text, $mode, $return);
+
+				if ($result == "return") {
+					return;
+				}
+				extract($result);
+			}
+
+			if ($return) {
+				ob_start();
+				tablestyle($caption, $text, $mode);
+				$ret=ob_get_contents();
+				ob_end_clean();
+				return $ret;
+			} else {
+				tablestyle($caption, $text, $mode);
+			}
+		}
+	}
 }
 //#############################################################
 
-init_session();
-online();
+$ns=new e107table;
 
-$fp = ($pref['frontpage'] ? $pref['frontpage'].".php" : "news.php index.php");
-define("e_SIGNUP", (file_exists(e_BASE."customsignup.php") ? e_BASE."customsignup.php" : e_BASE."signup.php"));
-define("e_LOGIN", (file_exists(e_BASE."customlogin.php") ? e_BASE."customlogin.php" : e_BASE."login.php"));
+$e107->ban();
 
-if($pref['membersonly_enabled'] && !USER && e_PAGE != e_SIGNUP && e_PAGE != "index.php" && e_PAGE != "fpw.php" && e_PAGE != e_LOGIN && !strstr(e_PAGE, "admin") && e_PAGE != 'membersonly.php'){
-        header("location: ".e_BASE."membersonly.php");
-        exit;
+if(isset($pref['force_userupdate']) && $pref['force_userupdate'] && USER && e_PAGE != "usersettings.php"){
+	if(force_userupdate()){
+		header("Location: ".e_BASE."usersettings.php?update");
+	};
 }
 
-$sql -> db_Delete("tmp", "tmp_time < '".(time()-300)."' AND tmp_ip!='data' AND tmp_ip!='adminlog' AND tmp_ip!='submitted_link' AND tmp_ip!='reported_post' AND tmp_ip!='var_store' ");
+$sql->db_Mark_Time('Start: Signup/splash/admin');
 
-define("SITENAME", $pref['sitename']);
-define("SITEURL", (substr($pref['siteurl'], -1) == "/" ? $pref['siteurl'] : $pref['siteurl']."/"));
+define("e_SIGNUP", e_BASE.(file_exists(e_BASE."customsignup.php") ? "customsignup.php" : "signup.php"));
+define("e_LOGIN", e_BASE.(file_exists(e_BASE."customlogin.php") ? "customlogin.php" : "login.php"));
+
+if ($pref['membersonly_enabled'] && !USER && e_PAGE != e_SIGNUP && e_PAGE != "index.php" && e_PAGE != "fpw.php" && e_PAGE != e_LOGIN && strpos(e_PAGE, "admin") === FALSE && e_PAGE != 'membersonly.php' && e_PAGE != 'sitedown.php') {
+	header("Location: ".e_HTTP."membersonly.php");
+	exit;
+}
+
+$sql->db_Delete("tmp", "tmp_time < '".(time() - 300)."' AND tmp_ip!='data' AND tmp_ip!='submitted_link'");
+
+// for multi-language these definitions needs to come after the language loaded.
+define("SITENAME", trim($tp->toHTML($pref['sitename'], "", "emotes_off defs no_make_clickable")));
 define("SITEBUTTON", $pref['sitebutton']);
-define("SITETAG", $pref['sitetag']);
-define("SITEDESCRIPTION", $pref['sitedescription']);
+define("SITETAG", $tp->toHTML($pref['sitetag'], FALSE, "emotes_off defs"));
+define("SITEDESCRIPTION", $tp->toHTML($pref['sitedescription'], "", "emotes_off defs"));
 define("SITEADMIN", $pref['siteadmin']);
 define("SITEADMINEMAIL", $pref['siteadminemail']);
+define("SITEDISCLAIMER", $tp->toHTML($pref['sitedisclaimer'], "", "emotes_off defs"));
 
-$search = array("&quot;", "&#39;", "&#92;", "&quot;", "&#39;", "©");
-$replace =  array("\"", "'", "\\", '\"', "\'", "&#169;");
-define("SITEDISCLAIMER", str_replace($search, $replace, $pref['sitedisclaimer']));
+// send the charset to the browser - overides spurious server settings with the lan pack settings.
+header("Content-type: text/html; charset=".CHARSET, true);
 
-$language = ($pref['sitelanguage'] ? $pref['sitelanguage'] : "English");
-
-define("e_LAN", $language);
-define("e_LANGUAGE", (!USERLAN || !defined("USERLAN") ? $language : USERLAN));
-
-@include(e_LANGUAGEDIR.e_LANGUAGE."/".e_LANGUAGE.".php");
-
-if($pref['maintainance_flag'] && ADMIN == FALSE && !eregi("admin", e_SELF)){
-        @include(e_LANGUAGEDIR.e_LANGUAGE."/lan_sitedown.php");
-        @include(e_LANGUAGEDIR."English/lan_sitedown.php");
-        @require_once(e_BASE."sitedown.php"); exit;
+if ($pref['maintainance_flag'] && ADMIN == FALSE && strpos(e_SELF, "admin.php") === FALSE && strpos(e_SELF, "sitedown.php") === FALSE) {
+	header("Location: ".SITEURL."sitedown.php");
+	exit;
 }
 
-if(defined("CORE_PATH") && ($page == "index.php" || !$page)){ $page = "news.php"; }
-
-if(strstr(e_SELF, $ADMIN_DIRECTORY) || strstr(e_SELF, "admin.php")){
-        @include(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_".e_PAGE);
-        @include(e_LANGUAGEDIR."English/admin/lan_".e_PAGE);
-}else{
-        @include(e_LANGUAGEDIR.e_LANGUAGE."/lan_".e_PAGE);
-        @include(e_LANGUAGEDIR."English/lan_".e_PAGE);
+if (strpos(e_SELF, $ADMIN_DIRECTORY) !== FALSE || strpos(e_SELF, "admin.php") !== FALSE) {
+	e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_".e_PAGE);
+	e107_include_once(e_LANGUAGEDIR."English/admin/lan_".e_PAGE);
+} else if (strpos(e_SELF, $PLUGINS_DIRECTORY) === FALSE) {
+	e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_".e_PAGE);
+	e107_include_once(e_LANGUAGEDIR."English/lan_".e_PAGE);
 }
 
-if(IsSet($_POST['userlogin'])){
-        @require_once(e_HANDLER."login.php");
-        $usr = new userlogin($_POST['username'], $_POST['userpass'], $_POST['autologin']);
+$sql->db_Mark_Time('(Start: Login/logout/ban/tz)');
+
+if (isset($_POST['userlogin'])) {
+	e107_require_once(e_HANDLER."login.php");
+	$usr = new userlogin($_POST['username'], $_POST['userpass'], $_POST['autologin']);
 }
 
-if(e_QUERY == "logout"){
-        $ip = getip();
-        $udata = (USER === TRUE) ? USERID.".".USERNAME : "0";
-        $sql -> db_Update("online", "online_user_id = '0', online_pagecount=online_pagecount+1 WHERE online_user_id = '{$udata}' LIMIT 1");
-        if($pref['user_tracking'] == "session"){ session_destroy(); $_SESSION[$pref['cookie_name']] = ""; }
-        cookie($pref['cookie_name'], "", (time()-2592000));
-        echo "<script type='text/javascript'>document.location.href='".e_BASE."index.php'</script>\n";
-        exit;
+if (e_QUERY == 'logout') {
+	$ip = $e107->getip();
+	$udata=(USER === TRUE) ? USERID.".".USERNAME : "0";
+	$sql->db_Update("online", "online_user_id = '0', online_pagecount=online_pagecount+1 WHERE online_user_id = '{$udata}' LIMIT 1");
+
+	if ($pref['user_tracking'] == "session") {
+		session_destroy();
+		$_SESSION[$pref['cookie_name']]="";
+	}
+
+	cookie($pref['cookie_name'], "", (time() - 2592000));
+	$e_event->trigger("logout");
+	echo "<script type='text/javascript'>document.location.href = '".SITEURL."index.php'</script>\n";
+	exit;
 }
-ban();
 
-define("TIMEOFFSET", $pref['time_offset']);
-//define("FLOODTIME", $pref['flood_time']);
-//define("FLOODHITS", $pref['flood_hits']);
 
-if((strstr(e_SELF, $ADMIN_DIRECTORY) || strstr(e_SELF, "admin") ) && $pref['admintheme'] && !$_POST['sitetheme']){
-        if(strstr(e_SELF, "menus.php")){
-                        checkvalidtheme($pref['sitetheme']);
-        } else if(strstr(e_SELF, "newspost.php")){
-                        define("MAINTHEME", e_THEME.$pref['sitetheme']."/");
-                        checkvalidtheme($pref['admintheme']);
-        } else {
-                        checkvalidtheme($pref['admintheme']);
-        }
+/*
+* Calculate time zone offset, based on session cookie set in e107.js.
+* (Buyer beware: this may be wrong for the first pageview in a session,
+* which is while the user is logged out, so not a problem...)
+*
+* Time offset is SECONDS. Seconds is much better than hours as a base,
+* as some places have 30 and 45 minute time zones.
+* It matches user clock time, instead of only time zones.
+* Add the offset to MySQL/server time to get user time.
+* Subtract the offset from user time to get server time.
+*
+*/
+
+$e_deltaTime=0;
+
+if (isset($_COOKIE['e107_tdOffset'])) {
+	// Actual seconds of delay. See e107.js and footer_default.php
+	$e_deltaTime = $_COOKIE['e107_tdOffset'];
+}
+
+if (isset($_COOKIE['e107_tzOffset'])) {
+	// Relative client-to-server time zone offset in seconds.
+	$e_deltaTime += (-($_COOKIE['e107_tzOffset'] * 60 + date("Z")));
+}
+
+define("TIMEOFFSET", $e_deltaTime);
+
+$sql->db_Mark_Time('Start: Get menus');
+
+$menu_data = $e107cache->retrieve("menus_".USERCLASS_LIST);
+$menu_data = $eArrayStorage->ReadArray($menu_data);
+if(!is_array($menu_data)) {
+	if ($sql->db_Select('menus', '*', "menu_location > 0 AND menu_class IN (".USERCLASS_LIST.") ORDER BY menu_order")) {
+		while ($row = $sql->db_Fetch()) {
+			$eMenuList[$row['menu_location']][]=$row;
+			$eMenuActive[]=$row['menu_name'];
+		}
+	}
+	$menu_data['menu_list'] = $eMenuList;
+	$menu_data['menu_active'] = $eMenuActive;
+	$menu_data = $eArrayStorage->WriteArray($menu_data, false);
+	$e107cache->set("menus_".USERCLASS_LIST, $menu_data);
+	unset($menu_data);
 } else {
-         if(USERTHEME != FALSE && USERTHEME != "USERTHEME"){
-                        checkvalidtheme(USERTHEME);
-                } else {
-                        checkvalidtheme($pref['sitetheme']);
-                }
+	$eMenuList = $menu_data['menu_list'];
+	$eMenuActive = $menu_data['menu_active'];
+	unset($menu_data);
 }
-@require_once(THEME."theme.php");
 
-if($pref['anon_post'] ? define("ANON", TRUE) : define("ANON", FALSE));
-if(Empty($pref['newsposts']) ? define("ITEMVIEW", 15) : define("ITEMVIEW", $pref['newsposts']));
+$sql->db_Mark_Time('(Start: Find/Load Theme)');
 
-if($pref['$antiflood1']==1){  define('FLOODPROTECT', TRUE); define('FLOODTIMEOUT', $pref['antiflood_timeout']); }
+if(!defined("THEME")){
+	if ((strpos(e_SELF, $ADMIN_DIRECTORY) !== FALSE || strpos(e_SELF, "admin") !== FALSE || (isset($eplug_admin) && $eplug_admin == TRUE)) && $pref['admintheme']) {
 
-define ("HEADERF", e_THEME."templates/header".$layout.".php");
-define ("FOOTERF", e_THEME."templates/footer".$layout.".php");
-if(!file_exists(HEADERF)){message_handler("CRITICAL_ERROR", "Unable to find file: ".HEADERF,  __LINE__-2, __FILE__);}
-if(!file_exists(FOOTERF)){message_handler("CRITICAL_ERROR", "Unable to find file: ".FOOTERF,  __LINE__-2, __FILE__);}
+		if (strpos(e_SELF.'?'.e_QUERY, 'menus.php?configure') !== FALSE) {
+			checkvalidtheme($pref['sitetheme']);
+		} else if (strpos(e_SELF, "newspost.php") !== FALSE) {
+			define("MAINTHEME", e_THEME.$pref['sitetheme']."/");
+			checkvalidtheme($pref['admintheme']);
+		}
+		else {
+			checkvalidtheme($pref['admintheme']);
+		}
+	} else {
+		if (USERTHEME !== FALSE && USERTHEME != "USERTHEME") {
+			checkvalidtheme(USERTHEME);
+		} else {
+			checkvalidtheme($pref['sitetheme']);
+		}
+	}
+}
+
+if (strpos(e_SELF.'?'.e_QUERY, 'menus.php?configure') === FALSE && (strpos(e_SELF, $ADMIN_DIRECTORY) !== FALSE || strpos(e_SELF, "admin") !== FALSE || (isset($eplug_admin) && $eplug_admin == TRUE))) {
+	if (file_exists(THEME.'admin_theme.php')) {
+		require_once(THEME.'admin_theme.php');
+	} else {
+		require_once(THEME."theme.php");
+	}
+} else {
+	require_once(THEME."theme.php");
+}
+
+if(!defined("IMODE")) define("IMODE", "lite");
+
+if ($pref['anon_post'] ? define("ANON", TRUE) : define("ANON", FALSE));
+
+if (Empty($pref['newsposts']) ? define("ITEMVIEW", 15) : define("ITEMVIEW", $pref['newsposts']));
+
+if ($pref['antiflood1'] == 1) {
+	define('FLOODPROTECT', TRUE);
+	define('FLOODTIMEOUT', $pref['antiflood_timeout']);
+}
+
+define("HEADERF", e_THEME."templates/header{$layout}.php");
+define("FOOTERF", e_THEME."templates/footer{$layout}.php");
+
+if (!file_exists(HEADERF)) {
+	message_handler("CRITICAL_ERROR", "Unable to find file: ".HEADERF, __LINE__ - 2, __FILE__);
+}
+
+if (!file_exists(FOOTERF)) {
+	message_handler("CRITICAL_ERROR", "Unable to find file: ".FOOTERF, __LINE__ - 2, __FILE__);
+}
 
 define("LOGINMESSAGE", "");
-$ns = new e107table;
-
 define("OPEN_BASEDIR", (ini_get('open_basedir') ? TRUE : FALSE));
 define("SAFE_MODE", (ini_get('safe_mode') ? TRUE : FALSE));
-define("MAGIC_QUOTES_GPC", (ini_get('magic_quotes_gpc') ? TRUE : FALSE));
 define("FILE_UPLOADS", (ini_get('file_uploads') ? TRUE : FALSE));
 define("INIT", TRUE);
+if(isset($_SERVER['HTTP_REFERER'])) {
+	$tmp = explode("?", $_SERVER['HTTP_REFERER']);
+	define("e_REFERER_SELF",($tmp[0] == e_SELF));
+} else {
+	define('e_REFERER_SELF', FALSE);
+}
 
-define("e_ADMIN", $e_BASE.$ADMIN_DIRECTORY);
-define("e_REFERER_SELF",($_SERVER["HTTP_REFERER"] == e_SELF));
-
+if (!class_exists('convert'))
+{
+	require_once(e_HANDLER."date_handler.php");
+}
 
 //@require_once(e_HANDLER."IPB_int.php");
 //@require_once(e_HANDLER."debug_handler.php");
-
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-function e107_parse($text,$referrer){
-        preg_match_all("#{CODE=(.*?)}#",$text,$matches,PREG_SET_ORDER);
-        for ($i=0; $i< count($matches); $i++) {
-                $p = explode(".",$matches[$i][1]);
-                $parse_func = "parse_".$p[1];
-                if(!function_exists($parse_func)){
-                        $parse_file = ('CORE' == $p[0]) ?  e_HANDLER."parse/" : e_PLUGIN.$p[0]."/parse/";
-                        $parse_file .= "parse_{$p[1]}.php";
-                        if(file_exists($parse_file)){
-                                @require_once($parse_file);
-                        }
-                }
-                if(function_exists($parse_func)){
-                        $newtext = call_user_func($parse_func,$matches[$i],$referrer);
-                } else {
-                        $newtext = "";
-                }
-                $text = str_replace($matches[$i][0],$newtext,$text);
-        }
-
-        global $parsethis;
-        if($parsethis){
-                @require_once(e_HANDLER.'parser_functions.php');
-                foreach($parsethis as $parser_regexp => $parser_name){
-                        preg_match_all($parser_regexp,$text,$matches,PREG_SET_ORDER);
-                        for ($i=0; $i< count($matches); $i++) {
-                                if($parser_name != "e107_core" && file_exists(e_PLUGIN.$parser_name.'/parser.php')){
-                                        @require_once(e_PLUGIN.$parser_name.'/parser.php');
-                                }
-                                if(function_exists($parser_name.'_parse')) {
-                                        $newtext=call_user_func($parser_name.'_parse',$matches[$i],$referrer);
-                                        $text = str_replace($matches[$i][0],$newtext,$text);
-                                }
-                        }
-                }
-                $text = preg_replace("#{{.*?}}#","",$text);
-        }
-        return $text;
+function js_location($qry){
+	echo "<script type='text/javascript'>document.location.href='{$qry}'</script>\n"; exit;
 }
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
-class textparse{
-
-        var $emotes;
-        var $searcha;
-        var $searchb;
-        var $replace;
-        var $profan;
-
-        function textparse(){
-                // constructor
-                global $pref;
-                                $pref['profanity_words'] = preg_replace("#(,$)#", "", $pref['profanity_words']);
-                if($pref['profanity_filter']){
-                        $this->profan = str_replace(",", "|", $pref['profanity_words']);
-                }
-
-                if($pref['smiley_activate']){
-                        $sql = new db;
-                        $sql -> db_Select("core", "*", "e107_name='emote'");
-                        $row = $sql -> db_Fetch(); extract($row);
-                        $this->emotes = unserialize($e107_value);
-
-                        $c=0;
-                        while(list($code, $name) = each($this->emotes[$c])){
-                                $this->searcha[$c] = " ".$code;
-                                $this->searchb[$c] = "\n".$code;
-                                $this->replace[$c] = " <img src='".e_IMAGE."emoticons/$name' alt='' style='vertical-align:middle; border:0' /> ";
-                                $c++;
-                        }
-                }
-        }
-
-        function editparse($text, $mode="off"){
-                /*
-                # Edit parse
-                # - parameter #1:                string $text, text to parse
-                # - parameter #2:                string $mode, on=links not parsed, default=off
-                # - return                                parsed text
-                # - scope                                        public
-                */
-                //                $text = stripslashes($text);
-                $search = array();
-                $replace = array();
-                $search[0] = "/\<div class=\"indent\"\>\<i\>'.CORE_LAN2.' (.*?)\<\/i\>\<br \/\>\"(.*?)\"\<\/div\>/si";
-                $replace[0] = '[quote=\1]\2[/quote]';
-                $search[1] = "/\<div class=\"indent\"\>\<i\>'.CORE_LAN2.' (.*?)\<\/i\> ...\<br \/\>\"(.*?)\"\<\/div\>/si";
-                $replace[1] = '[quote=\1]\2[/quote]';
-                $search[2] = "/\<div class=\"indent\"\>(.*?)\<\/div\>/si";
-                $replace[2] = '[blockquote]\1[/blockquote]';
-                $search[3] = "/\<b>(.*?)\<\/b\>/si";
-                $replace[3] = '[b]\1[/b]';
-                $search[4] = "/\<i>(.*?)\<\/i\>/si";
-                $replace[4] = '[i]\1[/i]';
-                $search[5] = "/\<u>(.*?)\<\/u\>/si";
-                $replace[5] = '[u]\1[/u]';
-                $search[6] = "/\<img alt=\"\" src=\"(.*?)\" \/>/si";
-                $replace[6] = '[img]\1[/img]';
-                $search[7] =  "/\<div style=\"text-align:center\"\>(.*?)\<\/div\>/si";
-                $replace[7] = '[center]\1[/center]';
-                $search[8] =  "/\<div style=\"text-align:left\"\>(.*?)\<\/div\>/si";
-                $replace[8] = '[left]\1[/left]';
-                $search[9] =  "/\<div style=\"text-align:right\"\>(.*?)\<\/div\>/si";
-                $replace[9] = '[right]\1[/right]';
-                $search[10] = "/\<code>(.*?)\<\/code\>/si";
-                $replace[10] = '[code]\1[/code]';
-                if($mode == "off"){
-                        $search[11] = "/\<a href=\"(.*?)\">(.*?)<\/a>/si";
-                        $replace[11] = '[link=\\1]\\2[/link]';
-                }
-                $search[12] = "#\[edited\](.*?)\[/edited\]#si";
-                $replace[12] = '';
-                $text = preg_replace($search, $replace, $text);
-                return $text;
-        }
-
-
-        function tpj($text, $strip=FALSE){
-                                                        $text = preg_replace_callback("/&#([0-9]{1,3});/",create_function('$matches','return chr($matches[1]);'),$text);
-                        $search[0] = "#script#si";
-                        $replace[0] = 'scri<i></i>pt';
-                        $search[1] = "#document#si";
-                        $replace[1] = 'docu<i></i>ment';
-                        $search[2] = "#expression#si";
-                        $replace[2] = 'expres<i></i>sion';
-                        $search[3] = "#onmouseover#si";
-                        $replace[3] = 'onmouse<i></i>over';
-                        $search[4] = "#onclick#si";
-                        $replace[4] = 'on<i></i>click';
-                        $search[5] = "#onmousedown#si";
-                        $replace[5] = 'onmouse<i></i>down';
-                        $search[6] = "#onmouseup#si";
-                        $replace[6] = 'onmouse<i></i>up';
-                        $search[7] = "#ondblclick#si";
-                        $replace[7] = 'on<i></i>dblclick';
-                        $search[8] = "#onmouseout#si";
-                        $replace[8] = 'onmouse<i></i>out';
-                        $search[9] = "#onmousemove#si";
-                        $replace[9] = 'onmouse<i></i>move';
-                        $search[10] = "#onload#si";
-                        $replace[10] = 'on<i></i>load';
-                        $search[11] = "#background: *?url#si";
-                        $replace[11] = 'background<i></i>:url';
-                                                                $search[12] = "#(meta )#si";
-                                                                $replace[12] = '\1<i></i>';
-
-                        if($strip){
-                                $text = strip_tags($text);
-                        }
-         $text = preg_replace($search, $replace, $text);
-         return $text;
-        }
-
-        function tpa($text, $mode="off", $referrer="", $highlight_search=FALSE, $poster_id=""){
-                /*
-                # Post parse
-                # - parameter #1:                string $text, text to parse
-                # - parameter #2:                string $mode, on=line breaks not replaced, default off
-                # - return                                        parsed text
-                # - scope                                        public
-                */
-                global $pref;
-                global $referrer;
-                global $poster_userid;
-                $poster_userid=$poster_id;
-                $text = " ".$text;
-                if($pref['profanity_filter'] && $this->profan){
-                        $text = eregi_replace($this->profan, $pref['profanity_replace'], $text);
-                }
-                if($pref['smiley_activate']){
-                        $text = str_replace($this->searcha, $this->replace, $text);
-                        $text = str_replace($this->searchb, $this->replace, $text);
-                }
-                $text = str_replace("$", "&#36;", $text);
-                                $text = code($text, "notdef");
-            if($mode != "nobreak"){ $text = nl2br($text); }
-                                $text = preg_replace("/\n/i", " ", $text);
-                                $text = str_replace("<br />", " <br />" , $text);
-                                $text = e107_parse($text,$referrer);
-                                $text = $this -> bbcode($text, $mode, $referrer);
-                                if($mode != "on"){
-                                        $text = $this -> wrap($text, $mode, $referrer, $highlight_search);
-                                }
-                                if(MAGIC_QUOTES_GPC){ $text = stripslashes($text); }
-                                $search = array("&quot;", "&#39;", "&#92;", "&quot;", "&#39;", "&lt;span", "&lt;/span");
-                                $replace =  array("\"", "'", "\\", '\"', "\'", "<span", "</span");
-                                $text = str_replace($search, $replace, $text);
-                                $text = str_replace("<br /><br />", "<br />", $text);
-                                $text = preg_replace("#([\n ])([a-z0-9\-_.]+?)@([\w\-]+\.([\w\-\.]+\.)*[\w]+)#i", "\\1<a href=\"mailto:\\2@\\3\">\\2@\\3</a>", $text);
-                                $text = substr($text, 1);
-                                $text = html($text);
-                                return $text;
-                }
-
-                function wrap($text, $mode, $referrer, $highlight_search=FALSE){
-                        global $pref;
-                        $wrapcount = 100;
-                        $message_array = explode(" ", $text);
-                        for($i=0; $i<=(count($message_array)-1); $i++){
-                                if(strlen($message_array[$i]) > $wrapcount){
-                                        if(substr($message_array[$i], 0, 7) == "http://"){
-                                                if(substr($message_array[$i], -1) == "."){
-                                                        $message_array[$i] = substr_replace($message_array[$i], "", -1);
-                                        }
-                                                $url = str_replace("http://", "", $message_array[$i]);
-                                                $url = explode("/", $url);
-                                                $url = $url[0];
-                                                $message_array[$i] = "<a href='".$message_array[$i]."' rel='external'>[".$url."]</a>";
-                                        }else{
-                                        if(!stristr($message_array[$i], "[link") && !stristr($message_array[$i], "[url") && !stristr($message_array[$i], "href=") && !stristr($message_array[$i], "src=") && !stristr($message_array[$i], "action=") && !stristr($message_array[$i], "onclick=") && !stristr($message_array[$i], "url(") && !stristr($message_array[$i], "[img") && !stristr($message_array[$i], "value=") && !stristr($message_array[$i], "pluginspage=") && !stristr($message_array[$i], "codebase=")){
-                                                        $message_array[$i] = preg_replace("/([^\s]{".$wrapcount."})/", "$1<br />", $message_array[$i]);
-                                                }
-                                        }
-                                }else{
-                                                                        if(!stristr($message_array[$i], "[link") && !stristr($message_array[$i], "[url") && !stristr($message_array[$i], "href=") && !stristr($message_array[$i], "src=") && !stristr($message_array[$i], "action=") && !stristr($message_array[$i], "onclick=") && !stristr($message_array[$i], "[img") && !stristr($message_array[$i], "value=") && !stristr($message_array[$i], "pluginspage=") && !stristr($message_array[$i], "codebase=")){
-                                                                                if($referrer != "admin" && !stristr($message_array[$i], "http://")){
-                                                                                        $message_array[$i] = $this -> tpj($message_array[$i]);
-                                                                                }
-                                                                                $search = "#([\t\r\n ])(www|ftp)\.(([\w\-]+\.)*[\w]+(:[0-9]+)?(/[^ \"\n\r\t<]*)?)#i";
-                                        $replace = ($pref['links_new_window'] ? '\1<a href="http://\2.\3" rel="external";">\2.\3</a>' : '\1<a href="http://\2.\3" >\2.\3</a>');
-                                        $message_array[$i] = preg_replace($search, $replace, $message_array[$i]);
-                                        $search = "#([a-z0-9]+?){1}://([\w\-]+\.([\w\-]+\.)*[\w]+(:[0-9]+)?(/[^ \"\n\r\t<]*)?([^).,]))#i";
-                                        $replace = ($pref['links_new_window'] ? '<a href="\1://\2" rel="external";">\1://\2</a>' : '<a href="\1://\2">\1://\2</a>');
-                                        $message_array[$i] = preg_replace($search, $replace, $message_array[$i]);
-                                        if($highlight_search && !stristr($message_array[$i], "http://")){
-                                                                                        $tmp = explode(" ", $_POST['search_query']);
-                                             foreach($tmp as $key){
-                                                                                                 if(eregi($key, $message_array[$i])){
-                                                                                                        $message_array[$i] = eregi_replace($key, "<span class='searchhighlight'>$key</span>", $message_array[$i]);
-                                                 }
-                                             }
-                                          }
-                                      }
-                                  }
-                        }
-                        $text = implode(" ",$message_array);
-                        return $text;
-                }
-                function bbcode($text, $mode="off", $referrer="") {
-                global $pref;
-                $text = " " . $text;
-                if (! (strpos($text, "[") && strpos($text, "]")) ){
-                                        $text = substr($text, 1);
-                                        return $text;
-                                }
-                                        $text = preg_replace_callback("#\[img\](.*?)\[/img\]#si", array($this,"img_parse"),$text);
-                $search[0] = "#\[link\]([a-z]+?://){1}(.*?)\[/link\]#si";
-                $replace[0] = ($pref['links_new_window'] ? '<a href="\1\2" rel="external">\1\2</a>' : '<a href="\1\2">\1\2</a>');
-                $search[1] = "#\[link\](.*?)\[/link\]#si";
-                $replace[1] = ($pref['links_new_window'] ? '<a href="http://\1" rel="external">\1</a>' : '<a href="http://\1">\1</a>');
-                $search[2] = "#\[link=([a-z]+?://){1}(.*?)\](.*?)\[/link\]#si";
-                $replace[2] = ($pref['links_new_window'] ? '<a href="\1\2" rel="external">\3</a>' : '<a href="\1\2">\3</a>');
-                $search[3] = "#\[link=(.*?)\](.*?)\[/link\]#si";
-                $replace[3] = ($pref['links_new_window'] ? '<a href="\1" rel="external">\2</a>' : '<a href="\1">\2</a>');
-                $search[4] = "#\[email\](.*?)\[/email\]#si";
-                $replace[4] = '<a href="mailto:\1">\1</a>';
-                $search[5] = "#\[email=(.*?){1}(.*?)\](.*?)\[/email\]#si";
-                $replace[5] = '<a href="mailto:\1\2">\3</a>';
-                $search[6] = "#\[url\]([a-z]+?://){1}(.*?)\[/url\]#si";
-                $replace[6] = ($pref['links_new_window'] ? '<a href="\1\2" rel="external">\1\2</a>' : '<a href="\1\2">\1\2</a>');
-                $search[7] = "#\[url\](.*?)\[/url\]#si";
-                $replace[7] = ($pref['links_new_window'] ? '<a href="http://\1"> rel="external"\1</a>' : '<a href="http://\1">\1</a>');
-                $search[8] = "#\[url=([a-z]+?://){1}(.*?)\](.*?)\[/url\]#si";
-                $replace[8] = ($pref['links_new_window'] ? '<a href="\1\2" rel="external">\3</a>' : '<a href="\1\2">\3</a>');
-                                $search[9] = "#\[quote\](.*?)\[/quote\]#si";
-                                $replace[9] = '<i>"\1"</i>';
-            $search[10] = "#\[b\](.*?)\[/b\]#si";
-            $replace[10] = '<b>\1</b>';
-            $search[11] = "#\[i\](.*?)\[/i\]#si";
-            $replace[11] = '<i>\1</i>';
-            $search[12] = "#\[u\](.*?)\[/u\]#si";
-            $replace[12] = '<u>\1</u>';
-                                $search[14] = "#\[center\](.*?)\[/center\]#si";
-                                $replace[14] = '<div style=\'text-align:center\'>\1</div>';
-                                $search[15] = "#\[left\](.*?)\[/left\]#si";
-                                $replace[15] = '<div style=\'text-align:left\'>\1</div>';
-                                $search[16] = "#\[right\](.*?)\[/right\]#si";
-                                $replace[16] = '<div style=\'text-align:right\'>\1</div>';
-                                $search[17] = "#\[blockquote\]#si";
-                                $replace[17] = '<div class=\'indent\'>';
-                                $search[18] = "#\[/blockquote\]#si";
-                                $replace[18] = '</div>';
-                                $search[19] = "/\[color=(.*?)\](.*?)\[\/color\]/si";
-                                $replace[19] = '<span style=\'color:\1\'>\2</span>';
-                                $search[20] = "/\[size=([1-2]?[0-9])\](.*?)\[\/size\]/si";
-                                $replace[20] = '<span style=\'font-size:\1px\'>\2</span>';
-                                $search[21] = "#\[edited\](.*?)\[/edited\]#si";
-                                $replace[21] = '<span class=\'smallblacktext\'>[ \1 ]</span>';
-                                $search[22] = "#\[br\]#si";
-                                $replace[22] = '<br />';
-            if($pref['forum_attach'] && FILE_UPLOADS || $referrer == "admin"){
-                                        $search[23] = "#\[file=(.*?)\](.*?)\[/file\]#si";
-                                        $replace[23] = '<a href="\1"><img src="'.e_IMAGE.'generic/attach1.png" alt="" style="border:0; vertical-align:middle" /> \2</a>';
-                                }else{
-                                        $search[23] = "#\[file=(.*?)\](.*?)\[/file\]#si";
-                                        $replace[23] = '[ '.CORE_LAN3.' ]';
-                                }
-
-                $search[24] = "/\[quote=(.*?)\](.*?)/si";
-                $replace[24] = '<div class=\'indent\'>'.CORE_LAN2.' ...<br />';
-                $search[25] = "/\[\/quote\]/si";
-                $replace[25] = '</div>';
-                                $text = preg_replace($search, $replace, $text);
-                                return $text;
-                                }
-
-                function img_parse($matches)
-                {
-                        global $poster_userid,$pref;
-                        if(preg_match("#\.php\?.*#",$matches[1]))
-                        {
-                                return "";
-                        }
-                        if(!$poster_userid){
-                                return "<img src='{$matches[1]}' alt='' style='vertical-align:middle; border:0' />";
-                        }
-                        else
-                        {
-                                if($pref['image_post'])
-                                {
-                                        if(!function_exists('e107_userGetuserclass'))
-                                        {
-                                                require_once(e_HANDLER.'user_func.php');
-                                        }
-                                        if(check_class($pref['image_post_class'],e107_userGetuserclass($poster_userid)))
-                                        {
-                                                return "<img src='{$matches[1]}' alt='' style='vertical-align:middle; border:0' />";
-                                        }
-                                }
-                                if($pref['image_post_disabled_method'])
-                                {
-                                        return '[ image disabled ]';
-                                }
-                                else
-                                {
-                                        return "Image: $matches[1]";
-                                }
-                        }
-                }
-        function formtpa($text, $mode="admin"){
-                global $sql, $pref;
-
-                if($mode != "admin" && !ADMIN){
-
-                        for($r=0; $r<=strlen($text); $r++){
-                                $chars[$text[$r]] = 1;
-                        }
-                        $ch = array_count_values($chars);
-                        if((strlen($text) > 50 && $ch[1] < 10) || (strlen($text) > 10 && $ch[1] < 3) || (strlen($text) > 100 && $ch[1] < 20)){
-                                echo "<script type='text/javascript'>document.location.href='index.php'</script>\n";
-                                exit;
-                        }
-                        $text = code($text);
-                        if(!$pref['html_post']){ $text = str_replace("<", "&lt;", $text); str_replace(">", "&gt;", $text); }
-                        $text = str_replace("<script", "&lt;script", $text);
-                        $text = str_replace("<iframe", "&lt;iframe", $text);
-                        /*
-                        if(($pref['image_post_class'] == 253 && !USER) || ($pref['image_post_class'] == 254 && !ADMIN)){
-                        $text = preg_replace("#\[img\](.*?)\[/img\]#si", '&nbsp;', $text);
-                        }else if(!check_class($pref['image_post_class'])){
-                        $text = preg_replace("#\[img\](.*?)\[/img\]#si", '&nbsp;', $text);
-                        }
-                        */
-
-                }else if(ADMIN && !strstr(e_PAGE, "newspost.php") && !strstr(e_PAGE, "article.php") && !strstr(e_PAGE, "review.php")){
-                        $text = preg_replace("#\[img\](.*?)\[/img\]#si", '<img src=\'\1\' alt=\'\' style=\'vertical-align:middle; border:0\' />', $text);
-                }
-
-                if(MAGIC_QUOTES_GPC){ $text = stripslashes($text); }
-                $search = array("\"", "'", "\\", '\"', "\'", "$");
-                $replace = array("&quot;", "&#39;", "&#92;", "&quot;", "&#39;", "&#036;");
-                $text = str_replace($search, $replace, $text);
-                return $text;
-        }
-
-        function formtparev($text){
-                $search = array("&quot;", "&#39;", "&#92;", "&quot;", "&#39;");
-                $replace = array("\"", "'", "\\", '\"', "\'");
-                $text = str_replace($search, $replace, $text);
-                return $text;
-        }
-
-}
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-function check_email($var){
-        return (preg_match('/^[-!#$%&\'*+\\.\/0-9=?A-Z^_`{|}~]+@([-0-9A-Z]+\.)+([0-9A-Z]){2,4}$/i', $var)) ? $var : FALSE;
-}
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-function check_class($var, $userclass=USERCLASS, $debug=FALSE){
-        if(preg_match ("/^([0-9]+)$/", $var)){
-                if($var == e_UC_MEMBER && USER==TRUE){return TRUE;}
-                if($var == e_UC_GUEST && USER==FALSE){return TRUE;}
-                if($var == e_UC_PUBLIC){return TRUE;}
-                if($var == e_UC_NOBODY) {return FALSE;}
-                if($var == e_UC_ADMIN && ADMIN) {return TRUE;}
-                if($var == e_UC_READONLY){return TRUE;}
-        }
-        if($debug){ echo "USERCLASS: ".$userclass.", \$var = $var : "; }
-        if(!defined("USERCLASS") || $userclass == ""){
-                if($debug){ echo "FALSE<br />"; }
-                return FALSE;
-        }
-        // user has classes set - continue
-        if(preg_match ("/^([0-9]+)$/", $var)){
-                $tmp = explode(".", $userclass);
-                if(is_numeric(array_search($var,$tmp))){
-                        if($debug){ echo "TRUE<br />"; }
-                        return TRUE;
-                }
-        } else {
-                // var is name of class ...
-                $sql = new db;
-                if($sql -> db_Select("userclass_classes", "*", "userclass_name='$var' ")){
-                        $row = $sql -> db_Fetch();
-                        $tmp = explode(".", $userclass);
-                        if(is_numeric(array_search($row['userclass_id'],$tmp))){
-                                if($debug){ echo "TRUE<br />"; }
-                                return TRUE;
-                        }
-                }
-        }
-        if($debug){  echo "NOTNUM! FALSE<br />"; }
-        return FALSE;
-}
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-function getperms($arg, $ap = ADMINPERMS){
-        global $PLUGINS_DIRECTORY;
-        if($ap == "0"){return TRUE;}
-        if($ap == ""){return FALSE;}
-        $ap = ".".$ap;
-        if($arg == "P" && preg_match("#(.*?)/".$PLUGINS_DIRECTORY."(.*?)/(.*?)#",e_SELF,$matches) ){
-                $psql = new db;
-                if($psql -> db_Select("plugin","plugin_id","plugin_path = '".$matches[2]."' ")){
-                        $row = $psql -> db_Fetch();
-                        $arg = "P".$row[0];
-                }
-        }
-        if(preg_match("#\.".$arg."\.#", $ap)){
-                return TRUE;
-        } else {
-                return FALSE;
-        }
-}
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-
-function save_prefs($table = "core", $uid=USERID){
-        global $pref, $user_pref;
-        $sql = new db;
-        if($table == "core"){
-                foreach($pref as $key => $prefvalue){
-                        $pref[$key] = textparse::formtpa($prefvalue);
-                }
-                $tmp = addslashes(serialize($pref));
-                $sql -> db_Update("core", "e107_value='$tmp' WHERE e107_name='pref'");
-        } else {
-                foreach($user_pref as $key => $prefvalue){
-                        $user_pref[$key] = textparse::formtpa($prefvalue);
-                }
-                $tmp = addslashes(serialize($user_pref));
-                $sql -> db_Update("user", "user_prefs='$tmp' WHERE user_id=$uid");
-                return $tmp;
-        }
+function check_email($var) {
+	return (preg_match('/^[-!#$%&\'*+\\.\/0-9=?A-Z^_`{|}~]+@([-0-9A-Z]+\.)+([0-9A-Z]){2,4}$/i', $var)) ? $var : FALSE;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-function online(){
-        $page = (strstr(e_SELF, "forum_")) ? e_SELF.".".e_QUERY : e_SELF;
-        $page = (strstr(e_SELF, "comment")) ? e_SELF.".".e_QUERY : $page;
-        $page = (strstr(e_SELF, "content")) ? e_SELF.".".e_QUERY : $page;
-        $online_timeout = 300;
-        $online_warncount = 90;
-        $online_bancount = 100;
-        global $sql, $pref;
-        global $listuserson;
-        $ip = getip();
-        $udata = (USER === TRUE) ? USERID.".".USERNAME : "0";
+function check_class($var, $userclass = USERCLASS, $peer = FALSE, $debug = FALSE)
+{
+	global $tp;
+	if($var == e_LANGUAGE){
+		return TRUE;
+	}
 
-        if(USER){
-                // Find record that matches IP or visitor, or matches user info
-                if($sql -> db_Select("online","*","(online_ip='{$ip}' AND online_user_id = '0') OR online_user_id = '{$udata}'")){
-                        $row = $sql -> db_Fetch();
-                        extract($row);
-                        if($online_user_id == $udata) {  //Matching user record
-                                if($online_timestamp < (time() - $online_timeout)){  //It has been at least 'timeout' seconds since this user has connected
-                                        //Update user record with timestamp, current IP, current page and set pagecount to 1
-                                        $query = "online_timestamp='".time()."', online_ip='{$ip}', online_location='$page', online_pagecount=1 WHERE online_user_id='{$online_user_id}' LIMIT 1";
-                                } else {
-                                        if(!ADMIN){$online_pagecount++;}
-                                        //Update user record with current IP, current page and increment pagecount
-                                        $query = "online_ip='{$ip}', online_location='$page', online_pagecount={$online_pagecount} WHERE online_user_id='{$online_user_id}' LIMIT 1";
-                                }
-                        } else {  //Found matching visitor record (ip only) for this user
-                                if($online_timestamp < (time() - $online_timeout)){  //It has been at least 'timeout' seconds since this user has connected
-                                        //Update record with timestamp, current IP, current page and set pagecount to 1
-                                        $query = "online_timestamp='".time()."', online_user_id='{$udata}', online_location='$page', online_pagecount=1 WHERE online_ip='{$ip}' AND online_user_id='0' LIMIT 1";
-                                } else {
-                                        if(!ADMIN){$online_pagecount++;}
-                                        //Update record with current IP, current page and increment pagecount
-                                        $query = "online_user_id='{$udata}', online_location='$page', online_pagecount={$online_pagecount} WHERE online_ip='{$ip}' AND online_user_id='0' LIMIT 1";
-                                }
-                        }
-                        $sql -> db_Update("online", $query);
-                } else {
-                        $sql -> db_Insert("online", " '".time()."', 'null', '".$udata."', '".$ip."', '".$page."', 1");
-                }
-        } else {  //Current page request is from a visitor
-                if($sql -> db_Select("online","*","online_ip='{$ip}' AND online_user_id = '0'")){
-                        $row = $sql -> db_Fetch();
-                        extract($row);
-                        if($online_timestamp < (time() - $online_timeout)){  //It has been at least 'timeout' seconds since this ip has connected
-                                //Update record with timestamp, current page, and set pagecount to 1
-                                $query = "online_timestamp='".time()."', online_location='$page', online_pagecount=1 WHERE online_ip='{$ip}' AND online_user_id='0' LIMIT 1";
-                        } else {
-                                //Update record with current page and increment pagecount
-                                $online_pagecount++;
-                             //   echo "here {$online_pagecount}";
-                                $query = "online_location='$page', online_pagecount={$online_pagecount} WHERE online_ip='{$ip}' AND online_user_id='0' LIMIT 1";
-                        }
-                        $sql -> db_Update("online", $query);
-                } else {
-                        $sql -> db_Insert("online", " '".time()."', 'null', '0', '{$ip}', '{$page}', 1");
-                }
-        }
+	if (!$var || $var == "")
+	{
+		return TRUE;
+	}
 
-        if(ADMIN || $pref['autoban']!=1){$online_pagecount=1;}
-        if($online_pagecount > $online_bancount && $online_ip !="127.0.0.1"){
-                $sql -> db_Insert("banlist", "'$ip', '0', 'Hit count exceeded ($online_pagecount requests within allotted time)' ");
-                exit;
-        }
-        if($online_pagecount >= $online_warncount && $online_ip !="127.0.0.1"){
-                echo "<div style='text-align:center; font: 11px verdana, tahoma, arial, helvetica, sans-serif;'><b>Warning!</b><br /><br />The flood protection on this site has been activated and you are warned that if you carry on requesting pages you could be banned.<br /></div>";
-                exit;
-        }
+	if(strpos($var, ",") !== FALSE)
+	{
+		$lans = explode(",",e_LANLIST);
+		$varList = explode(",", $var);
+		rsort($varList); // check the language first.(ie. numbers come last)
+		foreach($varList as $v)
+		{
+			if (in_array($v,$lans) && strpos($v, e_LANGUAGE) === FALSE) {
+				return FALSE;
+			}
 
-        $sql -> db_Delete("online", "online_timestamp<".(time() - $online_timeout));
-        $total_online = $sql -> db_Count("online");
-        if($members_online = $sql -> db_Select("online", "*", "online_user_id != '0' ")){
-                $listuserson = array();
-                while($row = $sql -> db_Fetch()){
-                        extract($row);
-                        list($oid,$oname) = explode(".",$online_user_id,2);
-                        $member_list .= "<a href='".e_BASE."user.php?id.$oid'>$oname</a> ";
-                        $listuserson[$online_user_id] = $online_location;
-                }
-        }
-        define("TOTAL_ONLINE", $total_online);
-        define("MEMBERS_ONLINE", $members_online);
-        define("GUESTS_ONLINE", $total_online - $members_online);
-        define("ON_PAGE", $sql -> db_Count("online", "(*)", "WHERE online_location='$page' "));
-        define("MEMBER_LIST", $member_list);
+			if(check_class($v, $userclass, $debug))	{
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
+
+	if (preg_match("/^([0-9]+)$/", $var) && !$peer)
+	{
+		if ($var == e_UC_MEMBER && USER == TRUE)
+		{
+			return TRUE;
+		}
+
+		if ($var == e_UC_GUEST && USER == FALSE) {
+			return TRUE;
+		}
+
+		if ($var == e_UC_PUBLIC) {
+			return TRUE;
+		}
+
+		if ($var == e_UC_NOBODY) {
+			return FALSE;
+		}
+
+		if ($var == e_UC_ADMIN && ADMIN) {
+			return TRUE;
+		}
+		if ($var == e_UC_READONLY) {
+			return TRUE;
+		}
+	}
+
+	if ($debug) {
+		echo "USERCLASS: ".$userclass.", \$var = $var : ";
+	}
+
+	if (!defined("USERCLASS") || $userclass == "") {
+		if ($debug) {
+			echo "FALSE<br />";
+		}
+		return FALSE;
+	}
+
+	// user has classes set - continue
+	if (preg_match("/^([0-9]+)$/", $var)) {
+		$tmp=explode(',', $userclass);
+		if (is_numeric(array_search($var, $tmp))) {
+			if ($debug) {
+				echo "TRUE<br />";
+			}
+			return TRUE;
+		}
+	} else {
+		// var is name of class ...
+		$sql=new db;
+		if ($sql->db_Select("userclass_classes", "*", "userclass_name='".$tp -> toDB($var)."' ")) {
+			$row=$sql->db_Fetch();
+			$tmp=explode(',', $userclass);
+			if (is_numeric(array_search($row['userclass_id'], $tmp))) {
+				if ($debug) {
+					echo "TRUE<br />";
+				}
+				return TRUE;
+			}
+		}
+	}
+
+	if ($debug) {
+		echo "NOTNUM! FALSE<br />";
+	}
+
+	return FALSE;
+}
+
+function getperms($arg, $ap = ADMINPERMS) {
+	global $PLUGINS_DIRECTORY;
+	if ($ap == "0") {
+		return TRUE;
+	}
+	if ($ap == "") {
+		return FALSE;
+	}
+	$ap='.'.$ap;
+	if ($arg == 'P' && preg_match("#(.*?)/".$PLUGINS_DIRECTORY."(.*?)/(.*?)#", e_SELF, $matches)) {
+		$psql=new db;
+		if ($psql->db_Select('plugin', 'plugin_id', "plugin_path = '".$matches[2]."' ")) {
+			$row=$psql->db_Fetch();
+			$arg='P'.$row[0];
+		}
+	}
+	if (strpos($ap, ".".$arg.".") !== FALSE) {
+		return TRUE;
+	} else {
+		return FALSE;
+	}
+}
+
+/**
+ * Get the user data from user and user_extended tables
+ *
+ * @return array
+ */
+function get_user_data($uid, $extra = "", $force_join = TRUE)
+{
+	global $pref, $sql;
+	$uid = intval($uid);
+	if($ret = getcachedvars("userdata_{$uid}"))
+	{
+		return $ret;
+	}
+	if($force_join == TRUE || array_key_exists('ue_upgrade', $pref) || array_key_exists('signup_maxip'))
+	{
+		$qry = "
+		SELECT u.*, ue.* FROM #user AS u
+		LEFT JOIN #user_extended AS ue ON ue.user_extended_id = u.user_id
+		WHERE u.user_id='{$uid}' {$extra}
+		";
+	}
+	else
+	{
+		$qry = "SELECT * FROM #user AS u WHERE u.user_id='{$uid}' {$extra}";
+	}
+	if ($sql->db_Select_gen($qry))
+	{
+		$var = $sql->db_Fetch();
+		$extended_struct = getcachedvars("extended_struct");
+		if(!$extended_struct)
+		{
+			unset($extended_struct);
+			$qry = "SHOW COLUMNS FROM #user_extended ";
+			if($sql->db_Select_gen($qry))
+			{
+				while($row = $sql->db_Fetch())
+				{
+					if($row['Default'] != "")
+					{
+						$extended_struct[] = $row;
+					}
+				}
+				cachevars("extended_struct", $extended_struct);
+			}
+		}
+
+		foreach($extended_struct as $row)
+		{
+			if($row['Default'] != "" && ($var[$row['Field']] == NULL || $var[$row['Field']] == "" ))
+			{
+				$var[$row['Field']] = $row['Default'];
+			}
+		}
+		cachevars("userdata_{$uid}", $var);
+		return $var;
+	}
+	return FALSE;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-function cachevars($id, $var){
-        global $cachevar;
-        $cachevar[$id] = $var;
-}
-function getcachedvars($id){
-        global $cachevar;
-        return ($cachevar[$id] ? $cachevar[$id] : FALSE);
-}
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-function getip(){
-        /*
-        # Get IP address
-        #
-        # - parameters                none
-        # - return                                valid IP address
-        # - scope                                        public
-        */
-        if(getenv('HTTP_X_FORWARDED_FOR')){
-                $ip = $_SERVER['REMOTE_ADDR'];
-                if(preg_match("/^([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/", getenv('HTTP_X_FORWARDED_FOR'), $ip3)){
-                        $ip2 = array('/^0\./', '/^127\.0\.0\.1/', '/^192\.168\..*/', '/^172\.16\..*/', '/^10..*/', '/^224..*/', '/^240..*/');
-                        $ip = preg_replace($ip2, $ip, $ip3[1]);
-                }
-        }else{
-                $ip = $_SERVER['REMOTE_ADDR'];
-        }
-        if($ip == ""){ $ip = "x.x.x.x"; }
-        return $ip;
-}
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-class floodprotect{
-        function flood($table, $orderfield){
-                /*
-                # Test for possible flood
-                #
-                # - parameter #1                string $table, table being affected
-                # - parameter #2                string $orderfield, date entry in respective table
-                # - return                                boolean
-                # - scope                                        public
-                */
-                $sql = new db;
-                if(FLOODPROTECT == TRUE){
-                        $sql -> db_Select($table, "*", "ORDER BY ".$orderfield." DESC LIMIT 1", "no_where");
-                        $row = $sql -> db_Fetch();
-                        return ($row[$orderfield] > (time() - FLOODTIMEOUT) ? FALSE : TRUE);
-                } else {
-                        return TRUE;
-                }
-        }
-}
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-function init_session(){
-        /*
-        # Validate user
-        #
-        # - parameters                none
-        # - return                                boolean
-        # - scope                                public
-        */
-        global $sql, $pref, $user_pref, $sql;
 
-        if(!$_COOKIE[$pref['cookie_name']] && !$_SESSION[$pref['cookie_name']]){
-                define("USER", FALSE); define("USERTHEME", FALSE); define("ADMIN", FALSE);define("GUEST", TRUE);
-        } else {
-                list($uid, $upw) = ($_COOKIE[$pref['cookie_name']] ? explode(".", $_COOKIE[$pref['cookie_name']]) : explode(".", $_SESSION[$pref['cookie_name']]));
-                if(empty($uid) || empty($upw)){         // corrupt cookie?
-                        cookie($pref['cookie_name'], "", (time()-2592000));
-                        $_SESSION[$pref['cookie_name']] = "";
-                        session_destroy();
-                        define("ADMIN", FALSE); define("USER", FALSE); define("USERCLASS",""); define("LOGINMESSAGE", "Corrupted cookie detected - logged out.<br /><br />");
-                        return(FALSE);
-                }
-                if($sql -> db_Select("user", "*", "user_id='$uid' AND md5(user_password)='$upw'")){
-                        $result = $sql -> db_Fetch(); extract($result);
-                        define("USERID", $user_id);
-                        define("USERNAME", $user_name);
-                        define("USERURL", $user_website);
-                        define("USEREMAIL", $user_email);
-                        define("USER", TRUE);
-                        define("USERCLASS", $user_class);
-                        define("USERREALM", $user_realm);
-                                                                define("USERVIEWED", $user_viewed);
-                                                                define("USERIMAGE", $user_image);
-                                                                define("USERSESS", $user_sess);
-                        if($user_currentvisit + 3600 < time()){
-                                $user_lastvisit = $user_currentvisit;
-                                $user_currentvisit = time();
-                                $sql -> db_Update("user", "user_visits=user_visits+1, user_lastvisit='$user_lastvisit', user_currentvisit='$user_currentvisit', user_viewed='' WHERE user_name='".USERNAME."' ");
-                        }
-                                                                define("USERLV", $user_lastvisit);
-                        if($user_ban == 1){ exit; }
-                        $user_pref = unserialize($user_prefs);
-                                    foreach($pref as $key => $prefvalue){
-                                                                        $pref[$key] = textparse::formtparev($prefvalue);
-                                                                }
-                        if(IsSet($_POST['settheme'])){
-                                $user_pref['sitetheme'] = ($pref['sitetheme'] == $_POST['sitetheme'] ? "" : $_POST['sitetheme']);
-                                save_prefs($user);
-                        }
-                        if(IsSet($_POST['setlanguage'])){
-                                $user_pref['sitelanguage'] = ($pref['sitelanguage'] == $_POST['sitelanguage'] ? "" : $_POST['sitelanguage']);
-                                save_prefs($user);
-                        }
+function save_prefs($table = 'core', $uid = USERID, $row_val = '') {
+	global $pref, $user_pref, $tp, $PrefCache, $sql, $eArrayStorage;
+	if ($table == 'core') {
+		if ($row_val == '') {
+			// Save old version as a backup
+			if(!$sql->db_Update('core', "e107_value='".addslashes($PrefCache)."' WHERE e107_name='SitePrefs_Backup'")){
+				$sql->db_Insert('core', "'SitePrefs', '".addslashes($PrefCache)."'");
+			}
 
-                        define("USERTHEME", ($user_pref['sitetheme'] && file_exists(e_THEME.$user_pref['sitetheme']."/theme.php") ? $user_pref['sitetheme'] : FALSE));
-                        global $ADMIN_DIRECTORY,$PLUGINS_DIRECTORY;
-                        define("USERLAN", ($user_pref['sitelanguage'] && (strpos(e_SELF,$PLUGINS_DIRECTORY)!==FALSE||(strpos(e_SELF,$ADMIN_DIRECTORY)===FALSE && file_exists(e_LANGUAGEDIR.$user_pref['sitelanguage']."/lan_".e_PAGE))||(strpos(e_SELF,$ADMIN_DIRECTORY)!==FALSE && file_exists(e_LANGUAGEDIR.$user_pref['sitelanguage']."/admin/lan_".e_PAGE))) ? $user_pref['sitelanguage'] : FALSE));
+			// traverse the pref array, with toDB on everything
+			$_pref = $tp -> toDB($pref, true, true);
+			// Create the data to be stored
+			$PrefCache1 = $eArrayStorage->WriteArray($_pref);
+			if(!$sql->db_Update('core', "e107_value='{$PrefCache1}' WHERE e107_name = 'SitePrefs'")){
+				$sql->db_Insert('core', "'SitePrefs', '{$PrefCache1}'");
+			}
+			ecache::clear('SitePrefs');
+		}
+	} else {
 
-                        if($user_admin){
-                                define("ADMIN", TRUE); define("ADMINID", $user_id); define("ADMINNAME", $user_name); define("ADMINPERMS", $user_perms); define("ADMINEMAIL", $user_email); define("ADMINPWCHANGE", $user_pwchange);
-                        } else {
-                                define("ADMIN", FALSE);
-                        }
-                } else {
-                        define("USER", FALSE); define("USERTHEME", FALSE); define("ADMIN", FALSE);
-                        define("CORRUPT_COOKIE",TRUE); define("USERCLASS","");
-                }
-        }
+		$_user_pref = $tp -> toDB($user_pref);
+
+		$tmp=addslashes(serialize($_user_pref));
+		$sql->db_Update("user", "user_prefs='$tmp' WHERE user_id=".intval($uid));
+		return $tmp;
+	}
 }
+
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-function ban(){
-        $sql = new db;
-        $ip = getip();
-        $wildcard = substr($ip, 0, strrpos($ip, ".")).".*";
-        if($sql -> db_Select("banlist", "*", "banlist_ip='".$_SERVER['REMOTE_ADDR']."' OR banlist_ip='".USEREMAIL."' OR banlist_ip='$ip' OR banlist_ip='$wildcard'")){
-                // enter a message here if you want some text displayed to banned users ...
-                exit;
-        }
+
+class e_online {
+	function online($online_tracking = false, $flood_control = false) {
+		if($online_tracking == true || $flood_control == true) {
+			global $online_timeout, $online_warncount, $online_bancount;
+			if(!isset($online_timeout)) {
+				$online_timeout = 300;
+			}
+			if(!isset($online_warncount)) {
+				$online_warncount = 90;
+			}
+			if(!isset($online_bancount)) {
+				$online_bancount = 100;
+			}
+			global $sql, $pref, $e107, $listuserson, $e_event, $tp;
+			$page = (strpos(e_SELF, "forum_") !== FALSE) ? e_SELF.".".e_QUERY : e_SELF;
+			$page = (strpos(e_SELF, "comment") !== FALSE) ? e_SELF.".".e_QUERY : $page;
+			$page = (strpos(e_SELF, "content") !== FALSE) ? e_SELF.".".e_QUERY : $page;
+			$page = $tp -> toDB($page, true);
+
+			$ip = $e107->getip();
+			$udata = (USER === true ? USERID.".".USERNAME : "0");
+
+			if (USER) {
+				// Find record that matches IP or visitor, or matches user info
+				if ($sql->db_Select("online", "*", "(`online_ip` = '{$ip}' AND `online_user_id` = '0') OR `online_user_id` = '{$udata}'")) {
+					$row = $sql->db_Fetch();
+
+					if ($row['online_user_id'] == $udata) {
+						//Matching user record
+						if ($row['online_timestamp'] < (time() - $online_timeout)) {
+							//It has been at least 'timeout' seconds since this user has connected
+							//Update user record with timestamp, current IP, current page and set pagecount to 1
+							$query = "online_timestamp='".time()."', online_ip='{$ip}', online_location='{$page}', online_pagecount=1 WHERE online_user_id='{$row['online_user_id']}' LIMIT 1";
+						} else {
+							if (!ADMIN) {
+								$row['online_pagecount'] ++;
+							}
+							// Update user record with current IP, current page and increment pagecount
+							$query = "online_ip='{$ip}', `online_location` = '{$page}', `online_pagecount` = '".intval($row['online_pagecount'])."' WHERE `online_user_id` = '{$row['online_user_id']}' LIMIT 1";
+						}
+					} else {
+						//Found matching visitor record (ip only) for this user
+						if ($row['online_timestamp'] < (time() - $online_timeout)) {
+							// It has been at least 'timeout' seconds since this user has connected
+							// Update record with timestamp, current IP, current page and set pagecount to 1
+							$query = "`online_timestamp` = '".time()."', `online_user_id` = '{$udata}', `online_location` = '{$page}', `online_pagecount` = 1 WHERE `online_ip` = '{$ip}' AND `online_user_id` = '0' LIMIT 1";
+						} else {
+							if (!ADMIN) {
+								$row['online_pagecount'] ++;
+							}
+							//Update record with current IP, current page and increment pagecount
+							$query = "`online_user_id` = '{$udata}', `online_location` = '{$page}', `online_pagecount` = ".intval($row['online_pagecount'])." WHERE `online_ip` = '{$ip}' AND `online_user_id` = '0' LIMIT 1";
+						}
+					}
+					$sql->db_Update("online", $query);
+				} else {
+					$sql->db_Insert("online", " '".time()."', '0', '{$udata}', '{$ip}', '{$page}', 1");
+				}
+			} else {
+				//Current page request is from a visitor
+				if ($sql->db_Select("online", "*", "`online_ip` = '{$ip}' AND `online_user_id` = '0'")) {
+					$row = $sql->db_Fetch();
+
+					if ($row['online_timestamp'] < (time() - $online_timeout)) //It has been at least 'timeout' seconds since this ip has connected
+					{
+						//Update record with timestamp, current page, and set pagecount to 1
+						$query = "`online_timestamp` = '".time()."', `online_location` = '{$page}', `online_pagecount` = 1 WHERE `online_ip` = '{$ip}' AND `online_user_id` = '0' LIMIT 1";
+					} else {
+						//Update record with current page and increment pagecount
+						$row['online_pagecount'] ++;
+						//   echo "here {$online_pagecount}";
+						$query="`online_location` = '{$page}', `online_pagecount` = {$row['online_pagecount']} WHERE `online_ip` = '{$ip}' AND `online_user_id` = '0' LIMIT 1";
+					}
+					$sql->db_Update("online", $query);
+				} else {
+					$sql->db_Insert("online", " '".time()."', 'null', '0', '{$ip}', '{$page}', 1");
+				}
+			}
+
+			if (ADMIN || $pref['autoban'] != 1) {
+				$row['online_pagecount'] = 1;
+			}
+			if ($row['online_pagecount'] > $online_bancount && $row['online_ip'] != "127.0.0.1") {
+				$sql->db_Insert("banlist", "'{$ip}', '0', 'Hit count exceeded ({$row['online_pagecount']} requests within allotted time)' ");
+				$e_event->trigger("flood", $ip);
+				exit;
+			}
+			if ($row['online_pagecount'] >= $online_warncount && $row['online_ip'] != "127.0.0.1") {
+				echo "<div style='text-align:center; font: 11px verdana, tahoma, arial, helvetica, sans-serif;'><b>Warning!</b><br /><br />The flood protection on this site has been activated and you are warned that if you carry on requesting pages you could be banned.<br /></div>";
+				exit;
+			}
+
+			$sql->db_Delete("online", "`online_timestamp` < ".(time() - $online_timeout));
+
+			global $members_online, $total_online, $member_list, $listuserson;
+			$total_online = $sql->db_Count("online");
+			if ($members_online = $sql->db_Select("online", "*", "online_user_id != '0' ")) {
+				$member_list = '';
+				$listuserson = array();
+				while ($row = $sql->db_Fetch()) {
+					$vals = explode(".", $row['online_user_id'], 2);
+					$member_list .= "<a href='".e_BASE."user.php?id.{$vals[0]}'>{$vals[1]}</a> ";
+					$listuserson[$row['online_user_id']] = $row['online_location'];
+				}
+			}
+			define("TOTAL_ONLINE", $total_online);
+			define("MEMBERS_ONLINE", $members_online);
+			define("GUESTS_ONLINE", $total_online - $members_online);
+			define("ON_PAGE", $sql->db_Count("online", "(*)", "WHERE `online_location` = '{$page}' "));
+			define("MEMBER_LIST", $member_list);
+		} else {
+			define("e_TRACKING_DISABLED", true);
+			define("TOTAL_ONLINE", "");
+			define("MEMBERS_ONLINE", "");
+			define("GUESTS_ONLINE", "");
+			define("ON_PAGE", "");
+			define("MEMBER_LIST", ""); //
+		}
+	}
 }
+
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-function cookie($name, $value, $expire, $path="/", $domain="", $secure=0){
-        setcookie($name, $value, $expire, $path, $domain, $secure);
+function cachevars($id, $var) {
+	global $cachevar;
+	$cachevar[$id]=$var;
 }
+
+function getcachedvars($id) {
+	global $cachevar;
+	return ($cachevar[$id] ? $cachevar[$id] : false);
+}
+
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-function html($string){
-        global $pref, $aj;
-        $match_count = preg_match_all("#\[html\](.*?)\[/html\]#si", $string, $result);
-        for ($a = 0; $a < $match_count; $a++){
-                if($pref['smiley_activate']){
-                        if(!is_object($aj)){$aj = new textparse;}
-                     $after_replace = str_replace($aj->replace, $aj->searcha, $result[1][$a]);
-                } else {
-                        $after_replace= $result[1][$a];
-                }
-                $after_replace = str_replace("<br />", "\n", $after_replace);
-                $after_replace=nl2br($after_replace);
-                $string = str_replace("[html]".$result[1][$a]."[/html]", $after_replace, $string);
-        }
-        return $string;
+class floodprotect {
+	function flood($table, $orderfield) {
+		/*
+		# Test for possible flood
+		#
+		# - parameter #1                string $table, table being affected
+		# - parameter #2                string $orderfield, date entry in respective table
+		# - return                                boolean
+		# - scope                                        public
+		*/
+		$sql=new db;
+
+		if (FLOODPROTECT == TRUE) {
+			$sql->db_Select($table, "*", "ORDER BY ".$orderfield." DESC LIMIT 1", "no_where");
+			$row=$sql->db_Fetch();
+			return ($row[$orderfield] > (time() - FLOODTIMEOUT) ? FALSE : TRUE);
+		} else {
+			return TRUE;
+		}
+	}
 }
+
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-function code($string, $mode="default"){
-        global $pref, $aj;
-        $search = array("&quot;", "&#39;", "&#92;", "&quot;", "&#39;", "&lt;span", "&lt;/span");
-        $replace =  array("\"", "'", "\\", '\"', "\'", "<span", "</span");
-        $string = str_replace($search, $replace, $string);
-        $match_count = preg_match_all("#(\[code[=]*(.*?)\])(.*?)\[/code\]#si", $string, $result);
-        for ($a = 0; $a < $match_count; $a++){
-                if($pref['smiley_activate']){
-                        if(!is_object($aj)){$aj = new textparse;}
-                            $after_replace = str_replace($aj->replace, $aj->searcha, $result[3][$a]);
-                } else {
-                        $after_replace= $result[3][$a];
-                }
-                if(strpos($result[2][$a],'highlight')){
-                        $after_replace = str_replace("&#036;","$",$after_replace);
-                        $after_replace=highlight_string($after_replace,TRUE);
-                        $after_replace=str_replace("<br />","",$after_replace);
-                        $class='indent';
-                } else {
-                        $after_replace = str_replace("&#036;","$",$after_replace);
-                        $after_replace=htmlentities($after_replace);
-                        $class = (strlen(trim($result[2][$a]))) ? $result[2][$a] : 'indent';
-                }
-                $string = str_replace($result[1][$a].$result[3][$a]."[/code]", "<div class='{$class}'>".$after_replace."</div>", $string);
-        }
-        return $string;
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+function init_session() {
+	/*
+	# Validate user
+	#
+	# - parameters none
+	# - return boolean
+	# - scope public
+	*/
+	global $sql, $pref, $user_pref, $tp, $currentUser;
+
+	if (!isset($_COOKIE[$pref['cookie_name']]) && !isset($_SESSION[$pref['cookie_name']])) {
+		define("USER", FALSE);
+		define("USERTHEME", FALSE);
+		define("ADMIN", FALSE);
+		define("GUEST", TRUE);
+		define('USERCLASS', '');
+		define('USEREMAIL', '');
+	} else {
+		list($uid, $upw)=($_COOKIE[$pref['cookie_name']] ? explode(".", $_COOKIE[$pref['cookie_name']]) : explode(".", $_SESSION[$pref['cookie_name']]));
+
+		if (empty($uid) || empty($upw)) {
+			cookie($pref['cookie_name'], "", (time() - 2592000));
+			$_SESSION[$pref['cookie_name']] = "";
+			session_destroy();
+			define("ADMIN", FALSE);
+			define("USER", FALSE);
+			define("USERCLASS", "");
+			define("LOGINMESSAGE", "Corrupted cookie detected - logged out.<br /><br />");
+			return (FALSE);
+		}
+
+		if($result = get_user_data($uid, "AND md5(u.user_password)='{$upw}'", FALSE)) {
+			$currentUser = $result;
+			define("USERID", $result['user_id']);
+			define("USERNAME", $result['user_name']);
+			define("USERURL", (isset($result['user_homepage']) ? $result['user_homepage'] : false));
+			define("USEREMAIL", $result['user_email']);
+			define("USER", TRUE);
+			define("USERCLASS", $result['user_class']);
+			define("USERREALM", $result['user_realm']);
+			define("USERVIEWED", $result['user_viewed']);
+			define("USERIMAGE", $result['user_image']);
+			define("USERSESS", $result['user_sess']);
+
+			if ($result['user_currentvisit'] + 3600 < time() || !$result['user_lastvisit']) {
+				$result['user_lastvisit'] = $result['user_currentvisit'];
+				$result['user_currentvisit'] = time();
+				$sql->db_Update("user", "user_visits = user_visits + 1, user_lastvisit = '{$result['user_lastvisit']}', user_currentvisit = '{$result['user_currentvisit']}', user_viewed = '' WHERE user_name='".USERNAME."' ");
+			}
+
+			define("USERLV", $result['user_lastvisit']);
+
+			if ($result['user_ban'] == 1) {
+				exit;
+			}
+
+			$user_pref = unserialize($result['user_prefs']);
+
+			if (isset($_POST['settheme'])) {
+				$user_pref['sitetheme'] = ($pref['sitetheme'] == $_POST['sitetheme'] ? "" : $_POST['sitetheme']);
+				save_prefs("user");
+			}
+
+			define("USERTHEME", ($user_pref['sitetheme'] && file_exists(e_THEME.$user_pref['sitetheme']."/theme.php") ? $user_pref['sitetheme'] : FALSE));
+			global $ADMIN_DIRECTORY, $PLUGINS_DIRECTORY;
+			if ($result['user_admin']) {
+				define("ADMIN", TRUE);
+				define("ADMINID", $result['user_id']);
+				define("ADMINNAME", $result['user_name']);
+				define("ADMINPERMS", $result['user_perms']);
+				define("ADMINEMAIL", $result['user_email']);
+				define("ADMINPWCHANGE", $result['user_pwchange']);
+			} else {
+				define("ADMIN", FALSE);
+			}
+		} else {
+			define("USER", FALSE);
+			define("USERTHEME", FALSE);
+			define("ADMIN", FALSE);
+			define("CORRUPT_COOKIE", TRUE);
+			define("USERCLASS", "");
+		}
+	}
+
+	define('USERCLASS_LIST', class_list());
+	define('e_CLASS_REGEXP', "(^|,)(".str_replace(",", "|", USERCLASS_LIST).")(,|$)");
 }
+
+$sql->db_Mark_Time('Start: Go online');
+if(isset($pref['track_online']) && $pref['track_online']) {
+	$e_online->online($pref['track_online'], $pref['flood_protect']);
+}
+
+function cookie($name, $value, $expire, $path = "/", $domain = "", $secure = 0) {
+	setcookie($name, $value, $expire, $path, $domain, $secure);
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+function message_handler($mode, $message, $line = 0, $file = "") {
+	e107_require_once(e_HANDLER."message_handler.php");
+	show_emessage($mode, $message, $line, $file);
+}
+
+// -----------------------------------------------------------------------------
+function table_exists($check) {
+	if (!$GLOBALS['mySQLtablelist']) {
+		$tablist=mysql_list_tables($GLOBALS['mySQLdefaultdb']);
+		while (list($temp) = mysql_fetch_array($tablist)) {
+			$GLOBALS['mySQLtablelist'][] = $temp;
+		}
+	}
+
+	$mltable=MPREFIX.strtolower($check);
+
+	foreach ($GLOBALS['mySQLtablelist'] as $lang) {
+		if (strpos($lang, $mltable) !== FALSE) {
+			return TRUE;
+		}
+	}
+}
+
+function class_list($uid = '') {
+	$clist=array();
+
+	if ($uid == '')
+	{
+		if (USER === TRUE)
+		{
+			if(USERCLASS)
+			{
+				$clist=explode(',', USERCLASS);
+			}
+			$clist[]=e_UC_MEMBER;
+			if (ADMIN === TRUE) {
+				$clist[] = e_UC_ADMIN;
+			}
+		} else {
+			$clist[] = e_UC_GUEST;
+		}
+		$clist[]=e_UC_READONLY;
+		$clist[]=e_UC_PUBLIC;
+		return implode(',', $clist);
+	}
+}
+
+// ---------------------------------------------------------------------------
+function e107_include($fname) {
+	global $e107_debug;
+	$ret = ($e107_debug ? include($fname) : @include($fname));
+	return $ret;
+}
+
+function e107_include_once($fname) {
+	global $e107_debug;
+	if(is_readable($fname)){
+		$ret = (!$e107_debug)? @include_once($fname) : include_once($fname);
+	}
+	return (isset($ret)) ? $ret : "";
+}
+
+function e107_require_once($fname) {
+	global $e107_debug;
+	$ret = ($e107_debug ? require_once($fname) : @require_once($fname));
+	return $ret;
+}
+
+function e107_require($fname) {
+	global $e107_debug;
+	$ret = ($e107_debug ? require($fname) : @require($fname));
+	return $ret;
+}
+
+function include_lan($path, $force = false) {
+	if (!is_readable($path)) {
+		$path = str_replace(e_LANGUAGE, 'English', $path);
+	}
+	$ret = ($force) ? include($path) : include_once($path);
+	return (isset($ret)) ? $ret : "";
+}
+
+if(!function_exists("print_a")) {
+	function print_a($var, $return = false) {
+		if(!$return){
+			echo '<pre>'.print_r($var, true).'</pre>';
+			return true;
+		} else {
+			return '<pre>'.print_r($var, true).'</pre>';
+		}
+	}
+}
+
+function force_userupdate(){
+	// returns TRUE if required fields are empty in the user's profile.
+	global $sql,$pref,$currentUser;
+	$signupval = explode(".", $pref['signup_options']);
+	if(in_array("2",$signupval)){
+		$signup_name = array("login", "homepage", "icq", "aim", "msn", "birthday", "location", "signature", "image", "timezone", "usrclass");
+		foreach($signupval as $key=>$sign){
+			$field = "user_".$signup_name[$key];
+			$req = $signupval[$key];
+			if($req ==2 && $currentUser[$field] == ""){
+			 //	echo "field = $field ";
+			 return TRUE;
+			}
+		}
+	}
+
+	// extended user.
+	if($sql -> db_Select("user_extended_struct", "user_extended_struct_name", " user_extended_struct_required = '1' ")){
+		while($row = $sql -> db_Fetch()){
+			//extract($row); //really neccessary?
+			$user_extended_struct_name = "user_{$row['user_extended_struct_name']}";
+			if(!$currentUser[$user_extended_struct_name]){
+				return TRUE;
+			}
+		}
+	}
+
+	return FALSE;
+}
+
+class error_handler {
+
+	var $errors;
+	var $debug = false;
+
+	function error_handler() {
+		if ((isset($_SERVER['QUERY_STRING']) && strpos($_SERVER['QUERY_STRING'], 'debug=') !== FALSE) || isset($_COOKIE['e107_debug_level'])) {
+			$this->debug = true;
+			error_reporting(E_ALL);
+		} else {
+			error_reporting(E_ERROR | E_PARSE);
+		}
+	}
+
+	function handle_error($type, $message, $file, $line, $context) {
+		switch($type) {
+			case E_NOTICE:
+			if ($this->debug == true) {
+				$error['short'] = "Notice: {$message}, Line {$line} of {$file}<br />\n";
+				$trace = debug_backtrace();
+				$backtrace[0] = (isset($trace[1]) ? $trace[1] : "");
+				$backtrace[1] = (isset($trace[2]) ? $trace[2] : "");
+				$error['trace'] = $backtrace;
+				$this->errors[] = $error;
+			}
+			break;
+			case E_WARNING:
+			if ($this->debug == true) {
+				$error['short'] = "Warning: {$message}, Line {$line} of {$file}<br />\n";
+				$trace = debug_backtrace();
+				$backtrace[0] = (isset($trace[1]) ? $trace[1] : "");
+				$backtrace[1] = (isset($trace[2]) ? $trace[2] : "");
+				$error['trace'] = $backtrace;
+				$this->errors[] = $error;
+			}
+			break;
+			case E_USER_ERROR:
+			if ($this->debug == true) {
+				$error['short'] = "Internal Error Message: {$message}, Line {$line} of {$file}<br />\n";
+				$trace = debug_backtrace();
+				$backtrace[0] = (isset($trace[1]) ? $trace[1] : "");
+				$backtrace[1] = (isset($trace[2]) ? $trace[2] : "");
+				$error['trace'] = $backtrace;
+				$this->errors[] = $error;
+			}
+			default:
+			return true;
+			break;
+		}
+	}
+
+	function return_errors() {
+		$index = 0; $colours[0] = "#C1C1C1"; $colours[1] = "#B6B6B6";
+		$ret = "<table class='fborder'>\n";
+		foreach ($this->errors as $key => $value) {
+			$ret .= "\t<tr>\n\t\t<td class='forumheader3' >{$value['short']}</td><td><input class='button' type ='button' style='cursor: hand; cursor: pointer;' size='30' value='Back Trace' onclick=\"expandit('bt_{$key}')\" /></t>\n\t</tr>\n";
+			$ret .= "\t<tr>\n<td style='display: none;' colspan='2' id='bt_{$key}'>".print_a($value['trace'], true)."</td></tr>\n";
+			if($index == 0) { $index = 1; } else { $index = 0; }
+		}
+		$ret .= "</table>";
+		return $ret;
+	}
+
+	function trigger_error($information, $level) {
+		trigger_error($information);
+	}
+}
+
+/**
+ * Strips slashes from a var if magic_quotes_gqc is enabled
+ *
+ * @param mixed $data
+ * @return mixed
+ */
+function strip_if_magic($data) {
+	if (MAGIC_QUOTES_GPC == true) {
+		return array_stripslashes($data);
+	} else {
+		return $data;
+	}
+}
+
+/**
+ * Strips slashes from a string or an array
+ *
+ * @param mixed $value
+ * @return mixed
+ */
+function array_stripslashes($data) {
+	return is_array($data) ? array_map('array_stripslashes', $data) : stripslashes($data);
+}
+
+$sql->db_Mark_Time('(After class2)');
 
 ?>

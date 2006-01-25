@@ -1,48 +1,47 @@
 <?php
-if(USER == TRUE){
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_plugins/userlanguage_menu/userlanguage_menu.php,v $
+|     $Revision: 1.11 $
+|     $Date: 2005/12/14 19:28:52 $
+|     $Author: sweetas $
++----------------------------------------------------------------------------+
+*/
 
+if (!defined('e107_INIT')) { exit; }
 
-$handle=opendir(e_LANGUAGEDIR);
-while ($file = readdir($handle)){
-	if($file != "." && $file != ".." && $file != "/"){
-		$lanlist[] = $file;
+require_once(e_HANDLER."file_class.php");
+	$fl = new e_file;
+	$lanlist = $fl->get_dirs(e_LANGUAGEDIR);
+	sort($lanlist);
+
+	$action = (e_QUERY && !$_GET['elan']) ? e_SELF."?".e_QUERY : e_SELF;
+	$text = "<form method='post' action='".$action."'>
+		<div style='text-align:center'>
+		<select name='sitelanguage' class='tbox' >";
+	foreach($lanlist as $langval)
+	{
+		$selected ="";
+		if($langval == USERLAN || ($langval == $pref['sitelanguage'] && USERLAN == ""))
+		{
+			$selected = "selected='selected'";
+		}
+		$text .= "<option value='".$langval."' $selected>".$langval."</option>\n ";
 	}
-}
-closedir($handle);
 
-$defaultlan = $pref['sitelanguage'];
-$count = 0;
+	$text .= "</select>";
+	$text .= "<br /><br /><input class='button' type='submit' name='setlanguage' value='".UTHEME_MENU_L1."' />";
+	$text .= "</div></form>	";
 
-$totalct = $sql -> db_Select("user", "user_prefs", "user_prefs REGEXP('sitelanguage') ");
+$ns->tablerender(UTHEME_MENU_L2, $text, 'user_lan');
 
-while ($row = $sql -> db_Fetch()){
-	$up = unserialize($row['user_prefs']);
-	$lancount[$up['sitelanguage']]++;
-}
-
-$defaultusers = $sql -> db_Count("user") - $totalct;
-$lancount[$defaultlan] += $defaultusers;
-
-$text = "
-<div style='text-align:center'>
-<form method='post' action='".e_SELF."'>
-<select name='sitelanguage' class='tbox'>";
-$counter = 0;
-
-while($lanlist[$counter]){
-	$text .= "<option value='".$lanlist[$counter]."' ";
-	if(($lanlist[$counter] == USERLAN) || (USERLAN == FALSE && $lanlist[$counter] == $defaultlan)){
-		$text .= "selected";
-	}
-	$text .= ">".($lanlist[$counter] == $defaultlan ? "[ ".$lanlist[$counter]." ]" : $lanlist[$counter])." (users: ".($lancount[$lanlist[$counter]] ? $lancount[$lanlist[$counter]] : "0").")</option>\n";
-	$counter++;
-}
-$text .= "</select>
-<br /><br />
-<input class='button' type='submit' name='setlanguage' value='".UTHEME_MENU_L1."' />
-</form>
-</div>";
-
-$ns -> tablerender(UTHEME_MENU_L2, $text);
-}
 ?>

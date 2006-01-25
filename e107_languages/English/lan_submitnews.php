@@ -3,9 +3,9 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $Source: /cvsroot/e107/e107/e107_languages/English/lan_submitnews.php,v $
-|     $Revision: 1.6 $
-|     $Date: 2004/09/07 10:11:07 $
+|     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/lan_submitnews.php,v $
+|     $Revision: 1.1 $
+|     $Date: 2004/09/21 19:11:56 $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */

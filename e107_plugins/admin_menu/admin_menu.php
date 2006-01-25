@@ -1,47 +1,61 @@
 <?php
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_plugins/admin_menu/admin_menu.php,v $
+|     $Revision: 1.7 $
+|     $Date: 2005/12/14 17:37:43 $
+|     $Author: sweetas $
++----------------------------------------------------------------------------+
+*/
 
-require_once(e_HANDLER."userclass_class.php");
+if (!defined('e107_INIT')) { exit; }
 
-$lan_file=e_PLUGIN."admin_menu/languages/".e_LANGUAGE.".php";
-if(file_exists($lan_file)){
-	require_once($lan_file);
-} else {
-	require_once(e_PLUGIN."admin_menu/languages/English.php");
-}
-if(ADMIN == TRUE){
+if (ADMIN == TRUE) {
+	@include(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_admin.php");
+	@include(e_LANGUAGEDIR."English/admin/lan_admin.php");
+	
+	require_once(e_HANDLER."userclass_class.php");
+	require_once(e_ADMIN."ad_links.php");
+	require_once(e_HANDLER.'admin_handler.php');
+	
+	$array_functions[] = array(e_ADMIN."plugin.php", ADLAN_98, ADLAN_99, "Z");
+	
+	if ($sql->db_Select("plugin", "*", "plugin_installflag=1")) {
+		while ($row = $sql->db_Fetch()) {
+			include(e_PLUGIN.$row['plugin_path']."/plugin.php");
+			if ($eplug_conffile) {
+				$array_functions[] = array(e_PLUGIN.$row['plugin_path']."/".$eplug_conffile, $eplug_name, "P".$row['plugin_id']);
+			}
+			unset($eplug_conffile, $eplug_name, $eplug_caption, $eplug_icon_small);
+		}
+	}
+
+	$array_functions = asortbyindex($array_functions, 1);
+
 	$amtext = "<div style='text-align:center'>
-	<select name='activate' onChange='urljump(this.options[selectedIndex].value)' class='tbox'>
-	<option>".ADMIN_MENU_L1."</option>\n";
-	$amtext .= wad(e_ADMIN."newspost.php", ADMIN_MENU_L3, "H");
-	$amtext .= wad(e_ADMIN."newspost.php?cat", ADMIN_MENU_L4, "7");
-	$amtext .= wad(e_ADMIN."prefs.php", ADMIN_MENU_L5, "Site Prefs", "1");
-	$amtext .= wad(e_ADMIN."menus.php", ADMIN_MENU_L6, "2");
-	$amtext .= wad(e_ADMIN."administrator.php", ADMIN_MENU_L7, "3");
+	<select name='activate' onchange='urljump(this.options[selectedIndex].value)' class='tbox'>
+	<option>".LAN_SELECT."</option>\n";
+	foreach ($array_functions as $link_value) {
+		$amtext .= render_admin_links($link_value[0], $link_value[1], $link_value[3]);
+	}
 
-	$amtext .= wad(e_ADMIN."updateadmin.php", ADMIN_MENU_L8, "");
-	$amtext .= wad(e_ADMIN."forum.php", ADMIN_MENU_L9, "5");
-	$amtext .= wad(e_ADMIN."article.php", ADMIN_MENU_L10, "J");
-	$amtext .= wad(e_ADMIN."content.php", ADMIN_MENU_L11, "L");
-	$amtext .= wad(e_ADMIN."review.php", ADMIN_MENU_L12, "K");
-
-	$amtext .= wad(e_ADMIN."links.php", ADMIN_MENU_L13, "I");
-	$amtext .= wad(e_ADMIN."links.php?cat", ADMIN_MENU_L14, "8");
-	$amtext .= wad(e_ADMIN."wmessage.php", ADMIN_MENU_L15, "M");
-	$amtext .= wad(e_ADMIN."upload.php", ADMIN_MENU_L16, "6");
-	$amtext .= wad(e_ADMIN."submitnews.php", ADMIN_MENU_L17, "N");
-
-	$amtext .= wad(e_ADMIN."banlist.php", ADMIN_MENU_L18, "4");
-	$amtext .= wad(e_ADMIN."users.php", ADMIN_MENU_L19, "4");
-	$amtext .= wad(e_ADMIN."ugflag.php", ADMIN_MENU_L20, "9");
-	$amtext .= wad(e_ADMIN."admin.php?logout", ADMIN_MENU_L21, "");
 	$amtext .= "</select>
 	</div>";
-	$ns -> tablerender(ADMIN_MENU_L2, $amtext);
+	$ns->tablerender(LAN_ADMIN, $amtext, 'admin_menu');
 }
-function wad($url, $urlname, $perms){
-	global $amtext;
-	if(getperms($perms)){
-		return "<option value='".$url."'>".$urlname."</option>";
+
+function render_admin_links($link, $title, $perms) {
+	if (getperms($perms)) {
+		return "<option value='".$link."'>".$title."</option>";
 	}
 }
 ?>

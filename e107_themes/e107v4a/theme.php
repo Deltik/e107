@@ -1,39 +1,49 @@
 <?php
 /*
-+---------------------------------------------------------------+
-|	e107 website system
-|	/e107.v4 theme file 
++ ----------------------------------------------------------------------------+
+|     e107 website system
 |
-|	©Steve Dunstan 2001-2002
-|	http://e107.org
-|	jalist@e107.org
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
 |
-|	Released under the terms and conditions of the
-|	GNU General Public License (http://gnu.org).
-+---------------------------------------------------------------+
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_themes/e107v4a/theme.php,v $
+|     $Revision: 1.17 $
+|     $Date: 2006/01/12 09:52:21 $
+|     $Author: lisa_ $
++----------------------------------------------------------------------------+
 */
+
+if (!defined('e107_INIT')) { exit; }
+
+// [multilanguage]
+@include_once(e_THEME."e107v4a/languages/".e_LANGUAGE.".php");
+@include_once(e_THEME."e107v4a/languages/English.php");
+
 
 // [theme]
 
 $themename = "e107.v4";
-$themeversion = "1.0";
-$themeauthor = "jalist";
+$themeversion = "2.0";
+$themeauthor = "Steve Dunstan [jalist]";
+$themeemail = "jalist@e107.org";
+$themewebsite = "http://e107.org";
 $themedate = "11/06/2003";
 $themeinfo = "";
-
-define("THEME_DISCLAIMER", "<br /><i>e107.v4 theme by jalist</i>");
-
+$xhtmlcompliant = TRUE;
+$csscompliant = TRUE;
+define("IMODE", "lite");
+define("THEME_DISCLAIMER", "<br /><i>".LAN_THEME_6."</i>");
 
 // [layout]
 
 $layout = "_default";
-$logo = THEME."images/bullet3.gif";
+$logo = THEME_ABS."images/bullet3.gif";
 
-
-
-
-
-$HEADER .= 
+$HEADER .=
 "
 <table style='width:100%; background-color:#E4E0E0' cellspacing='3' class='topborder'>
 <tr>
@@ -41,14 +51,14 @@ $HEADER .=
 {CUSTOM=clock}
 </td>
 <td style='text-align:right'>
-{CUSTOM=search}
+{CUSTOM=search+".THEME_ABS."images/search.png+18+19}
 </td>
 </tr>
 </table>
-<table style='width:100%; background-color:white' cellspacing='3' class='topborder'>
+<table style='width:100%;' cellspacing='3' id='header'>
 <tr>
-<td colspan='2' style='text-align:left'>
-{LOGO}
+<td colspan='2' style='text-align:left; vertical-align: middle;'>
+<img src='".THEME_ABS."images/logo.png' alt='' /> [ {SITENAME} ]
 </td>
 <td style='text-align:right'>
 {BANNER}
@@ -56,13 +66,17 @@ $HEADER .=
 </tr>
 </table>
 <table style='width:100%' cellspacing='3'>
+<td style='width:20%;'></td>
+<td style='width:60%;'><img src='".THEME_ABS."images/blank.gif' width='1' height='1' alt='' /></td>
+<td style='width:20%;'></td>
+</tr>
 <tr>
 <td style='width:20%; vertical-align: top;'>
 {SITELINKS=menu}
 {MENU=1}
 </td><td style='width:60%; vertical-align: top;'>";
 
-$FOOTER = 
+$FOOTER =
 "</td><td style='width:20%; vertical-align:top'>
 {MENU=2}
 </td></tr>
@@ -70,6 +84,8 @@ $FOOTER =
 <td colspan='3' style='text-align:center' class='smalltext'>
 
 {SITEDISCLAIMER}
+<br />
+{THEMEDISCLAIMER}
 </td>
 </tr>
 </table>
@@ -94,55 +110,56 @@ $FOOTER =
 
 
 function rand_tag(){
-	$tags = file(e_BASE."files/taglines.txt");
-	return stripslashes(htmlspecialchars($tags[rand(0, count($tags))]));
+        $tags = file(e_BASE."files/taglines.txt");
+        return stripslashes(htmlspecialchars($tags[rand(0, count($tags))]));
 }
 
-//	[newsstyle]
+//        [newsstyle]
 
 $NEWSSTYLE = "
 <div class='spacer'>
 <table cellpadding='0' cellspacing='0'>
 <tr>
-<td class='captiontopleft'><img src='".THEME."images/blank.gif' width='24' height='3' alt='' style='display: block;' /></td>
-<td class='captiontopmiddle'><img src='".THEME."images/blank.gif' width='1' height='3' alt='' style='display: block;' /></td>
-<td class='captiontopright'><img src='".THEME."images/blank.gif' width='11' height='3' alt='' style='display: block;' /></td>
+<td class='captiontopleft'><img src='".THEME_ABS."images/blank.gif' width='24' height='3' alt='' style='display: block;' /></td>
+<td class='captiontopmiddle'><img src='".THEME_ABS."images/blank.gif' width='1' height='3' alt='' style='display: block;' /></td>
+<td class='captiontopright'><img src='".THEME_ABS."images/blank.gif' width='11' height='3' alt='' style='display: block;' /></td>
 </tr>
 </table>
 <table cellpadding='0' cellspacing='0'>
 <tr>
-<td class='captionleft'><img src='".THEME."images/blank.gif' width='24' height='18' alt='' style='display: block;' /></td>
+<td class='captionleft'><img src='".THEME_ABS."images/blank.gif' width='24' height='18' alt='' style='display: block;' /></td>
 <td class='captionbar' style='white-space:nowrap'>
-{NEWSTITLE}
+{STICKY_ICON}{NEWSTITLE}
 </td>
-<td class='captionend'><img src='".THEME."images/blank.gif' width='12' height='18' alt='' style='display: block;' /></td>
-<td class='captionmain'><img src='".THEME."images/blank.gif' width='1' height='18' alt='' style='display: block;' /></td>
-<td class='captionright'><img src='".THEME."images/blank.gif' width='11' height='18' alt='' style='display: block;' /></td>
+<td class='captionend'><img src='".THEME_ABS."images/blank.gif' width='12' height='18' alt='' style='display: block;' /></td>
+<td class='captionmain'><img src='".THEME_ABS."images/blank.gif' width='1' height='18' alt='' style='display: block;' /></td>
+<td class='captionright'><img src='".THEME_ABS."images/blank.gif' width='11' height='18' alt='' style='display: block;' /></td>
 </tr>
 </table>
 <table cellpadding='0' cellspacing='0'>
 <tr>
-<td class='bodyleft'><img src='".THEME."images/blank.gif' width='3' height='1' alt='' style='display: block;' /></td>
+<td class='bodyleft'><img src='".THEME_ABS."images/blank.gif' width='3' height='1' alt='' style='display: block;' /></td>
 <td class='bodymain'>
 {NEWSBODY}
 {EXTENDED}
 <div class='alttd' style='text-align:right'>
-Posted by {NEWSAUTHOR} on {NEWSDATE}
- | 
+".LAN_THEME_4." {NEWSAUTHOR} ".LAN_THEME_5." {NEWSDATE}
+ |
 {NEWSCOMMENTS}
- | 
+ |
 {EMAILICON}
 {PRINTICON}
+{PDFICON}
 </div>
 </td>
-<td class='bodyright'><img src='".THEME."images/blank.gif' width='3' height='1' alt='' style='display: block;' /></td>
+<td class='bodyright'><img src='".THEME_ABS."images/blank.gif' width='3' height='1' alt='' style='display: block;' /></td>
 </tr>
 </table>
 <table cellpadding='0' cellspacing='0'>
 <tr>
-<td class='bottomleft'><img src='".THEME."images/blank.gif' width='10' height='9' alt='' style='display: block;' /></td>
-<td class='bottommain'><img src='".THEME."images/blank.gif' width='1' height='9' alt='' style='display: block;' /></td>
-<td class='bottomright'><img src='".THEME."images/blank.gif' width='10' height='9' alt='' style='display: block;' /></td>
+<td class='bottomleft'><img src='".THEME_ABS."images/blank.gif' width='10' height='9' alt='' style='display: block;' /></td>
+<td class='bottommain'><img src='".THEME_ABS."images/blank.gif' width='1' height='9' alt='' style='display: block;' /></td>
+<td class='bottomright'><img src='".THEME_ABS."images/blank.gif' width='10' height='9' alt='' style='display: block;' /></td>
 </tr>
 </table>
 </div>";
@@ -150,13 +167,11 @@ Posted by {NEWSAUTHOR} on {NEWSDATE}
 
 
 define("ICONSTYLE", "float: left; border:0");
-define("COMMENTLINK", "Read/Post Comment: ");
-define("COMMENTOFFSTRING", "Comments are turned off for this item");
+define("COMMENTLINK", LAN_THEME_1);
+define("COMMENTOFFSTRING", LAN_THEME_2);
 define("PRE_EXTENDEDSTRING", "<br /><br />[ ");
-define("EXTENDEDSTRING", "Read the rest ...");
+define("EXTENDEDSTRING", LAN_THEME_3);
 define("POST_EXTENDEDSTRING", " ]<br />");
-//define("ICONMAIL", "iconmail.png"); // Usable since e107v615
-//define("ICONPRINT", "iconprint.png"); // Usable since e107v615
 
 
 
@@ -164,56 +179,53 @@ define("POST_EXTENDEDSTRING", " ]<br />");
 
 define(PRELINK, "");
 define(POSTLINK, "");
-define(LINKSTART, "<img src='".THEME."images/bullet2.gif' alt='bullet' /> ");
-define(LINKEND, "<br />");
+define(LINKSTART, "<span><img src='".THEME_ABS."images/bullet2.gif' alt='bullet' /> ");
+define(LINKSTART_HILITE, "<span style='font-weight:bold'><img src='".THEME_ABS."images/bullet3.png' alt='bullet' /> ");
+define(LINKEND, "</span><br />");
 define(LINKDISPLAY, 2);
 define(LINKALIGN, "left");
 
 
-//	[tablestyle]
+//        [tablestyle]
 
 function tablestyle($caption, $text){
-	global $style;
-//	echo "Mode: ".$style;
+        global $style;
 
-	echo "<div class='spacer'>
 
+        echo "
+<div class='spacer'>
 <table cellpadding='0' cellspacing='0'>
 <tr>
-<td class='captiontopleft'><img src='".THEME."images/blank.gif' width='24' height='3' alt='' style='display: block;' /></td>
-<td class='captiontopmiddle'><img src='".THEME."images/blank.gif' width='1' height='3' alt='' style='display: block;' /></td>
-<td class='captiontopright'><img src='".THEME."images/blank.gif' width='11' height='3' alt='' style='display: block;' /></td>
+<td class='captiontopleft'><img src='".THEME_ABS."images/blank.gif' width='24' height='3' alt='' style='display: block;' /></td>
+<td class='captiontopmiddle'><img src='".THEME_ABS."images/blank.gif' width='1' height='3' alt='' style='display: block;' /></td>
+<td class='captiontopright'><img src='".THEME_ABS."images/blank.gif' width='11' height='3' alt='' style='display: block;' /></td>
 </tr>
 </table>
-
-
-
 <table cellpadding='0' cellspacing='0'>
 <tr>
-<td class='captionleft'><img src='".THEME."images/blank.gif' width='24' height='18' alt='' style='display: block;' /></td>
+<td class='captionleft'><img src='".THEME_ABS."images/blank.gif' width='24' height='18' alt='' style='display: block;' /></td>
 <td class='captionbar' style='white-space:nowrap'>".$caption."</td>
-<td class='captionend'><img src='".THEME."images/blank.gif' width='12' height='18' alt='' style='display: block;' /></td>
-<td class='captionmain'><img src='".THEME."images/blank.gif' width='1' height='18' alt='' style='display: block;' /></td>
-<td class='captionright'><img src='".THEME."images/blank.gif' width='11' height='18' alt='' style='display: block;' /></td>
+<td class='captionend'><img src='".THEME_ABS."images/blank.gif' width='12' height='18' alt='' style='display: block;' /></td>
+<td class='captionmain'><img src='".THEME_ABS."images/blank.gif' width='1' height='18' alt='' style='display: block;' /></td>
+<td class='captionright'><img src='".THEME_ABS."images/blank.gif' width='11' height='18' alt='' style='display: block;' /></td>
 </tr>
 </table>
-
 <table cellpadding='0' cellspacing='0'>
 <tr>
-<td class='bodyleft'><img src='".THEME."images/blank.gif' width='3' height='1' alt='' style='display: block;' /></td>
+<td class='bodyleft'><img src='".THEME_ABS."images/blank.gif' width='3' height='1' alt='' style='display: block;' /></td>
 <td class='bodymain'>".$text."</td>
-<td class='bodyright'><img src='".THEME."images/blank.gif' width='3' height='1' alt='' style='display: block;' /></td>
+<td class='bodyright'><img src='".THEME_ABS."images/blank.gif' width='3' height='1' alt='' style='display: block;' /></td>
 </tr>
 </table>
 <table cellpadding='0' cellspacing='0'>
 <tr>
-<td class='bottomleft'><img src='".THEME."images/blank.gif' width='10' height='9' alt='' style='display: block;' /></td>
-<td class='bottommain'><img src='".THEME."images/blank.gif' width='1' height='9' alt='' style='display: block;' /></td>
-<td class='bottomright'><img src='".THEME."images/blank.gif' width='10' height='9' alt='' style='display: block;' /></td>
+<td class='bottomleft'><img src='".THEME_ABS."images/blank.gif' width='10' height='9' alt='' style='display: block;' /></td>
+<td class='bottommain'><img src='".THEME_ABS."images/blank.gif' width='1' height='9' alt='' style='display: block;' /></td>
+<td class='bottomright'><img src='".THEME_ABS."images/blank.gif' width='10' height='9' alt='' style='display: block;' /></td>
 </tr>
 </table>
-
-</div>";
+</div>
+";
 
 }
 
@@ -228,8 +240,6 @@ $POLLSTYLE = <<< EOF
 </div>
 EOF;
 
-define(CB_STYLE, $CHATBOXSTYLE);
-
 
 $COMMENTSTYLE = "
 <div style='text-align:center'>
@@ -240,7 +250,7 @@ $COMMENTSTYLE = "
 <b>
 {USERNAME}
 </b>
- | 
+ |
  {TIMEDATE}
 </td>
 </tr>
@@ -259,16 +269,13 @@ $COMMENTSTYLE = "
 </span>
 </td>
 <td style='width:70%; vertical-align:top'>
-{COMMENT}
+{COMMENT} {COMMENTEDIT}
 </td>
 </tr>
 </table>
 </div>
 <br />";
 
-// Forum design
-if(strstr(e_SELF,"forum.php")||strstr(e_SELF,"forum_post.php")||strstr(e_SELF,"forum_viewforum.php")||strstr(e_SELF,"forum_viewtopic.php")){
-	@require_once("forum_design.php");
-}
+
 
 ?>

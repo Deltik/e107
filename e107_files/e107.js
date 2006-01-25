@@ -1,8 +1,54 @@
 <!--
 
-if(parent.frames[0])
+/*
++ ----------------------------------------------------------------------------+
+|	e107 website system - Javascript File.
+|
+|	$Source: /cvsroot/e107/e107_0.7/e107_files/e107.js,v $
+|	$Revision: 1.17 $
+|	$Date: 2006/01/06 01:50:05 $
+|	$Author: mcfly_e107 $
++----------------------------------------------------------------------------+
+*/
+
+/*
+ * NOTE: KEEP THIS AT THE TOP OF E107.JS!
+ * localTime is recorded ASAP after page load; SyncWithServerTime is called at the END
+ * of page processing. We want localTime and serverTime set in close chronological order.
+ * Page Processing order is as follows:
+ * A) All PHP code encountered sequentially in page
+ * B) All Javascript code encountered sequentially in page NOT including function internals
+ * So best proximity is achieved by setting
+ * serverTime at END of php code, and localTime at START of js code.
+ * NOTE: this method means reported times include transfer delay. It's slightly MORE accurate this way!
+ * Final product: tdOffset cookie contains server-browser time difference in seconds,
+ * independent of time zone. tzOffset contains browser time zone in minutes.
+ */
+
+var nowLocal = new Date();		/* time at very beginning of js execution */
+var localTime = Math.floor(nowLocal.getTime()/1000);	/* time, in ms -- recorded at top of jscript */
+/* NOTE: if serverDelta is needed for js functions, you must pull it from
+ * the cookie (as calculated during a previous page load!)
+ * The value calculated in SyncWithServerTime is not known until after the
+ * entire page has been processed.
+ */
+function SyncWithServerTime(serverTime)
 {
-parent.location.href = self.location.href;
+	if (serverTime) {
+	  	/* update time difference cookie */
+		tdCookie='e107_tdOffset=';
+		tdSetTimeCookie='e107_tdSetTime=';
+		serverDelta=Math.floor(localTime-serverTime);
+	  	document.cookie = tdCookie+serverDelta;
+	  	document.cookie = tdSetTimeCookie+(localTime-serverDelta); /* server time when set */
+	}
+
+	tzCookie = 'e107_tzOffset=';
+	if (document.cookie.indexOf(tzCookie) < 0) {
+		/* set if not already set */
+		timezoneOffset = nowLocal.getTimezoneOffset(); /* client-to-GMT in minutes */
+		document.cookie = tzCookie + timezoneOffset;
+	}
 }
 
 if(document.getElementById&&!document.all){ns6=1;}else{ns6=0;}
@@ -10,9 +56,11 @@ var agtbrw=navigator.userAgent.toLowerCase();
 var operaaa=(agtbrw.indexOf('opera')!=-1);
 var head="display:''";
 var folder='';
-function expandit(curobj){
+
+function expandit(curobj,hide){
 if(document.getElementById(curobj)){
   folder=document.getElementById(curobj).style;
+
   }else{
 
 if(ns6==1||operaaa==true){
@@ -22,51 +70,93 @@ if(ns6==1||operaaa==true){
 }
    }
 if (folder.display=="none"){folder.display="";}else{folder.display="none";}
+if(document.getElementById(hide)){
+	hidden=document.getElementById(hide).style;
+	if (hidden.display=="none"){hidden.display="";}else{hidden.display="none";}
+}
 }
 
 
 function urljump(url){
-	top.window.location = url; 
+	top.window.location = url;
 }
 
-function open_window(url,type) {
-	if('full' == type){
-		pwindow = window.open(url);
-	} else {
-		pwindow = window.open(url,'Name', 'top=100,left=100,resizable=yes,width=600,height=400,scrollbars=yes,menubar=yes')
+function setInner(id, txt) {
+	document.getElementById(id).innerHTML = txt;
+}
+
+function jsconfirm(thetext){
+		return confirm(thetext);
+}
+
+function insertext(str,tagid,display){
+	document.getElementById(tagid).value = str;
+	if(display){
+		document.getElementById(display).style.display='none';
 	}
 }
 
+function appendtext(str,tagid,display){
+	document.getElementById(tagid).value += str;
+	document.getElementById(tagid).focus();
+	if(display){
+		document.getElementById(display).style.display='none';
+	}
+}
+
+function open_window(url,wth,hgt) {
+	if('full' == wth){
+		pwindow = window.open(url);
+	} else {
+		if (wth) {
+			mywidth=wth;
+		} else {
+			mywidth=600;
+		}
+
+		if (hgt) {
+			myheight=hgt;
+		} else {
+			myheight=400;
+		}
+
+		pwindow = window.open(url,'Name', 'top=100,left=100,resizable=yes,width='+mywidth+',height='+myheight+',scrollbars=yes,menubar=yes')
+	}
+	pwindow.focus();
+}
+
 function ejs_preload(ejs_path, ejs_imageString){
-	var ejs_imageArray = ejs_imageString.split(','); 
-	for(ejs_loadall=0; ejs_loadall<ejs_imageArray.length; ejs_loadall++){ 
-		var ejs_LoadedImage=new Image(); 
-		ejs_LoadedImage.src=ejs_path + ejs_imageArray[ejs_loadall]; 
-	} 
-} 
+	var ejs_imageArray = ejs_imageString.split(',');
+	for(ejs_loadall=0; ejs_loadall<ejs_imageArray.length; ejs_loadall++){
+		var ejs_LoadedImage=new Image();
+		ejs_LoadedImage.src=ejs_path + ejs_imageArray[ejs_loadall];
+	}
+}
 
 function textCounter(field,cntfield) {
 	cntfield.value = field.value.length;
 }
 
 function openwindow() {
-	opener = window.open("htmlarea/index.php", "popup","top=50,left=100,resizable=no,width=670,height=520,scrollbars=no,menubar=no");            
+	opener = window.open("htmlarea/index.php", "popup","top=50,left=100,resizable=no,width=670,height=520,scrollbars=no,menubar=no");
+	opener.focus();
 }
-function setCheckboxes(the_form, do_check){
-	var elts = (typeof(document.forms[the_form].elements['perms[]']) != 'undefined') ? document.forms[the_form].elements['perms[]'] : document.forms[the_form].elements['perms[]'];
-    var elts_cnt  = (typeof(elts.length) != 'undefined') ? elts.length : 0;
-    if(elts_cnt){
+
+function setCheckboxes(the_form, do_check, the_cb){
+	var elts = (typeof(document.forms[the_form].elements[the_cb]) != 'undefined') ? document.forms[the_form].elements[the_cb] : document.forms[the_form].elements[the_cb];
+	var elts_cnt  = (typeof(elts.length) != 'undefined') ? elts.length : 0;
+	if(elts_cnt){
 		for(var i = 0; i < elts_cnt; i++){
 			elts[i].checked = do_check;
-        }
+		}
 	}else{
 		elts.checked        = do_check;
-    }
+		}
 	return true;
 }
 
 var ref=""+escape(top.document.referrer);
-var colord = window.screen.colorDepth; 
+var colord = window.screen.colorDepth;
 var res = window.screen.width + "x" + window.screen.height;
 var eself = document.location;
 
@@ -78,8 +168,9 @@ var is_nav = ((clientPC.indexOf('mozilla')!=-1) && (clientPC.indexOf('spoofer')=
 var is_moz = 0;
 var is_win = ((clientPC.indexOf("win")!=-1) || (clientPC.indexOf("16bit") != -1));
 var is_mac = (clientPC.indexOf("mac")!=-1);
-var selectedInputArea;
-
+var e107_selectedInputArea;
+var e107_selectedRange;
+var e107_dupCounter = 1;
 
 // From http://www.massless.org/mozedit/
 function mozWrap(txtarea, open, close){
@@ -95,54 +186,111 @@ function mozWrap(txtarea, open, close){
 }
 
 function storeCaret (textAr){
-	selectedInputArea = textAr;
+	e107_selectedInputArea = textAr;
 	if (textAr.createTextRange){
-		selectedRange = document.selection.createRange().duplicate();
+		e107_selectedRange = document.selection.createRange().duplicate();
 	}
 }
 
-function addtext(text){
-	if (window.selectedInputArea){
-		var ta = selectedInputArea;
-		val = text.split('][');
+function addtext(text, emote){
+	if (window.e107_selectedInputArea){
+		var ta = e107_selectedInputArea;
+		if (emote != true){
+			val = text.split('][');
+			}
+		else { val = text; }
+
 		if ((clientVer >= 4) && is_ie && is_win){
-			theSelection = document.selection.createRange().text;
+			theSelection = document.selection.createRange().text; /* wrap selected text */
 			if (theSelection) {
-				document.selection.createRange().text = val[0] +']' +  theSelection + '[' + val[1];
+				if (emote != true){
+					document.selection.createRange().text = val[0] +']' +  theSelection + '[' + val[1];
+				} else {
+					document.selection.createRange().text = val + theSelection;
+				}
 				ta.focus();
 				theSelection = '';
 				return;
 			}
+
 		}else if (ta.selectionEnd && (ta.selectionEnd - ta.selectionStart > 0)){
-			mozWrap(ta, val[0] +']', '[' + val[1]);
+			if (emote != true){
+				mozWrap(ta, val[0] +']', '[' + val[1]); /* wrap selected text */
+			} else {
+				mozWrap(ta, val, ''); /* wrap selected text */
+			}
 			return;
 		}
 		text = ' ' + text + ' ';
-		if (ta.createTextRange && selectedRange) {
-			var caretPos = selectedRange;
+		if (ta.createTextRange && e107_selectedRange) {
+			var caretPos = e107_selectedRange; /* IE */
 			caretPos.text = caretPos.text.charAt(caretPos.text.length - 1) == ' ' ? caretPos.text + text + ' ' : caretPos.text + text;
-			ta.focus();
+		} else if (ta.selectionStart || ta.selectionStart == '0') { /* Moz */
+		   	var startPos = ta.selectionStart;
+			var endPos = ta.selectionEnd;
+			var charb4 = ta.value.charAt(endPos-1);
+			ta.value = ta.value.substring(0, endPos)+ text + ta.value.substring(endPos);
 		} else {
 			ta.value  += text;
-			ta.focus();
 		}
+		ta.focus();
 	}
 }
 
-function help(help){
-	document.getElementById('dataform').helpb.value = help;
+function help(help,tagid){
+	if(tagid){
+		document.getElementById(tagid).value = help;
+	} else if(document.getElementById('dataform')) {
+		document.getElementById('dataform').helpb.value = help;
+	}
 }
-function externalLinks() { 
- if (!document.getElementsByTagName) return; 
- var anchors = document.getElementsByTagName("a"); 
- for (var i=0; i<anchors.length; i++) { 
-   var anchor = anchors[i]; 
-   if (anchor.getAttribute("href") && 
-       anchor.getAttribute("rel") == "external") 
-     anchor.target = "_blank"; 
- } 
-} 
+function externalLinks() {
+	if (!document.getElementsByTagName) return;
+	var anchors = document.getElementsByTagName("a");
+	for (var i=0; i<anchors.length; i++) {
+	var anchor = anchors[i];
+	if (anchor.getAttribute("href") &&
+		anchor.getAttribute("rel") == "external")
+		anchor.target = "_blank";
+	}
+}
 
+function eover(object, over) {
+	object.className = over;
+}
 
+function duplicateHTML(copy,paste,baseid){
+		if(document.getElementById(copy)){
+
+			e107_dupCounter++;
+			var type = document.getElementById(copy).nodeName; // get the tag name of the source copy.
+
+			var but = document.createElement('input');
+			var br = document.createElement('br');
+
+			but.type = 'button';
+			but.value = 'x';
+			but.className = 'button';
+			but.onclick = function(){ this.parentNode.parentNode.removeChild(this.parentNode); };
+
+			var destination = document.getElementById(paste);
+			var source      = document.getElementById(copy).cloneNode(true);
+
+			var newentry = document.createElement(type);
+
+			newentry.appendChild(source);
+			newentry.value='';
+			newentry.appendChild(but);
+			newentry.appendChild(br);
+			if(baseid)
+			{
+				newid = baseid+e107_dupCounter;
+				newentry.innerHTML = newentry.innerHTML.replace(new RegExp(baseid, 'g'), newid);
+				newentry.id=newid;
+			}
+
+			destination.appendChild(newentry);
+		}
+}
 
 //-->

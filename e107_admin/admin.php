@@ -1,200 +1,246 @@
 <?php
 /*
-+---------------------------------------------------------------+
-|        e107 website system
-|        /admin/admin.php
++ ----------------------------------------------------------------------------+
+|     e107 website system
 |
-|        ©Steve Dunstan 2001-2002
-|        http://e107.org
-|        jalist@e107.org
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
 |
-|        Released under the terms and conditions of the
-|        GNU General Public License (http://gnu.org).
-+---------------------------------------------------------------+
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_admin/admin.php,v $
+|     $Revision: 1.27 $
+|     $Date: 2006/01/18 18:45:47 $
+|     $Author: sweetas $
++----------------------------------------------------------------------------+
 */
-require_once("../class2.php");
-require_once("auth.php");
+require_once('../class2.php');
+$e_sub_cat = 'main';
+require_once('auth.php');
+require_once(e_HANDLER.'admin_handler.php');
 
-
-// auto db update ...
-if("0" == ADMINPERMS){
-        @require_once(e_ADMIN."update_routines.php");
-        @update_check();
-}
-//        end auto db update
-
-if(e_QUERY == "purge"){
-        $sql -> db_Delete("tmp", "tmp_ip='adminlog' ");
+if (is_dir(e_ADMIN.'htmlarea') || is_dir(e_HANDLER.'htmlarea')) {
+	$text = "There are files on your server that are known to be 
+	exploitable. These must be removed <b>immediately</b>. The files are related to the WYSIWYG system used in the 
+	older 0.6xx branch of e107 - htmlArea. Please delete the following directories and all their contents:<br /><br />
+	<div style='text-align:center'>".$HANDLERS_DIRECTORY."htmlarea/<br />".$ADMIN_DIRECTORY."htmlarea/</div>";
+	$ns -> tablerender('Warning!', $text);
 }
 
-$tdc=0;
-function wad($link, $title, $description, $perms, $icon = FALSE, $mode = FALSE){
-        global $tdc;
-        $permicon = ($mode == TRUE ? e_IMAGE."generic/rname.png" : e_IMAGE."generic/location.png");
-        if(getperms($perms)){
-                if(!$tdc){$tmp1 = "<tr>";}
-                if($tdc == 4){$tmp2 = "</tr>";$tdc=-1;}
-                $tdc++;
-                $tmp = $tmp1."<td class='td' style='text-align:left; vertical-align:top; width:20%; whitespace:nowrap' onmouseover='tdover(this)' onmouseout='tdnorm(this)'
-                onclick=\"document.location.href='$link'\"><img src='$permicon' alt='$description' style='border:0; vertical-align:middle'/> $title</td>\n\n".$tmp2;
-        }
-        return $tmp;
+if (is_readable(e_ADMIN.'filetypes.php')) {
+	$a_types = trim(file_get_contents(e_ADMIN.'filetypes.php'));
+} else {
+	$a_types = 'zip, gz, jpg, png, gif';
+}
+$a_types = explode(',', $a_types);
+foreach ($a_types as $f_type) {
+	$allowed_types[] = '.'.trim(str_replace('.', '', $f_type));
+}
+$public = array(e_FILE.'public', e_FILE.'public/avatars');
+foreach ($public as $dir) {
+	if (is_dir($dir)) {
+		if ($dh = opendir($dir)) {
+			while (($file = readdir($dh)) !== false) {
+				if ($file != '.' && $file != '..' && $file != '/' && $file != 'CVS' && $file != 'avatars' && $file != 'Thumbs.db') {
+					$fext = substr(strrchr($file, "."), 0);
+					if (!in_array($fext, $allowed_types)) {
+						if ($file == 'index.html') {
+							if (filesize($dir.'/'.$file)) {
+								$potential[] = str_replace('../', '', $dir).'/'.$file;
+							}
+						} else {
+							$potential[] = str_replace('../', '', $dir).'/'.$file;
+						}
+					}
+				}
+			}
+		closedir($dh);
+		}
+	}
 }
 
-require_once("ad_links.php");
-
-$newarray = asortbyindex ($array_functions, 1);
-
-$text = "<div style='text-align:center'>
-<table style='width:95%'>";
-
-while(list($key, $funcinfo) = each($newarray)){
-        $text .= wad($funcinfo[0], $funcinfo[1], $funcinfo[2], $funcinfo[3]);
+if (isset($potential)) {
+	$text = "There are one or more files in your public upload directories that are not in your allowed upload filetypes 
+	list. These may have been placed here by an attacker and if so should be removed <b>immediately</b>. You should 
+	<b>not</b> open these files as this may execute any malicious code the file might contain. ie. do not open them 
+	with your browser.<br /><br />
+	
+	If you recognise these files as being legitimate, it is likely that due to the recent allowed filetypes changes, 
+	the filetype you allowed is no longer in the allowed filetypes list and you will need to re-add it 
+	(see admin => uploads). You should not allow the upload of .html, .txt, etc as an attacker may upload a file of 
+	this type which includes malicious javascript. You should also, of course, not allow the upload of .php files or 
+	any other type of executable script.<br ><br />
+	
+	Below is the list of files that could potentially be malicious:<br /><br />";
+	
+	foreach ($potential as $p_file) {
+		$text .= $p_file.'<br />';
+	}
+	
+	$ns -> tablerender('Warning!', $text);
 }
 
-if(!$tdc){ $text .= "</tr>"; }
-
-
-
-        unset($tdc);
-
-        $text .= "</tr><tr>
-        <td colspan='5'><br />
-        </td>
-        </tr>";
-
-        $text .= wad(e_ADMIN."plugin.php", ADLAN_98, ADLAN_99, "Z", "", TRUE);
-
-        if($sql -> db_Select("plugin", "*", "plugin_installflag=1")){
-                while($row = $sql -> db_Fetch()){
-                        extract($row);
-                        include(e_PLUGIN.$plugin_path."/plugin.php");
-                        if($eplug_conffile){
-                                $text .= wad(e_PLUGIN.$plugin_path."/".$eplug_conffile, $eplug_name, $eplug_caption, "P".$plugin_id, "", TRUE);
-                        }
-                        unset($eplug_conffile, $eplug_name, $eplug_caption);
-                }
-        }
-
-$text .= "</tr>
-</table></div>";
-$ns -> tablerender("<div style='text-align:center'>".ADLAN_47." ".ADMINNAME."</div>", $text);
-
-
-
-// info -------------------------------------------------------
-
-$members = $sql -> db_Count("user");
-$unverified = $sql -> db_Count("user", "(*)", "WHERE user_ban=2");
-$banned = $sql -> db_Count("user", "(*)", "WHERE user_ban=1");
-$chatbox_posts = $sql -> db_Count("chatbox");
-$forum_posts = $sql -> db_Count("forum_t");
-$comments = $sql -> db_Count("comments");
-$permicon = "<img src='".e_IMAGE."generic/location.png' alt='' style='vertical-align:middle' /> ";
-$permicon2 = "<img src='".e_IMAGE."generic/rname.png' alt='' style='vertical-align:middle' /> ";
-$active_uploads = $sql -> db_Select("upload", "*", "upload_active=0");
-$submitted_links = $sql -> db_Select("tmp", "*", "tmp_ip='submitted_link' ");
-$reported_posts = $sql -> db_Select("tmp", "*", "tmp_ip='reported_post' ");
-$submitted_news = $sql -> db_Select("submitnews", "*", "submitnews_auth ='0' ");
-$submitted_articles = $sql -> db_Select("content", "*", "content_type ='15' ");
-$submitted_reviews = $sql -> db_Select("content", "*", "content_type ='16' ");
-
-$text = "<div style='text-align:center'>
-<table style='width:95%'>
-<tr>
-<td style='width:50%'>";
-
-
-$text .= $permicon.ADLAN_110.": ".$members."<br />";
-$text .= $permicon.ADLAN_111.": ".$unverified."<br />";
-$text .= $permicon.ADLAN_112.": ".$banned."<br /><br />";
-
-$text .= ($submitted_news ? $permicon2."<a href='".e_ADMIN."newspost.php?sn'>".ADLAN_107.": $submitted_news</a>" : $permicon.ADLAN_107.": 0")."<br />";
-$text .= ($submitted_articles ? $permicon2."<a href='".e_ADMIN."article.php?sa'>".ADLAN_123.": $submitted_articles</a>" : $permicon.ADLAN_123.": ".$submitted_articles)."<br />";
-$text .= ($submitted_reviews ? $permicon2."<a href='".e_ADMIN."review.php?sa'>".ADLAN_124.": $submitted_reviews</a>" : $permicon.ADLAN_124.": ".$submitted_reviews)."<br />";
-$text .= ($submitted_links ? $permicon2."<a href='".e_ADMIN."links.php?sn'>".ADLAN_119.": $submitted_links</a>" : $permicon.ADLAN_119.": ".$submitted_links)."<br /><br />";
-
-$text .= ($reported_posts ? $permicon2."<a href='".e_ADMIN."forum.php?sr'>".ADLAN_125.": $reported_posts</a>" : $permicon.ADLAN_125.": ".$reported_posts)."<br /><br />";
-
-$text .= ($active_uploads ? $permicon2."<a href='".e_ADMIN."upload.php'>".ADLAN_108.": $active_uploads</a>" : $permicon.ADLAN_108.": ".$active_uploads)."<br /><br />";
-
-$text .= $permicon.ADLAN_113.": ".$forum_posts."<br />";
-$text .= $permicon.ADLAN_114.": ".$comments."<br />";
-$text .= $permicon.ADLAN_115.": ".$chatbox_posts;
-
-$text .= "</td>
-<td style='width:50%; vertical-align:top'>";
-
-$text .= $permicon." <a style='cursor: pointer; cursor: hand' onclick=\"expandit(this)\">".ADLAN_116."</a>\n";
-if(e_QUERY != "logall"){
-        $text .= "<div style='display: none;'>";
+// update users using old layout names to their new names
+$update_prefs = FALSE;
+if (!$pref['adminstyle'] || $pref['adminstyle'] == 'default') {
+	$pref['adminstyle'] = 'compact';
+	$update_prefs = true;
 }
-if(e_QUERY == "logall"){
-        $sql -> db_Select("tmp", "*", "tmp_ip='adminlog' ORDER BY tmp_time DESC");
-}else{
-        $sql -> db_Select("tmp", "*", "tmp_ip='adminlog' ORDER BY tmp_time DESC LIMIT 0,10");
+if ($pref['adminstyle'] == 'adminb') {
+	$pref['adminstyle'] = 'cascade';
+	$update_prefs = true;
 }
-$text .= "<ul>";
-$gen = new convert;
-while($row = $sql -> db_Fetch()){
-        extract($row);
-        $datestamp = $gen->convert_date($tmp_time, "short");
-        $text .= "<li>".$datestamp.$tmp_info."</li>";
+if ($pref['adminstyle'] == 'admin_etalkers') {
+	$pref['adminstyle'] = 'categories';
+	$update_prefs = true;
 }
-$text .= "</ul>";
+if ($pref['adminstyle'] == 'admin_combo') {
+	$pref['adminstyle'] = 'combo';
+	$update_prefs = true;
+}
+if ($pref['adminstyle'] == 'admin_classis') {
+	$pref['adminstyle'] = 'classis';
+	$update_prefs = true;
+}
 
-$text .= "[ <a href='".e_SELF."?logall'>".ADLAN_117."</a> ][ <a href='".e_SELF."?purge'>".ADLAN_118."</a> ]\n</div>
-</td></tr></table></div>
+// temporary code to switch users using admin_jayya to jayya
 
-";
+if ($pref['admintheme'] == 'admin_jayya') {
+	$pref['admintheme'] = 'jayya';
+	$update_prefs = true;
+}
 
-$ns -> tablerender(ADLAN_109, $text);
+if ($pref['sitetheme'] == 'admin_jayya') {
+	$pref['sitetheme'] = 'jayya';
+	$update_prefs = true;
+}
+
+// ---------------------------------------------------------
+
+
+if ($update_prefs == true) {
+	save_prefs();
+}
+
+// auto db update
+if ('0' == ADMINPERMS) {
+	require_once(e_ADMIN.'update_routines.php');
+	update_check();
+}
+// end auto db update
+
+if (e_QUERY == 'purge') {
+	$admin_log->purge_log_events(false);
+}
+
+$td = 1;
+if(!defined("ADLINK_COLS")){
+	define("ADLINK_COLS",5);
+}
+function render_links($link, $title, $description, $perms, $icon = FALSE, $mode = FALSE) {
+	global $td;
+	$text = '';
+	if (getperms($perms)) {
+		if ($mode == 'adminb') {
+			$text = "<tr><td class='forumheader3'>
+				<div class='td' style='text-align:left; vertical-align:top; width:100%'
+				onmouseover=\"eover(this, 'forumheader5')\" onmouseout=\"eover(this, 'td')\" onclick=\"document.location.href='".$link."'\">
+				".$icon." <b>".$title."</b> ".($description ? "[ <span class='smalltext'>".$description."</span> ]" : "")."</div></td></tr>";
+		} else {
+			if ($td == (ADLINK_COLS+1)) {
+				$text .= '</tr>';
+				$td = 1;
+			}
+			if ($td == 1) {
+				$text .= '<tr>';
+			}
+			if ($mode == 'default') {
+				$text .= "<td class='td' style='text-align:left; vertical-align:top; width:20%; white-space:nowrap'
+					onmouseover=\"eover(this, 'forumheader5')\" onmouseout=\"eover(this, 'td')\" onclick=\"document.location.href='".$link."'\">".$icon." ".$title."</td>";
+			}
+			else if ($mode == 'classis') {
+				$text .= "<td style='text-align:center; vertical-align:top; width:20%'><a href='".$link."' title='$description'>".$icon."</a><br />
+					<a href='".$link."' title='$description'><b>".$title."</b></a><br /><br /></td>";
+			}elseif ($mode == 'beginner'){
+                $text .= "<td style='text-align:center; vertical-align:top; width:20%' ><a href='".$link."' >".$icon."</a>
+					<div style='padding:5px'>
+					<a href='".$link."' title='".$description."' style='text-decoration:none'><b>".$title."</b></a></div><br /><br /><br /></td>";
+			}
+			$td++;
+		}
+	}
+	return $text;
+}
+
+function render_clean() {
+	global $td;
+	while ($td <= ADLINK_COLS) {
+		$text .= "<td class='td' style='width:20%;'></td>";
+		$td++;
+	}
+	$text .= "</tr>";
+	$td = 1;
+	return $text;
+}
+
+$newarray = asortbyindex($array_functions, 1);
+
+require_once(e_ADMIN.'includes/'.$pref['adminstyle'].'.php');
+
+function admin_info() {
+	global $tp;
+	$text = "<div style='text-align:center'>
+		<table style='width: 100%; border-collapse:collapse; border-spacing:0px;'>
+		<tr>
+		<td style='width: 33%; vertical-align: top'>";
+
+	$text .= $tp->parseTemplate('{ADMIN_STATUS}');
+
+	$text .= "</td>
+		<td style='width: 33%; vertical-align: top'>";
+
+	$text .= $tp->parseTemplate('{ADMIN_LATEST}');
+
+	$text .= "</td>
+		<td style='width: 33%; vertical-align: top'>";
+
+	$text .= $tp->parseTemplate('{ADMIN_LOG}');
+
+	$text .= "</td>
+		</tr></table></div>";
+
+	return $text;
+}
+
+function status_request() {
+	global $pref;
+	if ($pref['adminstyle'] == 'classis' || $pref['adminstyle'] == 'cascade' || $pref['adminstyle'] == 'beginner') {
+		return TRUE;
+	} else {
+		return FALSE;
+	}
+}
+
+function latest_request() {
+	global $pref;
+	if ($pref['adminstyle'] == 'classis' || $pref['adminstyle'] == 'cascade' || $pref['adminstyle'] == 'beginner') {
+		return TRUE;
+	} else {
+		return FALSE;
+	}
+}
+
+function log_request() {
+	global $pref;
+	if ($pref['adminstyle'] == 'classis' || $pref['adminstyle'] == 'cascade'|| $pref['adminstyle'] == 'beginner') {
+		return TRUE;
+	} else {
+		return FALSE;
+	}
+}
 
 require_once("footer.php");
 
-// Multi indice array sort by sweetland@whoadammit.com
-function asortbyindex ($sortarray, $index) {
-        $lastindex = count ($sortarray) - 1;
-        for ($subindex = 0; $subindex < $lastindex; $subindex++) {
-                $lastiteration = $lastindex - $subindex;
-                for ($iteration = 0; $iteration < $lastiteration;    $iteration++) {
-                        $nextchar = 0;
-                        if (comesafter ($sortarray[$iteration][$index], $sortarray[$iteration + 1][$index])) {
-                                $temp = $sortarray[$iteration];
-                                $sortarray[$iteration] = $sortarray[$iteration + 1];
-                                $sortarray[$iteration + 1] = $temp;
-                        }
-                }
-        }
-        return ($sortarray);
-}
-
-function comesafter ($s1, $s2) {
-        $order = 1;
-        if (strlen ($s1) > strlen ($s2)) {
-                $temp = $s1;
-                $s1 = $s2;
-                $s2 = $temp;
-                $order = 0;
-        }
-        for ($index = 0; $index < strlen ($s1); $index++) {
-                if ($s1[$index] > $s2[$index]) return ($order);
-                if ($s1[$index] < $s2[$index]) return (1 - $order);
-        }
-        return ($order);
-}
-
-function headerjs(){
-$script =  "<script type=\"text/javascript\">
-function tdover(object) {
-  if (object.className == 'td') object.className = 'forumheader5';
-}
-
-function tdnorm(object) {
-  if (object.className == 'forumheader5') object.className = 'td';
-}
-</script>\n";
-
-return $script;
-}
 ?>

@@ -1,6 +1,15 @@
 <?php
-
-define("PAGE_NAME", "Banner"); 
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system - Language File.
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/lan_banner.php,v $
+|     $Revision: 1.2 $
+|     $Date: 2005/01/14 12:57:27 $
+|     $Author: lisa_ $
++----------------------------------------------------------------------------+
+*/
+define("PAGE_NAME", "Banner");
 
 define("LAN_16", "Username: ");
 define("LAN_17", "Password: ");
@@ -20,9 +29,10 @@ define("LAN_30", "Unlimited");
 define("LAN_31", "Not applicable");
 define("LAN_32", "Yes");
 define("LAN_33", "No");
-define("LAN_34", "Ends");
+define("LAN_34", "Ends:");
 define("LAN_35", "Clickthrough IP addresses");
 define("LAN_36", "Active:");
 define("LAN_37", "Starts:");
+define("LAN_38", "Error");
 
 ?>

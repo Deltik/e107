@@ -1,7 +1,26 @@
 <?php
-$text = "Enter all your site links here. For main site links (the ones displayed in your main navigation bar) set the category to 'Main', any others will be displayed on the Links page. You can seperate these links into different categories.
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/help/links.php,v $
+|     $Revision: 1.4 $
+|     $Date: 2005/12/14 17:37:43 $
+|     $Author: sweetas $
++----------------------------------------------------------------------------+
+*/
+
+if (!defined('e107_INIT')) { exit; }
+
+$text = "Enter all your site links here. Links added here will be shown in your main navigation menu, for other links please use the Links Page plugin.
 <br />
-<br />
-The submenus generator is ONLY usefull for e107 DHTML menus (TreeMenu, UltraTreeMenu, eDynamicMenu, ypSlideMenu...)";
+";
 $ns -> tablerender("Links Help", $text);
 ?>

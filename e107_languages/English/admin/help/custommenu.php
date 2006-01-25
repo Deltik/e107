@@ -1,13 +1,26 @@
 <?php
-$text = "From this screen you can create custom menus or custom pages with your own content in them.<br /><br /><b>Important Notes</b><br />
-- to use this feature you will need to CHMOD your /e107_plugins/custom/ and /e107_plugins/custompages/ directories to 777.
-<br />
-- you can use HTML code using ' for HTML attributes !!! (Using \" for HTML attributes will crash your menu/page)
-<br /><br />
-<i>Menu/Page Filename</i>: The name of your custom menu or custom page, the menu will be saved as 'this name.php' in the ".e_PLUGIN."custom/ directory<br />
-the page will be saved as this 'name.php' in the ".e_PLUGIN."custompages/ directory<br /><br />
-<i>Menu/Page Caption Title</i>: The text displayed in the captionbar of the menu item or the title of the page<br /><br />
-<i>Menu/Page Text</i>: The actual data that is displayed in the menu body or as normal page (For advanced users: no need to add lines to call the class2.php file or to display HEADER or FOOTER... will be automatically added), can be text, images etc";
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/help/custommenu.php,v $
+|     $Revision: 1.3 $
+|     $Date: 2005/12/14 17:37:43 $
+|     $Author: sweetas $
++----------------------------------------------------------------------------+
+*/
+
+if (!defined('e107_INIT')) { exit; }
+
+$text = "From this screen you can create custom menus or custom pages with your own content in them.<br /><br />
+Please see <a href='http://docs.e107.org?Custom Pages'>http://docs.e107.org?Custom Pages</a>";
 
 $ns -> tablerender(CUSLAN_18, $text);
 ?>

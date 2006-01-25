@@ -11,251 +11,242 @@
 |        Released under the terms and conditions of the
 |        GNU General Public License (http://gnu.org).
 |
-|   $Source: /cvsroot/e107/e107/e107_admin/header.php,v $
-|   $Revision: 1.23 $
-|   $Date: 2004/09/06 11:36:42 $
-|   $Author: loloirie $
+|   $Source: /cvsroot/e107/e107_0.7/e107_admin/header.php,v $
+|   $Revision: 1.42 $
+|   $Date: 2006/01/17 20:01:08 $
+|   $Author: e107coders $
 +---------------------------------------------------------------+
 */
-echo (defined("STANDARDS_MODE") ? "" : "<?xml version='1.0' encoding='iso-8859-1' ?>");
-if(file_exists(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_header.php")){@include_once(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_header.php");}else{@include_once(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_header.php");}
 
-?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<title><?php echo SITENAME." : ".LAN_head_4; ?></title>
-<link rel="stylesheet" href="<?php echo THEME; ?>style.css" />
-<?php if(file_exists(e_FILE."e107.css")){ echo "\n<link rel='stylesheet' href='".e_FILE."e107.css' />\n"; } ?>
-<?php if(file_exists(e_FILE."style.css")){ echo "\n<link rel='stylesheet' href='".e_FILE."style.css' />\n"; } ?>
-<meta http-equiv="Content-Type" content="text/html; charset=<?php echo CHARSET; ?>" />
-<meta http-equiv="content-style-type" content="text/css" />
-<?php
- echo "<script type='text/javascript' src='".e_FILE."e107.js'></script>\n";
-if(file_exists(THEME."theme.js")){echo "<script type='text/javascript' src='".THEME."theme.js'></script>\n";}
- if(file_exists(e_FILE."user.js")){echo "<script type='text/javascript' src='".e_FILE."user.js'></script>\n";}
-if(function_exists("headerjs")){     echo headerjs(); }
-if($htmlarea_js){ echo $htmlarea_js; }
-if($eplug_js){ echo "<script type='text/javascript' src='{$eplug_js}'></script>\n"; }
-if($eplug_css){ echo "\n<link rel='stylesheet' href='{$eplug_css}' type='text/css' />\n"; }
-?>
-</head>
-<body>
-<?php
+if (!defined('e107_INIT')) { exit; }
+
+require_once(e_ADMIN.'ad_links.php');
+echo defined('STANDARDS_MODE') ? "" :
+ "<?xml version='1.0' encoding='".CHARSET."' ?>";
+if (file_exists(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_header.php')) {
+	@include_once(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_header.php");
+} else {
+	@include_once(e_LANGUAGEDIR."English/admin/lan_header.php");
+}
+if (file_exists(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_footer.php')) {
+	@include_once(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_footer.php');
+} else {
+	@include_once(e_LANGUAGEDIR.'English/admin/lan_footer.php');
+}
+if (!defined('ADMIN_WIDTH')) {
+	define('ADMIN_WIDTH', 'width: 95%');
+}
+if (file_exists(THEME.'admin_template.php')) {
+  	require_once(THEME.'admin_template.php');
+} else {
+  	require_once(e_BASE.$THEMES_DIRECTORY.'templates/admin_template.php');
+}
+
+if (!defined('ADMIN_EDIT_ICON'))
+{
+	define("ADMIN_EDIT_ICON", "<img src='".e_IMAGE_ABS."admin_images/edit_16.png' alt='' title='".LAN_EDIT."' style='border:0px; height:16px; width:16px' />");
+	define("ADMIN_EDIT_ICON_PATH", e_IMAGE."admin_images/edit_16.png");
+}
+
+if (!defined('ADMIN_DELETE_ICON'))
+{
+	define("ADMIN_DELETE_ICON", "<img src='".e_IMAGE_ABS."admin_images/delete_16.png' alt='' title='".LAN_DELETE."' style='border:0px; height:16px; width:16px' />");
+	define("ADMIN_DELETE_ICON_PATH", e_IMAGE."admin_images/delete_16.png");
+}
+
+echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">
+	<html xmlns='http://www.w3.org/1999/xhtml'>
+	<head>
+	<title>".SITENAME." : ".LAN_head_4."</title>\n";
+echo "<meta http-equiv='content-type' content='text/html; charset=".CHARSET."' />
+	<meta http-equiv='content-style-type' content='text/css' />\n";
+if (strpos(e_SELF.'?'.e_QUERY, 'menus.php?configure') === FALSE && isset($pref['admincss']) && $pref['admincss'] && file_exists(THEME.$pref['admincss'])) {
+	echo "<link rel='stylesheet' href='".THEME_ABS.$pref['admincss']."' type='text/css' />\n";
+} else if (isset($pref['themecss']) && $pref['themecss'] && file_exists(THEME.$pref['themecss'])) {
+	echo "<link rel='stylesheet' href='".THEME_ABS."{$pref['themecss']}' type='text/css' />\n";
+} else {
+	echo "<link rel='stylesheet' href='".THEME_ABS."style.css' type='text/css' />\n";
+}
+
+if (!isset($no_core_css) || !$no_core_css) {
+	echo "<link rel='stylesheet' href='".e_FILE_ABS."e107.css' type='text/css' />\n";
+}
+
+if (function_exists('theme_head')) {
+   	echo theme_head();
+}
+if (strpos(e_SELF.'?'.e_QUERY, 'menus.php?configure') === FALSE) {
+	echo "<script type='text/javascript' src='".e_FILE_ABS."e107.js'></script>\n";
+}
+if (file_exists(THEME."theme.js")) {
+	echo "<script type='text/javascript' src='".THEME_ABS."theme.js'></script>\n";
+}
+if (filesize(e_FILE.'user.js')) {
+	echo "<script type='text/javascript' src='".e_FILE_ABS."user.js'></script>\n";
+}
+if (function_exists("headerjs")) {
+	echo headerjs();
+}
+if (isset($htmlarea_js) && $htmlarea_js) {
+	echo $htmlarea_js;
+}
+echo "<script type='text/javascript'>
+		function savepreset(ps,pid){
+			document.getElementById(ps).action='".e_SELF."?savepreset.'+pid;
+			document.getElementById(ps).submit();
+		}
+	</script> ";
+if (isset($eplug_js) && $eplug_js) {
+	echo "<script type='text/javascript' src='{$eplug_js}'></script>\n";
+}
+if (isset($eplug_css) && $eplug_css) {
+	echo "\n<link rel='stylesheet' href='{$eplug_css}' type='text/css' />\n";
+}
+if(check_class($pref['post_html']) && $pref['wysiwyg'] && $e_wysiwyg == TRUE){
+  	require_once(e_HANDLER."tiny_mce/wysiwyg.php");
+	echo wysiwyg($e_wysiwyg);
+	define("e_WYSIWYG",TRUE);
+}else{
+	define("e_WYSIWYG",FALSE);
+}
+echo "</head>
+	<body>";
 
 $ns = new e107table;
 $e107_var = array();
 
-echo "<div style='text-align:center'>
-<img src='".e_IMAGE."adminlogo.png' alt='Logo' />
-<br />";
+if (!function_exists('show_admin_menu')) {
+	function show_admin_menu($title, $active_page, $e107_vars, $js = FALSE, $sub_link = FALSE, $sortlist = FALSE) {
+		global $ns, $BUTTON, $BUTTON_OVER, $BUTTONS_START, $BUTTONS_END, $SUB_BUTTON, $SUB_BUTTON_OVER, $SUB_BUTTONS_START, $SUB_BUTTONS_END;
+		$id_title = "yop_".str_replace(" ", "", $title);
+		if (!isset($BUTTONS_START)) {
+			$BUTTONS_START = "<div style='text-align:center; width:100%'><table class='fborder' style='width:98%;'>\n";
+		}
+		if (!isset($BUTTON)) {
+			$BUTTON = "<tr><td class='button'><div style='width:100%; text-align:center'><a style='cursor:hand; cursor:pointer; text-decoration:none;' {ONCLICK} >{LINK_TEXT}</a></div></td></tr>\n";
+		}
+		if (!isset($BUTTON_OVER)) {
+			$BUTTON_OVER = "<tr><td class='button'><div style='width:100%; text-align:center'><a style='cursor:hand; cursor:pointer; text-decoration:none;' {ONCLICK} ><b>&laquo;&nbsp;{LINK_TEXT}&nbsp;&raquo;</b></a></div></td></tr>\n";
+		}
+		if (!isset($BUTTONS_END)) {
+			$BUTTONS_END = "</table></div>\n";
+		}
+		if (!isset($SUB_BUTTON)) {
+			$SUB_BUTTON = "<a style='text-decoration:none;' href='{LINK_URL}'>{LINK_TEXT}</a><br />";
+		}
+		if (!isset($SUB_BUTTON_OVER)) {
+			$SUB_BUTTON_OVER = "<b> &laquo; <a style='text-decoration:none;' href='{LINK_URL}'>{LINK_TEXT}</a> &raquo; </b><br />";
+		}
+		if (!isset($SUB_BUTTONS_START)) {
+			$SUB_BUTTONS_START = "<div style='text-align:center; width:100%'><table class='fborder' style='width:98%;'>
+			<tr><td class='button'><a style='text-align:center; cursor:hand; cursor:pointer; text-decoration:none;'
+			onclick=\"expandit('{SUB_HEAD_ID}');\" >{SUB_HEAD}</a></td></tr>
+			<tr id='{SUB_HEAD_ID}' style='display: none' ><td class='forumheader3' style='text-align:left;'>";
+		}
+		if (!isset($SUB_BUTTONS_END)) {
+			$SUB_BUTTONS_END = "</td></tr></table></div>";
+		}
 
-if(ADMIN == TRUE)
-{
-	$str = str_replace(".", "", ADMINPERMS);
-	if(ADMINPERMS == "0"){
-		echo ADLAN_48.": ".ADMINNAME." (".ADLAN_49.")";
-	}
-	else
-	{
-		echo ADLAN_48.": ".ADMINNAME." (".ADLAN_50.":  ".$str.")";
-	}
-}
-else
-{
-	echo ADLAN_51." ...";
-}
-
-$adminfpage = (!$pref['adminstyle'] || $pref['adminstyle'] == "default" ? "admin.php" : $pref['adminstyle'].".php");
-
-echo "
-<div>
-<table style='width:100%' cellspacing='10' cellpadding='10'>
-<tr>
-<td style='width:15%; vertical-align: top;'>";
-
-if(ADMIN == TRUE){
-
-	if(!strstr(e_SELF, "/".$adminfpage) || strstr(e_SELF, "/".$adminfpage."?")){
-		$e107_var['x']['text']=ADLAN_52;
-		$e107_var['x']['link']=e_ADMIN.$adminfpage;
-
-		$e107_var['y']['text']=ADLAN_53;
-		$e107_var['y']['link']=e_BASE."index.php";
-
-		$text .= show_admin_menu("",time(),$e107_var)."<br />";
-
-		require_once("header_links.php");
-		$text .= get_admin_treemenu(ADLAN_93,time(),$e107_var,TRUE);
-		unset($e107_var);
-
-		// Plugin links menu
-
-		$sql2 = new db;
-		if($sql2 -> db_Select("plugin", "*", "plugin_installflag=1"))
-		{
-			while($row = $sql2 -> db_Fetch())
-			{
-				extract($row);
-				include(e_PLUGIN.$plugin_path."/plugin.php");
-
-				//Link Plugin Manager
-				$e107_var['x']['text'] = "<b>".ADLAN_98."</b>";
-				$e107_var['x']['link'] = e_ADMIN."plugin.php";
-				$e107_var['x']['perm'] = "P";
-
-				// Links Plugins
-				if($eplug_conffile)
-				{
-					$e107_var['x'.$plugin_id]['text'] = $eplug_caption;
-					$e107_var['x'.$plugin_id]['link'] = e_PLUGIN.$plugin_path."/".$eplug_conffile;
-					$e107_var['x'.$plugin_id]['perm'] = "P".$plugin_id;
-				}
-				unset($eplug_conffile, $eplug_name, $eplug_caption);
+		if ($sortlist == TRUE) {
+			$temp = $e107_vars;
+			unset($e107_vars);
+			foreach (array_keys($temp) as $key) {
+				$func_list[] = $temp[$key]['text'];
 			}
-			$text .= get_admin_treemenu(ADLAN_95,time(),$e107_var,TRUE);
-			unset($e107_var);
-		}
-		unset($e107_var);
-		$e107_var['x']['text']=ADLAN_46;
-		$e107_var['x']['link']=e_ADMIN."admin.php?logout";
-		$text .= "<br />".show_admin_menu("",$act,$e107_var);
-		$ns -> tablerender(LAN_head_1, $text);
 
-	}
-	else
-	{
-		$text = "<div style='text-align:center'>";
-		unset($e107_var);
-		$e107_var['x']['text']=ADLAN_53;
-		$e107_var['x']['link']=e_ADMIN."../index.php";
-		$text .= show_admin_menu("",$act,$e107_var);
-		$text  .="</div>";
-		$ns -> tablerender(LAN_head_1, $text);
-		unset($text);
-	}
+			usort($func_list, 'strcoll');
 
-if(ADMINPERMS == "0")
-{
-	if((ADMINPWCHANGE+2592000) < time())
-	{
-		$text = "<div style='mediumtext; text-align:center'>".ADLAN_102." <a href='".e_ADMIN."updateadmin.php'>".ADLAN_103."</a></div>";
-		$ns -> tablerender(ADLAN_104, $text);
-	}
-}
-
-if(!($handle=opendir(e_LANGUAGEDIR.e_LANGUAGE."/admin/help/"))){
-  $handle=opendir(e_LANGUAGEDIR."English/admin/help/");
-}
-
-$text = "";
-while(false !== ($file = readdir($handle)))
-{
-	if($file != "." && $file != ".." && $file != "CVS")
-	{
-		if(eregi($file, e_SELF))
-		{
-			if(file_exists(e_LANGUAGEDIR.e_LANGUAGE."/admin/help/".$file)){@require_once(e_LANGUAGEDIR.e_LANGUAGE."/admin/help/".$file);}
-			else{@require_once(e_LANGUAGEDIR."English/admin/help/".$file);}
-		}
-	}
-}
-closedir($handle);
-}
-
-$plugpath = e_PLUGIN.substr(strrchr(substr(e_SELF, 0, strrpos(e_SELF, "/")), "/"), 1)."/help.php";
-if(file_exists($plugpath)){
-	@require_once($plugpath);
-}
-
-echo "<br />";
-
-
-if(!FILE_UPLOADS){
-        message_handler("ADMIN_MESSAGE", LAN_head_2, __LINE__, __FILE__);
-}
-/*
-if(OPEN_BASEDIR){
-        message_handler("ADMIN_MESSAGE", LAN_head_3, __LINE__, __FILE__);
-}
-*/
-
-echo "</td>
-<td style='width:60%; vertical-align: top;'>";
-
-function show_admin_menu($title,$page,$e107_vars){
-	global $ns;
-	$text = "<div style='text-align:center; width:100%'><table class='fborder' style='width:98%;'>";
-	foreach(array_keys($e107_vars) as $act)
-	{
-		$pre = "";
-		$post = "";
-		if($page == $act){
-			$pre = "<b>&laquo;&nbsp;";
-			$post = "&nbsp;&raquo;</b>";
-		}
-		$t=str_replace(" ","&nbsp;",$e107_vars[$act]['text']);
-		if(!$e107_vars[$act]['perm'] || getperms($e107_vars[$act]['perm']))
-		{
-			$text .= "<tr><td class='button'><div style='width:100%; text-align:center'><a style='cursor:hand; cursor:pointer; text-decoration:none;' href='{$e107_vars[$act]['link']}'>{$pre}{$t}{$post}</a></div></td></tr>";
-		}
-	}
-	$text .= "</table></div>";
-	if($title=="")
-	{
-		return $text;
-	}
-	$ns -> tablerender($title,$text);
-}
-
-function get_admin_treemenu($title,$page,$e107_vars,$sortlist=FALSE)
-{
-	global $ns;
-
-	if($sortlist == TRUE)
-	{
-		$temp = $e107_vars;
-		unset($e107_vars);
-		foreach(array_keys($temp) as $key)
-		{
-			$func_list[]=$temp[$key]['text'];
-		}
-    setlocale("LC_ALL","deu");
-    usort($func_list, 'strcoll');
-
-		foreach($func_list as $func_text)
-		{
-			foreach(array_keys($temp) as $key)
-			{
-				if($temp[$key]['text'] == $func_text)
-				{
-					$e107_vars[] = $temp[$key];
+			foreach ($func_list as $func_text) {
+				foreach (array_keys($temp) as $key) {
+					if ($temp[$key]['text'] == $func_text) {
+						$e107_vars[] = $temp[$key];
+					}
 				}
 			}
 		}
-	}
-	
-	$idtitle="yop_".str_replace(" ","",$title);
-	$text = "<div style='text-align:center; width:100%'><table class='fborder' style='width:100%;'>";
-	$text .= "<tr><td class='button'><a style='text-align:center; cursor:hand; cursor:pointer; text-decoration:none;' onclick=\"expandit('{$idtitle}');\" >{$title}</a></td></tr>";
-	$text .= "<tr id=\"{$idtitle}\" style=\"display: none;\" ><td class='forumheader3' style='text-align:left;'>";
-	foreach(array_keys($e107_vars) as $act)
-	{
-		$pre = "";
-		$post = "";
-		if($page == $act)
-		{
-			$pre = "<b> &laquo; ";
-			$post = " &raquo; </b>";
-		}
-		if(!$e107_vars[$act]['perm'] || getperms($e107_vars[$act]['perm']))
-		{
-			$text .= "{$pre}<a style='text-decoration:none;' href='{$e107_vars[$act]['link']}'>{$e107_vars[$act]['text']}</a>{$post}<br />";
-		}
-	}
 
-	$text .= "</td></tr>";
-	$text .= "</table></div>";
-	return $text;
+		$search[0] = "/\{LINK_TEXT\}(.*?)/si";
+		$search[1] = "/\{LINK_URL\}(.*?)/si";
+		$search[2] = "/\{ONCLICK\}(.*?)/si";
+		$search[3] = "/\{SUB_HEAD\}(.*?)/si";
+		$search[4] = "/\{SUB_HEAD_ID\}(.*?)/si";
+
+		if ($sub_link) {
+			$replace[0] = '';
+			$replace[1] = '';
+			$replace[2] = '';
+			$replace[3] = $title;
+			$replace[4] = $id_title;
+			$text = preg_replace($search, $replace, $SUB_BUTTONS_START);
+		} else {
+			$text = $BUTTONS_START;
+		}
+
+		foreach (array_keys($e107_vars) as $act) {
+			if (!isset($e107_vars[$act]['perm']) || !$e107_vars[$act]['perm'] || getperms($e107_vars[$act]['perm'])) {
+				if ($active_page == $act || (str_replace("?", "", e_PAGE.e_QUERY) == str_replace("?", "", $act))) {
+					$BUTTON_TEMPLATE = $sub_link ? $SUB_BUTTON_OVER : $BUTTON_OVER;
+				} else {
+					$BUTTON_TEMPLATE = $sub_link ? $SUB_BUTTON : $BUTTON;
+				}
+				$replace[0] = str_replace(" ", "&nbsp;", $e107_vars[$act]['text']);
+				$replace[1] = $e107_vars[$act]['link'];
+				$replace[2] = $js ? "onclick=\"showhideit('".$act."');\"" : "onclick=\"document.location='".$e107_vars[$act]['link']."'; disabled=true;\"";
+				$replace[3] = $title;
+				$replace[4] = $id_title;
+				$text .= preg_replace($search, $replace, $BUTTON_TEMPLATE);
+			}
+		}
+		$text .= $sub_link ? $SUB_BUTTONS_END : $BUTTONS_END;
+
+		if ($title == "" || $sub_link) {
+			return $text;
+		} else {
+			$ns -> tablerender($title, $text, array('id' => $id_title, 'style' => 'button_menu'));
+		}
+	}
 }
+
+if (!function_exists("parse_admin")) {
+	function parse_admin($ADMINLAYOUT) {
+		global $tp;
+		$adtmp = explode("\n", $ADMINLAYOUT);
+		for ($a = 0; $a < count($adtmp); $a++) {
+			if (preg_match("/{.+?}/", $adtmp[$a])) {
+				echo $tp->parseTemplate($adtmp[$a]);
+			} else {
+				echo $adtmp[$a];
+			}
+		}
+	}
+}
+
+function admin_update($update, $type = 'update', $success = false, $failed = false) {
+	global $ns;
+	if (($type == 'update' && $update) || ($type == 'insert' && $update !== false)) {
+		$caption = LAN_UPDATE;
+		$text = "<b>".($success ? $success : LAN_UPDATED)."</b>";
+	} else if ($type == 'delete' && $update) {
+		$caption = LAN_DELETE;
+		$text = "<b>".($success ? $success : LAN_DELETED)."</b>";
+	} else if (!mysql_errno()) {
+		if ($type == 'update') {
+			$caption = LAN_UPDATED_FAILED;
+			$text = "<b>".LAN_NO_CHANGE."<br />".LAN_TRY_AGAIN."</b>";
+		} else if ($type == 'delete') {
+			$caption = LAN_DELETE;
+			$text = "<b>".LAN_DELETED_FAILED.".<br />".LAN_TRY_AGAIN."</b>";
+		}
+	} else {
+		$caption = LAN_UPDATED_FAILED;
+		$text = "<b>".($failed ? $failed : LAN_UPDATED_FAILED." - ".LAN_TRY_AGAIN)."</b><br />".LAN_ERROR." ".mysql_errno().": ".mysql_error();
+	}
+	$ns -> tablerender($caption, "<div style='text-align:center'>".$text."</div>");
+	return $update;
+}
+
+if (strpos(e_SELF.'?'.e_QUERY, 'menus.php?configure') === FALSE) {
+	parse_admin($ADMIN_HEADER);
+}
+
 ?>

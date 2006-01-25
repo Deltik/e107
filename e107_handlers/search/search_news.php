@@ -1,30 +1,62 @@
 <?php
-// search module for news.
-$c = 0;
-$results = $sql -> db_Select("news", "*", "(news_start=0 || news_start < ".time().") AND (news_end=0 || news_end>".time().")  AND (news_title REGEXP('".$query."') OR news_body REGEXP('".$query."') OR news_extended REGEXP('".$query."')) ORDER BY news_id DESC ");
-	while($row = $sql -> db_Fetch()){
-		extract($row);$c ++;
-		if(check_class($news_class)){
-			$link = ($news_allow_comments ? "news.php?item.$news_id" : "comment.php?comment.news.$news_id");
-			$datestamp = $con -> convert_date($news_datestamp, "long");
-			if(eregi($query, $news_title)){
-				$resmain = parsesearch($news_title, $query);
-				$text .= "<form method='post' action='$link' id='news_title_".$c."'>
-				<input type='hidden' name='highlight_search' value='1' /><input type='hidden' name='search_query' value='$query' /><img src='".THEME."images/bullet2.gif' alt='bullet' /> <b><a href='javascript: document.getElementById(\"news_title_".$c."\").submit();'>".$resmain."</a></b></form><br /><span class='smalltext'>".LAN_SEARCH_3.$datestamp." - ".LAN_SEARCH_4."</span><br /><br />";
-			}else if(eregi($query, $news_body)){
-				$resmain = parsesearch($news_body, $query);
-				$text .= "<form method='post' action='$link' id='news_news_".$c."'>
-				<input type='hidden' name='highlight_search' value='1' /><input type='hidden' name='search_query' value='$query' /><img src='".THEME."images/bullet2.gif' alt='bullet' /> <b><a  href='javascript:document.getElementById(\"news_news_".$c."\").submit()'>".$news_title."</a></b></form><br /><span class='smalltext'>".LAN_SEARCH_3.$datestamp." - ".LAN_SEARCH_5."</span><br />".$resmain."<br /><br />";
-			}else if(eregi($query, $news_extended)){
-				$resmain = parsesearch($news_extended, $query);
-				$text .= "<form method='post' action='$link' id='news_extended_".$c."'>
-				<input type='hidden' name='highlight_search' value='1' /><input type='hidden' name='search_query' value='$query' /><img src='".THEME."images/bullet2.gif' alt='bullet' /> <b><a href='javascript:document.getElementById(\"news_extended_".$c."\").submit()'>".$news_title."</a></b></form><br /><span class='smalltext'>".LAN_SEARCH_3.$datestamp." - ".LAN_SEARCH_6."</span><br />".$resmain."<br /><br />";
-			}
-		}else{
-			$results = $results -1;
-		}
-	}
-if(!$results){
-	$text .= LAN_198;
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_handlers/search/search_news.php,v $
+|     $Revision: 1.14 $
+|     $Date: 2005/12/28 14:50:24 $
+|     $Author: sweetas $
++----------------------------------------------------------------------------+
+*/
+
+if (!defined('e107_INIT')) { exit; }
+
+// advanced 
+$advanced_where = "";
+if (isset($_GET['cat']) && $_GET['cat'] != 'all') {
+	$advanced_where .= " c.category_id='".intval($_GET['cat'])."' AND";
 }
+
+if (isset($_GET['time']) && is_numeric($_GET['time'])) {
+	$advanced_where .= " n.news_datestamp ".($_GET['on'] == 'new' ? '>=' : '<=')." '".(time() - $_GET['time'])."' AND";
+}
+
+if (isset($_GET['match']) && $_GET['match']) {
+	$search_fields = array('news_title');
+} else {
+	$search_fields = array('news_title', 'news_body', 'news_extended');
+}
+
+// basic
+$return_fields = 'n.news_id, n.news_title, n.news_body, n.news_extended, n.news_allow_comments, n.news_datestamp, n.news_category, c.category_name';
+$weights = array('1.2', '0.6', '0.6');
+$no_results = LAN_198;
+$time = time();
+
+$where = "(news_start < ".$time.") AND (news_end=0 OR news_end > ".$time.") AND news_class IN (".USERCLASS_LIST.") AND".$advanced_where;
+$order = array('news_datestamp' => DESC);
+$table = "news AS n LEFT JOIN #news_category AS c ON n.news_category = c.category_id";
+
+$ps = $sch -> parsesearch($table, $return_fields, $search_fields, $weights, 'search_news', $no_results, $where, $order);
+$text .= $ps['text'];
+$results = $ps['results'];
+
+function search_news($row) {
+	global $con;
+	$res['link'] = $row['news_allow_comments'] ? "news.php?item.".$row['news_id'] : "comment.php?comment.news.".$row['news_id'];
+	$res['pre_title'] = $row['category_name']." | ";
+	$res['title'] = $row['news_title'];
+	$res['summary'] = $row['news_body'].' '.$row['news_extended'];
+	$res['detail'] = LAN_SEARCH_3.$con -> convert_date($row['news_datestamp'], "long");
+	return $res;
+}
+
 ?>

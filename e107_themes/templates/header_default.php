@@ -1,292 +1,272 @@
 <?php
 /*
-+---------------------------------------------------------------+
-|        e107 website system
-|        /e107_themes/templates/header_default.php
++ ----------------------------------------------------------------------------+
+|     e107 website system
 |
-|        ©Steve Dunstan 2001-2004
-|        http://jalist.com
-|        stevedunstan@jalist.com
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
 |
-|        Released under the terms and conditions of the
-|        GNU General Public License (http://gnu.org).
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
 |
-|   $Id: header_default.php,v 1.37 2004/08/29 02:40:05 mcfly_e107 Exp $
-+---------------------------------------------------------------+
+|     $Source: /cvsroot/e107/e107_0.7/e107_themes/templates/header_default.php,v $
+|     $Revision: 1.76 $
+|     $Date: 2006/01/18 18:55:40 $
+|     $Author: e107coders $
++----------------------------------------------------------------------------+
 */
-if(!function_exists("parseheader")){
+
+if (!defined('e107_INIT')) { exit; }
+
+if (!function_exists("parseheader")) {
 	function parseheader($LAYOUT){
+		global $tp;
 		$tmp = explode("\n", $LAYOUT);
-		for($c=0; $c < count($tmp); $c++){
-			if(preg_match("/{.+?}/", $tmp[$c])){
-				$str = checklayout($tmp[$c]);
-			}else{
-			echo $tmp[$c];
-		}
-	}
-}
-}
-if(!function_exists("checklayout")){
-	function checklayout($str){
-		$sql = new db;
-		global $pref, $style, $userthemes, $udirs, $userclass, $dbq, $menu_pref, $dbq;
-		if(strstr($str, "LOGO")){
-			if(function_exists("theme_logo")){
-				call_user_func("theme_logo");
+		for ($c=0; $c < count($tmp); $c++) {
+			if (preg_match("/{.+?}/", $tmp[$c])) {
+				echo $tp -> parseTemplate($tmp[$c]);
 			} else {
-				echo "<img src='".e_IMAGE."logo.png' alt='Logo' />\n";
+				echo $tmp[$c];
 			}
-		}else if(strstr($str, "SITENAME")){
-			echo SITENAME."\n";
-		}else if(strstr($str, "SITETAG")){
-			echo SITETAG."\n";
-		}else if(strstr($str, "SITELINKS")){
-			if(!$sql -> db_Select("menus", "*", "(menu_name='edynamic_menu' OR menu_name REGEXP('tree_menu')) AND menu_location!=0")){
-				$linktype = substr($str,(strpos($str, "=")+1), 4);
-				define("LINKDISPLAY", ($linktype == "menu" ? 2 : 1));
-				if(function_exists("theme_sitelinks")){
-					call_user_func("theme_sitelinks");
-				} else {
-					require_once(e_HANDLER."sitelinks_class.php");
-					sitelinks();
-				}
-			}
-		}else if(strstr($str, "MENU")){
-			$sql = new db;
-			$ns = new e107table;
-			$menu = trim(chop(preg_replace("/\{MENU=(.*?)\}/si", "\\1", $str)));
-			$sql9 = new db;
-			$sql9 -> db_Select("menus", "menu_name,menu_class,menu_pages","menu_location='$menu' ORDER BY menu_order");
-			while($row = $sql9-> db_Fetch()){
-				extract($row);
-				$show_menu = TRUE;
-				if($menu_pages)
-				{
-					list($listtype,$listpages) = explode("-",$menu_pages);
-					$pagelist = explode("|",$listpages);
-					$check_url = e_SELF."?".e_QUERY;
-					if($listtype == '1') //show menu
-					{
-						$show_menu = FALSE;
-						foreach($pagelist as $p)
-						{
-							if(strpos($check_url,$p) !== FALSE)
-							{
-								$show_menu = TRUE;
-							}
-						}
-					}
-					if($listtype == '2') //hide menu
-					{
-						$show_menu = TRUE;
-						foreach($pagelist as $p)
-						{
-							if(strpos($check_url,$p) !== FALSE)
-							{
-								$show_menu = FALSE;
-							}
-						}
-					}
-				}
-
-				if(check_class($menu_class) && $show_menu){
-					if(strstr($menu_name, "custom_")){
-						require_once(e_PLUGIN."custom/".str_replace("custom_", "", $menu_name).".php");
-					} else {
-						@include(e_PLUGIN.$menu_name."/languages/".e_LANGUAGE.".php");
-						@include(e_PLUGIN.$menu_name."/languages/English.php");
-						require_once(e_PLUGIN.$menu_name."/".$menu_name.".php");
-					}
-				}
-
-			}
-		}else if(strstr($str, "SETSTYLE")){
-			$tmp = explode("=", $str);
-			$style = trim(chop(preg_replace("/\{SETSTYLE=(.*?)\}/si", "\\1", $str)));
-		}else if(strstr($str, "SITEDISCLAIMER")){
-			echo SITEDISCLAIMER.(defined("THEME_DISCLAIMER") && $pref['displaythemeinfo'] ? THEME_DISCLAIMER : "");
-		}else if(strstr($str, "CUSTOM")){
-			$custom = trim(chop(preg_replace("/\{CUSTOM=(.*?)\}/si", "\\1", $str)));
-			if($custom == "login" || $custom == "login noprofile"){
-				@include(e_PLUGIN."login_menu/languages/".e_LANGUAGE.".php");
-				@include(e_PLUGIN."login_menu/languages/English.php");
-
-				if(USER == TRUE){
-					echo "<span class='mediumtext'>".LOGIN_MENU_L5." ".USERNAME."&nbsp;&nbsp;&nbsp;.:. ";
-					if(ADMIN == TRUE){
-						echo "<a href='".e_ADMIN.(!$pref['adminstyle'] || $pref['adminstyle'] == "default" ? "admin.php" : $pref['adminstyle'].".php")."'>".LOGIN_MENU_L11."</a> .:. ";
-					}
-					echo ($custom != "login noprofile") ? "<a href='".e_BASE."user.php?id.".USERID."'>".LOGIN_MENU_L13."</a>\n.:. ":"";
-					echo "<a href='" . e_BASE . "usersettings.php'>".LOGIN_MENU_L12."</a> .:. <a href='".e_BASE."?logout'>".LOGIN_MENU_L8."</a> .:.</span>";
-				}else{
-				echo  "<form method='post' action='".e_SELF."'>\n<p>\n".LOGIN_MENU_L1."<input class='tbox' type='text' name='username' size='15' value='$username' maxlength='20' />&nbsp;&nbsp;\n".LOGIN_MENU_L2."<input class='tbox' type='password' name='userpass' size='15' value='' maxlength='20' />&nbsp;&nbsp;\n<input type='checkbox' name='autologin' value='1' />".LOGIN_MENU_L6."&nbsp;&nbsp;\n<input class='button' type='submit' name='userlogin' value='Login' />";
-				if($pref['user_reg']){
-					echo "&nbsp;&nbsp;<a href='".e_SIGNUP."'>".LOGIN_MENU_L3."</a>";
-				}
-				echo "</p>\n</form>";
-			}
-
-		}else if($custom == "search" && (USER || $pref['search_restrict']!=1)){
-			$searchflat = TRUE;
-			include(e_PLUGIN."search_menu/search_menu.php");
-		}else if($custom == "quote"){
-			if(!file_exists(e_BASE."quote.txt")){
-				$quote = "Quote file not found ($qotd_file)";
-			}else{
-			$quotes = file(e_BASE."quote.txt");
-			$quote = stripslashes(htmlspecialchars($quotes[rand(0, count($quotes))]));
 		}
-		echo $quote;
-	}else if($custom == "clock"){
-		$clock_flat = TRUE;
-		require_once(e_PLUGIN."clock_menu/clock_menu.php");
-	}else if($custom == "welcomemessage"){
-		$aj = new textparse;
-		$sql -> db_Select("wmessage");
-		list($wm_guest, $guestmessage, $wm_active1) = $sql-> db_Fetch();
-		list($wm_member, $membermessage, $wm_active2) = $sql-> db_Fetch();
-		list($wm_admin, $adminmessage, $wm_active3) = $sql-> db_Fetch();
-		if(ADMIN == TRUE && $wm_active3){
-			echo $aj -> tpa($adminmessage, "on","admin");
-		}else if(USER == TRUE && $wm_active2 && !ADMIN){
-			echo $aj -> tpa($membermessage, "on","admin");
-		}else if(USER == FALSE && $wm_active1 && !ADMIN){
-			echo $aj -> tpa($guestmessage, "on","admin");
+	}
+}
+$sql->db_Mark_Time('(Header Top)');
+
+echo (defined("STANDARDS_MODE") ? "" : "<?xml version='1.0' encoding='".CHARSET."' "."?".">")."<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">
+<html xmlns='http://www.w3.org/1999/xhtml'".(defined("TEXTDIRECTION") ? " dir='".TEXTDIRECTION."'" : "").(defined("CORE_LC") ? " xml:lang=\"".CORE_LC."\"" : "").">
+<head>
+<title>".SITENAME.(defined("e_PAGETITLE") ? ": ".e_PAGETITLE : (defined("PAGE_NAME") ? ": ".PAGE_NAME : ""))."</title>\n";
+
+// Multi-Language meta-tags with merge and override option.
+
+echo "<meta http-equiv='content-type' content='text/html; charset=".CHARSET."' />
+<meta http-equiv='content-style-type' content='text/css' />\n";
+echo (defined("CORE_LC")) ? "<meta http-equiv='content-language' content='".CORE_LC."' />\n" : "";
+$diz_merge = (defined("META_MERGE") && META_MERGE != FALSE && $pref['meta_description'][e_LANGUAGE]) ? $pref['meta_description'][e_LANGUAGE]." " : "";
+$key_merge = (defined("META_MERGE") && META_MERGE != FALSE && $pref['meta_keywords'][e_LANGUAGE]) ? $pref['meta_keywords'][e_LANGUAGE]."," : "";
+echo (defined("META_DESCRIPTION")) ? "<meta name=\"description\" content=\"".$diz_merge.META_DESCRIPTION."\" />\n" : "";
+echo (defined("META_KEYWORDS")) ? "<meta name=\"keywords\" content=\"".$key_merge.META_KEYWORDS."\" />\n" : "";
+
+if (isset($pref['meta_description'][e_LANGUAGE])) {
+	echo ($pref['meta_description'][e_LANGUAGE] && !defined("META_DESCRIPTION") ) ? "<meta name=\"description\" content=\"".$pref['meta_description'][e_LANGUAGE]."\" />\n" : "";
+}
+if (isset($pref['meta_keywords'][e_LANGUAGE])) {
+	echo ($pref['meta_keywords'][e_LANGUAGE] && !defined("META_KEYWORDS") ) ? "<meta name=\"keywords\" content=\"".$pref['meta_keywords'][e_LANGUAGE]."\" />\n" : "";
+}
+echo ($pref['meta_copyright'][e_LANGUAGE]) ? "<meta name=\"copyright\" content=\"".$pref['meta_copyright'][e_LANGUAGE]."\" />\n" : "";
+echo ($pref['meta_tag'][e_LANGUAGE]) ? str_replace("&lt;", "<", $tp -> toHTML($pref['meta_tag'][e_LANGUAGE], FALSE, "nobreak, no_hook, no_make_clickable"))."\n" : "";
+unset($key_merge,$diz_merge);
+
+if(isset($pref['rss_feeds']) && $pref['rss_feeds'] && file_exists(e_PLUGIN."rss_menu/rss_meta.php")){
+	require_once(e_PLUGIN."rss_menu/rss_meta.php");
+}
+
+if(isset($pref['trackbackEnabled'])){
+	echo "<link rel='pingback' href='".SITEURLBASE.e_PLUGIN_ABS."trackback/xmlrpc.php' />\n";
+}
+if((isset($pref['enable_png_image_fix']) && $pref['enable_png_image_fix'] == true) || (isset($sleight) && $sleight == true)) {
+	echo "<script type='text/javascript' src='".e_FILE_ABS."sleight_js.php'></script>\n";
+}
+
+if (isset($eplug_css) && $eplug_css) { echo "\n<link rel='stylesheet' href='{$eplug_css}' type='text/css' />\n"; }
+if (isset($eplug_js) && $eplug_js) { echo "<script type='text/javascript' src='{$eplug_js}'></script>\n"; }
+
+if(defined("PREVIEWTHEME")) {
+	echo "<link rel='stylesheet' href='".PREVIEWTHEME."style.css' type='text/css' />\n";
+} else {
+	$css_default = "all";
+	if (isset($theme_css_php) && $theme_css_php) {
+		echo "<link rel='stylesheet' href='".THEME_ABS."theme-css.php' type='text/css' />\n";
+	} else {
+		if(isset($pref['themecss']) && $pref['themecss'] && file_exists(THEME.$pref['themecss']))
+		{
+			// Support for print and handheld media.
+			if(file_exists(THEME."style_mobile.css")){
+            	echo "<link rel='stylesheet' href='".THEME_ABS."style_mobile.css' type='text/css' media='handheld' />\n";
+				$css_default = "screen";
+			}
+			if(file_exists(THEME."style_print.css")){
+            	echo "<link rel='stylesheet' href='".THEME_ABS."style_print.css' type='text/css' media='print' />\n";
+                $css_default = "screen";
+			}
+			echo "<link rel='stylesheet' href='".THEME_ABS."{$pref['themecss']}' type='text/css' media='{$css_default}' />\n";
+
+
 		}
-		define("WMFLAG", TRUE);
+		else
+		{
+			// Support for print and handheld media.
+			if(file_exists(THEME."style_mobile.css")){
+            	echo "<link rel='stylesheet' href='".THEME_ABS."style_mobile.css' type='text/css' media='handheld' />\n";
+                $css_default = "screen";
+			}
+			if(file_exists(THEME."style_print.css")){
+            	echo "<link rel='stylesheet' href='".THEME_ABS."style_print.css' type='text/css' media='print' />\n";
+                $css_default = "screen";
+			}
+			echo "<link rel='stylesheet' href='".THEME_ABS."style.css' type='text/css' media='{$css_default}' />\n";
+		}
+		if (!isset($no_core_css) || !$no_core_css) {
+			echo "<link rel='stylesheet' href='".e_FILE_ABS."e107.css' type='text/css' />\n";
+		}
+	}
+}
+
+if(function_exists('theme_head')){
+	echo theme_head();
+}
+if(function_exists('core_head')){ echo core_head(); }
+
+// ---------- Favicon ---------
+if (file_exists(THEME."favicon.ico")) {
+	echo "<link rel='icon' href='".THEME_ABS."favicon.ico' type='image/x-icon' />\n<link rel='shortcut icon' href='".THEME_ABS."favicon.ico' type='image/xicon' />\n";
+}elseif (file_exists(e_BASE."favicon.ico")) {
+	echo "<link rel='icon' href='".SITEURL."favicon.ico' type='image/x-icon' />\n<link rel='shortcut icon' href='".SITEURL."favicon.ico' type='image/xicon' />\n";
+}
+
+
+
+if (isset($theme_js_php) && $theme_js_php) {
+	echo "<link rel='stylesheet' href='".THEME_ABS."theme-js.php' type='text/css />";
+} else {
+	echo "<script type='text/javascript' src='".e_FILE_ABS."e107.js'></script>\n";
+	if (file_exists(THEME.'theme.js')) { echo "<script type='text/javascript' src='".THEME_ABS."theme.js'></script>\n"; }
+	if (filesize(e_FILE.'user.js')) { echo "<script type='text/javascript' src='".e_FILE_ABS."user.js'></script>\n"; }
+}
+if (isset($WYSIWYG) && $WYSIWYG == TRUE && check_class($pref['post_html']) && isset($e_wysiwyg) && $e_wysiwyg != "") {
+	require_once(e_HANDLER."tiny_mce/wysiwyg.php");
+	define("e_WYSIWYG",TRUE);
+	echo wysiwyg($e_wysiwyg);
+}else{
+	define("e_WYSIWYG",FALSE);
+}
+if (function_exists('headerjs')){echo headerjs();  }
+
+if (isset($pref['statActivate']) && $pref['statActivate']) {
+	if(!$pref['statCountAdmin'] && ADMIN) {
+		/* don't count admin visits */
+	} else {
+		require_once(e_PLUGIN."log/consolidate.php");
+		$script_text = "document.write( '<link rel=\"stylesheet\" type=\"text/css\" href=\"".e_PLUGIN_ABS."log/log.php?referer=' + ref + '&color=' + colord + '&eself=' + eself + '&res=' + res + '\">' );\n";
+	}
+}
+
+if ($pref['image_preload']) {
+	$ejs_listpics = '';
+	$handle=opendir(THEME.'images');
+	while ($file = readdir($handle)) {
+		if (!strstr($file, "._") && strstr($file,".") && $file != "." && $file != ".." && $file != "Thumbs.db" && $file != ".DS_Store") {
+			$ejs_listpics .= $file.",";
+		}
 	}
 
-}else if(strstr($str, "BANNER")){
-	$campaign = trim(chop(preg_replace("/\{BANNER=(.*?)\}/si", "\\1", $str)));
-	mt_srand ((double) microtime() * 1000000);
-	$seed = mt_rand(1,2000000000);
-	if($campaign != "{BANNER}"){
-		$query = "banner_active=1 AND (banner_startdate=0 OR banner_startdate<=".time().") AND (banner_enddate=0 OR banner_enddate>".time().") AND (banner_impurchased=0 OR banner_impressions<=banner_impurchased) AND banner_campaign='$campaign' ORDER BY RAND($seed)";
-	}else{
-	$query = "banner_active=1 AND (banner_startdate=0 OR banner_startdate<=".time().") AND (banner_enddate=0 OR banner_enddate>".time().") AND (banner_impurchased=0 OR banner_impressions<=banner_impurchased) ORDER BY RAND($seed)";
-}
-$sql = new db;
-if($sql -> db_Select("banner", "*", $query)){
-	$row = $sql -> db_Fetch(); extract($row);
+	$ejs_listpics = substr($ejs_listpics, 0, -1);
+	closedir($handle);
 
-	$fileext1 = substr(strrchr($banner_image, "."), 1);
-	$fileext2 = substr(strrchr($banner_image, "."), 0);
-	if ($fileext1 == swf) {
-		echo "<object classid=\"clsid:D27CDB6E-AE6D-11cf-96B8-444553540000\" codebase=\"http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,29,0\" width=\"468\" height=\"60\">\n<param name=\"movie\" value=\"".e_IMAGE."banners/".$banner_image."\">\n<param name=\"quality\" value=\"high\"><param name=\"SCALE\" value=\"noborder\">\n<embed src=\"".e_IMAGE."banners/".$banner_image."\" width=\"468\" height=\"60\" scale=\"noborder\" quality=\"high\" pluginspage=\"http://www.macromedia.com/go/getflashplayer\" type=\"application/x-shockwave-flash\"></embed></object>";
-	}else if($fileext1 == "php" || $fileext1 == "html" || $fileext1 == "js"){
-		include(e_IMAGE."banners/".$banner_image);
-	}else{
-	echo "<a href='".e_BASE."banner.php?".$banner_id."' rel='external'><img src='".e_IMAGE."banners/".$banner_image."' alt='".$banner_clickurl."' style='border:0' /></a>";
+	$script_text .= "ejs_preload('".THEME_ABS."images/','".$ejs_listpics."');\n";
 }
-$sql -> db_Update("banner", "banner_impressions=banner_impressions+1 WHERE banner_id='$banner_id' ");
-}
-}else if(strstr($str, "NEWS_CATEGORY")){
-	$news_category = trim(chop(preg_replace("/\{NEWS_CATEGORY=(.*?)\}/si", "\\1", $str)));
-	require_once(e_PLUGIN."alt_news/alt_news.php");
-	alt_news($news_category);
+if (isset($script_text) && $script_text) {
+	echo "<script type='text/javascript'>\n";
+	echo "<!--\n";
+	echo $script_text;
+	echo "// -->\n";
+	echo "</script>\n";
 }
 
+$fader_onload='';
+if(in_array('fader_menu', $eMenuActive))
+{
+	$fader_onload = 'changecontent(); ';
 }
-}
 
-$aj = new textparse;
-echo (defined("STANDARDS_MODE") ? "" : "<?xml version='1.0' encoding='iso-8859-1' ?>")."<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">
-<html xmlns=\"http://www.w3.org/1999/xhtml\">
-<head>
-<title>".SITENAME.(defined("e_PAGETITLE") ? ": ".e_PAGETITLE : (defined("PAGE_NAME") ? ": ".PAGE_NAME : ""))."</title>
-<link rel=\"stylesheet\" href=\"".e_FILE."e107.css\" type=\"text/css\" />
-<link rel=\"stylesheet\" href=\"".THEME."style.css\" type=\"text/css\" />";
-if(file_exists(e_BASE."favicon.ico")){echo "\n<link rel=\"shortcut icon\" href=\"favicon.ico\" />"; }
-if(file_exists(e_FILE."style.css")){ echo "\n<link rel='stylesheet' href='".e_FILE."style.css' type=\"text/css\" />\n"; }
-if($eplug_css){ echo "\n<link rel='stylesheet' href='{$eplug_css}' type='text/css' />\n"; }
-echo "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=".CHARSET."\" />
-<meta http-equiv=\"content-style-type\" content=\"text/css\" />
-".($pref['meta_tag'] ? $aj -> formtparev($pref['meta_tag'])."\n" : "");
+$links_onload = 'externalLinks();';
+$body_onload = ($fader_onload != '' || $links_onload != '') ? " onload='".$fader_onload.$links_onload."'" : "";
 
-echo "<script type='text/javascript' src='".e_FILE."e107.js'></script>";
-if(file_exists(THEME."theme.js")){echo "<script type='text/javascript' src='".THEME."theme.js'></script>\n";}
-if(file_exists(e_FILE."user.js")){echo "<script type='text/javascript' src='".e_FILE."user.js'></script>\n";}
-if($eplug_js){ echo "<script type='text/javascript' src='{$eplug_js}'></script>\n"; }
-if($htmlarea_js){ echo $htmlarea_js; }
-if(function_exists("headerjs")){echo headerjs();  }
-
-echo "<script type=\"text/javascript\">
-<!--\n";
-if($pref['log_activate']){
-echo "
-document.write( '<link rel=\"stylesheet\" type=\"text/css\" href=\"".e_PLUGIN."log/log.php?referer=' + ref + '&color=' + colord + '&eself=' + eself + '&res=' + res + '\">' );";
-}
-//echo "var ejs_listpics = new Array();";
-
-$fader_onload = ($sql -> db_Select("menus", "*", "menu_name='fader_menu' AND menu_location!='0' ") ? "changecontent();" : "");
-$links_onload = "externalLinks();";
-$body_onload =($fader_onload != "" || $links_onload != "" ? " onload='".$links_onload." ".$fader_onload."'" : "");
-$ejs_listpics = "";
-$handle=opendir(THEME."images");
-while ($file = readdir($handle)){
-if(strstr($file,".") && $file != "." && $file != ".."){
-$ejs_listpics .= $file.",";
-}
-}
-$ejs_listpics = substr($ejs_listpics, 0, -1);
-
-closedir($handle);
-echo "\n
-
-ejs_preload('".THEME."images/','".$ejs_listpics."');\n
-// -->\n
-</script>
-</head>
-<body".$body_onload.">";
+echo "</head>
+<body".$body_onload.">\n";
 //echo "XX - ".$e107_popup;
 // require $e107_popup =1; to use it as header for popup without menus
-if($e107_popup != 1){
-
-	if($pref['no_rightclick']){
-		echo "<script language=\"javascript\">
-		<!--
-		var message=\"Not Allowed\";
-		function click(e) {
-		if (document.all) {
-		if (event.button==2||event.button==3) {
-		alert(message);
-		return false;
-		}
-		}
-		if (document.layers) {
-		if (e.which == 3) {
-		alert(message);
-		return false;
-		}
-		}
-		}
-		if (document.layers) {
-		document.captureevents(event.mousedown);
-		}
-		document.onmousedown=click;
-		// -->
-		</script>\n";
+if(!isset($e107_popup))
+{
+	$e107_popup = 0;
+}
+if ($e107_popup != 1) {
+	if (isset($pref['no_rightclick']) && $pref['no_rightclick']) {
+		echo "<script language='javascript'>\n";
+		echo "<!--\n";
+		echo "var message=\"Not Allowed\";\n";
+		echo "function click(e) {\n";
+		echo "	if (document.all) {\n";
+		echo "		if (event.button==2||event.button==3) {\n";
+		echo "			alert(message);\n";
+		echo "			return false;\n";
+		echo "		}\n";
+		echo "	}\n";
+		echo "	if (document.layers) {\n";
+		echo "		if (e.which == 3) {\n";
+		echo "			alert(message);\n";
+		echo "			return false;\n";
+		echo "		}\n";
+		echo "	}\n";
+		echo "}\n";
+		echo "if (document.layers) {\n";
+		echo "	document.captureevents(event.mousedown);\n";
+		echo "}\n";
+		echo "document.onmousedown=click;\n";
+		echo "// -->\n";
+		echo "</script>\n";
 	}
 
+	if(isset($CUSTOMPAGES))
+	{
+		if (is_array($CUSTOMPAGES))
+		{
+			foreach ($CUSTOMPAGES as $cust_key => $cust_value)
+			{
+				$custompage[$cust_key] = explode(' ', $cust_value);
+			}
+		}
+		else
+		{
+			$custompage['no_array'] = explode(' ', $CUSTOMPAGES);
+		}
+	}
+	else
+	{
+		$custompage['no_array'] = array();
+	}
 
-	$custompage = explode(" ", $CUSTOMPAGES);
-
-	if(e_PAGE == "news.php" && $NEWSHEADER){
+	$ph = FALSE;
+	if (e_PAGE == 'news.php' && isset($NEWSHEADER)) {
 		parseheader($NEWSHEADER);
-	}else{
-	while(list($key, $kpage) = each($custompage)){
-		if(strstr(e_SELF, $kpage)){
-			$ph = TRUE;
-			break;
+	} else {
+		foreach ($custompage as $key_extract => $cust_extract) {
+			foreach ($cust_extract as $key => $kpage) {
+				if ($kpage && strstr(e_SELF, $kpage) || strstr(e_SELF."?".e_QUERY,$kpage)) {
+					$ph = TRUE;
+					if ($key_extract=='no_array') {
+						$cust_header = $CUSTOMHEADER ? $CUSTOMHEADER : $HEADER;
+						$cust_footer = $CUSTOMFOOTER ? $CUSTOMFOOTER : $FOOTER;
+					} else {
+						$cust_header = $CUSTOMHEADER[$key_extract] ? $CUSTOMHEADER[$key_extract] : $HEADER;
+						$cust_footer = $CUSTOMFOOTER[$key_extract] ? $CUSTOMFOOTER[$key_extract] : $FOOTER;
+					}
+					break;
+				}
+			}
 		}
+		parseheader(($ph ? $cust_header : $HEADER));
 	}
-	parseheader(($ph ? $CUSTOMHEADER : $HEADER));
+	$sql->db_Mark_Time("Main Page Body");
+
+
+	if(defined("PREVIEWTHEME")) {
+		themeHandler :: showPreview();
+	}
+
+
+	unset($text);
 }
-
-unset($text);
-
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-}
-
-
 ?>

@@ -1,22 +1,46 @@
 <?php
-function r_emote(){
-	$sql = new db;
-	$sql -> db_Select("core", "*", "e107_name='emote'");
-	$row = $sql -> db_Fetch(); extract($row);
-	$emote = unserialize($e107_value);
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_handlers/emote.php,v $
+|     $Revision: 1.15 $
+|     $Date: 2005/12/14 17:37:34 $
+|     $Author: sweetas $
++----------------------------------------------------------------------------+
+*/
+if (!defined('e107_INIT')) { exit; }
 
-	$str = "<div class='spacer'>";
+function r_emote()
+{
+	global $sysprefs, $pref, $tp;
 
-	$c=0;
-	while(list($code, $name) = @each($emote[$c])){
-		if(!$orig[$name]){
-			$str .= "<a href=\"javascript:addtext(' $code')\"><img src=\"".e_IMAGE."emoticons/$name\" style=\"border:0\" alt=\"\" /></a> \n";
-			$orig[$name] = TRUE;
-		}
-		$c++;
+	if (!is_object($tp->e_emote))
+	{
+		require_once(e_HANDLER.'emote_filter.php');
+		$tp->e_emote = new e_emoteFilter;
+	}
+	
+	foreach($tp->e_emote->emotes as $key => $value)
+	{
+		$key = str_replace("!", ".", $key);
+		$key = preg_replace("#_(\w{3})$#", ".\\1", $key);
+		$key = e_IMAGE."emotes/" . $pref['emotepack'] . "/" .$key;
+
+		$value2 = substr($value, 0, strpos($value, " "));
+		$value = ($value2 ? $value2 : $value);
+		$value = ($value == '&|') ? ':((' : $value;
+		$str .= "\n<a href=\"javascript:addtext('$value',true)\"><img src='$key' style='border:0; padding-top:2px;' alt='' /></a> ";
 	}
 
-	$str .= "</div>";
-	return $str;
+	return "<div class='spacer'>".$str."</div>";
 }
+
 ?>

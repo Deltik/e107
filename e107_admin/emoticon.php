@@ -1,154 +1,332 @@
 <?php
 /*
-+---------------------------------------------------------------+
-|        e107 website system
-|        /admin/emoticon_conf.php
++ ----------------------------------------------------------------------------+
+|     e107 website system
 |
-|        ©Steve Dunstan 2001-2002
-|        http://e107.org
-|        jalist@e107.org
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
 |
-|        Released under the terms and conditions of the
-|        GNU General Public License (http://gnu.org).
-+---------------------------------------------------------------+
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_admin/emoticon.php,v $
+|     $Revision: 1.32 $
+|     $Date: 2006/01/13 14:38:41 $
+|     $Author: sweetas $
++----------------------------------------------------------------------------+
 */
+
 require_once("../class2.php");
-if(!getperms("F")){ header("location:".e_BASE."index.php"); exit; }
-
-if(IsSet($_POST['updatesettings'])){
-        $aj = new textparse;
-        while(list($id, $name) = each($_POST['emote_code'])){
-                $emote[] = array($aj -> formtpa($name) => $_POST['emote_text'][$id]);
-        }
-        $tmp = addslashes(serialize($emote));
-        $sql -> db_Update("core", "e107_value='$tmp' WHERE e107_name='emote' ");
-        if($_POST['smiley_activate'] != $pref['smiley_activate'])
-        {
-        	clear_cache();
-        }
-        $pref['smiley_activate'] = $_POST['smiley_activate'];
-        save_prefs();
-        header("location:".e_ADMIN."emoticon.php?u");
-        exit;
+if (!getperms("F")) {
+	header("location:".e_BASE."index.php");
+	exit;
 }
-
-if(!$sql -> db_Select("core", "*", "e107_name='emote'")){
-        $e107_value = setdefault();
-}else{
-        $row = $sql -> db_Fetch(); extract($row);
-}
-$emote = unserialize($e107_value);
-
-if(IsSet($_POST['addemote'])){
-        if($_POST['emote_new_code'] && $_POST['emote_new_image']){
-                $aj = new textparse;
-                $emote[count($emote)] = array($aj -> formtpa($_POST['emote_new_code']) => $_POST['emote_new_image']);
-                $tmp = addslashes(serialize($emote));
-                $sql -> db_Update("core", "e107_value='$tmp' WHERE e107_name='emote' ");
-                header("location:".e_ADMIN."emoticon.php?v");
-                exit;
-        }
-}
-
-$tmp = explode(".", e_QUERY);
-
-if($tmp[0] == "del"){
-	if(!e_REFERER_SELF){exit;}
-        unset($emote[$tmp[1]]);
-
- //Fix Thermo to allow emote deletion
-        $newemote=array_values($emote);
-        $emote=$newemote;
- //End Change Chris
-
-        $tmp = addslashes(serialize($emote));
-        $sql -> db_Update("core", "e107_value='$tmp' WHERE e107_name='emote' ");
-        header("location:".e_ADMIN."emoticon.php?w");
-        exit;
-}
+$e_sub_cat = 'emoticon';
 
 require_once("auth.php");
 
-if(e_QUERY == "u"){
-        $ns -> tablerender("", "<div style='text-align:center'><b>".EMOLAN_1."</b></div>");
+if(!$sql->db_Count("core", "(*)", "e107_name = 'emote_default'"))
+{
+	$tmp = 'a:28:{s:9:"alien!png";s:6:"!alien";s:10:"amazed!png";s:7:"!amazed";s:9:"angry!png";s:11:"!grr !angry";s:12:"biglaugh!png";s:4:"!lol";s:11:"cheesey!png";s:10:":D :oD :-D";s:12:"confused!png";s:10:":? :o? :-?";s:7:"cry!png";s:19:"&| &-| &o| :(( !cry";s:8:"dead!png";s:21:"x) xo) x-) x( xo( x-(";s:9:"dodge!png";s:6:"!dodge";s:9:"frown!png";s:10:":( :o( :-(";s:7:"gah!png";s:10:":@ :o@ :o@";s:8:"grin!png";s:10:":D :oD :-D";s:9:"heart!png";s:6:"!heart";s:8:"idea!png";s:10:":! :o! :-!";s:7:"ill!png";s:4:"!ill";s:7:"mad!png";s:13:"~:( ~:o( ~:-(";s:12:"mistrust!png";s:9:"!mistrust";s:11:"neutral!png";s:10:":| :o| :-|";s:12:"question!png";s:2:"?!";s:12:"rolleyes!png";s:10:"B) Bo) B-)";s:7:"sad!png";s:4:"!sad";s:10:"shades!png";s:10:"8) 8o) 8-)";s:7:"shy!png";s:4:"!shy";s:9:"smile!png";s:10:":) :o) :-)";s:11:"special!png";s:3:"%-6";s:12:"suprised!png";s:10:":O :oO :-O";s:10:"tongue!png";s:21:":p :op :-p :P :oP :-P";s:8:"wink!png";s:10:";) ;o) ;-)";}';
+	$sql->db_Insert("core", "'emote_default', '$tmp' ");
 }
 
-if(e_QUERY == "v"){
-        $ns -> tablerender("", "<div style='text-align:center'><b>".EMOLAN_2."</b></div>");
+if (isset($_POST['active']))
+{
+	if ($pref['smiley_activate'] != $_POST['smiley_activate']) {
+		$pref['smiley_activate'] = $_POST['smiley_activate'];
+		save_prefs();
+		$update = true;
+	}
+	admin_update($update);
 }
 
-if(e_QUERY == "w"){
-        $ns -> tablerender("", "<div style='text-align:center'><b>".EMOLAN_3."</b></div>");
+/* get packs */
+
+require_once(e_HANDLER."file_class.php");
+$fl = new e_file;
+$emote = new emotec;
+foreach($_POST as $key => $value)
+{
+	if(strstr($key, "subPack_"))
+	{
+		$subpack = str_replace("subPack_", "", $key);
+		$emote -> emoteConf($subpack);
+		break;
+	}
+
+	if(strstr($key, "defPack_"))
+	{
+		$pref['emotepack'] = str_replace("defPack_", "", $key);
+		save_prefs();
+		break;
+	}
 }
 
-$smiley_activate = $pref['smiley_activate'];
+$emote -> installCheck();
+$emote -> listPacks();
 
-$text = "<div style='text-align:center'><div style='border : solid 1px #000; padding : 4px; width : auto; height : 400px; overflow : auto; '>
-<form method='post' action='".e_SELF."'>
-<table width='85%'>
-<tr>
-<td style='width:30%' class='forumheader3'>".EMOLAN_4.": </td>
-<td colspan='4' class='forumheader3'>";
-$text .= ($pref['smiley_activate'] ? "<input type='checkbox' name='smiley_activate' value='1'  checked='checked' />" : "<input type='checkbox' name='smiley_activate' value='1' />");
-$text .= "
-</td>
-</tr>
-<tr>
-<td rowspan='".count($emote)."' class='forumheader3' style='vertical-align:top'>".EMOLAN_5."</td>";
-foreach ($emote as $c => $value){
-        while(list($short, $name) = @each($emote[$c])){
-                $text .= "
-                <td style='width:20%; text-align:center' class='forumheader3'><input class='tbox' type='text' name='emote_code[]' size='15' value='$short' maxlength='20' /></td>
-                <td style='width:20%; text-align:center' class='forumheader3'><input class='tbox' type='text' name='emote_text[]' size='15' value='$name' maxlength='20' /></td>
-                <td style='width:10%; text-align:center' class='forumheader3'><img src='".e_IMAGE."emoticons/$name' alt='' style='vertical-align:absmiddle' /></td>
-                <td style='width:30%' class='forumheader3'>[ <a href='".e_SELF."?del.$c'>".EMOLAN_6."</a> ]</td>
-                </tr>";
-                $c++;
-        }
+class emotec
+{
+
+	var $packArray;
+
+	function emotec()
+	{
+		/* constructor */
+		global $fl;
+		$this -> packArray = $fl -> get_dirs(e_IMAGE."emotes");
+
+		if(isset($_POST['sub_conf']))
+		{
+			$this -> saveConf();
+		}
+	}
+
+	function listPacks()
+	{
+
+		global $ns, $fl, $pref;
+
+		$text = "<div style='text-align:center'>
+		<form method='post' action='".e_SELF."'>
+		<table style='".ADMIN_WIDTH."' class='fborder'>
+		<tr>
+		<td style='width:30%' class='forumheader3'>".EMOLAN_4.": </td>
+		<td style='width:70%' class='forumheader3'>".($pref['smiley_activate'] ? "<input type='checkbox' name='smiley_activate' value='1'  checked='checked' />" : "<input type='checkbox' name='smiley_activate' value='1' />")."</td>
+		</tr>
+
+		<tr>
+		<td colspan='2' style='text-align:center' class='forumheader'>
+		<input class='button' type='submit' name='active' value='".LAN_UPDATE."' />
+		</td>
+		</tr>
+		</table>
+		</form>
+		</div>
+		";
+
+		$ns -> tablerender(EMOLAN_1, $text);
+
+
+		$text = "
+		<form method='post' action='".e_SELF."'>
+		<table style='".ADMIN_WIDTH."' class='fborder'>
+		<tr>
+		<td class='forumheader' style='width: 20%;'>".EMOLAN_2."</td>
+		<td class='forumheader' style='width: 50%;'>".EMOLAN_3."</td>
+		<td class='forumheader' style='width: 10%; text-align: center;'>".EMOLAN_8."</td>
+		<td class='forumheader' style='width: 20%;'>".EMOLAN_9."</td>
+		";
+
+		$reject = array('^\.$','^\.\.$','^\/$','^CVS$','thumbs\.db','.*\._$', 'emoteconf*');
+		foreach($this -> packArray as $pack)
+		{
+			$emoteArray = $fl -> get_files(e_IMAGE."emotes/".$pack, "", $reject);
+
+			$text .= "
+			<tr>
+			<td class='forumheader' style='width: 20%;'>$pack</td>
+			<td class='forumheader' style='width: 20%;'>
+			";
+
+			foreach($emoteArray as $emote)
+			{
+				$text .= "<img src='".$emote['path']."/".$emote['fname']."' alt='' /> ";
+			}
+			
+			$text .= "</td>
+			<td class='forumheader3' style='width: 10%; text-align: center;'>".($pref['emotepack'] == $pack ? EMOLAN_10 : "<input class='button' type='submit' name='defPack_".$pack."' value='".EMOLAN_11." />")."</td>
+			<td class='forumheader3' style='width: 20%; text-align: center;'><input class='button' type='submit' name='subPack_".$pack."' value='".EMOLAN_12."' /></td>
+			</tr>
+			";
+		}
+
+		$text .= "
+		</table>
+		</form>
+		";
+		$ns -> tablerender(EMOLAN_13, $text);
+	}
+
+	function emoteConf($packID)
+	{
+
+		global $ns, $fl, $pref, $sysprefs, $tp;
+		$corea = "emote_".$packID;
+
+		$emotecode = $sysprefs -> getArray($corea);
+
+		$reject = array('^\.$','^\.\.$','^\/$','^CVS$','thumbs\.db','.*\._$', 'emoteconf*', '*\.txt', '*\.html', '*\.pak', '*php*', '.cvsignore');
+		$emoteArray = $fl -> get_files(e_IMAGE."emotes/".$packID, "", $reject);
+
+		$eArray = array();
+		foreach($emoteArray as $value)
+		{
+			if(!strstr($value['fname'], ".php") && !strstr($value['fname'], ".txt") && !strstr($value['fname'], ".pak") && !strstr($value['fname'], ".xml") && !strstr($value['fname'], "phpBB") && !strstr($value['fname'], ".html"))
+			{
+				$eArray[] = array('path' => $value['path'], 'fname' => $value['fname']);
+			}
+		}
+
+		$text = "
+		<form method='post' action='".e_SELF."'>
+		<table style='".ADMIN_WIDTH."' class='fborder'>
+		<tr>
+		<td class='forumheader' style='width: 20%;'>".EMOLAN_2."</td>
+		<td class='forumheader' style='width: 20%; text-align: center;'>".EMOLAN_5."</td>
+		<td class='forumheader' style='width: 60%;'>".EMOLAN_6." <span class='smalltext'>( ".EMOLAN_7." )</a></td>
+		</tr>
+		";
+
+		foreach($eArray as $emote)
+		{
+			$ename = $emote['fname'];
+			$evalue = str_replace(".", "!", $ename);
+
+			$text .= "
+			<tr>
+			<td class='forumheader3' style='width: 20%;'>".$ename."</td>
+			<td class='forumheader3' style='width: 20%; text-align: center;'><img src='".$emote['path'].$ename."' alt='' /></td>
+			<td class='forumheader3' style='width: 60%;'><input style='width: 80%' class='tbox' type='text' name='$evalue' value='".$tp -> toForm($emotecode[$evalue])."' maxlength='200' /></td>
+			</tr>
+			";	
+		}
+
+		$text .= "
+		<tr>
+		<td style='text-align: center;' colspan='3' class='forumheader'><input class='button' type='submit' name='sub_conf' value='".EMOLAN_14."' /></td>
+		</tr>
+		
+		</table>
+		<input type='hidden' name='packID' value='$packID' />
+		</form>";
+		$ns -> tablerender(EMOLAN_15.": '".$packID."'", $text);
+
+	}
+
+	function saveConf()
+	{
+		global $ns, $sql, $tp;
+
+		$packID = $_POST['packID'];
+		unset($_POST['sub_conf'], $_POST['packID']);
+
+		foreach($_POST as $key => $value)
+		{
+			$key = str_replace("_", "!", $key);
+			$_POST[$key] = $value;
+		}
+
+		$encoded_emotes = $tp -> toDB($_POST);
+		$tmp = addslashes(serialize($encoded_emotes));
+
+		if ($sql->db_Select("core", "*", "e107_name='emote_".$packID."'")) {
+			admin_update($sql->db_Update("core", "e107_value='$tmp' WHERE e107_name='emote_".$packID."' "), 'update', EMOLAN_16);
+		} else {
+			admin_update($sql->db_Insert("core", "'emote_".$packID."', '$tmp' "), 'insert', EMOLAN_16);
+		}
+	}
+
+	function installCheck()
+	{
+		global $sql, $fl;
+		foreach($this -> packArray as $value)
+		{
+			if(!$sql -> db_Select("core", "*", "e107_name='emote_".$value."' "))
+			{
+				$fileArray = $fl -> get_files(e_IMAGE."emotes/".$value);
+				foreach($fileArray as $file)
+				{
+					if(strstr($file['fname'], ".xml"))
+					{
+						$confFile = array('file' => $file['fname'], 'type' => "xml");
+					}
+					else if(strstr($file['fname'], ".pak"))
+					{
+						$confFile = array('file' => $file['fname'], 'type' => "pak");
+					}
+					else if(strstr($file['fname'], ".php"))
+					{
+						$confFile = array('file' => $file['fname'], 'type' => "php");
+					}
+				}
+
+				/* .pak file ------------------------------------------------------------------------------------------------------------------------------------ */
+				if($confFile['type'] == "pak")
+				{
+					$filename = e_IMAGE."emotes/".$value."/".$confFile['file'];
+					$pakconf = file ($filename);
+					$contentArray = array();
+					foreach($pakconf as $line)
+					{
+						if(trim($line) && strstr($line, "=+") && !strstr($line, ".txt") && !strstr($line, ".html") && !strstr($line, "cvs")) $contentArray[] = $line;
+					}
+					$confArray = array();
+					foreach($contentArray as $pakline)
+					{
+						$tmp = explode("=+:", $pakline);
+						$confIC = str_replace(".", "!", $tmp[0]);
+						$confArray[$confIC] = trim($tmp[2]);
+					}
+					$tmp = addslashes(serialize($confArray));
+					$sql->db_Insert("core", "'emote_".$value."', '$tmp' ");
+					echo "<div style='text-align: center;'><b>New emote pak found: '</b> ".$value."'</div>";
+				}
+				/* end ----------------------------------------------------------------------------------------------------------------------------------------- */
+
+				/* .xml file ------------------------------------------------------------------------------------------------------------------------------------ */
+				if($confFile['type'] == "xml")
+				{
+					$filename = e_IMAGE."emotes/".$value."/".$confFile['file'];
+
+					$handle = fopen ($filename, "r"); 
+					$contents = fread ($handle, filesize ($filename)); 
+					fclose ($handle);
+
+					preg_match_all("#\<emoticon file=\"(.*?)\"\>(.*?)\<\/emoticon\>#si", $contents, $match);
+					$confArray = array();
+
+					for($a=0; $a<=(count($match[0])); $a++)
+					{
+						preg_match_all("#\<string\>(.*?)\<\/string\>#si", $match[0][$a], $match2);
+
+						$codet = "";
+						foreach($match2[1] as $code)
+						{
+							$codet .= $code." ";
+						}
+
+						foreach($fileArray as $emote)
+						{
+							if(strstr($emote['fname'], $match[1][$a]))
+							{
+								$file = str_replace(".", "!", $emote['fname']);
+							}
+						}
+						$confArray[$file] = $codet;
+					}
+
+					$tmp = addslashes(serialize($confArray));
+					$sql->db_Insert("core", "'emote_".$value."', '$tmp' ");
+					echo "<div style='text-align: center;'><b>New emote xml pak found: '</b> ".$value."'</div>";
+				}
+
+				if($confFile['type'] == "php")
+				{
+					echo "<b>.conf file found</b>: installing '".$value."'<br />";
+					include_once(e_IMAGE."emotes/".$value."/".$confFile['file']);
+					$sql->db_Insert("core", "'emote_".$value."', '$_emoteconf' ");
+					echo "<div style='text-align: center;'><b>New emote php found: '</b> ".$value."'</div>";
+				}
+				/* end ----------------------------------------------------------------------------------------------------------------------------------------- */
+				
+			}
+		}
+	}
 }
-$text .= "<tr>
-<td colspan='5' style='text-align:center' class='forumheader'>
-<input class='button' type='submit' name='updatesettings' value='".EMOLAN_7."' />
-</td>
-</tr>
-</table>
-</form>
-</div>
 
-<div style='text-align:center'>
-<form method='post' action='".e_SELF."'>
-<table width='85%'>
-<tr>
-<td style='width:30%' class='forumheader3'>".EMOLAN_8.": </td>
-<td class='forumheader3'><input class='tbox' type='text' name='emote_new_code' size='15' value='$name' maxlength='20' /></td>
-</td>
-</tr>
-
-<tr>
-<td style='width:30%' class='forumheader3'>".EMOLAN_9.": </td>
-<td class='forumheader3'><input class='tbox' type='text' name='emote_new_image' size='30' value='$name' maxlength='100' /></td>
-</td>
-</tr>
-
-</td>
-</tr>
-<td colspan='2' style='text-align:center' class='forumheader'>
-<input class='button' type='submit' name='addemote' value='".EMOLAN_10."' />
-</td>
-</tr>
-</table>
-</form>
-</div></div>";
-
-$ns -> tablerender("<div style='text-align:center'>".EMOLAN_11."</div>", $text);
 require_once("footer.php");
-
-function setdefault(){
-        $sql = new db;
-        $tmp = 'a:60:{i:0;a:1:{s:2:"&|";s:7:"cry.png";}i:1;a:1:{s:3:"&-|";s:7:"cry.png";}i:2;a:1:{s:3:"&o|";s:7:"cry.png";}i:3;a:1:{s:3:":((";s:7:"cry.png";}i:4;a:1:{s:3:"~:(";s:7:"mad.png";}i:5;a:1:{s:4:"~:o(";s:7:"mad.png";}i:6;a:1:{s:4:"~:-(";s:7:"mad.png";}i:7;a:1:{s:2:":)";s:9:"smile.png";}i:8;a:1:{s:3:":o)";s:9:"smile.png";}i:9;a:1:{s:3:":-)";s:9:"smile.png";}i:10;a:1:{s:2:":(";s:9:"frown.png";}i:11;a:1:{s:3:":o(";s:9:"frown.png";}i:12;a:1:{s:3:":-(";s:9:"frown.png";}i:13;a:1:{s:2:":D";s:8:"grin.png";}i:14;a:1:{s:3:":oD";s:8:"grin.png";}i:15;a:1:{s:3:":-D";s:8:"grin.png";}i:16;a:1:{s:2:":?";s:12:"confused.png";}i:17;a:1:{s:3:":o?";s:12:"confused.png";}i:18;a:1:{s:3:":-?";s:12:"confused.png";}i:19;a:1:{s:3:"%-6";s:11:"special.png";}i:20;a:1:{s:2:"x)";s:8:"dead.png";}i:21;a:1:{s:3:"xo)";s:8:"dead.png";}i:22;a:1:{s:3:"x-)";s:8:"dead.png";}i:23;a:1:{s:2:"x(";s:8:"dead.png";}i:24;a:1:{s:3:"xo(";s:8:"dead.png";}i:25;a:1:{s:3:"x-(";s:8:"dead.png";}i:26;a:1:{s:2:":@";s:7:"gah.png";}i:27;a:1:{s:3:":o@";s:7:"gah.png";}i:28;a:1:{s:3:":-@";s:7:"gah.png";}i:29;a:1:{s:2:":!";s:8:"idea.png";}i:30;a:1:{s:3:":o!";s:8:"idea.png";}i:31;a:1:{s:3:":-!";s:8:"idea.png";}i:32;a:1:{s:2:":|";s:11:"neutral.png";}i:33;a:1:{s:3:":o|";s:11:"neutral.png";}i:34;a:1:{s:3:":-|";s:11:"neutral.png";}i:35;a:1:{s:2:"?!";s:12:"question.png";}i:36;a:1:{s:2:"B)";s:12:"rolleyes.png";}i:37;a:1:{s:3:"Bo)";s:12:"rolleyes.png";}i:38;a:1:{s:3:"B-)";s:12:"rolleyes.png";}i:39;a:1:{s:2:"8)";s:10:"shades.png";}i:40;a:1:{s:3:"8o)";s:10:"shades.png";}i:41;a:1:{s:3:"8-)";s:10:"shades.png";}i:42;a:1:{s:2:":O";s:12:"suprised.png";}i:43;a:1:{s:3:":oO";s:12:"suprised.png";}i:44;a:1:{s:3:":-O";s:12:"suprised.png";}i:45;a:1:{s:2:":p";s:10:"tongue.png";}i:46;a:1:{s:3:":op";s:10:"tongue.png";}i:47;a:1:{s:3:":-p";s:10:"tongue.png";}i:48;a:1:{s:2:":P";s:10:"tongue.png";}i:49;a:1:{s:3:":oP";s:10:"tongue.png";}i:50;a:1:{s:3:":-P";s:10:"tongue.png";}i:51;a:1:{s:2:";)";s:8:"wink.png";}i:52;a:1:{s:3:";o)";s:8:"wink.png";}i:53;a:1:{s:3:";-)";s:8:"wink.png";}i:54;a:1:{s:4:"!ill";s:7:"ill.png";}i:55;a:1:{s:7:"!amazed";s:10:"amazed.png";}i:56;a:1:{s:4:"!cry";s:7:"cry.png";}i:57;a:1:{s:6:"!dodge";s:9:"dodge.png";}i:58;a:1:{s:6:"!alien";s:9:"alien.png";}i:59;a:1:{s:6:"!heart";s:9:"heart.png";}}';
-        $sql -> db_Insert("core", "'emote', '$tmp' ");
-        return $tmp;
-}
-
 
 ?>

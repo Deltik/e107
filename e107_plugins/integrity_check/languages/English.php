@@ -1,5 +1,15 @@
 <?php
-
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system - Language File.
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_plugins/integrity_check/languages/English.php,v $
+|     $Revision: 1.4 $
+|     $Date: 2005/03/09 20:48:52 $
+|     $Author: streaky $
++----------------------------------------------------------------------------+
+*/
+	
 define("Integ_01", "Saving successful");
 define("Integ_02", "Saving failed");
 define("Integ_03", "Missing Files:");
@@ -22,12 +32,14 @@ define("Integ_19", "Core-Checksum-Files");
 define("Integ_20", "Plugin-Checksum-Files");
 define("Integ_21", "Select the plugin you want to create a crc-file for.");
 define("Integ_22", "Use gzip");
-define("Integ_23", "Check only themes actually existant on your host");
+define("Integ_23", "Only check installed themes");
 define("Integ_24", "Admin Front Page");
 define("Integ_25", "Leave Admin Area");
 define("Integ_26", "Load Site with normal header");
+	
+// define("Integ_29", "<br /><br /><b>*<u>CRC-ERRORS:</u></b><br />These are checksum errors and there are two possible reasons for this:<br />-You changed something within the mentioned file, so it isn't longer the same as the original.<br />-The mentioned file is corrupt, you should reupload it!");
+// language file should contain NO html. 
 
-define("Integ_29", "<br /><br /><b>*<u>CRC-ERRORS:</u></b><br />These are checksum errors and there are two possible reasons for this:<br />-You changed something within the mentioned file, so it isn't longer the same as the original.<br />-The mentioned file is corrupt, you should reupload it!");
 define("Integ_30", "For less cpu-usage , you can do the checking in 1 - 10 steps.");
 define("Integ_31", "Steps: ");
 define("Integ_32", "There is a file named <b>log_crc.txt</b> in your crc-folder. Please delete! (Or try refreshing)");
@@ -38,5 +50,5 @@ define("Integ_36", "Click here, if you don't want to wait 5 Seconds till the nex
 define("Integ_37", "Click me");
 define("Integ_38", "Another <u><i>{counts}</i></u> lines to do...");
 define("Integ_39", "Please delete the file:<br />".e_PLUGIN."integrity_check/<u><i>do_core_file.php</i></u>!<br />It is outdated and never meant for public release...");
-
+	
 ?>

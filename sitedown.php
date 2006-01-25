@@ -10,26 +10,36 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107/sitedown.php,v $
+|     $Source: /cvsroot/e107/e107_0.7/sitedown.php,v $
 |     $Revision: 1.6 $
-|     $Date: 2004/09/10 02:58:10 $
-|     $Author: e107coders $
+|     $Date: 2005/06/11 22:24:48 $
+|     $Author: streaky $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
-$tp = new textparse;
-$text = "<font style='font-size: 14px; color: black; font-family: Tahoma, Verdana, Arial, Helvetica; text-decoration: none'>
-<div style='text-align:center'>
-<img src='".e_IMAGE."logo.png' alt='Logo' />
-</div>
-<hr />
-<br />
 
-<div style='text-align:center'>".($pref['maintainance_text'] ? $tp -> tpa($pref['maintainance_text'],"","admin") : "<b>- ".SITENAME." ".LAN_00." -</b><br /><br />".LAN_01 )."</div>";
-echo "<html><head><title>".PAGE_NAME."</title></head><body>";
+global $pref;
+global $tp;
 
-echo $text;
+e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_sitedown.php");
+e107_include_once(e_LANGUAGEDIR."English/lan_sitedown.php");
 
-echo "</body></html>";
+if($pref['maintainance_text']) {
+	$SITEDOWN_TABLE_MAINTAINANCETEXT = $tp->toHTML($pref['maintainance_text'], TRUE, 'parse_sc', 'admin');
+} else {
+	$SITEDOWN_TABLE_MAINTAINANCETEXT = "<b>- ".SITENAME." ".LAN_00." -</b><br /><br />".LAN_01 ;
+}
 
+$SITEDOWN_TABLE_PAGENAME = PAGE_NAME;
+	
+if (!$SITEDOWN_TABLE) {
+	if (file_exists(THEME."sitedown_template.php")) {
+		require_once(THEME."sitedown_template.php");
+	} else {
+		require_once(e_THEME."templates/sitedown_template.php");
+	}
+}
+
+echo preg_replace("/\{(.*?)\}/e", '$\1', $SITEDOWN_TABLE);
+	
 ?>

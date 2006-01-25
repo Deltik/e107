@@ -1,22 +1,22 @@
 <?php
 /*
-+---------------------------------------------------------------+
-|	e107 website system
++ ----------------------------------------------------------------------------+
+|     e107 website system - Language File.
 |
-|	©Steve Dunstan 2001-2002
-|	http://e107.org
-|	jalist@e107.org
-|
-|	Released under the terms and conditions of the
-|	GNU General Public License (http://gnu.org).
-+---------------------------------------------------------------+
+|     $Source: /cvsroot/e107/e107_0.7/e107_plugins/counter_menu/languages/English.php,v $
+|     $Revision: 1.5 $
+|     $Date: 2005/06/22 18:07:49 $
+|     $Author: stevedunstan $
++----------------------------------------------------------------------------+
 */
-
-define("COUNTER_L1", "Counter");
-define("COUNTER_L2", "Today");
-define("COUNTER_L3", "Ever");
-define("COUNTER_L4", "Record");
-define("COUNTER_L5", "Stat logging is disabled.");
-define("COUNTER_L6", "Click here to enable.");
-
+	
+define("COUNTER_L1", "Admin visits aren't being counted.");
+define("COUNTER_L2", "This page today ...");
+define("COUNTER_L3", "total");
+define("COUNTER_L4", "This page ever ...");
+define("COUNTER_L5", "unique");
+define("COUNTER_L6", "Site ...");
+define("COUNTER_L7", "Counter");
+define("COUNTER_L8", "Admin message: <b>Stat logging is disabled.</b><br />To activate, you need to install the Statistic Logging plugin from your <a href='".e_ADMIN."plugin.php'>plugin manager</a>, then activate it from the <a href='".e_PLUGIN."log/admin_config.php'>configuration screen</a>.");
+	
 ?>

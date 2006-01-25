@@ -1,18 +1,35 @@
 <?php
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_admin/sql/core_sql.php,v $
+|     $Revision: 1.44 $
+|     $Date: 2006/01/05 06:40:17 $
+|     $Author: sweetas $
++----------------------------------------------------------------------------+
+*/
 header("location:../index.php");
 exit;
 ?>
 #
 # +---------------------------------------------------------------+
-# |	e107 website system
-# |	/files/sql.php
+# |        e107 website system
+# |        /files/sql.php
 # |
-# |	©Steve Dunstan 2001-2002
-# |	http://e107.org
-# |	jalist@e107.org
+# |        ?Steve Dunstan 2001-2002
+# |        http://e107.org
+# |        jalist@e107.org
 # |
-# |	Released under the terms and conditions of the
-# |	GNU General Public License (http://gnu.org).
+# |        Released under the terms and conditions of the
+# |        GNU General Public License (http://gnu.org).
 # +---------------------------------------------------------------+
 # Database : <variable>
 # --------------------------------------------------------
@@ -43,38 +60,12 @@ CREATE TABLE banner (
   banner_impurchased int(10) unsigned NOT NULL default '0',
   banner_startdate int(10) unsigned NOT NULL default '0',
   banner_enddate int(10) unsigned NOT NULL default '0',
-  banner_active tinyint(1) unsigned NOT NULL default '0',
+  banner_active tinyint(3) unsigned NOT NULL default '0',
   banner_clicks int(10) unsigned NOT NULL default '0',
   banner_impressions int(10) unsigned NOT NULL default '0',
   banner_ip text NOT NULL,
   banner_campaign varchar(150) NOT NULL default '',
   PRIMARY KEY  (banner_id)
-) TYPE=MyISAM;
-# --------------------------------------------------------
-
-#
-# Table structure for table `cache`
-#
-
-CREATE TABLE cache (
-  cache_url varchar(200) NOT NULL default '',
-  cache_datestamp int(10) unsigned NOT NULL default '0',
-  cache_data longtext NOT NULL
-) TYPE=MyISAM;
-# --------------------------------------------------------
-
-#
-# Table structure for table `chatbox`
-#
-
-CREATE TABLE chatbox (
-  cb_id int(10) unsigned NOT NULL auto_increment,
-  cb_nick varchar(30) NOT NULL default '',
-  cb_message text NOT NULL,
-  cb_datestamp int(10) unsigned NOT NULL default '0',
-  cb_blocked tinyint(3) unsigned NOT NULL default '0',
-  cb_ip varchar(15) NOT NULL default '',
-  PRIMARY KEY  (cb_id)
 ) TYPE=MyISAM;
 # --------------------------------------------------------
 
@@ -94,40 +85,33 @@ CREATE TABLE comments (
   comment_blocked tinyint(3) unsigned NOT NULL default '0',
   comment_ip varchar(20) NOT NULL default '',
   comment_type varchar(10) NOT NULL default '0',
+  comment_lock tinyint(1) unsigned NOT NULL default '0',
   PRIMARY KEY  (comment_id)
-) TYPE=MyISAM;
-# --------------------------------------------------------
-
-#
-# Table structure for table `content`
-#
-
-CREATE TABLE content (
-  content_id int(10) unsigned NOT NULL auto_increment,
-  content_heading tinytext NOT NULL,
-  content_subheading tinytext NOT NULL,
-  content_content text NOT NULL,
-  content_parent int(10) unsigned NOT NULL default '0',
-  content_datestamp int(10) unsigned NOT NULL default '0',
-  content_author varchar(200) NOT NULL default '',
-  content_comment tinyint(3) unsigned NOT NULL default '0',
-  content_summary text NOT NULL,
-  content_type tinyint(3) unsigned NOT NULL default '0',
-  content_review_score tinyint(3) unsigned NOT NULL default '0',
-  content_pe_icon tinyint(1) unsigned NOT NULL default '0',
-  content_class tinyint(3) unsigned NOT NULL default '0',
-  PRIMARY KEY  (content_id)
 ) TYPE=MyISAM;
 # --------------------------------------------------------
 
 #
 # Table structure for table `core`
 #
-
 CREATE TABLE core (
-  e107_name varchar(20) NOT NULL default '',
+  e107_name varchar(100) NOT NULL default '',
   e107_value text NOT NULL,
   PRIMARY KEY  (e107_name)
+) TYPE=MyISAM;
+# --------------------------------------------------------
+
+#
+# Table structure for table `dblog`
+#
+CREATE TABLE dblog (
+  dblog_id int(10) unsigned NOT NULL auto_increment,
+  dblog_type varchar(60) NOT NULL default '',
+  dblog_datestamp int(10) unsigned NOT NULL default '0',
+  dblog_user_id int(10) unsigned NOT NULL default '0',
+  dblog_ip varchar(80) NOT NULL default '',
+  dblog_query text NOT NULL,
+  dblog_remarks varchar(255) NOT NULL default '',
+  PRIMARY KEY  (dblog_id)
 ) TYPE=MyISAM;
 # --------------------------------------------------------
 
@@ -151,6 +135,10 @@ CREATE TABLE download (
   download_thumb varchar(150) NOT NULL default '',
   download_image varchar(150) NOT NULL default '',
   download_comment tinyint(3) unsigned NOT NULL default '0',
+  download_class varchar(255) NOT NULL default '0',
+  download_mirror text NOT NULL,
+  download_mirror_type tinyint(1) unsigned NOT NULL default '0',
+  download_visible varchar(255) NOT NULL default '0',
   PRIMARY KEY  (download_id),
   UNIQUE KEY download_name (download_name)
 ) TYPE=MyISAM;
@@ -166,10 +154,41 @@ CREATE TABLE download_category (
   download_category_description text NOT NULL,
   download_category_icon varchar(100) NOT NULL default '',
   download_category_parent int(10) unsigned NOT NULL default '0',
-  download_category_class varchar(100) NOT NULL default '',
+  download_category_class varchar(255) NOT NULL default '0',
+  download_category_order int(10) unsigned NOT NULL default '0',
   PRIMARY KEY  (download_category_id)
 ) TYPE=MyISAM;
 # --------------------------------------------------------
+
+#
+# Table structure for table `download_mirror`
+#
+
+CREATE TABLE download_mirror (
+  mirror_id int(10) unsigned NOT NULL auto_increment,
+  mirror_name varchar(200) NOT NULL default '',
+  mirror_url varchar(200) NOT NULL default '',
+  mirror_image varchar(200) NOT NULL default '',
+  mirror_location varchar(100) NOT NULL default '',
+  mirror_description text NOT NULL,
+  mirror_count int(10) unsigned NOT NULL default '0',
+  PRIMARY KEY  (mirror_id)
+) TYPE=MyISAM;
+# --------------------------------------------------------
+
+#
+# Table structure for table `download_requests`
+#
+CREATE TABLE download_requests (
+  download_request_id int(10) unsigned NOT NULL auto_increment,
+  download_request_userid int(10) unsigned NOT NULL default '0',
+  download_request_ip varchar(30) NOT NULL default '',
+  download_request_download_id int(10) unsigned NOT NULL default '0',
+  download_request_datestamp int(10) unsigned NOT NULL default '0',
+  PRIMARY KEY  (download_request_id)
+) TYPE=MyISAM;
+# --------------------------------------------------------
+
 
 #
 # Table structure for table `flood`
@@ -178,46 +197,6 @@ CREATE TABLE download_category (
 CREATE TABLE flood (
   flood_url text NOT NULL,
   flood_time int(10) unsigned NOT NULL default '0'
-) TYPE=MyISAM;
-# --------------------------------------------------------
-
-#
-# Table structure for table `forum`
-#
-
-CREATE TABLE forum (
-  forum_id int(10) unsigned NOT NULL auto_increment,
-  forum_name varchar(250) NOT NULL default '',
-  forum_description text NOT NULL,
-  forum_parent int(10) unsigned NOT NULL default '0',
-  forum_datestamp int(10) unsigned NOT NULL default '0',
-  forum_moderators text NOT NULL,
-  forum_threads int(10) unsigned NOT NULL default '0',
-  forum_replies int(10) unsigned NOT NULL default '0',
-  forum_lastpost varchar(200) NOT NULL default '',
-  forum_class varchar(100) NOT NULL default '',
-  forum_order int(10) unsigned NOT NULL default '0',
-  PRIMARY KEY  (forum_id)
-) TYPE=MyISAM;
-# --------------------------------------------------------
-
-#
-# Table structure for table `forum_t`
-#
-
-CREATE TABLE forum_t (
-  thread_id int(10) unsigned NOT NULL auto_increment,
-  thread_name varchar(250) NOT NULL default '',
-  thread_thread text NOT NULL,
-  thread_forum_id int(10) unsigned NOT NULL default '0',
-  thread_datestamp int(10) unsigned NOT NULL default '0',
-  thread_parent int(10) unsigned NOT NULL default '0',
-  thread_user varchar(250) NOT NULL default '',
-  thread_views int(10) unsigned NOT NULL default '0',
-  thread_active tinyint(3) unsigned NOT NULL default '0',
-  thread_lastpost int(10) unsigned NOT NULL default '0',
-  thread_s tinyint(1) unsigned NOT NULL default '0',
-  PRIMARY KEY  (thread_id)
 ) TYPE=MyISAM;
 # --------------------------------------------------------
 
@@ -239,19 +218,6 @@ CREATE TABLE headlines (
 # --------------------------------------------------------
 
 #
-# Table structure for table `link_category`
-#
-
-CREATE TABLE link_category (
-  link_category_id int(10) unsigned NOT NULL auto_increment,
-  link_category_name varchar(100) NOT NULL default '',
-  link_category_description varchar(250) NOT NULL default '',
-  link_category_icon varchar(100) NOT NULL default '',
-  PRIMARY KEY  (link_category_id)
-) TYPE=MyISAM;
-# --------------------------------------------------------
-
-#
 # Table structure for table `links`
 #
 
@@ -263,11 +229,12 @@ CREATE TABLE links (
   link_button varchar(100) NOT NULL default '',
   link_category tinyint(3) unsigned NOT NULL default '0',
   link_order int(10) unsigned NOT NULL default '0',
-  link_refer int(10) unsigned NOT NULL default '0',
+  link_parent int(10) unsigned NOT NULL default '0',
   link_open tinyint(1) unsigned NOT NULL default '0',
-  link_class tinyint(3) unsigned NOT NULL default '0',
+  link_class varchar(255) NOT NULL default '0',
   PRIMARY KEY  (link_id)
 ) TYPE=MyISAM;
+
 # --------------------------------------------------------
 
 #
@@ -279,8 +246,9 @@ CREATE TABLE menus (
   menu_name varchar(100) NOT NULL default '',
   menu_location tinyint(3) unsigned NOT NULL default '0',
   menu_order tinyint(3) unsigned NOT NULL default '0',
-  menu_class tinyint(3) unsigned NOT NULL default '0',
+  menu_class varchar(255) NOT NULL default '0',
   menu_pages text NOT NULL,
+  menu_path varchar(100) NOT NULL default '',
   PRIMARY KEY  (menu_id)
 ) TYPE=MyISAM;
 # --------------------------------------------------------
@@ -300,10 +268,19 @@ CREATE TABLE news (
   news_allow_comments tinyint(3) unsigned NOT NULL default '0',
   news_start int(10) unsigned NOT NULL default '0',
   news_end int(10) unsigned NOT NULL default '0',
-  news_class tinyint(3) unsigned NOT NULL default '0',
+  news_class varchar(255) NOT NULL default '0',
   news_render_type tinyint(3) unsigned NOT NULL default '0',
+  news_comment_total int(10) unsigned NOT NULL default '0',
+  news_summary text NOT NULL,
+  news_thumbnail text NOT NULL,
+  news_sticky tinyint(3) unsigned NOT NULL default '0',
   PRIMARY KEY  (news_id)
 ) TYPE=MyISAM;
+
+
+
+
+
 # --------------------------------------------------------
 
 #
@@ -333,6 +310,26 @@ CREATE TABLE online (
 # --------------------------------------------------------
 
 #
+# Table structure for table `page`
+#
+
+CREATE TABLE page (
+  page_id int(10) unsigned NOT NULL auto_increment,
+  page_title varchar(250) NOT NULL default '',
+  page_text mediumtext NOT NULL,
+  page_author int(10) unsigned NOT NULL default '0',
+  page_datestamp int(10) unsigned NOT NULL default '0',
+  page_rating_flag tinyint(1) unsigned NOT NULL default '0',
+  page_comment_flag tinyint(1) unsigned NOT NULL default '0',
+  page_password varchar(50) NOT NULL default '',
+  page_class varchar(250) NOT NULL default '',
+  page_ip_restrict text NOT NULL,
+  page_theme varchar(50) NOT NULL default '',
+  PRIMARY KEY  (page_id)
+) TYPE=MyISAM;
+# --------------------------------------------------------
+
+#
 # Table structure for table `plugin`
 #
 
@@ -342,45 +339,24 @@ CREATE TABLE plugin (
   plugin_version varchar(10) NOT NULL default '',
   plugin_path varchar(100) NOT NULL default '',
   plugin_installflag tinyint(1) unsigned NOT NULL default '0',
+  plugin_rss varchar(255) NOT NULL default '',
   PRIMARY KEY  (plugin_id)
 ) TYPE=MyISAM;
+
 # --------------------------------------------------------
 
 #
-# Table structure for table `poll`
+# Table structure for table `rate`
 #
 
-CREATE TABLE poll (
-  poll_id int(10) unsigned NOT NULL auto_increment,
-  poll_datestamp int(10) unsigned NOT NULL default '0',
-  poll_end_datestamp int(10) unsigned NOT NULL default '0',
-  poll_admin_id int(10) unsigned NOT NULL default '0',
-  poll_title varchar(250) NOT NULL default '',
-  poll_option_1 varchar(250) NOT NULL default '',
-  poll_option_2 varchar(250) NOT NULL default '',
-  poll_option_3 varchar(250) NOT NULL default '',
-  poll_option_4 varchar(250) NOT NULL default '',
-  poll_option_5 varchar(250) NOT NULL default '',
-  poll_option_6 varchar(250) NOT NULL default '',
-  poll_option_7 varchar(250) NOT NULL default '',
-  poll_option_8 varchar(250) NOT NULL default '',
-  poll_option_9 varchar(250) NOT NULL default '',
-  poll_option_10 varchar(250) NOT NULL default '',
-  poll_votes_1 int(10) unsigned NOT NULL default '0',
-  poll_votes_2 int(10) unsigned NOT NULL default '0',
-  poll_votes_3 int(10) unsigned NOT NULL default '0',
-  poll_votes_4 int(10) unsigned NOT NULL default '0',
-  poll_votes_5 int(10) unsigned NOT NULL default '0',
-  poll_votes_6 int(10) unsigned NOT NULL default '0',
-  poll_votes_7 int(10) unsigned NOT NULL default '0',
-  poll_votes_8 int(10) unsigned NOT NULL default '0',
-  poll_votes_9 int(10) unsigned NOT NULL default '0',
-  poll_votes_10 int(10) unsigned NOT NULL default '0',
-  poll_ip text NOT NULL,
-  poll_active tinyint(3) unsigned NOT NULL default '0',
-  poll_comment tinyint(3) unsigned NOT NULL default '1',
-  PRIMARY KEY  (poll_id)
+CREATE TABLE preset (
+  preset_id int(10) unsigned NOT NULL auto_increment,
+  preset_name varchar(80) NOT NULL default '',
+  preset_field varchar(80) NOT NULL default '',
+  preset_value varchar(255) NOT NULL default '',
+  PRIMARY KEY  (preset_id)
 ) TYPE=MyISAM;
+			
 # --------------------------------------------------------
 
 #
@@ -423,40 +399,6 @@ CREATE TABLE session (
   session_data text NOT NULL
 ) TYPE=MyISAM;
 
-# --------------------------------------------------------
-
-#
-# Table structure for table `stat_counter`
-#
-
-CREATE TABLE stat_counter (
-  counter_date date NOT NULL default '0000-00-00',
-  counter_url varchar(100) NOT NULL default '',
-  counter_unique int(10) unsigned NOT NULL default '0',
-  counter_total int(10) unsigned NOT NULL default '0',
-  counter_ip text NOT NULL
-) TYPE=MyISAM;
-# --------------------------------------------------------
-
-#
-# Table structure for table `stat_info`
-#
-
-CREATE TABLE stat_info (
-  info_name text NOT NULL,
-  info_count int(10) unsigned NOT NULL default '0',
-  info_type tinyint(3) unsigned NOT NULL default '0'
-) TYPE=MyISAM;
-# --------------------------------------------------------
-
-#
-# Table structure for table `stat_last`
-#
-
-CREATE TABLE stat_last (
-  stat_last_date int(11) unsigned NOT NULL default '0',
-  stat_last_info text NOT NULL
-) TYPE=MyISAM;
 # --------------------------------------------------------
 
 #
@@ -520,16 +462,11 @@ CREATE TABLE upload (
 CREATE TABLE user (
   user_id int(10) unsigned NOT NULL auto_increment,
   user_name varchar(100) NOT NULL default '',
+  user_loginname varchar(100) NOT NULL default '',
   user_customtitle varchar(100) NOT NULL default '',
   user_password varchar(32) NOT NULL default '',
-  user_sess varchar(32) NOT NULL default '',
+  user_sess varchar(100) NOT NULL default '',
   user_email varchar(100) NOT NULL default '',
-  user_homepage varchar(150) NOT NULL default '',
-  user_icq varchar(10) NOT NULL default '',
-  user_aim varchar(100) NOT NULL default '',
-  user_msn varchar(100) NOT NULL default '',
-  user_location varchar(150) NOT NULL default '',
-  user_birthday date NOT NULL default '0000-00-00',
   user_signature text NOT NULL,
   user_image varchar(100) NOT NULL default '',
   user_timezone char(3) NOT NULL default '',
@@ -553,15 +490,16 @@ CREATE TABLE user (
   user_perms text NOT NULL,
   user_realm text NOT NULL,
   user_pwchange int(10) unsigned NOT NULL default '0',
+  user_xup varchar(100) NOT NULL default '',
   PRIMARY KEY  (user_id),
-  UNIQUE KEY user_name (user_name)
+  UNIQUE KEY user_name (user_name),
+  KEY user_ban_index (user_ban)
 ) TYPE=MyISAM;
 # --------------------------------------------------------
 
 #
 # Table structure for table `userclass_classes`
 #
-
 CREATE TABLE userclass_classes (
   userclass_id tinyint(3) unsigned NOT NULL default '0',
   userclass_name varchar(100) NOT NULL default '',
@@ -572,25 +510,52 @@ CREATE TABLE userclass_classes (
 # --------------------------------------------------------
 
 #
-# Table structure for table `wmessage`
+# Table structure for table `e107_user_extended`
 #
 
-CREATE TABLE wmessage (
-  wm_id tinyint(3) unsigned NOT NULL default '0',
-  wm_text text NOT NULL,
-  wm_active tinyint(3) unsigned NOT NULL default '0'
+CREATE TABLE user_extended (
+  user_extended_id int(10) unsigned NOT NULL default '0',
+  user_hidden_fields text NOT NULL,
+  PRIMARY KEY  (user_extended_id)
 ) TYPE=MyISAM;
 # --------------------------------------------------------
 
+
 #
-# Table structure for table `parser`
+# Table structure for table `e107_user_extended_struct`
 #
 
-CREATE TABLE parser (
-  parser_id int(10) unsigned NOT NULL auto_increment,
-  parser_pluginname varchar(100) NOT NULL default '',
-  parser_regexp varchar(100) NOT NULL default '',
-  PRIMARY KEY  (parser_id),
-  UNIQUE KEY parser_regexp (parser_regexp)
+CREATE TABLE user_extended_struct (
+  user_extended_struct_id int(10) unsigned NOT NULL auto_increment,
+  user_extended_struct_name varchar(255) NOT NULL default '',
+  user_extended_struct_text varchar(255) NOT NULL default '',
+  user_extended_struct_type tinyint(3) unsigned NOT NULL default '0',
+  user_extended_struct_parms varchar(255) NOT NULL default '',
+  user_extended_struct_values text NOT NULL,
+  user_extended_struct_default varchar(255) NOT NULL default '',
+  user_extended_struct_read tinyint(3) unsigned NOT NULL default '0',
+  user_extended_struct_write tinyint(3) unsigned NOT NULL default '0',
+  user_extended_struct_required tinyint(3) unsigned NOT NULL default '0',
+  user_extended_struct_signup tinyint(3) unsigned NOT NULL default '0',
+  user_extended_struct_applicable tinyint(3) unsigned NOT NULL default '0',
+  user_extended_struct_order int(10) unsigned NOT NULL default '0',
+  user_extended_struct_parent int(10) unsigned NOT NULL default '0',
+  PRIMARY KEY  (user_extended_struct_id)
+) TYPE=MyISAM;
+# --------------------------------------------------------
+
+
+#
+# Table structure for table `generic`
+#
+CREATE TABLE generic (
+  gen_id int(10) unsigned NOT NULL auto_increment,
+  gen_type varchar(80) NOT NULL default '',
+  gen_datestamp int(10) unsigned NOT NULL default '0',
+  gen_user_id int(10) unsigned NOT NULL default '0',
+  gen_ip varchar(80) NOT NULL default '',
+  gen_intdata int(10) unsigned NOT NULL default '0',
+  gen_chardata text NOT NULL,
+  PRIMARY KEY  (gen_id)
 ) TYPE=MyISAM;
 # --------------------------------------------------------

@@ -1,18 +1,24 @@
 <?php
 /*
-+---------------------------------------------------------------+
-|        e107 website system
-|        /classes/mail.php
-|        updated by Cameron.
++ ----------------------------------------------------------------------------+
+|     e107 website system
 |
-|        ©Steve Dunstan 2001-2002
-|        http://e107.org
-|        jalist@e107.org
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
 |
-|        Released under the terms and conditions of the
-|        GNU General Public License (http://gnu.org).
-+---------------------------------------------------------------+
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_handlers/mail.php,v $
+|     $Revision: 1.25 $
+|     $Date: 2005/12/14 17:37:34 $
+|     $Author: sweetas $
++----------------------------------------------------------------------------+
 */
+
+if (!defined('e107_INIT')) { exit; }
+
 /*
 Please note that mailed attachments have been found to be corrupted using php 4.3.3
 php 4.3.6 does NOT have this problem.
@@ -20,169 +26,177 @@ php 4.3.6 does NOT have this problem.
 // Comment out the line below if you have trouble with some people not receiving emails.
 // ini_set(sendmail_path, "/usr/sbin/sendmail -t -f ".$pref['siteadminemail']);
 
+function sendemail($send_to, $subject, $message, $to_name, $send_from, $from_name, $attachments, $Cc, $Bcc, $returnpath, $returnreceipt,$inline ="") {
+	global $pref;
+	require_once(e_HANDLER."phpmailer/class.phpmailer.php");
 
-function sendemail($send_to, $subject, $message,$to_name,$send_from,$from_name,$attachments,$Cc,$Bcc,$returnpath,$returnreceipt){
-        global $pref;
-        $lb = "\n";
-        // Clean up the HTML. ==
+	$mail = new PHPMailer();
 
-        if(preg_match('/<(html|font|br|a|img)/i', $message)){
-        $Html = $message;
-        }else{
-        $Html = preg_replace("/\n/","<br />",$message);
-        $Html = eregi_replace('(((f|ht){1}t(p|ps)://)[-a-zA-Z0-9@:%_\+.~#?&//=]+)',    '<a href="\\1">\\1</a>', $Html);
-        $Html = eregi_replace('([[:space:]()[{}])(www.[-a-zA-Z0-9@:%_\+.~#?&//=]+)',    '\\1<a href="http://\\2">\\2</a>', $Html);
-        $Html = eregi_replace('([_\.0-9a-z-]+@([0-9a-z][0-9a-z-]+\.)+[a-z]{2,3})',    '<a href="mailto:\\1">\\1</a>', $Html);
-        }
+    if ($pref['mailer']== 'smtp' || $pref['smtp_enable']==1) {
+		$mail->Mailer = "smtp";
+	 	$mail->SMTPKeepAlive = FALSE;
+		$mail->Host = $pref['smtp_server'];
+		if($pref['smtp_username'] && $pref['smtp_password']){
+			$mail->SMTPAuth = TRUE;
+			$mail->Username = $pref['smtp_username'];
+			$mail->Password = $pref['smtp_password'];
+			$mail->PluginDir = e_HANDLER."phpmailer/";
+		}
 
-        $text = strip_tags(preg_replace("<br>","/\n/",$message));
-        $OB="----=_OuterBoundary_000". md5(uniqid(mt_rand(), 1));
-        $IB="----=_InnerBoundery_001" . md5(uniqid(mt_rand(), 1));
+	} elseif ($pref['mailer']== 'sendmail'){
+		$mail->Mailer = "sendmail";
+		$mail->Sendmail = ($pref['sendmail']) ? $pref['sendmail'] : "/usr/sbin/sendmail -t -i -r ".$pref['siteadminemail'];
+	} else {
+        $mail->Mailer = "mail";
+	}
 
-        $send_from = ($send_from)?$send_from:$pref['siteadminemail'];
-        $from_name = ($from_name)?$from_name:$pref['siteadmin'];
-        $to_name = ($to_name)?$to_name:$send_to;
-    //    $send_to = $to_name." <".$send_to.">\n";
+	$to_name = ($to_name) ? $to_name: $send_to;
 
-        $headers = "Date: ".date("r")."\n";
-        $headers.= "MIME-Version: 1.0\n";
-        $headers.= "From: ".$from_name." <".$send_from.">\n";
-        $headers.= "Reply-To: ".$from_name." <".$send_from.">\n";
-        $headers.= ($returnreceipt !="")? "Return-Receipt: $returnreceipt\n":"Return-Receipt: ".$pref['siteadminemail']."\n";
-        $headers.= "X-Sender: ".$send_from."\n";
-        $headers.= "X-Mailer: PHP Mailer\n";
-        $headers.= "X-MimeOLE: Produced By e107 website system\n";
-        $headers.= "X-Priority: 3\n";
-        if ($Cc) {$headers .= "Cc: $Cc\n";}
-        if ($Bcc) {$headers .= "Bcc: $Bcc\n";}
-        $headers.="Content-Type: multipart/mixed;\n\tboundary=\"".$OB."\"\n";
+	$mail->CharSet = CHARSET;
+	$mail->From = ($send_from)? $send_from: $pref['siteadminemail'];
+	$mail->FromName = ($from_name)? $from_name:	$pref['siteadmin'];
+	$mail->Host = $pref['smtp_server'];
+	$mail->Subject = $subject;
+	$mail->SetLanguage("en",e_HANDLER."phpmailer/language/");
 
-        // Insert Body with text and HTML.
-        $body ="This is a multi-part message in MIME format.\n";
-        $body.="\n--".$OB."\n";
-        $body.="Content-Type:multipart/alternative;\n\tboundary=\"".$IB."\"\n\n";
+	$lb = "\n";
+	// Clean up the HTML. ==
 
-        //plaintext section
-        $body.="\n--".$IB."\n";
-        $body.="Content-Type: text/plain;\n\tcharset=".CHARSET."\n";
-        $body.="Content-Transfer-Encoding: quoted-printable\n\n";
-        // plaintext goes here
-        $body.=$text."\n\n";
+	if (preg_match('/<(font|br|a|img|b)/i', $message)) {
+		$Html = $message; // Assume html if it begins with one of these tags
+	} else {
+		$Html = htmlspecialchars($message);
+		$Html = preg_replace('%(http|ftp|https)(://\S+)%', '<a href="\1\2">\1\2</a>', $Html);
+		$Html = preg_replace('/([[:space:]()[{}])(www.[-a-zA-Z0-9@:%_\+.~#?&\/\/=]+)/i', '\\1<a href="http://\\2">\\2</a>', $Html);
+		$Html = preg_replace('/([_\.0-9a-z-]+@([0-9a-z][0-9a-z-]+\.)+[a-z]{2,3})/i', '<a href="mailto:\\1">\\1</a>', $Html);
+		$Html = str_replace("\n", "<br>\n", $Html);
+	}
+	if (strpos($message,"</style>") !== FALSE){
+    	$text = strstr($message,"</style>");
+	}else{
+    	$text = $message;
+	}
+    $text = str_replace("<br />", "\n", $text);
+  	$text = strip_tags(str_replace("<br>", "\n", $text));
 
-        // html section
-        $body.="\n--".$IB."\n";
-        $body.="Content-Type: text/html;\n\tcharset=".CHARSET."\n";
-        $body.="Content-Transfer-Encoding: base64\n\n";
-        $body.= chunk_split(base64_encode($Html))."\n\n";
-        $body.="\n--".$IB."--\n";
+	$mail->Body = $Html; //Main message is HTML
+	$mail->IsHTML(TRUE);
+ 	$mail->AltBody = $text; //Include regular plaintext as well
+	$mail->AddAddress($send_to, $to_name);
 
-// attachments ================
-        if($attachments){
-        if(!is_array($attachments)){
-        $AttmFiles[] = $attachments;
-        }else{
-        $AttmFiles = $attachments;
-        }
-
-         foreach($AttmFiles as $AttmFile){
-           if(is_file($AttmFile)){
-                $patharray = explode ("/", $AttmFile);
-                $mime = is_callable("mime_content_type")? mime_content_type($AttmFile):"application/octetstream";
-                $FileName=$patharray[count($patharray)-1];
-                $body.= "\n--".$OB."\n";
-                $body.="Content-Type: $mime;\n\tname=\"".$FileName."\"\n";
-                $body.="Content-Transfer-Encoding: base64\n";
-                $body.="Content-length:\"".filesize($AttmFile)."\"\n";
-                $body.="Content-Disposition: attachment;\n\tfilename=\"".$FileName."\"\n\n";
-                $fd=fopen($AttmFile, "r");
-                $FileContent=fread($fd,filesize($AttmFile));
-                fclose($fd);
-                $FileContent=chunk_split(base64_encode($FileContent));
-                $body.=$FileContent; $body.= "\n";
+		if ($attachments){
+			if (is_array($attachments))	{
+				foreach($attachments as $attach){
+                    if(is_readable($attach)){
+						$mail->AddAttachment($attach, basename($attach),"base64",mime_content_type($attach));
+                    }
+				}
+			}else{
+				if(is_readable($attachments)){
+					$mail->AddAttachment($attachments, basename($attachments),"base64",mime_content_type($attachments));
                 }
-           }
+			}
+		}
+
+		if($inline){
+			$tmp = explode(",",$inline);
+			foreach($tmp as $inline_img){
+				if(is_readable($inline_img)){
+					$mail->AddEmbeddedImage($inline_img, md5($inline_img), basename($inline_img),"base64",mime_content_type($inline_img));
+				}
+			}
+		}
+
+
+	if($Cc){
+        $tmp = explode(",",$Cc);
+		foreach($tmp as $addc){
+			$mail->AddCC($addc);
         }
-        $body.= "\n--".$OB."--\n";
+	}
 
-
-
-        if($pref['smtp_enable']){
-                require_once(e_HANDLER."smtp.php");
-                if(smtpmail($send_to, $subject, $body, $headers)){
-                        return TRUE;
-                }else{
-                        return FALSE;
-                }
-        }else{
-                $headers.= ($returnpath !="")? "Return-Path: <".$returnpath.">\n":"Return-Path: <".$pref['siteadminemail'].">\n";
-                if(@mail($send_to, $subject, $body, $headers)){
-                        return TRUE;
-                }else{
-                        return FALSE;
-                }
+	if($Bcc){
+        $tmp = explode(",",$Bcc);
+		foreach($tmp as $addbc){
+			$mail->AddBCC($addbc);
         }
+	}
+
+
+	if (!$mail->Send()) {
+		// echo "There has been a mail error sending to " . $row["email"] . "<br>";
+		return FALSE;
+		// Clear all addresses and attachments for next loop
+		$mail->ClearAddresses();
+		$mail->ClearAttachments();
+	} else {
+		// Clear all addresses and attachments for next loop
+		$mail->ClearAddresses();
+		$mail->ClearAttachments();
+		return TRUE;
+	}
 
 }
 
 
 function validatemail($Email) {
-    global $HTTP_HOST;
-    $result = array(); ;
+	$HTTP_HOST = $_SERVER['HTTP_HOST'];
+	$result = array();
+	 ;
 
-    if (!eregi("^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$", $Email)) {
-        $result[0]=false;
-        $result[1]="$Email is not properly formatted";
-        return $result;
-    }
+	if (!preg_match("/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$/i", $Email)) {
+		$result[0] = false;
+		$result[1] = "$Email is not properly formatted";
+		return $result;
+	}
 
-    list ( $Username, $Domain ) = split ("@",$Email);
+	list ($Username, $Domain ) = split ("@", $Email);
 
-    if (getmxrr($Domain, $MXHost)){
-        $ConnectAddress = $MXHost[0];
-    } else {
-        $ConnectAddress = $Domain;
-    }
+	if (function_exists("getmxrr") && getmxrr($Domain, $MXHost)) {
+		$ConnectAddress = $MXHost[0];
+	} else {
+		$ConnectAddress = $Domain;
+	}
 
-    $Connect = fsockopen ( $ConnectAddress, 25 );
+	$Connect = fsockopen ($ConnectAddress, 25 );
 
-    if ($Connect){
+	if ($Connect) {
+		if (strpos("220", $Out = fgets($Connect, 1024)) === 0) {
+			fputs ($Connect, "HELO $HTTP_HOST\r\n");
+			$Out = fgets ($Connect, 1024 );
+			fputs ($Connect, "MAIL FROM: <{$Email}>\r\n");
+			$From = fgets ($Connect, 1024 );
+			fputs ($Connect, "RCPT TO: <{$Email}>\r\n");
+			$To = fgets ($Connect, 1024);
+			fputs ($Connect, "QUIT\r\n");
+			fclose($Connect);
+			if (strpos("250", $From) !== 0 || strpos("250", $To) !== 0) {
+				$result[0] = false;
+				$result[1] = "Server rejected address";
+				$result[2] = $From;
+				return $result;
+			}
+		} else {
+			$result[0] = false;
+			$result[1] = "No response from server";
+			$result[2] = $From;
+			return $result;
+		}
 
-        if (ereg("^220", $Out = fgets($Connect, 1024))) {
+	} else {
 
-           fputs ($Connect, "HELO $HTTP_HOST\r\n");
-           $Out = fgets ( $Connect, 1024 );
-           fputs ($Connect, "MAIL FROM: <{$Email}>\r\n");
-           $From = fgets ( $Connect, 1024 );
-           fputs ($Connect, "RCPT TO: <{$Email}>\r\n");
-           $To = fgets ($Connect, 1024);
-           fputs ($Connect, "QUIT\r\n");
-           fclose($Connect);
-            if (!ereg ("^250", $From) ||
-            !ereg ( "^250", $To )) {
-               $result[0]=false;
-               $result[1]="Server rejected address";
-               $result[2] = $From;
-               return $result;
-            }
-            } else {
-            $result[0] = false;
-            $result[1] = "No response from server";
-            $result[2] = $From;
-            return $result;
-          }
-
-    }  else {
-
-        $result[0]=false;
-        $result[1]="Cannot find E-Mail server.";
-        $result[2] = $From;
-        return $result;
-    }
-  $result[0]=true;
-    $result[1]="$Email appears to be valid.";
-    $result[2] = $From;
-    return $result;
+		$result[0] = false;
+		$result[1] = "Cannot find E-Mail server.";
+		$result[2] = $From;
+		return $result;
+	}
+	$result[0] = true;
+	$result[1] = "$Email appears to be valid.";
+	$result[2] = $From;
+	return $result;
 } // end of function
+
+
 
 
 ?>
