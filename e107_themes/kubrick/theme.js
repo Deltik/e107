@@ -19,100 +19,6 @@ function addEvent(obj, evType, fn)
 		}
 	}
 
-function floatImages()
-	{
-	// adapted from http://www.dithered.com/javascript/browser_detect/
-	//**************************************************************//
-	// sniff user agent
-	var userAgent = navigator.userAgent.toLowerCase();
-
-	// if Mozilla 1.4 then quit
-	if ((userAgent.indexOf('gecko') != -1) && (userAgent.indexOf('gecko/') + 14 == userAgent.length) && (parseFloat(userAgent.substring(userAgent.indexOf('rv:') + 3)) == '1.4')) return;
-
-	// if Opera then quit
-	if (document.all && window.Event) return;
-	//**************************************************************//
-
-	// check this browser can cope with what we want to do
-	if (!document.getElementById) return;
-	var blogDiv = document.getElementById('blog');
-	if (!blogDiv) return;
-	if (!blogDiv.offsetWidth) return;
-
-	blogDiv.className = (blogDiv.offsetWidth >= 500) ? "float-images" : "block-images";
-	}
-
-// Blockquote citations
-
-// Simon Willison's work:
-// http://simon.incutio.com/archive/2002/12/20/#blockquoteCitations
-
-// Also Dunstan Orchard's work:
-// http://1976design.com/blog/archive/2003/11/10/updates/
-function blockquoteCite()
-	{
-	if (!document.createElementNS)
-		{
-		document.createElementNS = function(ns, elt)
-			{
-			return document.createElement(elt);
-			}
-		}
-	quotes = document.getElementsByTagName('blockquote');
-	for (i = 0; i < quotes.length; i++)
-		{
-		var cite = quotes[i].getAttribute('cite');
-		// value of cite attribute should only contain URI, not any other
-		if ((cite) && (cite != ''))
-			{
-			newlink = document.createElementNS('http://www.w3.org/1999/xhtml', 'a');
-			newlink.setAttribute('href', cite);
-			newlink.className = 'cite-link';
-			newlink.appendChild(document.createTextNode(cite));
-			newdiv = document.createElementNS('http://www.w3.org/1999/xhtml', 'cite');
-			newdiv.className = 'blockquote-cite';
-			newdiv.appendChild(document.createTextNode('Source: '));
-			newdiv.appendChild(newlink);
-			quotes[i].appendChild(newdiv);
-			quotes[i].removeAttribute('cite');
-			}
-		}
-	}
-
-// Ins and Del tags citations
-function insdelCite()
-	{
-	if (!document.createElementNS)
-		{
-		document.createElementNS = function(ns, elt)
-			{
-			return document.createElement(elt);
-			}
-		}
-	var insdel = new Array(2);
-	insdel[0] = document.getElementsByTagName('ins');
-	insdel[1] = document.getElementsByTagName('del');
-	for (var i=0; i<insdel.length; i++)
-		{
-		if (insdel[i])
-			{
-			for (var id=0; id<insdel[i].length; id++)
-				{
-				var isdl = insdel[i][id].getAttribute('cite');
-				if ((isdl) && (isdl != ""))
-					{
-					idlink = document.createElementNS('http://www.w3.org/1999/xhtml', 'a');
-					idlink.setAttribute('href', isdl);
-					idlink.className = 'cite-link ' + (i == 0 ? 'ins-cite' : 'del-cite');
-					idlink.setAttribute('title','citation of ' + (i == 0 ? 'added' : 'deleted') + ' text');
-					idlink.appendChild(document.createTextNode('#'));
-					insdel[i][id].appendChild(idlink);
-					insdel[i][id].removeAttribute('cite');
-					}
-				}
-			}
-		}
-	}
 
 // Force IE not to show alternate text as tooltip
 function noAltTooltip()
@@ -437,12 +343,6 @@ function hideNiceTitle(e)
 		CURRENT_NICE_TITLE = null;
 		}
 	}
-
-addEvent(window, "load", floatImages);
-addEvent(window, "resize", floatImages);
-addEvent(window, "load", blockquoteCite);
-addEvent(window, "load", insdelCite);
 addEvent(window, "load", noAltTooltip);
 addEvent(window, "load", makeNiceTitles);
 
-// I'm very poor in JavaScript. Please correct me if I'm wrong.

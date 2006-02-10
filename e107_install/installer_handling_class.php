@@ -12,8 +12,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_install/installer_handling_class.php,v $
-|     $Revision: 1.26 $
-|     $Date: 2006/01/18 01:36:28 $
+|     $Revision: 1.29 $
+|     $Date: 2006/02/10 12:02:49 $
 |     $Author: streaky $
 +----------------------------------------------------------------------------+
 */
@@ -23,7 +23,7 @@ if (!defined('e107_INIT')) { exit; }
 class e_install {
 
 	var $required_php = "4.3";
-
+	
 	var $paths;
 	var $template;
 	var $debug_info;
@@ -37,9 +37,11 @@ class e_install {
 		while (@ob_end_clean());
 		global $e107;
 		$this->e107 = $e107;
-		if($_POST['previous_steps']) {
+		if(isset($_POST['previous_steps'])) {
 			$this->previous_steps = unserialize(base64_decode($_POST['previous_steps']));
 			unset($_POST['previous_steps']);
+		} else {
+			$this->previous_steps = array();
 		}
 		$this->post_data = $_POST;
 	}
@@ -175,20 +177,14 @@ class e_install {
 			$success = true;
 			$this->template->SetTag("stage_title", LANINS_037.($this->previous_steps['mysql']['createdb'] == 1 ? LANINS_038 : ""));
 			if (!@mysql_connect($this->previous_steps['mysql']['server'], $this->previous_steps['mysql']['user'], $this->previous_steps['mysql']['password'])) {
-				if($_SERVER['QUERY_STRING'] == "debug"){
-					$this->raise_error("Couldn't connect to mysql server, error details: ".mysql_error());
-				}
 				$success = false;
-				$page_content = LANINS_041;
+				$page_content = LANINS_041.nl2br("\n\n<b>".LANINS_083."\n</b><i>".mysql_error()."</i>");
 			} else {
 				$page_content = LANINS_042;
 				if($this->previous_steps['mysql']['createdb'] == 1) {
 					if (!mysql_query("CREATE DATABASE ".$this->previous_steps['mysql']['db'])) {
-						if($_SERVER['QUERY_STRING'] == "debug"){
-							$this->raise_error("Couldn't create database, error deatils: ".mysql_error());
-						}
 						$success = false;
-						$page_content .= "<br /><br />".LANINS_043;
+						$page_content .= "<br /><br />".LANINS_043.nl2br("\n\n<b>".LANINS_083."\n</b><i>".mysql_error()."</i>");
 					} else {
 						$page_content .= "<br /><br />".LANINS_044;
 					}
@@ -207,7 +203,6 @@ class e_install {
 
 	function stage_4(){
 		global $e_forms;
-		$this->previous_steps['language'] = $_POST['language'];
 		$this->stage = 4;
 		$this->get_lan_file();
 		$this->template->SetTag("installation_heading", LANINS_001);
@@ -215,11 +210,11 @@ class e_install {
 		$this->template->SetTag("stage_num", LANINS_007);
 		$this->template->SetTag("stage_title", LANINS_008);
 		$not_writable = $this->check_writable_perms();
+		$version_fail = false;
+		$perms_errors = "";
 		if(count($not_writable)) {
 			$perms_pass = false;
-			unset($perms_errors);
-			foreach ($not_writable as $file)
-			{
+			foreach ($not_writable as $file) {
 				$perms_errors .= (substr($file, -1) == "/" ? LANINS_010a : LANINS_010)."...<br /><b>{$file}</b><br />\n";
 			}
 			$perms_notes = LANINS_018;
@@ -253,7 +248,6 @@ class e_install {
 		}
 		$e_forms->start_form("versions", $_SERVER['PHP_SELF'].($_SERVER['QUERY_STRING'] == "debug" ? "?debug" : ""));
 		if(!$perms_pass) {
-			$e_forms->add_hidden_data("language", $this->post_data['language']);
 			$e_forms->add_button("retest_perms", LANINS_009);
 			$this->stage = 3; // make the installer jump back a step
 		} elseif ($perms_pass && !$version_fail && $xml_installed) {
@@ -302,12 +296,12 @@ class e_install {
 			  <table cellspacing='0'>
 			    <tr>
 			      <td class='row-border'><label for='u_name'>".LANINS_072."</label></td>
-			      <td class='row-border'><input class='tbox' type='text' name='u_name' id='u_name' size='30' value='".($this->previous_steps['admin']['user'] ? $this->previous_steps['admin']['user'] : "")."' maxlength='60' /></td>
+			      <td class='row-border'><input class='tbox' type='text' name='u_name' id='u_name' size='30' value='".(isset($this->previous_steps['admin']['user']) ? $this->previous_steps['admin']['user'] : "")."' maxlength='60' /></td>
 				  <td class='row-border'>".LANINS_073."</td>
 			    </tr>
 			    <tr>
 			      <td class='row-border'><label for='d_name'>".LANINS_074."</label></td>
-			      <td class='row-border'><input class='tbox' type='text' name='d_name' id='d_name' size='30' value='".($this->previous_steps['admin']['display'] ? $this->previous_steps['admin']['display'] : "")."' maxlength='60' /></td>
+			      <td class='row-border'><input class='tbox' type='text' name='d_name' id='d_name' size='30' value='".(isset($this->previous_steps['admin']['display']) ? $this->previous_steps['admin']['display'] : "")."' maxlength='60' /></td>
 				  <td class='row-border'>".LANINS_075."</td>
 			    </tr>
 			    <tr>
@@ -322,7 +316,7 @@ class e_install {
 			    </tr>
 			    <tr>
 			      <td class='row-border'><label for='email'>".LANINS_080."</label></td>
-			      <td class='row-border'><input type='text' name='email' size='30' id='email' value='".($this->previous_steps['admin']['email'] ? $this->previous_steps['admin']['email'] : LANINS_082)."' maxlength='100' /></td>
+			      <td class='row-border'><input type='text' name='email' size='30' id='email' value='".(isset($this->previous_steps['admin']['email']) ? $this->previous_steps['admin']['email'] : LANINS_082)."' maxlength='100' /></td>
 				  <td class='row-border'>".LANINS_081."</td>
 			    </tr>
 			  </table>
@@ -441,9 +435,12 @@ This file has been generated by the installation script.
 	}
 
 	function get_lan_file(){
+		if(!isset($this->previous_steps['language'])) {
+			$this->previous_steps['language'] = "English";
+		}
 		$this->lan_file = "{$this->e107->e107_dirs['LANGUAGES_DIRECTORY']}{$this->previous_steps['language']}/lan_installer.php";
 		if(is_readable($this->lan_file)){
-			require($this->lan_file);
+			include($this->lan_file);
 		} elseif(is_readable("{$this->e107->e107_dirs['LANGUAGES_DIRECTORY']}English/lan_installer.php")) {
 			include("{$this->e107->e107_dirs['LANGUAGES_DIRECTORY']}English/lan_installer.php");
 		} else {
@@ -472,12 +469,8 @@ This file has been generated by the installation script.
 		$e_forms->add_hidden_data("stage", ($force_stage ? $force_stage : ($this->stage + 1)));
 	}
 
-	function popup_info($info){
-		global $installer_folder_name;
-		return "&nbsp;&nbsp;<img src='".e_HTTP."{$installer_folder_name}images/info.png' alt='Info Image (Hover curser to read info)' title='{$info}' />";
-	}
-
 	function check_writable_perms(){
+		$bad_files = array();
 		$data = file_get_contents("./".$this->e107->e107_dirs['INSTALLER']."writable_file_list.txt");
 		foreach ($this->e107->e107_dirs as $dir_name => $value) {
 			$find[] = "{\${$dir_name}}";
@@ -495,10 +488,16 @@ This file has been generated by the installation script.
 
 	function create_tables() {
 
-		mysql_connect($this->previous_steps['mysql']['server'], $this->previous_steps['mysql']['user'], $this->previous_steps['mysql']['password']);
-		mysql_select_db($this->previous_steps['mysql']['db']);
-
-
+		$link = mysql_connect($this->previous_steps['mysql']['server'], $this->previous_steps['mysql']['user'], $this->previous_steps['mysql']['password']);
+		if(!$link) {
+			return nl2br(LANINS_084."\n\n<b>".LANINS_083."\n</b><i>".mysql_error($link)."</i>");
+		}
+		
+		$db_selected = mysql_select_db($this->previous_steps['mysql']['db'], $link);
+		if(!$db_selected) {
+			return nl2br(LANINS_085." '{$this->previous_steps['mysql']['db']}'\n\n<b>".LANINS_083."\n</b><i>".mysql_error($link)."</i>");
+		}
+		
 		$filename = "{$this->e107->e107_dirs['ADMIN_DIRECTORY']}sql/core_sql.php";
 		$fd = fopen ($filename, "r");
 		$sql_data = fread($fd, filesize($filename));
@@ -515,14 +514,11 @@ This file has been generated by the installation script.
 			$tablename = $match[1];
 			preg_match_all("/create(.*?)myisam;/si", $sql_data, $result );
 			$sql_table = preg_replace("/create table\s/si", "CREATE TABLE {$this->previous_steps['mysql']['prefix']}", $sql_table);
-			if (!mysql_query($sql_table)) {
-				return nl2br(LANINS_061);
+			if (!mysql_query($sql_table, $link)) {
+				return nl2br(LANINS_061."\n\n<b>".LANINS_083."\n</b><i>".mysql_error($link)."</i>");
 			}
 		}
 
-		$search = array("'", "'");
-		$replace = array("&quot;", "&#39;");
-		$welcome_message = str_replace($search, $replace, $welcome_message);
 		$datestamp = time();
 
 		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}news VALUES (0, '".LANINS_063."', '".LANINS_062."', '', '{$datestamp}', '0', '1', 1, 0, 0, 0, 0, '0', '', '', 0) ");
@@ -611,6 +607,7 @@ This file has been generated by the installation script.
 		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}plugin VALUES (0, 'Integrity Check', '0.03', 'integrity_check', 1) ");
 
 		// Create the admin user
+		$ip = $_SERVER['REMOTE_ADDR'];
 		$userp = "1, '{$this->previous_steps['admin']['display']}', '{$this->previous_steps['admin']['user']}', '', '".md5($this->previous_steps['admin']['password'])."', '', '{$this->previous_steps['admin']['email']}', '', '', '', 0, ".time().", 0, 0, 0, 0, 0, 0, '{$ip}', 0, '', '', '', 0, 1, '', '', '0', '', ".time().", ''";
 		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}user VALUES ({$userp})" );
 		mysql_close();

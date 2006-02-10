@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/users.php,v $
-|     $Revision: 1.68 $
-|     $Date: 2006/01/05 04:11:01 $
+|     $Revision: 1.70 $
+|     $Date: 2006/02/08 02:27:24 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
@@ -103,13 +103,15 @@ if (isset($_POST['update_options'])) {
 // ------- Prune Users. --------------
 if (isset($_POST['prune'])) {
 	$e107cache->clear("online_menu_totals");
-	$sql2 = new db;
 	$text = USRLAN_56." ";
-	if ($sql->db_Select("user", "user_id, user_name", "user_ban=2")) {
-		while ($row = $sql->db_Fetch()) {
-			extract($row);
-			$text .= $user_name." ";
-			$sql2->db_Delete("user", "user_id='$user_id' ");
+	if ($sql->db_Select("user", "user_id, user_name", "user_ban=2"))
+	{
+		$uList = $sql->db_getList();
+		foreach($uList as $u)
+		{
+			$text .= $u['user_name']." ";
+			$sql->db_Delete("user", "user_id='{$u['user_id']}' ");
+			$sql->db_Delete("user_extended", "user_extended_id='{$u['user_id']}' ");
 		}
 	}
 	$ns->tablerender(USRLAN_57, "<div style='text-align:center'><b>".$text."</b></div>");
@@ -256,6 +258,7 @@ if (isset($_POST['useraction']) && $_POST['useraction'] == 'test') {
 if (isset($_POST['useraction']) && $_POST['useraction'] == 'deluser') {
 	if ($_POST['confirm']) {
 		if ($sql->db_Delete("user", "user_id='".$_POST['userid']."' AND user_perms != '0'")) {
+		   $sql->db_Delete("user_extended", "user_extended_id='".$_POST['userid']."' ");
 			$user->show_message(USRLAN_10);
 		}
 		if(!$sub_action){ $sub_action = "user_id"; }
@@ -321,7 +324,7 @@ if (isset($_POST['useraction']) && $_POST['useraction'] == "verify")
 		if(!$action){ $action = "main"; }
 		if(!$sub_action){ $sub_action = "user_id"; }
 		if(!$id){ $id = "DESC"; }
-		
+
 		if($pref['user_reg_veri'] == 2)
 		{
 			if($sql->db_Select("user", "user_email, user_name", "user_id = '{$uid}'"))
@@ -329,7 +332,7 @@ if (isset($_POST['useraction']) && $_POST['useraction'] == "verify")
 				$row = $sql->db_Fetch();
 				$message = USRLAN_114." ".$row['user_name'].",\n\n".USRLAN_122." ".SITENAME.".\n\n".USRLAN_123."\n\n";
 				$message .= str_replace("{SITEURL}", SITEURL, USRLAN_139);
-			
+
 				require_once(e_HANDLER."mail.php");
 				if(sendemail($row['user_email'], USRLAN_113." ".SITENAME, $message))
 				{
@@ -535,6 +538,7 @@ class users{
  // Display Chosen options -------------------------------------
 
 	$datefields = array("user_lastpost","user_lastvisit","user_join","user_currentvisit");
+	$boleanfields = array("user_admin","user_hideemail","user_ban");
 
 	foreach($search_display as $disp)
 	{
@@ -553,6 +557,9 @@ class users{
 			{
 				$text .= "&nbsp;";
 			}
+		}elseif(in_array($disp,$boleanfields))
+		{
+        	$text .= ($row[$disp]) ? ADMIN_TRUE_ICON : "";
 		}
 		elseif(in_array($disp,$datefields))
 		{
@@ -566,7 +573,7 @@ class users{
 		{
 			$text .= $row[$disp]."&nbsp;";
 		}
-		if(isset($prev[$disp]) && $row[$disp] == $prev[$disp] && $prev[$disp] != "")
+		if(!in_array($disp,$boleanfields) && isset($prev[$disp]) && $row[$disp] == $prev[$disp] && $prev[$disp] != "")
 		{ // show matches
 			$text .= " <b>*</b>";
 		}
@@ -678,7 +685,7 @@ class users{
 	}
 
 	function show_options($action) {
-		
+
 		global $unverified;
 		// ##### Display options ---------------------------------------------------------------------------------------------------------
 		if ($action == "") {

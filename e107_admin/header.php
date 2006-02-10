@@ -12,13 +12,16 @@
 |        GNU General Public License (http://gnu.org).
 |
 |   $Source: /cvsroot/e107/e107_0.7/e107_admin/header.php,v $
-|   $Revision: 1.42 $
-|   $Date: 2006/01/17 20:01:08 $
-|   $Author: e107coders $
+|   $Revision: 1.44 $
+|   $Date: 2006/02/09 09:35:52 $
+|   $Author: sweetas $
 +---------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
+
+// send the charset to the browser - overides spurious server settings with the lan pack settings.
+header("Content-type: text/html; charset=".CHARSET, true);
 
 require_once(e_ADMIN.'ad_links.php');
 echo defined('STANDARDS_MODE') ? "" :
@@ -42,11 +45,26 @@ if (file_exists(THEME.'admin_template.php')) {
   	require_once(e_BASE.$THEMES_DIRECTORY.'templates/admin_template.php');
 }
 
+if (!defined('ADMIN_TRUE_ICON'))
+{
+	define("ADMIN_TRUE_ICON", "<img src='".e_IMAGE_ABS."fileinspector/integrity_pass.png' alt='' style='border:0px; height:16px; width:16px' />");
+	define("ADMIN_TRUE_ICON_PATH", e_IMAGE."fileinspector/integrity_pass.png");
+}
+
+if (!defined('ADMIN_FALSE_ICON'))
+{
+	define("ADMIN_FALSE_ICON", "<img src='".e_IMAGE_ABS."fileinspector/integrity_fail.png' alt='' style='border:0px; height:16px; width:16px' />");
+	define("ADMIN_FALSE_ICON_PATH", e_IMAGE."fileinspector/integrity_fail.png");
+}
+
+
 if (!defined('ADMIN_EDIT_ICON'))
 {
 	define("ADMIN_EDIT_ICON", "<img src='".e_IMAGE_ABS."admin_images/edit_16.png' alt='' title='".LAN_EDIT."' style='border:0px; height:16px; width:16px' />");
 	define("ADMIN_EDIT_ICON_PATH", e_IMAGE."admin_images/edit_16.png");
 }
+
+
 
 if (!defined('ADMIN_DELETE_ICON'))
 {

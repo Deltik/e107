@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/news.php,v $
-|     $Revision: 1.90 $
-|     $Date: 2006/01/12 22:41:46 $
-|     $Author: lisa_ $
+|     $Revision: 1.92 $
+|     $Date: 2006/01/31 04:55:00 $
+|     $Author: qnome $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
@@ -401,6 +401,8 @@ if($pref['news_unstemplate'] && file_exists(THEME."news_template.php")) {
 // #### new: news archive ---------------------------------------------------------------------------------------------
 if ($action != "item" && $action != 'list' && $pref['newsposts_archive']) {
 	// do not show the newsarchive on the news.php?item.X page (but only on the news mainpage)
+	require_once(e_FILE.'shortcode/batch/news_archives.php');
+
 	$i = $interval + 1;
 	while(isset($newsAr[$i]))
 	{
@@ -426,16 +428,20 @@ if ($action != "item" && $action != 'list' && $pref['newsposts_archive']) {
 		$gen = new convert;
 		$news2['news_datestamp'] = $gen->convert_date($news2['news_datestamp'], "short");
 
-		$textnewsarchive .= "
-					<div>
+
+		if(!$NEWSARCHIVE){
+			$NEWSARCHIVE ="<div>
 					<table style='width:98%;'>
 					<tr>
 					<td>
-					<div><img src='".THEME."images/".(defined("BULLET") ? BULLET : "bullet2.gif")."' style='border:0px' alt='' /> <b><a href='news.php?item.".$news2['news_id']."'>".$news2['news_title']."</a></b> <span class='smalltext'><i><a href='".e_BASE."user.php?id.".$news2['user_id']."'>".$news2['user_name']."</a> @ (".$news2['news_datestamp'].") (".$news2['category_name'].")</i></span></div>
+					<div>{ARCHIVE_BULLET} <b>{ARCHIVE_LINK}</b> <span class='smalltext'><i>{ARCHIVE_AUTHOR} @ ({ARCHIVE_DATESTAMP}) ({ARCHIVE_CATEGORY})</i></span></div>
 					</td>
 					</tr>
 					</table>
 					</div>";
+
+		}
+		$textnewsarchive .= $tp->parseTemplate($NEWSARCHIVE, FALSE, $news_archive_shortcodes);
 		$i++;
 	}
 	$ns->tablerender($pref['newsposts_archive_title'], $textnewsarchive, 'news_archive');

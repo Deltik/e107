@@ -11,8 +11,8 @@
 |        GNU General Public License (http://gnu.org).
 |
 |   $Source: /cvsroot/e107/e107_0.7/e107_admin/newspost.php,v $
-|   $Revision: 1.102 $
-|   $Date: 2006/01/18 04:42:06 $
+|   $Revision: 1.105 $
+|   $Date: 2006/02/09 01:42:31 $
 |   $Author: e107coders $
 +---------------------------------------------------------------+
 
@@ -148,7 +148,11 @@ if (isset($_POST['preview'])) {
 	$newspost->preview_item($id);
 }
 
-if (isset($_POST['submit'])) {
+if (isset($_POST['submit_news'])) {
+    if(e_WYSIWYG){
+		$_POST['data'] = $tp->createConstants($_POST['data']); // convert e107_images to {e_IMAGE} etc.
+		$_POST['news_extended'] = $tp->createConstants($_POST['news_extended']);
+	}
 	$newspost->submit_item($sub_action, $id);
 	$action = "main";
 	unset($sub_action, $id);
@@ -216,13 +220,25 @@ if (!e_QUERY || $action == "main") {
 if ($action == "create") {
 	$preset = $pst->read_preset("admin_newspost");  //only works here because $_POST is used.
 
-	if ($sub_action == "edit" && !$_POST['preview'] && !$_POST['submit']) {
+	if ($sub_action == "edit" && !$_POST['preview'] && !$_POST['submit_news']) {
 		if ($sql->db_Select("news", "*", "news_id='$id' ")) {
 			$row = $sql->db_Fetch();
 			extract($row);
 			$_POST['news_title'] = $news_title;
-			$_POST['data'] = $news_body;
-			$_POST['news_extended'] = $news_extended;
+
+			if(e_WYSIWYG){
+
+				$_POST['data'] = $tp->toHTML($news_body,$parseBB = TRUE); // parse the bbcodes to we can edit as html.
+            	$_POST['data'] = $tp->replaceConstants($_POST['data'],TRUE); // eg. replace {e_IMAGE} with e107_images/ and NOT ../e107_images
+				$_POST['news_extended'] = $tp->toHTML($news_extended,$parseBB = TRUE);
+            	$_POST['news_extended'] = $tp->replaceConstants($_POST['news_extended'],TRUE);
+
+			}else{
+
+				$_POST['data'] = $news_body;
+				$_POST['news_extended'] = $news_extended;
+			}
+
 			$_POST['news_allow_comments'] = $news_allow_comments;
 			$_POST['news_class'] = $news_class;
 			$_POST['news_summary'] = $news_summary;
@@ -235,6 +251,7 @@ if ($action == "create") {
 			$_POST['comment_total'] = $sql->db_Count("comments", "(*)", " WHERE comment_item_id='$news_id' AND comment_type='0' ");
 			$_POST['news_rendertype'] = $news_render_type;
 			$_POST['news_thumbnail'] = $news_thumbnail;
+
 		}
 	}
 	$newspost->create_item($sub_action, $id);
@@ -440,7 +457,7 @@ class newspost {
 		}
 
 		$text = "<div style='text-align:center'>
-		<form ".(FILE_UPLOADS ? "enctype='multipart/form-data'" : "")." method='post' action='".e_SELF."?".e_QUERY."' id='dataform'>
+		<form method='post' action='".e_SELF."?".e_QUERY."' id='dataform' ".(FILE_UPLOADS ? "enctype='multipart/form-data'" : "")." >
 		<table style='".ADMIN_WIDTH."' class='fborder'>
 
 		<tr>
@@ -479,9 +496,9 @@ class newspost {
 		<td style='width:20%' class='forumheader3'>".NWSLAN_13.":<br /></td>
 		<td style='width:80%;margin-left:auto' class='forumheader3'>";
 
-		$insertjs = (!$pref['wysiwyg'])?"rows='15' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'": "rows='25' style='width:100%'  ";
+		$insertjs = (!$pref['wysiwyg']) ? "rows='15' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'": "rows='25' ";
 		$_POST['data'] = $tp->toForm($_POST['data']);
-		$text .= "<textarea class='tbox' id='data' name='data'  cols='80'  style='width:95%' $insertjs>".(strstr($_POST['data'], "[img]http") ? $_POST['data'] : str_replace("[img]../", "[img]", $_POST['data']))."</textarea>
+		$text .= "<textarea class='tbox' id='data' name='data'  cols='80'  style='width:100%' $insertjs>".(strstr($tp->post_toForm($_POST['data']), "[img]http") ? $_POST['data'] : str_replace("[img]../", "[img]", $tp->post_toForm($_POST['data'])))."</textarea>
 		";
 
 		//Main news body textarea
@@ -500,7 +517,7 @@ class newspost {
 		<td style='width:80%' class='forumheader3'>
 		<a style='cursor: pointer; cursor: hand' onclick=\"expandit(this);$ff_expand\">".NWSLAN_83."</a>
 		<div style='display:none'>
-		<textarea class='tbox' id='news_extended' name='news_extended' cols='80' style='width:95%' $insertjs>".(strstr($_POST['news_extended'], "[img]http") ? $_POST['news_extended'] : str_replace("[img]../", "[img]", $tp->toForm($_POST['news_extended'])))."</textarea>";
+		<textarea class='tbox' id='news_extended' name='news_extended' cols='80' style='width:95%' $insertjs>".(strstr($tp->post_toForm($_POST['news_extended']), "[img]http") ? $tp->post_toForm($_POST['news_extended']) : str_replace("[img]../", "[img]", $tp->post_toForm($_POST['news_extended'])))."</textarea>";
 		if (!$pref['wysiwyg']) {
 			$text .="<br />". display_help("helpb");
 		}
@@ -569,10 +586,10 @@ class newspost {
 		<div id='newsicn' style='display:none;{head}'>";
 
 		foreach($thumblist as $icon){
-			$text .= "<a href=\"javascript:insertext('".$icon['fname']."','news_thumbnail','newsicn')\"><img src='".$icon['path'].$icon['fname']."' style='border:0' alt='' /></a> ";
+			$text .= "<a href=\"javascript:insertext('".$icon['fname']."','news_thumbnail','newsicn')\"><img src='".$icon['path'].$icon['fname']."' style='border:0' alt='' /></a>\n ";
 		}
 
-		$text .= "</div>
+		$text .= "</div></div>
 		</td>
 		</tr>
 		";
@@ -580,7 +597,7 @@ class newspost {
 		if (!$pref['wysiwyg'])
 		{
 
-			$text .= "<tr>
+			$text .= "\n\n<!-- wysiwyg off -->\n\n<tr>
 			<td class='forumheader3'>".LAN_NEWS_42."</td>
 			<td class='forumheader3'>
 			<a style='cursor: pointer' onclick='expandit(this);'>".LAN_NEWS_40."</a>
@@ -661,13 +678,13 @@ class newspost {
 					}
 				}
 			}
-
+            /*
 			$text .= "</div>
 			</td>
 			</tr>\n";
 
 
-			/*
+
 			<input class='tbox' type='text' name='news_image' size='60' value='".$_POST['news_image']."' maxlength='100' />
 			<input class='button' type ='button' style='cursor:hand' size='30' value='View images' onclick='expandit(this)' />
 			<div id='imagefile' style='display:none;{head}'>";
@@ -682,7 +699,9 @@ class newspost {
 
 			$text .= "</div>
 			</td>
-			</tr>\n";
+			</tr>\n
+
+			<!-- end of wysiwyg off -->\n\n";
 		}
 
 		$text .= "<tr>
@@ -752,7 +771,7 @@ class newspost {
 		$cal_attrib['value'] = $_enddate;
 		$text .= $cal->make_input_field($cal_options, $cal_attrib);
 
-		$text .= "</select>
+		$text .= "
 		</div>
 		</td>
 		</tr>";
@@ -838,7 +857,7 @@ class newspost {
 		<td colspan='2'  style='text-align:center' class='forumheader'>".
 
 		(isset($_POST['preview']) ? "<input class='button' type='submit' name='preview' value='".NWSLAN_24."' /> " : "<input class='button' type='submit' name='preview' value='".NWSLAN_27."' /> ").
-		($id && $sub_action != "sn" && $sub_action != "upload" ? "<input class='button' type='submit' name='submit' value='".NWSLAN_25."' /> " : "<input class='button' type='submit' name='submit' value='".NWSLAN_26."' /> ")."
+		($id && $sub_action != "sn" && $sub_action != "upload" ? "<input class='button' type='submit' name='submit_news' value='".NWSLAN_25."' /> " : "<input class='button' type='submit' name='submit_news' value='".NWSLAN_26."' /> ")."
 
 
 		<input type='hidden' name='news_id' value='$news_id' />  \n</td>
@@ -854,6 +873,7 @@ class newspost {
 	function preview_item($id) {
 		// ##### Display news preview ---------------------------------------------------------------------------------------------------------
 		global $tp, $sql, $ix, $IMAGES_DIRECTORY;
+
 		$_POST['news_id'] = $id;
 
 		if($_POST['news_start'])
@@ -897,12 +917,15 @@ class newspost {
 		$_POST['comment_total'] = $comment_total;
 		$_PR = $_POST;
 
+		if(e_WYSIWYG){
+            $_PR['data'] = $tp->createConstants($_PR['data']); // convert e107_images/ to {e_IMAGE} etc.
+ 			$_PR['news_extended'] = $tp->createConstants($_PR['news_extended']);
+		}
+
+		$_PR['news_body'] = $tp->post_toHTML($_PR['data'],FALSE);
 		$_PR['news_title'] = $tp->post_toHTML($_PR['news_title']);
 		$_PR['news_summary'] = $tp->post_toHTML($_PR['news_summary']);
-		$_PR['data'] = $tp->post_toHTML($_PR['data'], FALSE);
 		$_PR['news_extended'] = $tp->post_toHTML($_PR['news_extended']);
-		$_PR['news_body'] = strstr($_PR['data'], "[img]http") ? $_PR['data'] : str_replace("[img]", "[img]../", $_PR['data']);
-
 		$_PR['news_file'] = $_POST['news_file'];
 		$_PR['news_image'] = $_POST['news_image'];
 

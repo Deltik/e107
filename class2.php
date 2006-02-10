@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/class2.php,v $
-|     $Revision: 1.254 $
-|     $Date: 2006/01/14 19:31:26 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.258 $
+|     $Date: 2006/02/04 07:20:31 $
+|     $Author: streaky $
 +----------------------------------------------------------------------------+
 */
 // Find out if register globals is enabled and destroy them if so
@@ -61,6 +61,15 @@ ini_set('arg_separator.output',     '&amp;');
 ini_set('session.use_only_cookies', 1);
 ini_set('session.use_trans_sid',    0);
 
+//  Ensure thet '.' is the first part of the include path
+$inc_path = explode(PATH_SEPARATOR, ini_get('include_path'));
+if($inc_path[0] != ".") {
+	array_unshift($inc_path, ".");
+	$inc_path = implode(PATH_SEPARATOR, $inc_path);
+	ini_set("include_path", $inc_path);
+}
+unset($inc_path);
+
 // Grab e107_config, get directory paths, and create the $e107 object
 @include_once(realpath(dirname(__FILE__).'/e107_config.php'));
 if(!isset($ADMIN_DIRECTORY)){
@@ -103,7 +112,7 @@ define("e_UC_NOBODY", 255);
 define("ADMINDIR", $ADMIN_DIRECTORY);
 
 // All debug objects and constants are defined in the debug handler
-if (strpos(e_MENU, 'debug=') !== FALSE || isset($_COOKIE['e107_debug_level'])) {
+if (strpos(e_MENU, 'debug') !== FALSE || isset($_COOKIE['e107_debug_level'])) {
 	require_once(e_HANDLER.'debug_handler.php');
 	$db_debug = new e107_db_debug;
 } else {
@@ -247,7 +256,7 @@ if($pref['redirectsiteurl'] && $pref['siteurl']) {
 	$siteurl = SITEURLBASE."/";
 	if (strpos($pref['siteurl'], $siteurl) === FALSE && strpos(e_SELF, ADMINDIR) === FALSE) {
 		$location = str_replace($siteurl, $pref['siteurl'], e_SELF).(e_QUERY ? "?".e_QUERY : "");
-		header("Location: {$location}");
+		header("Location: {$location}", true, 301); // send 301 header, not 302
 		exit();
 	}
 }
@@ -455,9 +464,6 @@ define("SITEDESCRIPTION", $tp->toHTML($pref['sitedescription'], "", "emotes_off 
 define("SITEADMIN", $pref['siteadmin']);
 define("SITEADMINEMAIL", $pref['siteadminemail']);
 define("SITEDISCLAIMER", $tp->toHTML($pref['sitedisclaimer'], "", "emotes_off defs"));
-
-// send the charset to the browser - overides spurious server settings with the lan pack settings.
-header("Content-type: text/html; charset=".CHARSET, true);
 
 if ($pref['maintainance_flag'] && ADMIN == FALSE && strpos(e_SELF, "admin.php") === FALSE && strpos(e_SELF, "sitedown.php") === FALSE) {
 	header("Location: ".SITEURL."sitedown.php");

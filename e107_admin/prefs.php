@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     ?Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/prefs.php,v $
-|     $Revision: 1.74 $
-|     $Date: 2006/01/17 20:01:09 $
-|     $Author: e107coders $
+|     $Revision: 1.78 $
+|     $Date: 2006/02/07 15:35:43 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 require_once("../class2.php");
@@ -68,24 +68,26 @@ if (isset($_POST['updateprefs']))
 	exit;
 }
 
-$sql->db_Select("plugin", "plugin_path", "plugin_installflag='1' ");
-while ($row = $sql->db_Fetch()) {
-	if (preg_match("/^auth_(.*)/", $row['plugin_path'], $match)) {
-		$authlist[] = $match[1];
+if($sql->db_Select("plugin", "plugin_path", "plugin_installflag='1' AND plugin_path = 'alt_auth'"))
+{
+	$authlist[] = "e107";
+	$handle=opendir(e_PLUGIN."alt_auth");
+	while ($file = readdir($handle))
+	{
+		if(preg_match("/^(.*)_auth\.php/",$file,$match))
+		{
+			$authlist[] = $match[1];
+		}
 	}
 }
+
 if ($authlist) {
-	$authlist[] = "e107";
-	$auth_dropdown = "\n<tr>
-		<td style='width:50%' class='forumheader3'>".PRFLAN_56.": </td>
-		<td style='width:50%; text-align:right;' class='forumheader3'>";
 	$auth_dropdown .= "<select class='tbox' name='auth_method'>\n";
 	foreach($authlist as $a) {
 		$s = ($pref['auth_method'] == $a ? " selected='selected'>" : "");
 		$auth_dropdown .= "<option {$s}>".$a."</option>\n";
 	}
 	$auth_dropdown .= "</select>\n";
-	$auth_dropdown .= "</td></tr>";
 } else {
 	$auth_dropdown = "<input type='hidden' name='auth_method' value='' />".PRFLAN_151;
 	$pref['auth_method'] = "";
@@ -480,7 +482,7 @@ for ($i = 0; $i < count($signup_title); $i++)
 	}
 	else
 	{
-		$text .= "<input type='hidden' name='{$signup_name[$i]}' valye='0' />";
+		$text .= "<input type='hidden' name='{$signup_name[$i]}' value='0' />";
 	}
 }
 
@@ -838,8 +840,7 @@ $text .= "<div id='advanced' style='display:none; text-align:center'>
 
 	<tr>
 	<td style='width:50%' class='forumheader3'>".PRFLAN_150."<br /><span class='smalltext'>&nbsp</span></td>
-	<td style='width:50%; text-align:right' class='forumheader3'>{$auth_dropdown}
-	</td>
+	<td style='width:50%; text-align:right' class='forumheader3'>{$auth_dropdown}</td>
 	</tr>
 
 	";

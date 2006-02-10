@@ -1,271 +1,271 @@
-<?php
-/*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     ©Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $Source: /cvsroot/e107/e107_0.7/e107_plugins/chatbox_menu/chatbox_menu.php,v $
-|     $Revision: 1.61 $
-|     $Date: 2006/01/18 07:08:14 $
-|     $Author: streaky $
-+----------------------------------------------------------------------------+
-*/
-
-global $tp, $e107cache, $e_event, $e107, $pref, $footer_js, $PLUGINS_DIRECTORY;
-
-//if (file_exists(e_PLUGIN."chatbox_menu/languages/".e_LANGUAGE."/".e_LANGUAGE.".php")) {
-//	include_once(e_PLUGIN."chatbox_menu/languages/".e_LANGUAGE."/".e_LANGUAGE.".php");
-//} else {
-//	include_once(e_PLUGIN."chatbox_menu/languages/English/English.php");
-//}
-
-
-if($pref['cb_layer'] || isset($_POST['chatbox_ajax']))
-{
-	$footer_js[] = e_FILE_ABS.'e_ajax.js';
-	if(isset($_POST['chat_submit']))
-	{
-		include_once("../../class2.php");
-	}
-}
-
-if(!defined("e_HANDLER")){ exit; }
-require_once(e_HANDLER."emote.php");
-
-$emessage='';
-if(isset($_POST['chat_submit']) && $_POST['cmessage'] != "")
-{
-	if(!USER && !$pref['anon_post'])
-	{
-		// disallow post
-	}
-	else
-	{
-		$cmessage = $_POST['cmessage'];
-		if(isset($_POST['ajax_used']))
-		{
-			//Normally the menu.sc file will auto-load the language file, this is needed in case
-			//ajax is turned on and the menu is not loaded from the menu.sc
-			include_lan(e_PLUGIN."chatbox_menu/languages/".e_LANGUAGE."/".e_LANGUAGE.".php");
-		}
-		$nick = trim(preg_replace("/\[.*\]/si", "", $tp -> toDB($_POST['nick'])));
-		$fp = new floodprotect;
-		if($fp -> flood("chatbox", "cb_datestamp"))
-		{
-			if((strlen(trim($cmessage)) < 1000) && trim($cmessage) != "")
-			{
-				$cmessage = $tp -> toDB($cmessage);
-				if($sql -> db_Select("chatbox", "*", "cb_message='$cmessage' AND cb_datestamp+84600>".time()))
-				{
-					$emessage = CHATBOX_L17;
-				}
-				else
-				{
-					$datestamp = time();
-					$ip = $e107->getip();
-					if(USER)
-					{
-						$nick = USERID.".".USERNAME;
-						$sql -> db_Update("user", "user_chats=user_chats+1, user_lastpost='".time()."' WHERE user_id='".USERID."' ");
-					}
-					else if(!$nick)
-					{
-						$nick = "0.Anonymous";
-					}
-					else
-					{
-						if($sql -> db_Select("user", "*", "user_name='$nick' ")){
-							$emessage = CHATBOX_L1;
-						}
-						else
-						{
-							$nick = "0.".$nick;
-						}
-					}
-					if(!$emessage)
-					{
-						$sql -> db_Insert("chatbox", "0, '$nick', '$cmessage', '".time()."', '0' , '$ip' ");
-						$edata_cb = array("cmessage" => $cmessage, "ip" => $ip);
-						$e_event -> trigger("cboxpost", $edata_cb);
-						$e107cache->clear("chatbox");
-					}
-				}
-			}
-			else
-			{
-				$emessage = CHATBOX_L15;
-			}
-		}
-		else
-		{
-			$emessage = CHATBOX_L19;
-		}
-	}
-}
-
-$pref['cb_linkc'] = str_replace("e107_images/", e_IMAGE, $pref['cb_linkc']);
-if(!USER && !$pref['anon_post']){
-	if($pref['user_reg'])
-	{
-		$texta = "<div style='text-align:center'>".CHATBOX_L3."</div><br /><br />";
-	}
-}
-else
-{
-	$cb_width = (defined("CBWIDTH") ? CBWIDTH : "100%");
-
-	if($pref['cb_layer'] == 2)
-	{
-		$texta =  "\n<form id='chatbox' action='".e_SELF."?".e_QUERY."'  method='post' onsubmit='return(false);'>
-		<div><input type='hidden' id='chatbox_ajax' value='1' /></div>
-		";
-	}
-	else
-	{
-		$texta =  (e_QUERY ? "\n<form id='chatbox' method='post' action='".e_SELF."?".e_QUERY."'>" : "\n<form id='chatbox' method='post' action='".e_SELF."'>");
-	}
-	$texta .= "<div style='text-align:center; width: 100%'>";
-
-	if(($pref['anon_post'] == "1" && USER == FALSE))
-	{
-		$texta .= "\n<input class='tbox' type='text' id='nick' name='nick' value='' maxlength='50' style='width: ".$cb_width.";' /><br />";
-	}
-
-	if($pref['cb_layer'] == 2)
-	{
-
-		$oc = "onclick=\"javascript:sendInfo('".$pref['siteurl'].$PLUGINS_DIRECTORY."chatbox_menu/chatbox_menu.php', 'chatbox_posts', this.form);\"";
-	}
-	else
-	{
-		$oc = "";
-	}
-	$texta .= "
-	<textarea class='tbox chatbox' id='cmessage' name='cmessage' cols='20' rows='5' style='width:".$cb_width."; overflow: auto' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'></textarea>
-	<br />
-	<input class='button' type='submit' id='chat_submit' name='chat_submit' value='".CHATBOX_L4."' {$oc}/>
-	<input class='button' type='reset' name='reset' value='".CHATBOX_L5."' />";
-
-	if($pref['cb_emote'] && $pref['smiley_activate']){
-		$texta .= "
-		<input class='button' type ='button' style='cursor:hand; cursor:pointer' size='30' value='".CHATBOX_L14."' onclick=\"expandit('emote')\" />
-		<div style='display:none' id='emote'>".r_emote()."
-		</div>\n";
-	}
-
-	$texta .="</div>\n</form>\n";
-}
-
-if($emessage != ""){
-	$texta .= "<div style='text-align:center'><b>".$emessage."</b></div>";
-}
-
-if(!$text = $e107cache->retrieve("chatbox"))
-{
-	global $pref,$tp;
-	$pref['chatbox_posts'] = ($pref['chatbox_posts'] ? $pref['chatbox_posts'] : 10);
-	$chatbox_posts = $pref['chatbox_posts'];
-	if(!isset($pref['cb_mod']))
-	{
-		$pref['cb_mod'] = e_UC_ADMIN;
-	}
-	define("CB_MOD", check_class($pref['cb_mod']));
-
-	$qry = "
-	SELECT c.*, u.user_name FROM #chatbox AS c
-	LEFT JOIN #user AS u ON FLOOR(c.cb_nick) = u.user_id
-	ORDER BY c.cb_datestamp DESC LIMIT 0, ".intval($chatbox_posts);
-
-	if($sql -> db_Select_gen($qry))
-	{
-		$obj2 = new convert;
-		$cbpost = $sql -> db_getList();
-		foreach($cbpost as $cb)
-		{
-			// get available vars
-			list($cb_uid, $cb_nick) = explode(".", $cb['cb_nick'], 2);
-			if($cb['user_name'])
-			{
-				$cb_nick = "<a href='".e_BASE."user.php?id.{$cb_uid}'>{$cb['user_name']}</a>";
-			}
-			else
-			{
-				$cb_nick = $tp -> toHTML($cb_nick);
-			}
-
-			$datestamp = $obj2->convert_date($cb['cb_datestamp'], "short");
-			if(!$pref['cb_wordwrap']) { $pref['cb_wordwrap'] = 30; }
-			$emotes_active = $pref['cb_emote'] ? 'emotes_on' : 'emotes_off';
-
-			$cb_message = $tp -> toHTML($cb['cb_message'], TRUE, $emotes_active, $cb['cb_uid'], $pref['menu_wordwrap']);
-
-			$replace[0] = "["; $replace[1] = "]";
-			$search[0] = "&lsqb;"; $search[1] =  "&rsqb;";
-			$cb_message = str_replace($search, $replace, $cb_message);
-
-			global $CHATBOXSTYLE;
-			if(!$CHATBOXSTYLE)
-			{
-				$bullet = (defined("BULLET") ? "<img src='".THEME_ABS."images/".BULLET."' alt='' style='vertical-align: middle;' />" : "<img src='".THEME_ABS."images/".(defined("BULLET") ? BULLET : "bullet2.gif")."' alt='' style='vertical-align: middle;' />");
-				// default chatbox style
-				$CHATBOXSTYLE = "<!-- chatbox -->\n<div class='spacer'>
-				$bullet <b>{USERNAME}</b><br /><span class='smalltext'>{TIMEDATE}</span><br /><div class='smallblacktext'>{MESSAGE}</div></div><br />\n";
-			}
-
-			$search[0] = "/\{USERNAME\}(.*?)/si";
-			$replace[0] = $cb_nick;
-			$search[1] = "/\{TIMEDATE\}(.*?)/si";
-			$replace[1] = $datestamp;
-			$search[2] = "/\{MESSAGE\}(.*?)/si";
-			$replace[2] = ($cb['cb_blocked'] ? CHATBOX_L6 : $cb_message);
-
-			$text .= preg_replace($search, $replace, $CHATBOXSTYLE);
-
-		}
-	}
-	else
-	{
-		$text .= "<span class='mediumtext'>".CHATBOX_L11."</span>";
-	}
-	$total_chats = $sql -> db_Count("chatbox");
-	if($total_chats > $chatbox_posts || CB_MOD)
-	{
-		$text .= "<br /><div style='text-align:center'><a href='".e_PLUGIN."chatbox_menu/chat.php'>".(CB_MOD ? CHATBOX_L13 : CHATBOX_L12)."</a> (".$total_chats.")</div>";
-	}
-	$e107cache->set("chatbox", $text);
-}
-
-$caption = (file_exists(THEME."images/chatbox_menu.png") ? "<img src='".THEME_ABS."images/chatbox_menu.png' alt='' /> ".CHATBOX_L2 : CHATBOX_L2);
-
-if($pref['cb_layer'] == 1)
-{
-	$text = $texta."<div style='border : 0; padding : 4px; width : auto; height : ".$pref['cb_layer_height']."px; overflow : auto; '>".$text."</div>";
-	$ns -> tablerender($caption, $text, 'chatbox');
-}
-elseif($pref['cb_layer'] == 2 && isset($_POST['chat_submit']))
-{
-	$text = $texta.$text;
-	$text = str_replace(e_IMAGE, e_IMAGE_ABS, $text);
-	echo $text;
-}
-else
-{
-	$text = $texta.$text;
-	if($pref['cb_layer'] == 2)
-	{
-		$text = "<div id='chatbox_posts'>".$text."</div>";
-	}
-	$ns -> tablerender($caption, $text, 'chatbox');
-}
-
-//$text = ($pref['cb_layer'] ? $texta."<div style='border : 0; padding : 4px; width : auto; height : ".$pref['cb_layer_height']."px; overflow : auto; '>".$text."</div>" : $texta.$text);
-//if(ADMIN && getperms("C")){$text .= "<br /><div style='text-align: center'>[ <a href='".e_PLUGIN."chatbox_menu/admin_chatbox.php'>".CHATBOX_L13."</a> ]</div>";}
-//$ns -> tablerender($caption, $text, 'chatbox');
-
+<?php
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_plugins/chatbox_menu/chatbox_menu.php,v $
+|     $Revision: 1.62 $
+|     $Date: 2006/01/19 23:57:21 $
+|     $Author: mcfly_e107 $
++----------------------------------------------------------------------------+
+*/
+
+global $tp, $e107cache, $e_event, $e107, $pref, $footer_js, $PLUGINS_DIRECTORY;
+
+//if (file_exists(e_PLUGIN."chatbox_menu/languages/".e_LANGUAGE."/".e_LANGUAGE.".php")) {
+//	include_once(e_PLUGIN."chatbox_menu/languages/".e_LANGUAGE."/".e_LANGUAGE.".php");
+//} else {
+//	include_once(e_PLUGIN."chatbox_menu/languages/English/English.php");
+//}
+
+
+if($pref['cb_layer'] || isset($_POST['chatbox_ajax']))
+{
+	if(isset($_POST['chat_submit']))
+	{
+		include_once("../../class2.php");
+	}
+	$footer_js[] = e_FILE_ABS.'e_ajax.js';
+}
+
+if(!defined("e_HANDLER")){ exit; }
+require_once(e_HANDLER."emote.php");
+
+$emessage='';
+if(isset($_POST['chat_submit']) && $_POST['cmessage'] != "")
+{
+	if(!USER && !$pref['anon_post'])
+	{
+		// disallow post
+	}
+	else
+	{
+		$cmessage = $_POST['cmessage'];
+		if(isset($_POST['ajax_used']))
+		{
+			//Normally the menu.sc file will auto-load the language file, this is needed in case
+			//ajax is turned on and the menu is not loaded from the menu.sc
+			include_lan(e_PLUGIN."chatbox_menu/languages/".e_LANGUAGE."/".e_LANGUAGE.".php");
+		}
+		$nick = trim(preg_replace("/\[.*\]/si", "", $tp -> toDB($_POST['nick'])));
+		$fp = new floodprotect;
+		if($fp -> flood("chatbox", "cb_datestamp"))
+		{
+			if((strlen(trim($cmessage)) < 1000) && trim($cmessage) != "")
+			{
+				$cmessage = $tp -> toDB($cmessage);
+				if($sql -> db_Select("chatbox", "*", "cb_message='$cmessage' AND cb_datestamp+84600>".time()))
+				{
+					$emessage = CHATBOX_L17;
+				}
+				else
+				{
+					$datestamp = time();
+					$ip = $e107->getip();
+					if(USER)
+					{
+						$nick = USERID.".".USERNAME;
+						$sql -> db_Update("user", "user_chats=user_chats+1, user_lastpost='".time()."' WHERE user_id='".USERID."' ");
+					}
+					else if(!$nick)
+					{
+						$nick = "0.Anonymous";
+					}
+					else
+					{
+						if($sql -> db_Select("user", "*", "user_name='$nick' ")){
+							$emessage = CHATBOX_L1;
+						}
+						else
+						{
+							$nick = "0.".$nick;
+						}
+					}
+					if(!$emessage)
+					{
+						$sql -> db_Insert("chatbox", "0, '$nick', '$cmessage', '".time()."', '0' , '$ip' ");
+						$edata_cb = array("cmessage" => $cmessage, "ip" => $ip);
+						$e_event -> trigger("cboxpost", $edata_cb);
+						$e107cache->clear("chatbox");
+					}
+				}
+			}
+			else
+			{
+				$emessage = CHATBOX_L15;
+			}
+		}
+		else
+		{
+			$emessage = CHATBOX_L19;
+		}
+	}
+}
+
+$pref['cb_linkc'] = str_replace("e107_images/", e_IMAGE, $pref['cb_linkc']);
+if(!USER && !$pref['anon_post']){
+	if($pref['user_reg'])
+	{
+		$texta = "<div style='text-align:center'>".CHATBOX_L3."</div><br /><br />";
+	}
+}
+else
+{
+	$cb_width = (defined("CBWIDTH") ? CBWIDTH : "100%");
+
+	if($pref['cb_layer'] == 2)
+	{
+		$texta =  "\n<form id='chatbox' action='".e_SELF."?".e_QUERY."'  method='post' onsubmit='return(false);'>
+		<div><input type='hidden' id='chatbox_ajax' value='1' /></div>
+		";
+	}
+	else
+	{
+		$texta =  (e_QUERY ? "\n<form id='chatbox' method='post' action='".e_SELF."?".e_QUERY."'>" : "\n<form id='chatbox' method='post' action='".e_SELF."'>");
+	}
+	$texta .= "<div style='text-align:center; width: 100%'>";
+
+	if(($pref['anon_post'] == "1" && USER == FALSE))
+	{
+		$texta .= "\n<input class='tbox' type='text' id='nick' name='nick' value='' maxlength='50' style='width: ".$cb_width.";' /><br />";
+	}
+
+	if($pref['cb_layer'] == 2)
+	{
+
+		$oc = "onclick=\"javascript:sendInfo('".$pref['siteurl'].$PLUGINS_DIRECTORY."chatbox_menu/chatbox_menu.php', 'chatbox_posts', this.form);\"";
+	}
+	else
+	{
+		$oc = "";
+	}
+	$texta .= "
+	<textarea class='tbox chatbox' id='cmessage' name='cmessage' cols='20' rows='5' style='width:".$cb_width."; overflow: auto' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'></textarea>
+	<br />
+	<input class='button' type='submit' id='chat_submit' name='chat_submit' value='".CHATBOX_L4."' {$oc}/>
+	<input class='button' type='reset' name='reset' value='".CHATBOX_L5."' />";
+
+	if($pref['cb_emote'] && $pref['smiley_activate']){
+		$texta .= "
+		<input class='button' type ='button' style='cursor:hand; cursor:pointer' size='30' value='".CHATBOX_L14."' onclick=\"expandit('emote')\" />
+		<div style='display:none' id='emote'>".r_emote()."
+		</div>\n";
+	}
+
+	$texta .="</div>\n</form>\n";
+}
+
+if($emessage != ""){
+	$texta .= "<div style='text-align:center'><b>".$emessage."</b></div>";
+}
+
+if(!$text = $e107cache->retrieve("chatbox"))
+{
+	global $pref,$tp;
+	$pref['chatbox_posts'] = ($pref['chatbox_posts'] ? $pref['chatbox_posts'] : 10);
+	$chatbox_posts = $pref['chatbox_posts'];
+	if(!isset($pref['cb_mod']))
+	{
+		$pref['cb_mod'] = e_UC_ADMIN;
+	}
+	define("CB_MOD", check_class($pref['cb_mod']));
+
+	$qry = "
+	SELECT c.*, u.user_name FROM #chatbox AS c
+	LEFT JOIN #user AS u ON FLOOR(c.cb_nick) = u.user_id
+	ORDER BY c.cb_datestamp DESC LIMIT 0, ".intval($chatbox_posts);
+
+	if($sql -> db_Select_gen($qry))
+	{
+		$obj2 = new convert;
+		$cbpost = $sql -> db_getList();
+		foreach($cbpost as $cb)
+		{
+			// get available vars
+			list($cb_uid, $cb_nick) = explode(".", $cb['cb_nick'], 2);
+			if($cb['user_name'])
+			{
+				$cb_nick = "<a href='".e_BASE."user.php?id.{$cb_uid}'>{$cb['user_name']}</a>";
+			}
+			else
+			{
+				$cb_nick = $tp -> toHTML($cb_nick);
+			}
+
+			$datestamp = $obj2->convert_date($cb['cb_datestamp'], "short");
+			if(!$pref['cb_wordwrap']) { $pref['cb_wordwrap'] = 30; }
+			$emotes_active = $pref['cb_emote'] ? 'emotes_on' : 'emotes_off';
+
+			$cb_message = $tp -> toHTML($cb['cb_message'], TRUE, $emotes_active, $cb['cb_uid'], $pref['menu_wordwrap']);
+
+			$replace[0] = "["; $replace[1] = "]";
+			$search[0] = "&lsqb;"; $search[1] =  "&rsqb;";
+			$cb_message = str_replace($search, $replace, $cb_message);
+
+			global $CHATBOXSTYLE;
+			if(!$CHATBOXSTYLE)
+			{
+				$bullet = (defined("BULLET") ? "<img src='".THEME_ABS."images/".BULLET."' alt='' style='vertical-align: middle;' />" : "<img src='".THEME_ABS."images/".(defined("BULLET") ? BULLET : "bullet2.gif")."' alt='' style='vertical-align: middle;' />");
+				// default chatbox style
+				$CHATBOXSTYLE = "<!-- chatbox -->\n<div class='spacer'>
+				$bullet <b>{USERNAME}</b><br /><span class='smalltext'>{TIMEDATE}</span><br /><div class='smallblacktext'>{MESSAGE}</div></div><br />\n";
+			}
+
+			$search[0] = "/\{USERNAME\}(.*?)/si";
+			$replace[0] = $cb_nick;
+			$search[1] = "/\{TIMEDATE\}(.*?)/si";
+			$replace[1] = $datestamp;
+			$search[2] = "/\{MESSAGE\}(.*?)/si";
+			$replace[2] = ($cb['cb_blocked'] ? CHATBOX_L6 : $cb_message);
+
+			$text .= preg_replace($search, $replace, $CHATBOXSTYLE);
+
+		}
+	}
+	else
+	{
+		$text .= "<span class='mediumtext'>".CHATBOX_L11."</span>";
+	}
+	$total_chats = $sql -> db_Count("chatbox");
+	if($total_chats > $chatbox_posts || CB_MOD)
+	{
+		$text .= "<br /><div style='text-align:center'><a href='".e_PLUGIN."chatbox_menu/chat.php'>".(CB_MOD ? CHATBOX_L13 : CHATBOX_L12)."</a> (".$total_chats.")</div>";
+	}
+	$e107cache->set("chatbox", $text);
+}
+
+$caption = (file_exists(THEME."images/chatbox_menu.png") ? "<img src='".THEME_ABS."images/chatbox_menu.png' alt='' /> ".CHATBOX_L2 : CHATBOX_L2);
+
+if($pref['cb_layer'] == 1)
+{
+	$text = $texta."<div style='border : 0; padding : 4px; width : auto; height : ".$pref['cb_layer_height']."px; overflow : auto; '>".$text."</div>";
+	$ns -> tablerender($caption, $text, 'chatbox');
+}
+elseif($pref['cb_layer'] == 2 && isset($_POST['chat_submit']))
+{
+	$text = $texta.$text;
+	$text = str_replace(e_IMAGE, e_IMAGE_ABS, $text);
+	echo $text;
+}
+else
+{
+	$text = $texta.$text;
+	if($pref['cb_layer'] == 2)
+	{
+		$text = "<div id='chatbox_posts'>".$text."</div>";
+	}
+	$ns -> tablerender($caption, $text, 'chatbox');
+}
+
+//$text = ($pref['cb_layer'] ? $texta."<div style='border : 0; padding : 4px; width : auto; height : ".$pref['cb_layer_height']."px; overflow : auto; '>".$text."</div>" : $texta.$text);
+//if(ADMIN && getperms("C")){$text .= "<br /><div style='text-align: center'>[ <a href='".e_PLUGIN."chatbox_menu/admin_chatbox.php'>".CHATBOX_L13."</a> ]</div>";}
+//$ns -> tablerender($caption, $text, 'chatbox');
+
 ?>

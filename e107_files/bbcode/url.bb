@@ -1,14 +1,21 @@
-$full_text = str_replace('"','&039;',$full_text);
-$search = array(
-"#\[url\]([a-z]+?://){1}(.*?)\[/url\]#si",
-"#\[url\](.*?)\[/url\]#si",
-"#\[url=([a-z]+?://){1}(.*?)\](.*?)\[/url\]#si",
-);
+global $pref;
 
-$replace = array(
-'<a href="\1\2">\1\2</a>',
-'<a href="http://\1">\1</a>',
-'<a href="\1\2">\3</a>',
-);
+$external = $pref['links_new_window'] || $parm == 'external' ? ' rel="external"' : '';
 
-return preg_replace($search,$replace,$full_text);
+if ($parm && $parm != 'external') {
+	if (strpos($parm, "://") !== FALSE) {
+		return "<a href='".$tp -> toAttribute($parm)."'".$external.">".$code_text."</a>";
+	} else if (strpos($parm, ".") !== FALSE) {
+		return "<a href='http://".$tp -> toAttribute($parm)."'".$external.">".$code_text."</a>";
+	} else if (strpos($code_text, "://") !== FALSE) {
+		return "<a href='".$tp -> toAttribute($code_text)."'".$external.">".$code_text."</a>";
+	} else {
+		return "<a href='http://".$tp -> toAttribute($code_text)."'".$external.">http://".$code_text."</a>";
+	}
+} else {
+	if (strpos($code_text, "://") !== FALSE) {
+		return "<a href='".$tp -> toAttribute($code_text)."'".$external.">".$code_text."</a>";
+	} else {
+		return "<a href='http://".$tp -> toAttribute($code_text)."'".$external.">http://".$code_text."</a>";
+	}
+}

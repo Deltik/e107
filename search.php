@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/search.php,v $
-|     $Revision: 1.47 $
-|     $Date: 2005/12/28 14:03:36 $
+|     $Revision: 1.49 $
+|     $Date: 2006/01/26 21:52:38 $
 |     $Author: sweetas $
 +----------------------------------------------------------------------------+
 */
@@ -56,24 +56,41 @@ function search_info($id, $type, $plug_require, $info='') {
 $search_id = 0;
 if ($search_info[$search_id] = search_info('news', 'core', false, array('sfile' => e_HANDLER.'search/search_news.php', 'qtype' => LAN_98, 'refpage' => 'news.php', 'advanced' => e_HANDLER.'search/advanced_news.php'))) {
 	$search_id++;
+} else {
+	unset($search_info[$search_id]);
 }
+
 if ($search_info[$search_id] = search_info('comments', 'core', false, array('sfile' => e_HANDLER.'search/search_comment.php', 'qtype' => LAN_99, 'refpage' => 'comment.php', 'advanced' => e_HANDLER.'search/advanced_comment.php'))) {
 	$search_id++;
+} else {
+	unset($search_info[$search_id]);
 }
+
 if ($search_info[$search_id] = search_info('users', 'core', false, array('sfile' => e_HANDLER.'search/search_user.php', 'qtype' => LAN_140, 'refpage' => 'user.php', 'advanced' => e_HANDLER.'search/advanced_user.php'))) {
 	$search_id++;
+} else {
+	unset($search_info[$search_id]);
 }
+
 if ($search_info[$search_id] = search_info('downloads', 'core', false, array('sfile' => e_HANDLER.'search/search_download.php', 'qtype' => LAN_197, 'refpage' => 'download.php', 'advanced' => e_HANDLER.'search/advanced_download.php'))) {
 	$search_id++;
+} else {
+	unset($search_info[$search_id]);
 }
+
 if ($search_info[$search_id] = search_info('pages', 'core', false, array('sfile' => e_HANDLER.'search/search_pages.php', 'qtype' => LAN_418, 'refpage' => 'page.php', 'advanced' => e_HANDLER.'search/advanced_pages.php'))) {
 	$search_id++;
+} else {
+	unset($search_info[$search_id]);
 }
+
 //plugin search routines
 foreach ($search_prefs['plug_handlers'] as $plug_dir => $active) {
 	if (is_readable(e_PLUGIN.$plug_dir."/e_search.php")) {
 		if ($search_info[$search_id] = search_info($plug_dir, 'plug', e_PLUGIN.$plug_dir."/e_search.php")) {
 			$search_id++;
+		} else {
+			unset($search_info[$search_id]);
 		}
 	}
 }

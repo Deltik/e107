@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     ï¿½Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,13 +11,16 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_themes/templates/header_default.php,v $
-|     $Revision: 1.76 $
-|     $Date: 2006/01/18 18:55:40 $
-|     $Author: e107coders $
+|     $Revision: 1.78 $
+|     $Date: 2006/01/26 21:57:06 $
+|     $Author: sweetas $
 +----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
+
+// send the charset to the browser - overides spurious server settings with the lan pack settings.
+header("Content-type: text/html; charset=".CHARSET, true);
 
 if (!function_exists("parseheader")) {
 	function parseheader($LAYOUT){
@@ -70,6 +73,8 @@ if((isset($pref['enable_png_image_fix']) && $pref['enable_png_image_fix'] == tru
 	echo "<script type='text/javascript' src='".e_FILE_ABS."sleight_js.php'></script>\n";
 }
 
+if(function_exists('core_head')){ echo core_head(); }
+
 if (isset($eplug_css) && $eplug_css) { echo "\n<link rel='stylesheet' href='{$eplug_css}' type='text/css' />\n"; }
 if (isset($eplug_js) && $eplug_js) { echo "<script type='text/javascript' src='{$eplug_js}'></script>\n"; }
 
@@ -117,7 +122,6 @@ if(defined("PREVIEWTHEME")) {
 if(function_exists('theme_head')){
 	echo theme_head();
 }
-if(function_exists('core_head')){ echo core_head(); }
 
 // ---------- Favicon ---------
 if (file_exists(THEME."favicon.ico")) {
