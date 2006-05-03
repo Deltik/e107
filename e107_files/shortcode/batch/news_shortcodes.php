@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/news_shortcodes.php,v $
-|     $Revision: 1.18 $
-|     $Date: 2006/01/13 15:37:31 $
-|     $Author: lisa_ $
+|     $Revision: 1.22 $
+|     $Date: 2006/04/26 12:54:28 $
+|     $Author: sweetas $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -31,9 +31,9 @@ SC_BEGIN NEWSBODY
 global $tp;
 $news_item = getcachedvars('current_news_item');
 $param = getcachedvars('current_news_param');
-$news_body = $tp -> toHTML($news_item['news_body'], TRUE, 'parse_sc', $news_item['news_author']);
+$news_body = $tp -> toHTML($news_item['news_body'], TRUE, 'parse_sc, fromadmin', $news_item['news_author']);
 if($news_item['news_extended'] && (isset($_POST['preview']) || strpos(e_QUERY, 'extend') !== FALSE)) {
-    $news_extended = $tp -> toHTML($news_item['news_extended'], TRUE, 'parse_sc', $news_item['news_author']);
+    $news_extended = $tp -> toHTML($news_item['news_extended'], TRUE, 'parse_sc, fromadmin', $news_item['news_author']);
     $news_body .= "<br /><br />".$news_extended;
 }
 return $news_body;
@@ -173,7 +173,7 @@ $news_item = getcachedvars('current_news_item');
 $param = getcachedvars('current_news_param');
 if (ADMIN && getperms("H")) {
 	$adop_icon = (file_exists(THEME."generic/newsedit.png") ? THEME."generic/newsedit.png" : e_IMAGE."generic/".IMODE."/newsedit.png");
-	return "<a href='".e_BASE.e_ADMIN."newspost.php?create.edit.".$news_item['news_id']."'><img src='".$adop_icon."' alt='' style='border:0' /></a>\n";
+	return " <a href='".e_BASE.e_ADMIN."newspost.php?create.edit.".$news_item['news_id']."'><img src='".$adop_icon."' alt='' style='border:0' /></a>\n";
 } else {
 	return '';
 }
@@ -232,7 +232,13 @@ SC_END
 SC_BEGIN NEWSTHUMBNAIL
 $news_item = getcachedvars('current_news_item');
 $param = getcachedvars('current_news_param');
-return (isset($news_item['news_thumbnail']) && $news_item['news_thumbnail']) ? "<a href='".e_BASE."news.php?item.".$news_item['news_id'].".".$news_item['news_category']."'><img src='".e_IMAGE."newspost_images/".$news_item['news_thumbnail']."' alt='' style='".$param['thumbnail']."' /></a>" : "";
+return (isset($news_item['news_thumbnail']) && $news_item['news_thumbnail']) ? "<a href='".e_BASE."news.php?item.".$news_item['news_id'].".".$news_item['news_category']."'><img class='news_image' src='".e_IMAGE."newspost_images/".$news_item['news_thumbnail']."' alt='' style='".$param['thumbnail']."' /></a>" : "";
+SC_END
+
+SC_BEGIN NEWSIMAGE
+$news_item = getcachedvars('current_news_item');
+$param = getcachedvars('current_news_param');
+return (isset($news_item['news_thumbnail']) && $news_item['news_thumbnail']) ? "<a href='".e_BASE."news.php?item.".$news_item['news_id'].".".$news_item['news_category']."'><img class='news_image' src='".e_IMAGE."newspost_images/".$news_item['news_thumbnail']."' alt='' style='".$param['thumbnail']."' /></a>" : "";
 SC_END
 	
 SC_BEGIN STICKY_ICON

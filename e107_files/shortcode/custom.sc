@@ -13,7 +13,7 @@ switch($custom_query[0])
 						if(ADMIN == TRUE){
 								$ret .= "<a href='".e_ADMIN."admin.php'>".LOGIN_MENU_L11."</a> .:. ";
 						}
-						$ret .= ($custom != "login noprofile") ? "<a href='".e_BASE."user.php?id.".USERID."'>".LOGIN_MENU_L13."</a>\n.:. ":"";
+						$ret .= ($custom_query[0] != "login noprofile") ? "<a href='".e_BASE."user.php?id.".USERID."'>".LOGIN_MENU_L13."</a>\n.:. ":"";
 						$ret .= "<a href='" . e_BASE . "usersettings.php'>".LOGIN_MENU_L12."</a> .:. <a href='".e_BASE."?logout'>".LOGIN_MENU_L8."</a> .:.</span>";
 				} else {
 						$ret .= "<form method='post' action='".e_SELF."'>\n<div class='loginc_div'>\n".LOGIN_MENU_L1."<input class='tbox loginc user' type='text' name='username' size='15' value='$username' maxlength='20' />&nbsp;&nbsp;\n".LOGIN_MENU_L2."<input class='tbox loginc pass' type='password' name='userpass' size='15' value='' maxlength='20' />&nbsp;&nbsp;\n<input type='checkbox' name='autologin' value='1' />".LOGIN_MENU_L6."&nbsp;&nbsp;\n<input class='button loginc' type='submit' name='userlogin' value='Login' />";
@@ -85,24 +85,7 @@ switch($custom_query[0])
 
 
 		case "welcomemessage":
-				if(GUEST == TRUE && $sql -> db_Select("wmessage",wm_text,"wm_id = 1 AND wm_active = 1"))
-				{
-					$row = $sql -> db_Fetch();
-					$ret .= $tp -> toHTML($row['wm_text']);
-				}
 
-				if(USER == TRUE && $sql -> db_Select("wmessage",wm_text,"wm_id = 2 AND wm_active = 1"))
-				{
-					$row = $sql -> db_Fetch();
-					$ret .= $tp -> toHTML($row['wm_text']);
-				}
-
-				if(ADMIN == TRUE && $sql -> db_Select("wmessage",wm_text,"wm_id = 3 AND wm_active = 1"))
-				{
-					$row = $sql -> db_Fetch();
-					$ret .= $tp -> toHTML($row['wm_text']);
-				}
-				define("WMFLAG", TRUE);
-				return $ret;
+				return $tp->parseTemplate("{WMESSAGE}");
 				break;
 }

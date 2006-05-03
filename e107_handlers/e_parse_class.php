@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/e_parse_class.php,v $
-|     $Revision: 1.140 $
-|     $Date: 2006/02/10 15:31:52 $
-|     $Author: sweetas $
+|     $Revision: 1.150 $
+|     $Date: 2006/04/29 01:03:10 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -58,8 +58,6 @@ class e_parse
 			}
 		}
 
- //       ret = $this->createConstants($ret);
-
 		return $ret;
 	}
 
@@ -80,9 +78,6 @@ class e_parse
 		// ensure apostrophes are properly converted, or else the form item could break
 		return str_replace(array( "'", '"'), array("&#039;", "&quot;"), $text);
 	}
-
-
-
 
 	function post_toHTML($text, $modifier = true, $extra = '') {
 		/*
@@ -120,9 +115,6 @@ class e_parse
 
 		return ($modifier ? $this->toHTML($text, true, $extra) : $text);
 	}
-
-
-
 
 	function parseTemplate($text, $parseSCFiles = TRUE, $extraCodes = "") {
 		// Start parse {XXX} codes
@@ -263,7 +255,7 @@ class e_parse
 		}
 		return $ret;
 	}
-	
+
 	function text_truncate($text, $len = 200, $more = "[more]") {
 		if(strlen($text) <= $len) {
 			return $text;
@@ -286,14 +278,13 @@ class e_parse
 		{
 			return $text;
 		}
-		global $pref;
+		global $pref, $fromadmin;
 
-
+		$fromadmin = strpos($modifiers, "fromadmin");
 		//$text = str_replace(array("&#092;&quot;", "&#092;&#039;", "&#092;&#092;"), array("&quot;", "&#039;", "&#092;"), $text);
 
-
 		// support for converting defines(constants) within text. eg. Lan_XXXX
-		if(strpos($modifiers,"defs") !== FALSE && strlen($text) < 20 && defined(trim($text))){
+		if(strpos($modifiers,"defs") !== FALSE && strlen($text) < 25 && defined(trim($text))){
 			return constant(trim($text));
 		}
 
@@ -303,7 +294,7 @@ class e_parse
 			$text = $this->replaceConstants($text);
 		}
 
-		if(!$wrap) $wrap = $pref['main_wordwrap'];
+		if(!$wrap && $pref['main_wordwrap']) $wrap = $pref['main_wordwrap'];
 		$text = " ".$text;
 
 		if (strpos($modifiers, 'nobreak') === FALSE) {
@@ -419,7 +410,7 @@ class e_parse
 
 		return trim($text);
 	}
-	
+
 	function toAttribute($text) {
 		if (!preg_match('/&#|\'|"|\(|\)|<|>/s', $text)) {
 			return $text;
@@ -436,12 +427,15 @@ class e_parse
 		return strtr ($stringarray, $trans_tbl);
 	}
 
-	function toRss($text)
+	function toRss($text,$tags=FALSE)
 	{
-		$text = $this -> toHTML($text,TRUE);
-		$text = strip_tags($text);
 
-		$search = array("&amp;#039;", "&amp;#036;", "&#039;", "&#036;"," & ");
+		if($tags != TRUE){
+			$text = $this -> toHTML($text,TRUE);
+			$text = strip_tags($text);
+		}
+
+		$search = array("&amp;#039;", "&amp;#036;", "&#039;", "&#036;"," & ",);
 		$replace = array("'", '$', "'", '$',' &amp; ' );
 		$text = str_replace($search, $replace, $text);
 
@@ -469,6 +463,7 @@ class e_parse
 		}
 
 		$text = preg_replace_callback("#\{(e_[A-Z]*)\}#s", array($this, 'doReplace'), $text);
+		$text = str_replace("{THEME}",constant("THEME"),$text);
 		return $text;
 	}
 

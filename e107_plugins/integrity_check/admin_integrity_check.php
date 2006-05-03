@@ -230,7 +230,7 @@ function headerjs() {
 	
 //check Version you are using
 if (file_exists(e_ADMIN."ver.php")) {
-	include_once(e_ADMIN."ver.php");
+	include(e_ADMIN."ver.php");
 }
 	
 //Arrays for replacing Directorys (if non-standard)
@@ -392,7 +392,10 @@ unset($t_array);
 $text = "<div style='text-align:center'>
 	<form method='post' action='".e_SELF."?".e_QUERY."' name='integrity_check'>
 	<table style='width:95%'>
-	 
+
+	<tr>
+	<td class='fcaption' colspan='2'><br /><a href='".e_ADMIN."fileinspector.php'>".Integ_27."</a><br /><br />
+	</td>	 
 	<tr>
 	<td class='fcaption' colspan='2'>".Integ_06."
 	</td>

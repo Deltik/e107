@@ -12,8 +12,8 @@
 | GNU General Public License (http://gnu.org).
 |
 | $Source: /cvsroot/e107/e107_0.7/e107_handlers/news_class.php,v $
-| $Revision: 1.69 $
-| $Date: 2005/12/28 14:03:36 $
+| $Revision: 1.71 $
+| $Date: 2006/04/12 14:58:12 $
 | $Author: sweetas $
 +---------------------------------------------------------------+
 */
@@ -58,7 +58,7 @@ class news {
 		{
 			$excerpt = substr($news['news_body'], 0, 100)."...";
 			$id=mysql_insert_id();
-			$permLink = $e107->http_path."comment.php?comment.news.{$id}";
+			$permLink = $e107->base_path."comment.php?comment.news.{$id}";
 
 			require_once(e_PLUGIN."trackback/trackbackClass.php");
 			$trackback = new trackbackClass();
@@ -147,6 +147,10 @@ class news {
 			$param['trackbackstring'] = (defined("TRACKBACKSTRING") ? TRACKBACKSTRING : "");
 			$param['trackbackbeforestring'] = (defined("TRACKBACKBEFORESTRING") ? TRACKBACKBEFORESTRING : "");
 			$param['trackbackafterstring'] = (defined("TRACKBACKAFTERSTRING") ? TRACKBACKAFTERSTRING : "");
+			$param['itemlink'] = (defined("NEWSLIST_ITEMLINK")) ? NEWSLIST_ITEMLINK : "";
+			$param['thumbnail'] =(defined("NEWSLIST_THUMB")) ? NEWSLIST_THUMB : "border:0px";
+			$param['catlink']  = (defined("NEWSLIST_CATLINK")) ? NEWSLIST_CATLINK : "";
+			$param['caticon'] =  (defined("NEWSLIST_CATICON")) ? NEWSLIST_CATICON : ICONSTYLE;
 		}
 		
 		cachevars('current_news_item', $news);

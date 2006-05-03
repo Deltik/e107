@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/users.php,v $
-|     $Revision: 1.70 $
-|     $Date: 2006/02/08 02:27:24 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.76 $
+|     $Date: 2006/04/10 05:05:22 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 require_once("../class2.php");
@@ -34,7 +34,7 @@ if (isset($_POST['useraction']) && $_POST['useraction'] == 'usersettings') {
 }
 
 if (isset($_POST['useraction']) && $_POST['useraction'] == 'userclass') {
-	header('location:'.e_ADMIN."userclass.php?".$tp -> toDB($_POST['userid']));
+	header('location:'.e_ADMIN."userclass.php?".$tp -> toDB($_POST['userid'].".".e_QUERY));
 	exit;
 }
 
@@ -60,30 +60,66 @@ $amount = 30;
 // ------- Resend Email. --------------
 if (isset($_POST['resend_mail'])) {
 	$tid = $_POST['resend_id'];
+
+	// Check for a Language field, and if present, send the email in the user's language.
+    if($sql -> db_Select("user_extended", "user_language", "user_extended_id = '$tid'")){
+    	$row = $sql -> db_Fetch();
+		$lfile = e_LANGUAGEDIR.$row['user_language']."/lan_signup.php";
+    }
+
+    if(is_readable($lfile)){
+		require_once($lfile);
+	}else{
+		$row['user_language'] = e_LANGUAGE;
+    	require_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_signup.php");
+	}
+
 	$key = $_POST['resend_key'];
 	$name = $_POST['resend_name'];
 	define("RETURNADDRESS", (substr(SITEURL, -1) == "/" ? SITEURL."signup.php?activate.".$tid.".".$key : SITEURL."/signup.php?activate.".$tid.".".$key));
 
-	$message = USRLAN_114." ".$_POST['resend_name']."\n\n".USRLAN_122." ".SITENAME."\n".USRLAN_123."\n\n".USRLAN_124."...\n\n";
-	$message .= RETURNADDRESS . "\n\n".USRLAN_115."\n\n ".USRLAN_125." ".SITENAME."\n".SITEURL;
+	$message = LAN_EMAIL_01." ".$_POST['resend_name']."\n\n".LAN_SIGNUP_24." ".SITENAME.".\n".LAN_SIGNUP_21."...\n\n";
+	$message .= RETURNADDRESS . "\n\n".SITENAME."\n".SITEURL;
 
 	require_once(e_HANDLER."mail.php");
-	if(sendemail($_POST['resend_email'], USRLAN_113." ".SITENAME, $message)){
+	if(sendemail($_POST['resend_email'], LAN_404." ".SITENAME, $message)){
 	//  echo str_replace("\n","<br>",$message);
-		$user->show_message("Email Re-sent to: ".$name);
+		$user->show_message(USRLAN_140.": <a href='mailto:".$_POST['resend_email']."' title=\"".DUSRLAN_7."\" >".$name."</a> (".$row['user_language'].") ".USRLAN_142.":<span class='smalltext'><br /><br /><a href='".RETURNADDRESS."'>".RETURNADDRESS."</a></span>");
 	}else{
-    	$user->show_message("Failed to Re-sent to: ".$name);
+    	$user->show_message(USRLAN_141.": ".$name);
 	}
 	unset($tid);
 }
 // ------- Test Email. --------------
 if (isset($_POST['test_mail'])) {
-	require_once(e_HANDLER."mail.php");
-	$text = validatemail($_POST['test_email']);
+	require_once(e_HANDLER."mail_validation_class.php");
+	list($adminuser,$adminhost) = split ("@", SITEADMINEMAIL);
+	$validator = new email_validation_class;
+	$validator->localuser= $adminuser;
+	$validator->localhost= $adminhost;
+	$validator->timeout=5;
+	$validator->debug=1;
+	$validator->html_debug=1;
+	$text = "<div style='".ADMIN_WIDTH."'>";
+	ob_start();
+	$email_status = $validator->ValidateEmailBox($_POST['test_email']);
+	$text .= ob_get_contents();
+	ob_end_clean();
+	$text .= "</div>";
 	$caption = $_POST['test_email']." - ";
-	$caption .= ($text[0] == TRUE)?"Successful":
-	 "Error";
-	$ns->tablerender($caption, $text[1]);
+	$caption .= ($email_status == 1)? "Valid": "Invalid";
+
+	if($email_status == 1){
+		$text .= "<form method='post' action='".e_SELF.$qry."'>
+			<div style='text-align:left'>
+			<input type='hidden' name='useraction' value='resend' />\n
+			<input type='hidden' name='userid' value='".$_POST['test_id']."' />\n
+			<input class='button' type='submit' name='resend_' value='".USRLAN_112."' />\n</div></form>\n";
+    	$text .= "<div>";
+	}
+
+
+	$ns->tablerender($caption, $text);
 	unset($id, $action, $sub_cation);
 }
 // ------- Update Options. --------------
@@ -220,7 +256,7 @@ if (isset($_POST['useraction']) && $_POST['useraction'] == "unban") {
 	if(!$sub_action){$sub_action = "user_id"; }
 }
 
-// ------- Resend Email. --------------
+// ------- Resend Email Confirmation. --------------
 if (isset($_POST['useraction']) && $_POST['useraction'] == 'resend') {
 	$qry = (e_QUERY) ? "?".e_QUERY : "";
 	if ($sql->db_Select("user", "*", "user_id='".$_POST['userid']."' ")) {
@@ -239,7 +275,7 @@ if (isset($_POST['useraction']) && $_POST['useraction'] == 'resend') {
 		exit;
 	}
 }
-// ------- TEst Email. --------------
+// ------- TEst Email confirmation. --------------
 if (isset($_POST['useraction']) && $_POST['useraction'] == 'test') {
 	$qry = (e_QUERY) ? "?".e_QUERY : "";
 	if ($sql->db_Select("user", "*", "user_id='".$_POST['userid']."' ")) {
@@ -247,6 +283,7 @@ if (isset($_POST['useraction']) && $_POST['useraction'] == 'test') {
 		$text .= "<form method='post' action='".e_SELF.$qry."'><div style='text-align:center'>\n";
 		$text .= USRLAN_117." <br /><b>".$test['user_email']."</b><br /><br />
 			<input type='hidden' name='test_email' value='".$test['user_email']."' />\n
+			<input type='hidden' name='test_id' value='".$_POST['userid']."' />\n
 			<input class='button' type='submit' name='test_mail' value='".USRLAN_118."' />\n</div></form>\n";
 		$caption = USRLAN_118;
 		$ns->tablerender($caption, $text);
@@ -413,8 +450,7 @@ class users{
 		if ($sql->db_Select("userclass_classes")) {
 			while ($row = $sql->db_Fetch())
 			{
-				//extract($row);
-				$class[$row['userclass_id']] = $row['userclass_name'];
+				$class[$row['userclass_id']] = $tp->toHTML($row['userclass_name'],"","defs");
 			}
 		}
 
@@ -636,7 +672,7 @@ class users{
 
 		if ($users > $amount && !$_POST['searchquery']) {
 			$parms = "{$users},{$amount},{$from},".e_SELF."?".(e_QUERY ? "$action.$sub_action.$id." : "main.user_id.desc.")."[FROM]";
-			$text .= "<br />".LAN_GOPAGE." ".$tp->parseTemplate("{NEXTPREV={$parms}}");
+			$text .= "<br />".$tp->parseTemplate("{NEXTPREV={$parms}}");
 		}
 
 // Search - display options etc. .
@@ -679,7 +715,7 @@ class users{
 
 
 // ======================
-		$caption = USRLAN_77 ."&nbsp;&nbsp;   (total: $user_total)";
+		$caption = USRLAN_77 ."&nbsp;&nbsp;   (total: $users)";
 		$ns->tablerender($caption, $text);
 
 	}

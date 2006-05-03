@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/class2.php,v $
-|     $Revision: 1.258 $
-|     $Date: 2006/02/04 07:20:31 $
-|     $Author: streaky $
+|     $Revision: 1.277 $
+|     $Date: 2006/04/30 23:48:39 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 // Find out if register globals is enabled and destroy them if so
@@ -166,7 +166,7 @@ At a later date add a check to load e107 compat mode by $pref
 PHP Compatabilty should *always* be on. */
 e107_require_once(e_HANDLER."php_compatibility_handler.php");
 e107_require_once(e_HANDLER."e107_Compat_handler.php");
-
+$aj = new textparse; // required for backwards compatibility with 0.6 plugins.
 
 e107_require_once(e_HANDLER."pref_class.php");
 $sysprefs = new prefs;
@@ -226,9 +226,14 @@ if(!$PrefCache){
 	// cache of core prefs was found, so grab all the useful core rows we need
 	$sysprefs->DefaultIgnoreRows .= '|SitePrefs';
 	$sysprefs->prefVals['core']['SitePrefs'] = $PrefCache;
-	$sysprefs->ExtractPrefs($retrieve_prefs, TRUE);
+	if(isset($retrieve_prefs))
+	{
+		$sysprefs->ExtractPrefs($retrieve_prefs, TRUE);
+	}
 	$pref = $eArrayStorage->ReadArray($PrefCache);
 }
+
+$e107->set_base_path();
 
 // extract menu prefs
 $menu_pref = unserialize(stripslashes($sysprefs->get('menu_pref')));
@@ -275,7 +280,7 @@ if (isset($_POST['setlanguage']) || isset($_GET['elan'])) {
 	} else {
 		setcookie('e107language_'.$pref['cookie_name'], $_POST['sitelanguage'], time() + 86400, "/");
 		$_COOKIE['e107language_'.$pref['cookie_name']] = $_POST['sitelanguage'];
-		if (strpos(e_SELF, e_ADMIN) === FALSE) {
+		if (strpos(e_SELF, ADMINDIR) === FALSE) {
 			$locat = (!$_GET['elan'] && e_QUERY) ? e_SELF."?".e_QUERY : e_SELF;
 			header("Location:".$locat);
 		}
@@ -287,25 +292,31 @@ $user_language='';
 if (isset($pref['multilanguage']) && $pref['multilanguage']) {
 
 	if ($pref['user_tracking'] == "session") {
-		$user_language=$_SESSION['e107language_'.$pref['cookie_name']];
+		$user_language=(array_key_exists('e107language_'.$pref['cookie_name'], $_SESSION) ? $_SESSION['e107language_'.$pref['cookie_name']] : "");
 		$sql->mySQLlanguage=($user_language) ? $user_language : "";
 	} else {
 		$user_language=$_COOKIE['e107language_'.$pref['cookie_name']];
 		$sql->mySQLlanguage=($user_language) ? $user_language : "";
 	}
 
-	// Get Language List for rights checking.
+
+}
+
+// Get Language List for rights checking.
+if(!$tmplan = getcachedvars("language-list")){
 	$handle=opendir(e_LANGUAGEDIR);
 	while ($file = readdir($handle)) {
 		if (is_dir(e_LANGUAGEDIR.$file) && $file !="." && $file !=".." && $file !="CVS") {
-			$lanlist[] = $file;
+				$lanlist[] = $file;
 		}
 	}
 	closedir($handle);
 	$tmplan = implode(",",$lanlist);
+	cachevars("language-list", $tmplan);
 }
 
 define("e_LANLIST",(isset($tmplan) ? $tmplan : ""));
+
 
 $sql->db_Mark_Time('(Start: Pref/multilang done)');
 
@@ -324,6 +335,8 @@ $e_online = new e_online();
 
 // cache class
 $e107cache = new ecache;
+
+
 
 if (isset($pref['del_unv']) && $pref['del_unv'] && $pref['user_reg_veri'] != 2) {
 	$threshold=(time() - ($pref['del_unv'] * 60));
@@ -438,10 +451,10 @@ $ns=new e107table;
 
 $e107->ban();
 
-if(isset($pref['force_userupdate']) && $pref['force_userupdate'] && USER && e_PAGE != "usersettings.php"){
-	if(force_userupdate()){
+if($pref['force_userupdate'] && USER) {
+	if(force_userupdate()) {
 		header("Location: ".e_BASE."usersettings.php?update");
-	};
+	}
 }
 
 $sql->db_Mark_Time('Start: Signup/splash/admin');
@@ -464,23 +477,17 @@ define("SITEDESCRIPTION", $tp->toHTML($pref['sitedescription'], "", "emotes_off 
 define("SITEADMIN", $pref['siteadmin']);
 define("SITEADMINEMAIL", $pref['siteadminemail']);
 define("SITEDISCLAIMER", $tp->toHTML($pref['sitedisclaimer'], "", "emotes_off defs"));
+define("SITECONTACTINFO", $tp->toHTML($pref['sitecontactinfo'], TRUE, "emotes_off defs"));
+
 
 if ($pref['maintainance_flag'] && ADMIN == FALSE && strpos(e_SELF, "admin.php") === FALSE && strpos(e_SELF, "sitedown.php") === FALSE) {
 	header("Location: ".SITEURL."sitedown.php");
 	exit;
 }
 
-if (strpos(e_SELF, $ADMIN_DIRECTORY) !== FALSE || strpos(e_SELF, "admin.php") !== FALSE) {
-	e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_".e_PAGE);
-	e107_include_once(e_LANGUAGEDIR."English/admin/lan_".e_PAGE);
-} else if (strpos(e_SELF, $PLUGINS_DIRECTORY) === FALSE) {
-	e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_".e_PAGE);
-	e107_include_once(e_LANGUAGEDIR."English/lan_".e_PAGE);
-}
-
 $sql->db_Mark_Time('(Start: Login/logout/ban/tz)');
 
-if (isset($_POST['userlogin'])) {
+if (isset($_POST['userlogin']) || isset($_POST['userlogin_x'])) {
 	e107_require_once(e_HANDLER."login.php");
 	$usr = new userlogin($_POST['username'], $_POST['userpass'], $_POST['autologin']);
 }
@@ -584,6 +591,14 @@ if (strpos(e_SELF.'?'.e_QUERY, 'menus.php?configure') === FALSE && (strpos(e_SEL
 	require_once(THEME."theme.php");
 }
 
+if (strpos(e_SELF, $ADMIN_DIRECTORY) !== FALSE || strpos(e_SELF, "admin.php") !== FALSE) {
+	e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_".e_PAGE);
+	e107_include_once(e_LANGUAGEDIR."English/admin/lan_".e_PAGE);
+} else if (strpos(e_SELF, $PLUGINS_DIRECTORY) === FALSE) {
+	e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_".e_PAGE);
+	e107_include_once(e_LANGUAGEDIR."English/lan_".e_PAGE);
+}
+
 if(!defined("IMODE")) define("IMODE", "lite");
 
 if ($pref['anon_post'] ? define("ANON", TRUE) : define("ANON", FALSE));
@@ -595,6 +610,7 @@ if ($pref['antiflood1'] == 1) {
 	define('FLOODTIMEOUT', $pref['antiflood_timeout']);
 }
 
+$layout = isset($layout) ? $layout : '_default';
 define("HEADERF", e_THEME."templates/header{$layout}.php");
 define("FOOTERF", e_THEME."templates/footer{$layout}.php");
 
@@ -630,8 +646,8 @@ function js_location($qry){
 	echo "<script type='text/javascript'>document.location.href='{$qry}'</script>\n"; exit;
 }
 
-function check_email($var) {
-	return (preg_match('/^[-!#$%&\'*+\\.\/0-9=?A-Z^_`{|}~]+@([-0-9A-Z]+\.)+([0-9A-Z]){2,4}$/i', $var)) ? $var : FALSE;
+function check_email($email) {
+	return preg_match("/^([_a-zA-Z0-9-+]+)(\.[_a-zA-Z0-9-]+)*@([a-zA-Z0-9-]+)(\.[a-zA-Z0-9-]+)*(\.[a-zA-Z]{2,6})$/" , $email) ? $email : FALSE;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -766,6 +782,8 @@ function get_user_data($uid, $extra = "", $force_join = TRUE)
 {
 	global $pref, $sql;
 	$uid = intval($uid);
+	$var = array();
+	if($uid == 0) { return $var; }
 	if($ret = getcachedvars("userdata_{$uid}"))
 	{
 		return $ret;
@@ -799,15 +817,21 @@ function get_user_data($uid, $extra = "", $force_join = TRUE)
 						$extended_struct[] = $row;
 					}
 				}
-				cachevars("extended_struct", $extended_struct);
+				if(isset($extended_struct))
+				{
+					cachevars("extended_struct", $extended_struct);
+				}
 			}
 		}
 
-		foreach($extended_struct as $row)
+		if(isset($extended_struct))
 		{
-			if($row['Default'] != "" && ($var[$row['Field']] == NULL || $var[$row['Field']] == "" ))
+			foreach($extended_struct as $row)
 			{
-				$var[$row['Field']] = $row['Default'];
+				if($row['Default'] != "" && ($var[$row['Field']] == NULL || $var[$row['Field']] == "" ))
+				{
+					$var[$row['Field']] = $row['Default'];
+				}
 			}
 		}
 		cachevars("userdata_{$uid}", $var);
@@ -977,7 +1001,7 @@ function cachevars($id, $var) {
 
 function getcachedvars($id) {
 	global $cachevar;
-	return ($cachevar[$id] ? $cachevar[$id] : false);
+	return (isset($cachevar[$id]) ? $cachevar[$id] : false);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -1013,8 +1037,9 @@ function init_session() {
 	# - return boolean
 	# - scope public
 	*/
-	global $sql, $pref, $user_pref, $tp, $currentUser;
+	global $sql, $pref, $user_pref, $tp, $currentUser, $e107;
 
+	define('USERIP', $e107->getip());
 	if (!isset($_COOKIE[$pref['cookie_name']]) && !isset($_SESSION[$pref['cookie_name']])) {
 		define("USER", FALSE);
 		define("USERTHEME", FALSE);
@@ -1023,7 +1048,7 @@ function init_session() {
 		define('USERCLASS', '');
 		define('USEREMAIL', '');
 	} else {
-		list($uid, $upw)=($_COOKIE[$pref['cookie_name']] ? explode(".", $_COOKIE[$pref['cookie_name']]) : explode(".", $_SESSION[$pref['cookie_name']]));
+		list($uid, $upw)=(isset($_COOKIE[$pref['cookie_name']]) && $_COOKIE[$pref['cookie_name']] ? explode(".", $_COOKIE[$pref['cookie_name']]) : explode(".", $_SESSION[$pref['cookie_name']]));
 
 		if (empty($uid) || empty($upw)) {
 			cookie($pref['cookie_name'], "", (time() - 2592000));
@@ -1036,8 +1061,10 @@ function init_session() {
 			return (FALSE);
 		}
 
-		if($result = get_user_data($uid, "AND md5(u.user_password)='{$upw}'", FALSE)) {
-			$currentUser = $result;
+		$result = get_user_data($uid);
+		if(is_array($result) && md5($result['user_password']) == $upw)
+		{
+
 			define("USERID", $result['user_id']);
 			define("USERNAME", $result['user_name']);
 			define("USERURL", (isset($result['user_homepage']) ? $result['user_homepage'] : false));
@@ -1049,17 +1076,25 @@ function init_session() {
 			define("USERIMAGE", $result['user_image']);
 			define("USERSESS", $result['user_sess']);
 
-			if ($result['user_currentvisit'] + 3600 < time() || !$result['user_lastvisit']) {
+			$update_ip = ($result['user_ip'] != USERIP ? ", user_ip = '".USERIP."'" : "");
+
+			if($result['user_currentvisit'] + 3600 < time() || !$result['user_lastvisit'])
+			{
 				$result['user_lastvisit'] = $result['user_currentvisit'];
 				$result['user_currentvisit'] = time();
-				$sql->db_Update("user", "user_visits = user_visits + 1, user_lastvisit = '{$result['user_lastvisit']}', user_currentvisit = '{$result['user_currentvisit']}', user_viewed = '' WHERE user_name='".USERNAME."' ");
+				$sql->db_Update("user", "user_visits = user_visits + 1, user_lastvisit = '{$result['user_lastvisit']}', user_currentvisit = '{$result['user_currentvisit']}', user_viewed = ''{$update_ip} WHERE user_id='".USERID."' ");
+			}
+			else
+			{
+				$result['user_currentvisit'] = time();
+				$sql->db_Update("user", "user_currentvisit = '{$result['user_currentvisit']}'{$update_ip} WHERE user_id='".USERID."' ");
 			}
 
+			$currentUser = $result;
+			$currentUser['user_realname'] = $result['user_login']; // Used by force_userupdate
 			define("USERLV", $result['user_lastvisit']);
 
-			if ($result['user_ban'] == 1) {
-				exit;
-			}
+			if ($result['user_ban'] == 1) { exit; }
 
 			$user_pref = unserialize($result['user_prefs']);
 
@@ -1196,28 +1231,33 @@ if(!function_exists("print_a")) {
 	}
 }
 
-function force_userupdate(){
-	// returns TRUE if required fields are empty in the user's profile.
+function force_userupdate() {
+
 	global $sql,$pref,$currentUser;
-	$signupval = explode(".", $pref['signup_options']);
-	if(in_array("2",$signupval)){
-		$signup_name = array("login", "homepage", "icq", "aim", "msn", "birthday", "location", "signature", "image", "timezone", "usrclass");
-		foreach($signupval as $key=>$sign){
-			$field = "user_".$signup_name[$key];
-			$req = $signupval[$key];
-			if($req ==2 && $currentUser[$field] == ""){
-			 //	echo "field = $field ";
-			 return TRUE;
-			}
-		}
+
+	if (e_PAGE == "usersettings.php" || strpos(e_SELF, ADMINDIR) == TRUE)
+	{
+		return FALSE;
 	}
 
-	// extended user.
-	if($sql -> db_Select("user_extended_struct", "user_extended_struct_name", " user_extended_struct_required = '1' ")){
-		while($row = $sql -> db_Fetch()){
-			//extract($row); //really neccessary?
+    $signup_option_names = array("realname", "signature", "image", "timezone", "class");
+
+	foreach($signup_option_names as $key => $value)
+	{
+		if ($pref['signup_option_'.$value] == 2 && !$currentUser['user_'.$value])
+		{
+			return TRUE;
+		}
+    }
+
+	if($sql -> db_Select("user_extended_struct", "user_extended_struct_name", "user_extended_struct_required = '1'"))
+	{
+		while($row = $sql -> db_Fetch())
+		{
 			$user_extended_struct_name = "user_{$row['user_extended_struct_name']}";
-			if(!$currentUser[$user_extended_struct_name]){
+
+			if(!$currentUser[$user_extended_struct_name])
+			{
 				return TRUE;
 			}
 		}

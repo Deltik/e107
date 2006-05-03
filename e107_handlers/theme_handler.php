@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/theme_handler.php,v $
-|     $Revision: 1.27 $
-|     $Date: 2006/01/30 20:34:08 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.30 $
+|     $Date: 2006/04/29 06:29:37 $
+|     $Author: sweetas $
 +----------------------------------------------------------------------------+
 */
 
@@ -89,14 +89,15 @@ class themeHandler{
 							if(strstr($file2, "preview.")) {
 								$themeArray[$file]['preview'] = e_THEME.$file."/".$file2;
 							}
-							if(strstr($file2, "css") && !strstr($file2, "menu.css") && strpos($file2, "e_") !== 0)
+							if(strstr($file2, "css") && !strstr($file2, "menu.css") && strpos($file2, "e_") !== 0 && strpos($file2, "admin_") !== 0)
 							{
 								/* get information string */
 								$fp=fopen(e_THEME.$file."/".$file2, "r");
 								$cssContents = fread ($fp, filesize(e_THEME.$file."/".$file2));
 								fclose($fp);
+								$nonadmin = preg_match('/\* Non-Admin(.*?)\*\//', $cssContents) ? true : false;
 								preg_match('/\* info:(.*?)\*\//', $cssContents, $match);
-								$themeArray[$file]['css'][] = array("name" => $file2, "info" => $match[1]);
+								$themeArray[$file]['css'][] = array("name" => $file2, "info" => $match[1], "nonadmin" => $nonadmin);
 								if($STYLESHEET)
 								{
 									$themeArray[$file]['multipleStylesheets'] = TRUE;
@@ -105,6 +106,7 @@ class themeHandler{
 								{
 									$STYLESHEET = TRUE;
 								}
+								
 							}
 						}
 						$fp=fopen(e_THEME.$file."/theme.php", "r");
@@ -324,8 +326,10 @@ class themeHandler{
 
 					if($mode == 2)
 					{
-						$text .= "
-						<input type='radio' name='admincss' value='".$css['name']."' ".($pref['admincss'] == $css['name'] || (!$pref['admincss'] && $css['name'] == "style.css") ? " checked='checked'" : "")." /><b>".$css['name'].":</b><br />".($css['info'] ? $css['info'] : ($css['name'] == "style.css" ? TPVLAN_23 : TPVLAN_24))."<br />\n";
+						if (!$css['nonadmin']) {
+							$text .= "
+							<input type='radio' name='admincss' value='".$css['name']."' ".($pref['admincss'] == $css['name'] || (!$pref['admincss'] && $css['name'] == "style.css") ? " checked='checked'" : "")." /><b>".$css['name'].":</b><br />".($css['info'] ? $css['info'] : ($css['name'] == "style.css" ? TPVLAN_23 : TPVLAN_24))."<br />\n";
+						}
 					}
 
 					if($mode == 1)
@@ -426,6 +430,7 @@ class themeHandler{
 		global $pref, $e107cache, $ns;
 		$themeArray = $this -> getThemes("id");
 		$pref['sitetheme'] = $themeArray[$this -> id];
+		$pref['themecss'] ='style.css';
 		$e107cache->clear();
 		save_prefs();
 		$ns->tablerender("Admin Message", "<br /><div style='text-align:center;'>".TPVLAN_3." <b>'".$themeArray[$this -> id]."'</b>.</div><br />");
@@ -436,6 +441,7 @@ class themeHandler{
 		global $pref, $e107cache, $ns;
 		$themeArray = $this -> getThemes("id");
 		$pref['admintheme'] = $themeArray[$this -> id];
+		$pref['admincss'] = file_exists(THEME.'admin_style.css') ? 'admin_style.css' : 'style.css';
 		$e107cache->clear();
 		save_prefs();
 		$ns->tablerender("Admin Message", "<br /><div style='text-align:center;'>".TPVLAN_40." <b>'".$themeArray[$this -> id]."'</b>.</div><br />");

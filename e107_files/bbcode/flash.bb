@@ -1,36 +1,21 @@
-// [flash=height,width,bgcolor,quality]path_to_file[/flash]
-unset($flParms);
-$flParms['bgcolor']='#000000';
-$flParms['allowScriptAccess']='sameDomain';
-$flParms['quality']='high';
-$flParms['wmode']='transparent';
-if($parm)
-{
-	parse_str($parm,$tmp);
-	foreach($tmp as $p => $v)
-	{
-		$flParms[$p]=$v;
-	}
-}
-$parmStr="";
-foreach($flParms as $k => $v)
-{
-	if($k != 'height' && $k != 'width')
-	{
-		$parmStr .= "<param name='".$tp -> toAttribute($k)."' value='".$tp -> toAttribute($v)."'\n";
-	}
-}
+// USAGE: [flash=width,height]http://www.example.com/file.swf[/flash]
 
-$ret = "<object type='application/x-shockwave-flash' data='".$tp -> toAttribute($code_text)."' ";
-if($flParms['height'])
-{
-	$ret .= "height='".$tp -> toAttribute($flParms['height'])."' ";
-}
-if($flParms['width'])
-{
-	$ret .= "width='".$tp -> toAttribute($flParms['width'])."' ";
-}
-$ret .= ">\n";
-$ret .= $parmStr;
-$ret .= "</object>\n";
-return $ret;
+$movie_path   = "http://".eregi_replace("http://", "",$code_text);
+$movie_path   = $tp -> toAttribute($movie_path);
+
+$parm_array   = explode(",",$parm);
+
+$width_type   = strpos($parm_array[0], "%") !== FALSE ? "%" : "px";
+$height_type  = strpos($parm_array[1], "%") !== FALSE ? "%" : "px";
+
+$width_value  = ereg_replace("[^0-9]","",$parm_array[0]);
+$height_value = ereg_replace("[^0-9]","",$parm_array[1]);
+
+$width_value  = $width_value  ? $width_value.$width_type   : "50px";
+$height_value = $height_value ? $height_value.$height_type : "50px";
+
+return "<object type='application/x-shockwave-flash' data='$movie_path' width='$width_value' height='$height_value'>
+		<param name='movie'   value='$movie_path' />
+		<param name='quality' value='high' />
+		<param name='allowscriptaccess' value='samedomain' />
+		</object>";

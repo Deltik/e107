@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/users_extended.php,v $
-|     $Revision: 1.31 $
-|     $Date: 2005/12/06 07:21:05 $
-|     $Author: sweetas $
+|     $Revision: 1.37 $
+|     $Date: 2006/04/29 06:53:08 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 require_once("../class2.php");
@@ -35,7 +35,6 @@ $cal = new DHTML_Calendar(true);
 require_once("auth.php");
 require_once(e_HANDLER."user_extended_class.php");
 require_once(e_HANDLER."userclass_class.php");
-require_once("users_extended_predefined.php");
 
 
 $ue = new e107_user_extended;
@@ -149,17 +148,15 @@ if(isset($_POST['deactivate']))
 	$message .= field_deactivate();
 }
 
-//set order of all fields
-if($sql->db_Select("user_extended_struct", "user_extended_struct_id", "user_extended_struct_parent = 0"))
+if($sql->db_Select("user_extended_struct","DISTINCT(user_extended_struct_parent)"))
 {
 	$plist = $sql->db_getList();
 	foreach($plist as $_p)
 	{
-		$_parent = $_p['user_extended_struct_id'];
-		if($sql->db_Select("user_extended_struct", "*", "user_extended_struct_parent = {$_parent} ORDER BY user_extended_struct_order ASC"))
+		$o = 0;
+		if($sql->db_Select("user_extended_struct", "user_extended_struct_id", "user_extended_struct_parent = {$_p['user_extended_struct_parent']} && user_extended_struct_type != 0 ORDER BY user_extended_struct_order ASC"))
 		{
 			$_list = $sql->db_getList();
-			$o = 0;
 			foreach($_list as $r)
 			{
 				$sql->db_Update("user_extended_struct", "user_extended_struct_order = '{$o}' WHERE user_extended_struct_id = {$r['user_extended_struct_id']}");
@@ -517,7 +514,7 @@ class users_ext
 				$sel = ($current['user_extended_struct_required'] == $k ? " selected='selected' " : "");
 				$text .= "<option value='{$k}' {$sel}>{$v}</option>\n";
 			}
-		
+
 			$text .= "
 			</select>
 			<br />
@@ -692,7 +689,7 @@ class users_ext
 		<tr>
 		<td style='width:30%' class='forumheader3'>".EXTLAN_6."</td>
 		<td style='width:70%' class='forumheader3' colspan='3'>
-		".r_userclass("user_read", $current['user_extended_struct_read'], 'off', 'public, member, admin, classes')."<br /><span class='smalltext'>".EXTLAN_22."</span>
+		".r_userclass("user_read", $current['user_extended_struct_read'], 'off', 'public, member, admin, classes, readonly')."<br /><span class='smalltext'>".EXTLAN_22."</span>
 		</td>
 		</tr>
 
@@ -807,7 +804,7 @@ function show_predefined()
 	}
 
 	$txt = "
-	<form method='post'>
+	<form method='post' action='".e_SELF."?pre'>
 	<table class='fborder' style='".ADMIN_WIDTH."'>
 	<tr>
 	<td class='fcaption' colspan='4'>".EXTLAN_57."</td>
@@ -848,7 +845,7 @@ function show_field($var, $type='activate')
 //	$showlist = array('type','text', 'values', 'include_text', 'regex');
 	if($head_shown != 1)
 	{
-	
+
 		$txt .= "
 		<tr>
 		<td class='forumheader'>".UE_LAN_9."</td>
@@ -875,7 +872,6 @@ function show_field($var, $type='activate')
 //	}
 	$val = ('activate' == $type) ? EXTLAN_59 : EXTLAN_60;
 	$txt .= "
-	</td>
 	<td class='forumheader3' style='text-align: center'><input class='button' type='submit' name='{$type}[{$var['name']}]' value='{$val}' /></td>
 	</tr>";
 	return $txt;
@@ -887,12 +883,18 @@ function field_activate()
 	$ret = "";
 	$preList = $ue->parse_extended_xml('getfile');
 	$tmp = $preList;
+
 	foreach(array_keys($_POST['activate']) as $f)
 	{
-		$tmp[$f]['parms'] = addslashes($tmp[$f]['parms']);
+
+		$tmp[$f]['parms'] = $tp->toDB($tmp[$f]['parms']);
 		if($ue->user_extended_add($tmp[$f]))
 		{
 			$ret .= "Field: $f has been activated <br />";
+
+			if($tmp[$f]['type']=="db field" && is_readable(e_ADMIN."sql/extended_".$f.".php")){
+             	$ret .= (process_sql($f)) ? LAN_CREATED." user_extended_{$f}<br />" : LAN_CREATED_FAILED." user_extended_{$f}<br />";
+			}
 		}
 		else
 		{
@@ -904,13 +906,16 @@ function field_activate()
 
 function field_deactivate()
 {
-	global $ue, $ns, $tp;
+	global $ue, $ns, $tp,$sql;
 	$ret = "";
 	foreach(array_keys($_POST['deactivate']) as $f)
 	{
 		if($ue->user_extended_remove($f, $f))
 		{
 			$ret .= "Field: $f has been deactivated <br />";
+			if(is_readable(e_ADMIN."sql/extended_".$f.".php")){
+             	$ret .= (mysql_query("DROP TABLE ".MPREFIX."user_extended_".$f)) ? LAN_DELETED." user_extended_".$f."<br />" : LAN_DELETED_FAILED." user_extended_".$f."<br />";
+			}
 		}
 		else
 		{
@@ -920,11 +925,45 @@ function field_deactivate()
 	return $ret;
 }
 
+
+function process_sql($f){
+    global $sql;
+	$filename = e_ADMIN."sql/extended_".$f.".php";
+	$fd = fopen ($filename, "r");
+	$sql_data = fread($fd, filesize($filename));
+	fclose ($fd);
+
+	$search[0] = "CREATE TABLE ";	$replace[0] = "CREATE TABLE ".MPREFIX;
+	$search[1] = "INSERT INTO ";	$replace[1] = "INSERT INTO ".MPREFIX;
+
+    preg_match_all("/create(.*?)myisam;/si", $sql_data, $creation);
+    foreach($creation[0] as $tab){
+		$query = str_replace($search,$replace,$tab);
+      	if(!mysql_query($query)){
+        	$error = TRUE;
+		}
+	}
+
+    preg_match_all("/insert(.*?);/si", $sql_data, $inserts);
+	foreach($inserts[0] as $ins){
+		$qry = str_replace($search,$replace,$ins);
+		if(!mysql_query($qry)){
+		  	$error = TRUE;
+		}
+    }
+
+	return ($error) ? FALSE : TRUE;
+
+}
+
+
+
 function headerjs()
 {
 	include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_user_extended.php");
 	$text = "
 	<script type='text/javascript'>
+
 	function changeHelp(type) {
 		var ftype;
 		var helptext;
@@ -952,6 +991,8 @@ function headerjs()
 			document.getElementById('db_mode').style.display = 'none';
 		}
 	}
+
+
 	</script>";
 
 	global $cal;

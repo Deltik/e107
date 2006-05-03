@@ -8,7 +8,7 @@ if (!array_key_exists($tmp[0],$eMenuList)) {
 	return;
 }
 
-if ($tmp[1] == ret) {
+if (isset($tmp[1]) && $tmp[1] == 'ret') {
 	ob_start();
 }
 
@@ -20,12 +20,28 @@ foreach($eMenuList[$tmp[0]] as $row)
 		list($listtype,$listpages) = explode("-",$row['menu_pages']);
 		$pagelist = explode("|",$listpages);
 		$check_url = e_SELF."?".e_QUERY;
+
 		if($listtype == '1')  //show menu
 		{
 			$show_menu = FALSE;
-			foreach($pagelist as $p) {
-				if(strpos($check_url,$p) !== FALSE) {
-					$show_menu = TRUE;
+			foreach($pagelist as $p)
+			{
+				if(substr($p, -1) == '!')
+				{
+					$p = substr($p, 0, -1);
+					if(substr($check_url, strlen($p)*-1) == $p)
+					{
+						$show_menu = TRUE;
+						continue 2;
+					}
+				}
+				else 
+				{
+					if(strpos($check_url,$p) !== FALSE)
+					{
+						$show_menu = TRUE;
+						continue 2;
+					}
 				}
 			}
 		}
@@ -33,8 +49,22 @@ foreach($eMenuList[$tmp[0]] as $row)
 		{
 			$show_menu = TRUE;
 			foreach($pagelist as $p) {
-				if(strpos($check_url,$p) !== FALSE) {
-					$show_menu = FALSE;
+				if(substr($p, -1) == '!')
+				{
+					$p = substr($p, 0, -1);
+					if(substr($check_url, strlen($p)*-1) == $p)
+					{
+						$show_menu = FALSE;
+						continue 2;
+					}
+				}
+				else 
+				{
+					if(strpos($check_url, $p) !== FALSE)
+					{
+						$show_menu = FALSE;
+						continue 2;
+					}
 				}
 			}
 		}
@@ -80,7 +110,7 @@ foreach($eMenuList[$tmp[0]] as $row)
 	}
 }
 
-if ($tmp[1] == ret) {
+if (isset($tmp[1]) && $tmp[1] == 'ret') {
 	$ret = ob_get_contents();
 	ob_end_clean();
 	return $ret;

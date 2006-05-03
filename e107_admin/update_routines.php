@@ -11,16 +11,35 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/update_routines.php,v $
-|     $Revision: 1.175 $
-|     $Date: 2006/01/24 23:41:17 $
-|     $Author: e107coders $
+|     $Revision: 1.178 $
+|     $Date: 2006/04/09 00:51:16 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 
 require_once("../class2.php");
 
+if (isset($pref['signup_options'])) // CONVERT 0.6 STYLE SIGNUP OPTIONS
+{
+    $tmp = explode(".", $pref['signup_options']);
+	$pref['signup_option_realname']  = $tmp[0];
+	$pref['signup_option_signature'] = $tmp[7];
+	$pref['signup_option_image']     = $tmp[8];
+	$pref['signup_option_timezone']  = $tmp[9];
+	$pref['signup_option_class']     = $tmp[10];
+	unset($pref['signup_options']);
+	save_prefs();
+}
+
+if (!$pref['displayname_maxlength'])
+{
+  $pref['displayname_maxlength'] = 15;
+  save_prefs();
+}
+
 if (!defined("LAN_UPDATE_8")) { define("LAN_UPDATE_8", ""); }
 if (!defined("LAN_UPDATE_9")) { define("LAN_UPDATE_9", ""); }
+
 if($sql->db_Select("plugin", "plugin_version", "plugin_path = 'forum' AND plugin_installflag='1' ")) {
 	if(file_exists(e_PLUGIN.'forum/forum_update_check.php'))
 	{
@@ -479,7 +498,7 @@ function update_617_to_700($type='') {
 				{
 					unset($new_field);
 					$parms = explode("|", $val);
-					$ext_name['ue_'.$key] = 'user_'.$parms[0];
+					$ext_name['ue_'.$key] = 'user_'.preg_replace("#\W#","",$parms[0]);
 					$new_field['name'] = preg_replace("#\W#","",$parms[0]);
 					$new_field['text'] = $parms[0];
 					$new_field['type'] = $new_types[$parms[1]];
@@ -512,19 +531,21 @@ function update_617_to_700($type='') {
 								{
 									if($new_values)
 									{
-										$new_values .= " ,";
+										$new_values .= ", ";
 									}
-									$new_values .= $ext_name[$key]."='".$val."'";
+									$new_values .= "`".$ext_name[$key]."`='".$val."'";
 								}
 							}
 						}
-						foreach ($user_pref as $key => $prefvalue) {
+						foreach ($user_pref as $key => $prefvalue)
+						{
 							$user_pref[$key] = $tp->toDB($prefvalue);
 						}
 						$tmp=addslashes(serialize($user_pref));
 						$sql2->db_Update("user", "user_prefs='$tmp' WHERE user_id='{$row['user_id']}'");
 						if($new_values)
 						{
+//							echo $new_values."<br />";
 							$sql2->db_Select_gen("INSERT INTO #user_extended (user_extended_id) values ('{$row['user_id']}')");
 							$sql2->db_Update('user_extended', $new_values." WHERE user_extended_id = '{$row['user_id']}'");
 						}
@@ -532,10 +553,7 @@ function update_617_to_700($type='') {
 				}
 			}
 			$sql->db_Select_gen("DELETE FROM #core WHERE e107_name='user_entended'");
-
-
 		}
-
 		//End Extended user field conversion
 
 

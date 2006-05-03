@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/mail.php,v $
-|     $Revision: 1.25 $
-|     $Date: 2005/12/14 17:37:34 $
+|     $Revision: 1.31 $
+|     $Date: 2006/05/01 07:16:25 $
 |     $Author: sweetas $
 +----------------------------------------------------------------------------+
 */
@@ -32,7 +32,7 @@ function sendemail($send_to, $subject, $message, $to_name, $send_from, $from_nam
 
 	$mail = new PHPMailer();
 
-    if ($pref['mailer']== 'smtp' || $pref['smtp_enable']==1) {
+	if ($pref['mailer']== 'smtp') {
 		$mail->Mailer = "smtp";
 	 	$mail->SMTPKeepAlive = FALSE;
 		$mail->Host = $pref['smtp_server'];
@@ -101,7 +101,7 @@ function sendemail($send_to, $subject, $message, $to_name, $send_from, $from_nam
 		if($inline){
 			$tmp = explode(",",$inline);
 			foreach($tmp as $inline_img){
-				if(is_readable($inline_img)){
+				if(is_readable($inline_img) && !is_dir($inline_img)){
 					$mail->AddEmbeddedImage($inline_img, md5($inline_img), basename($inline_img),"base64",mime_content_type($inline_img));
 				}
 			}
@@ -109,17 +109,25 @@ function sendemail($send_to, $subject, $message, $to_name, $send_from, $from_nam
 
 
 	if($Cc){
-        $tmp = explode(",",$Cc);
-		foreach($tmp as $addc){
-			$mail->AddCC($addc);
-        }
+        if($mail->Mailer == "mail"){
+			$mail->AddCustomHeader("Cc: {$Cc}");
+		}else{
+        	$tmp = explode(",",$Cc);
+			foreach($tmp as $addc){
+		  		$mail->AddCC("Cc", $addc);
+        	}
+		}
 	}
 
 	if($Bcc){
-        $tmp = explode(",",$Bcc);
-		foreach($tmp as $addbc){
-			$mail->AddBCC($addbc);
-        }
+		if($mail->Mailer == "mail"){
+			$mail->AddCustomHeader("Bcc: {$Bcc}");
+		}else{
+        	$tmp = explode(",",$Bcc);
+	   		foreach($tmp as $addbc){
+				$mail->AddBCC($addbc);
+        	}
+		}
 	}
 
 
@@ -138,64 +146,12 @@ function sendemail($send_to, $subject, $message, $to_name, $send_from, $from_nam
 
 }
 
-
+/*  Deprecated.
+ Use mail_validation_class.php instead.
 function validatemail($Email) {
-	$HTTP_HOST = $_SERVER['HTTP_HOST'];
-	$result = array();
-	 ;
 
-	if (!preg_match("/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$/i", $Email)) {
-		$result[0] = false;
-		$result[1] = "$Email is not properly formatted";
-		return $result;
-	}
-
-	list ($Username, $Domain ) = split ("@", $Email);
-
-	if (function_exists("getmxrr") && getmxrr($Domain, $MXHost)) {
-		$ConnectAddress = $MXHost[0];
-	} else {
-		$ConnectAddress = $Domain;
-	}
-
-	$Connect = fsockopen ($ConnectAddress, 25 );
-
-	if ($Connect) {
-		if (strpos("220", $Out = fgets($Connect, 1024)) === 0) {
-			fputs ($Connect, "HELO $HTTP_HOST\r\n");
-			$Out = fgets ($Connect, 1024 );
-			fputs ($Connect, "MAIL FROM: <{$Email}>\r\n");
-			$From = fgets ($Connect, 1024 );
-			fputs ($Connect, "RCPT TO: <{$Email}>\r\n");
-			$To = fgets ($Connect, 1024);
-			fputs ($Connect, "QUIT\r\n");
-			fclose($Connect);
-			if (strpos("250", $From) !== 0 || strpos("250", $To) !== 0) {
-				$result[0] = false;
-				$result[1] = "Server rejected address";
-				$result[2] = $From;
-				return $result;
-			}
-		} else {
-			$result[0] = false;
-			$result[1] = "No response from server";
-			$result[2] = $From;
-			return $result;
-		}
-
-	} else {
-
-		$result[0] = false;
-		$result[1] = "Cannot find E-Mail server.";
-		$result[2] = $From;
-		return $result;
-	}
-	$result[0] = true;
-	$result[1] = "$Email appears to be valid.";
-	$result[2] = $From;
-	return $result;
-} // end of function
-
+}
+*/
 
 
 

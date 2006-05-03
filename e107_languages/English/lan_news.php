@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/lan_news.php,v $
-|     $Revision: 1.7 $
-|     $Date: 2006/01/11 18:13:29 $
-|     $Author: lisa_ $
+|     $Revision: 1.9 $
+|     $Date: 2006/04/18 01:33:36 $
+|     $Author: sweetas $
 +----------------------------------------------------------------------------+
 */
 define("PAGE_NAME", "News");
@@ -20,8 +20,8 @@ define("LAN_307", "Total posts in this category: ");
 
 define("LAN_NEWS_1", "News for specific members only");
 define("LAN_NEWS_2", "You are not allowed to see this news");
-define("LAN_NEWS_3", "Please delete install.php from your server");
-define("LAN_NEWS_4", "if you do not there is a potential security risk to your website");
+//define("LAN_NEWS_3", "Please delete install.php from your server");
+//define("LAN_NEWS_4", "if you do not there is a potential security risk to your website");
 
 define("LAN_NEWS_5", "<b>Error!</b> Was unable to update news item into database!</b>");
 define("LAN_NEWS_6", "News entered into database.");
@@ -40,8 +40,9 @@ define("LAN_NEWS_18", "Info:");
 define("LAN_NEWS_19", "Now");
 define("LAN_NEWS_20", "News updated in database for the following language: ");
 define("LAN_NEWS_21", "News updated in database.");
-define("LAN_NEWS_22", "Go to page: ");
+// define("LAN_NEWS_22", "Go to page: ");
 define("LAN_NEWS_23", "News Categories");
 define("LAN_NEWS_24", "create pdf of this news item");
 define("LAN_462", "No news items for specified month");
+
 ?>

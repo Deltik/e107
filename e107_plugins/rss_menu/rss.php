@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/rss_menu/rss.php,v $
-|     $Revision: 1.43 $
-|     $Date: 2006/02/09 22:25:20 $
-|     $Author: e107coders $
+|     $Revision: 1.47 $
+|     $Date: 2006/04/05 12:19:18 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 
@@ -80,6 +80,8 @@ class rssCreate {
 	var $rssQuery;
 	var $topicid;
 	var $offset;
+	var $rssNamespace;
+	var $rssCustomChannel;
 
 	function rssCreate($content_type, $rss_type, $topic_id) {
 		// constructor
@@ -188,7 +190,7 @@ class rssCreate {
 					}
 
 					$this -> rssItems[$loop]['title'] = $value['thread_name'];
-					$this -> rssItems[$loop]['link'] = $e107->http_path.$PLUGINS_DIRECTORY."forum/forum_viewtopic.php?".$value['thread_id'];
+					$this -> rssItems[$loop]['link'] = $e107->base_path.$PLUGINS_DIRECTORY."forum/forum_viewtopic.php?".$value['thread_id'];
 
 					$this -> rssItems[$loop]['description'] = $value['thread_thread'];
 
@@ -220,10 +222,10 @@ class rssCreate {
 
 					if($value['parent_name']) {
 						$this -> rssItems[$loop]['title'] = "Re: ".$value['parent_name'];
-						$this -> rssItems[$loop]['link'] = $e107->http_path.$PLUGINS_DIRECTORY."forum/forum_viewtopic.php?".$value['thread_parent'];
+						$this -> rssItems[$loop]['link'] = $e107->base_path.$PLUGINS_DIRECTORY."forum/forum_viewtopic.php?".$value['thread_parent'];
 					} else {
 						$this -> rssItems[$loop]['title'] = $value['thread_name'];
-						$this -> rssItems[$loop]['link'] = $e107->http_path.$PLUGINS_DIRECTORY."forum/forum_viewtopic.php?".$value['thread_id'];
+						$this -> rssItems[$loop]['link'] = $e107->base_path.$PLUGINS_DIRECTORY."forum/forum_viewtopic.php?".$value['thread_id'];
 					}
 
 					$this -> rssItems[$loop]['description'] = $value['thread_thread'];
@@ -260,14 +262,14 @@ class rssCreate {
 				$loop = 0;
 
 				if($value['user_name']) {
-					$this -> rssItems[$loop]['author'] = $value['user_name'] . " ( ".$e107->http_path."user.php?id.".intval($value['thread_user'])." )";
+					$this -> rssItems[$loop]['author'] = $value['user_name'] . " ( ".$e107->base_path."user.php?id.".intval($value['thread_user'])." )";
 				} else {
 					$tmp=explode(".", $value['thread_user'], 2);
 					list($this -> rssItems[$loop]['author'], $ip) = explode(chr(1), $tmp[1]);
 				}
 
 				$this -> rssItems[$loop]['title'] = $topic['thread_name'];
-				$this -> rssItems[$loop]['link'] = $e107->http_path.$PLUGINS_DIRECTORY."forum/forum_viewtopic.php?".$topic['thread_id'];
+				$this -> rssItems[$loop]['link'] = $e107->base_path.$PLUGINS_DIRECTORY."forum/forum_viewtopic.php?".$topic['thread_id'];
 				$this -> rssItems[$loop]['description'] = $topic['thread_thread'];
 				$loop ++;
 				foreach($replies as $value) {
@@ -279,7 +281,7 @@ class rssCreate {
 						list($this -> rssItems[$loop]['author'], $ip) = explode(chr(1), $tmp[1]);
 					}
 					$this -> rssItems[$loop]['title'] = "Re: ".$topic['thread_name'];
-					$this -> rssItems[$loop]['link'] = $e107->http_path.$PLUGINS_DIRECTORY."forum/forum_viewtopic.php?".$this -> topicid;
+					$this -> rssItems[$loop]['link'] = $e107->base_path.$PLUGINS_DIRECTORY."forum/forum_viewtopic.php?".$this -> topicid;
 					$this -> rssItems[$loop]['description'] = $value['thread_thread'];
 					$loop++;
 				}
@@ -296,7 +298,7 @@ class rssCreate {
 					$nick = preg_replace("/[0-9]+\./", "", $value['bugtrack2_bugs_poster']);
 					$this -> rssItems[$loop]['author'] = $nick;
 					$this -> rssItems[$loop]['title'] = $value['bugtrack2_bugs_summary'];
-					$this -> rssItems[$loop]['link'] = $e107->http_path.$PLUGINS_DIRECTORY."bugtracker2/bugtracker2.php?0.bug.".$value['bugtrack2_bugs_id'];
+					$this -> rssItems[$loop]['link'] = $e107->base_path.$PLUGINS_DIRECTORY."bugtracker2/bugtracker2.php?0.bug.".$value['bugtrack2_bugs_id'];
 					$this -> rssItems[$loop]['description'] = $value['bugtrack2_bugs_description'];
 					$loop++;
 				}
@@ -330,10 +332,10 @@ class rssCreate {
 
 					if($value['parent_name']) {
 						$this -> rssItems[$loop]['title'] = "Re: ".$value['parent_name'];
-						$this -> rssItems[$loop]['link'] = $e107->http_path.$PLUGINS_DIRECTORY."forum/forum_viewtopic.php?".$value['thread_id'].".post";
+						$this -> rssItems[$loop]['link'] = $e107->base_path.$PLUGINS_DIRECTORY."forum/forum_viewtopic.php?".$value['thread_id'].".post";
 					} else {
 						$this -> rssItems[$loop]['title'] = $value['thread_name'];
-						$this -> rssItems[$loop]['link'] = $e107->http_path.$PLUGINS_DIRECTORY."forum/forum_viewtopic.php?".$value['thread_id'];
+						$this -> rssItems[$loop]['link'] = $e107->base_path.$PLUGINS_DIRECTORY."forum/forum_viewtopic.php?".$value['thread_id'];
 					}
 					$this -> rssItems[$loop]['description'] = $value['thread_thread'];
 					$loop++;
@@ -355,9 +357,9 @@ class rssCreate {
 					}
 					$this -> rssItems[$loop]['author_email'] = $value['download_author_email'];
 					$this -> rssItems[$loop]['title'] = $value['download_name'];
-					$this -> rssItems[$loop]['link'] = $e107->http_path."download.php?view.".$value['download_id'];
+					$this -> rssItems[$loop]['link'] = $e107->base_path."download.php?view.".$value['download_id'];
 					$this -> rssItems[$loop]['description'] = ($rss_type == 3 ? $value['download_description'] : $value['download_description']);
-					$this -> rssItems[$loop]['enc_url'] = $e107->http_path."request.php?".$value['download_id'];
+					$this -> rssItems[$loop]['enc_url'] = $e107->base_path."request.php?".$value['download_id'];
 					$this -> rssItems[$loop]['enc_leng'] = $value['download_filesize'];
 					$this -> rssItems[$loop]['enc_type'] = $this->getmime($value['download_url']);
 					$this -> rssItems[$loop]['pubdate'] = $value['download_datestamp'];
@@ -375,6 +377,8 @@ class rssCreate {
 	// dear McFly, I remember why I used extract() now..  to avoid this: $row[($something['whatever'])]
 				if($sql -> db_Select_gen($query)){
 					$this -> contentType = $content_type;
+					$this -> rssNamespace = $namespace;
+					$this -> rssCustomChannel = $custom_channel;
 					$this -> rssItems = array();
 					$tmp = $sql->db_getList();
 					$loop=0;
@@ -389,12 +393,12 @@ class rssCreate {
 							if(eregi("http",$link2)){
                                 $this -> rssItems[$loop]['link'] = $link2;
 							}else{
-                            	$this -> rssItems[$loop]['link'] = $e107->http_path.$PLUGINS_DIRECTORY.$link2;
+                            	$this -> rssItems[$loop]['link'] = $e107->base_path.$PLUGINS_DIRECTORY.$link2;
 							}
                                             }
 						$this -> rssItems[$loop]['description'] = $row[$description];
 
-						if($enc_url){ $this -> rssItems[$loop]['enc_url'] = $e107->http_path.$PLUGINS_DIRECTORY.$enc_url.$row[$item_id]; }
+						if($enc_url){ $this -> rssItems[$loop]['enc_url'] = $e107->base_path.$PLUGINS_DIRECTORY.$enc_url.$row[$item_id]; }
                			if($enc_leng){ $this -> rssItems[$loop]['enc_leng'] = $row[$enc_leng]; }
 						if($row[$enc_type]){
 							$this -> rssItems[$loop]['enc_type'] = $this->getmime($row[$enc_type]);
@@ -406,7 +410,7 @@ class rssCreate {
 						$catlink = ($categorylink) ? str_replace("#",$catid,$categorylink) : "";
 						if($categoryname && $catlink){
 							$this -> rssItems[$loop]['category_name'] = $row[$categoryname];
-							$this -> rssItems[$loop]['category_link'] = $e107->http_path.$catlink;
+							$this -> rssItems[$loop]['category_link'] = $e107->base_path.$catlink;
 						}
 						if($datestamp){
 							$this -> rssItems[$loop]['pubdate'] = $row[$datestamp];
@@ -428,7 +432,8 @@ class rssCreate {
 		header('Content-type: application/xml', TRUE);
 
 		$rss_title = $tp->toRss($pref['sitename']." : ".$rss_title);
-
+        $rss_namespace = ($this->rssNamespace) ? "xmlns:".$this->rssNamespace : "";
+        $rss_custom_channel = ($this->rssCustomChannel) ? $this->rssCustomChannel : "";
 		$time = time();
 		switch ($this -> rssType) {
 			case 1:		// Rss 1.0
@@ -441,7 +446,8 @@ class rssCreate {
 						<link>".$pref['siteurl']."</link>
 						<description>".$tp->toRss($pref['sitedescription'])."</description>
 						<lastBuildDate>".$itemdate = date("r", ($time + $this -> offset))."</lastBuildDate>
-						<docs>http://backend.userland.com/rss092</docs>";
+						<docs>http://backend.userland.com/rss092</docs>\n";
+
 					foreach($this -> rssItems as $value) {
 						echo "
 							<item>
@@ -464,12 +470,15 @@ class rssCreate {
 
 				<!-- test=\"".SITEDISCLAIMER."\" -->
 
-				<rss version=\"2.0\">
+				<rss {$rss_namespace} version=\"2.0\">
 				<channel>
 				<title>".$tp->toRss($rss_title)."</title>
 				<link>".$pref['siteurl']."</link>
-				<description>".$tp->toRss($pref['sitedescription'])."</description>
-				<language>en-gb</language>
+				<description>".$tp->toRss($pref['sitedescription'])."</description>\n";
+
+			echo $tp->toRss($rss_custom_channel,TRUE)."\n";
+
+			echo "<language>en-gb</language>
 				<copyright>".preg_replace("#\<br \/\>|\n|\r#si", "", SITEDISCLAIMER)."</copyright>
 				<managingEditor>".$pref['siteadmin']." - ".$pref['siteadminemail']."</managingEditor>
 				<webMaster>".$pref['siteadminemail']."</webMaster>
@@ -539,7 +548,7 @@ class rssCreate {
 				<!-- content type=\"".$this -> contentType."\" -->
 				<rdf:RDF xmlns=\"http://purl.org/rss/1.0/\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:sy=\"http://purl.org/rss/1.0/modules/syndication/\" xmlns:admin=\"http://webns.net/mvcb/\" xmlns:content=\"http://purl.org/rss/1.0/modules/content/\">
 				<channel rdf:about=\"".$pref['siteurl']."\">
-				<title>".$rss_title."</title>
+				<title>".$tp->toRss($rss_title)."</title>
 				<link>".$pref['siteurl']."</link>
 				<description>".$tp->toRss($pref['sitedescription'])."</description>
 				<dc:language>en</dc:language>
@@ -567,11 +576,11 @@ class rssCreate {
 			foreach($this -> rssItems as $value) {
 				echo "
 					<item rdf:about=\"".$value['link']."\">
-					<title>".$value['title']."</title>
+					<title>".$tp->toRss($value['title'])."</title>
 					<link>".$value['link']."</link>
 					<dc:date>".$this->get_iso_8601_date($time + $this -> offset)."</dc:date>
 					<dc:creator>".$value['author']."</dc:creator>
-					<dc:subject>".$value['category_name']."</dc:subject>
+					<dc:subject>".$tp->toRss($value['category_name'])."</dc:subject>
 					<description>".$tp->toRss($value['description'])."</description>
 					</item>";
 			}
@@ -586,8 +595,6 @@ class rssCreate {
 		$ext = strtolower(str_replace(".","",strrchr(basename($file), ".")));
 		$mime["mp3"] = "audio/mpeg";
 		return $mime[$ext];
-
-
 	}
 
 

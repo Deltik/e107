@@ -12,9 +12,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/lan_prefs.php,v $
-|     $Revision: 1.46 $
-|     $Date: 2006/01/15 01:08:03 $
-|     $Author: streaky $
+|     $Revision: 1.53 $
+|     $Date: 2006/05/02 00:00:04 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 
@@ -89,7 +89,7 @@ define("CUSTSIG_3", "Website:");
 define("CUSTSIG_4", "Birthday:");
 define("CUSTSIG_5", "Location:");
 define("CUSTSIG_6", "Signature:");
-define("CUSTSIG_7", "Avatar");
+define("CUSTSIG_7", "Avatar:");
 define("CUSTSIG_8", "Time-Zone:");
 define("CUSTSIG_12", "Hide");
 define("CUSTSIG_13", "Fields");
@@ -149,7 +149,7 @@ define("PRFLAN_140", "Text to display after signup form has been submitted.");
 define("PRFLAN_141", "Allow registration using XML User Profiles");
 define("PRFLAN_142", "Flood Only");
 define("PRFLAN_143", "Failed Login Only");
-define("PRFLAN_144", "Flood & Failed Login");
+define("PRFLAN_144", "Flood &amp; Failed Login");
 define("PRFLAN_145", "Links in new window");
 define("PRFLAN_146", "Tick here to make all links open in a new window (<i>this will apply sitewide</i>). ");
 define("PRFLAN_147", "Developer Mode");
@@ -163,4 +163,18 @@ define("PRFLAN_152", "No Verification");
 define("PRFLAN_153", "Admin Approval");
 define("PRFLAN_154", "New user verification method <br />If 'Admin Approval' is selected, it is recommended that you enable email notification on user signup <a href='".e_ADMIN."notify.php'>here</a>.");
 
+define("PRFLAN_155", "Display Name available to");
+define("PRFLAN_156", "Reset ALL Display Names");
+define("PRFLAN_157", "All Display Names have been reset to the Login Name");
+define("PRFLAN_158", "Display Name maximum length");
+define("PRFLAN_159", "viewing this page with");
+
+define("PRFLAN_160", "Check remote servers when validating email addresses.");
+define("PRFLAN_161", "Disable all comments on the site");
+
+define("PRFLAN_162", "Site Contact Information");
+define("PRFLAN_163", "eg. Company Name, Address, Phone etc.");
+
+define("PRFLAN_164", "Allow users to email copy of contact email to self");
+define("PRFLAN_165", "Possible opening for allowing spam, use with caution");
 ?>

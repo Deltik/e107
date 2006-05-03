@@ -12,8 +12,8 @@
 |        GNU General Public License (http://gnu.org).
 |
 |   $Source: /cvsroot/e107/e107_0.7/e107_admin/header.php,v $
-|   $Revision: 1.44 $
-|   $Date: 2006/02/09 09:35:52 $
+|   $Revision: 1.50 $
+|   $Date: 2006/04/27 05:25:06 $
 |   $Author: sweetas $
 +---------------------------------------------------------------+
 */
@@ -38,11 +38,6 @@ if (file_exists(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_footer.php')) {
 }
 if (!defined('ADMIN_WIDTH')) {
 	define('ADMIN_WIDTH', 'width: 95%');
-}
-if (file_exists(THEME.'admin_template.php')) {
-  	require_once(THEME.'admin_template.php');
-} else {
-  	require_once(e_BASE.$THEMES_DIRECTORY.'templates/admin_template.php');
 }
 
 if (!defined('ADMIN_TRUE_ICON'))
@@ -73,17 +68,20 @@ if (!defined('ADMIN_DELETE_ICON'))
 }
 
 echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">
-	<html xmlns='http://www.w3.org/1999/xhtml'>
+	<html xmlns='http://www.w3.org/1999/xhtml'".(defined("TEXTDIRECTION") ? " dir='".TEXTDIRECTION."'" : "").(defined("CORE_LC") ? " xml:lang=\"".CORE_LC."\"" : "").">
 	<head>
 	<title>".SITENAME." : ".LAN_head_4."</title>\n";
 echo "<meta http-equiv='content-type' content='text/html; charset=".CHARSET."' />
 	<meta http-equiv='content-style-type' content='text/css' />\n";
 if (strpos(e_SELF.'?'.e_QUERY, 'menus.php?configure') === FALSE && isset($pref['admincss']) && $pref['admincss'] && file_exists(THEME.$pref['admincss'])) {
-	echo "<link rel='stylesheet' href='".THEME_ABS.$pref['admincss']."' type='text/css' />\n";
+	$css_file = file_exists(THEME.'admin_'.$pref['admincss']) ? THEME_ABS.'admin_'.$pref['admincss'] : THEME_ABS.$pref['admincss'];
+	echo "<link rel='stylesheet' href='".$css_file."' type='text/css' />\n";
 } else if (isset($pref['themecss']) && $pref['themecss'] && file_exists(THEME.$pref['themecss'])) {
-	echo "<link rel='stylesheet' href='".THEME_ABS."{$pref['themecss']}' type='text/css' />\n";
+	$css_file = file_exists(THEME.'admin_'.$pref['themecss']) ? THEME_ABS.'admin_'.$pref['themecss'] : THEME_ABS.$pref['themecss'];
+	echo "<link rel='stylesheet' href='".$css_file."' type='text/css' />\n";
 } else {
-	echo "<link rel='stylesheet' href='".THEME_ABS."style.css' type='text/css' />\n";
+	$css_file = file_exists(THEME.'admin_style.css') ? THEME_ABS.'admin_style.css' : THEME_ABS.'style.css';
+	echo "<link rel='stylesheet' href='".$css_file."' type='text/css' />\n";
 }
 
 if (!isset($no_core_css) || !$no_core_css) {
@@ -108,12 +106,16 @@ if (function_exists("headerjs")) {
 if (isset($htmlarea_js) && $htmlarea_js) {
 	echo $htmlarea_js;
 }
+if (strpos(e_SELF, 'fileinspector.php') === FALSE) {
 echo "<script type='text/javascript'>
-		function savepreset(ps,pid){
-			document.getElementById(ps).action='".e_SELF."?savepreset.'+pid;
-			document.getElementById(ps).submit();
-		}
-	</script> ";
+<!--
+function savepreset(ps,pid){
+	document.getElementById(ps).action='".e_SELF."?savepreset.'+pid;
+	document.getElementById(ps).submit();
+}
+//-->
+</script>\n";
+}
 if (isset($eplug_js) && $eplug_js) {
 	echo "<script type='text/javascript' src='{$eplug_js}'></script>\n";
 }
@@ -128,7 +130,7 @@ if(check_class($pref['post_html']) && $pref['wysiwyg'] && $e_wysiwyg == TRUE){
 	define("e_WYSIWYG",FALSE);
 }
 echo "</head>
-	<body>";
+<body>\n";
 
 $ns = new e107table;
 $e107_var = array();
@@ -209,7 +211,11 @@ if (!function_exists('show_admin_menu')) {
 				}
 				$replace[0] = str_replace(" ", "&nbsp;", $e107_vars[$act]['text']);
 				$replace[1] = $e107_vars[$act]['link'];
-				$replace[2] = $js ? "onclick=\"showhideit('".$act."');\"" : "onclick=\"document.location='".$e107_vars[$act]['link']."'; disabled=true;\"";
+				if ($e107_vars[$act]['include']!='') {
+					$replace[2] = $e107_vars[$act]['include'];
+				} else {
+					$replace[2] = $js ? "onclick=\"showhideit('".$act."');\"" : "onclick=\"document.location='".$e107_vars[$act]['link']."'; disabled=true;\"";
+				}
 				$replace[3] = $title;
 				$replace[4] = $id_title;
 				$text .= preg_replace($search, $replace, $BUTTON_TEMPLATE);
@@ -223,6 +229,12 @@ if (!function_exists('show_admin_menu')) {
 			$ns -> tablerender($title, $text, array('id' => $id_title, 'style' => 'button_menu'));
 		}
 	}
+}
+
+if (file_exists(THEME.'admin_template.php')) {
+  	require_once(THEME.'admin_template.php');
+} else {
+  	require_once(e_BASE.$THEMES_DIRECTORY.'templates/admin_template.php');
 }
 
 if (!function_exists("parse_admin")) {

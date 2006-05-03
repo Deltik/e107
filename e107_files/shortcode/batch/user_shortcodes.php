@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/user_shortcodes.php,v $
-|     $Revision: 1.14 $
-|     $Date: 2005/12/27 19:19:39 $
-|     $Author: sweetas $
+|     $Revision: 1.16 $
+|     $Date: 2006/02/23 01:02:13 $
+|     $Author: whoisrich $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -210,9 +210,9 @@ else
 return "<a href='".e_SELF."?id.{$user['user_id']}'>{$icon}</a>";
 SC_END
 
-SC_BEGIN USER_NAME_LINK
+SC_BEGIN USER_ID
 global $user;
-return "<a href='".e_SELF."?id.{$user['user_id']}'>".$user['user_name']."</a>";
+return $user['user_id'];
 SC_END
 
 SC_BEGIN USER_NAME
@@ -220,9 +220,16 @@ global $user;
 return $user['user_name'];
 SC_END
 
-SC_BEGIN USER_ID
+SC_BEGIN USER_NAME_LINK
 global $user;
-return $user['user_id'];
+return "<a href='".e_SELF."?id.{$user['user_id']}'>".$user['user_name']."</a>";
+SC_END
+
+SC_BEGIN USER_LOGINNAME
+global $user;
+if(ADMIN && getperms("4")) {
+	return $user['user_loginname'];
+}
 SC_END
 
 SC_BEGIN USER_BIRTHDAY_ICON
@@ -376,6 +383,7 @@ $qry = "
 	LEFT JOIN #user_extended_struct as c ON f.user_extended_struct_parent = c.user_extended_struct_id
 	ORDER BY c.user_extended_struct_order ASC, f.user_extended_struct_order ASC
 ";
+
 require_once(e_HANDLER."user_extended_class.php");
 $ue = new e107_user_extended;
 $ueCatList = $ue->user_extended_get_categories();
@@ -385,7 +393,7 @@ $ueCatList[0][0] = array('user_extended_struct_name' => LAN_410);
 foreach($ueCatList as $catnum => $cat)
 {
 	$key = $cat[0]['user_extended_struct_name'];
-	$cat_name = $tp->parseTemplate("{EXTENDED={$key}.text.{$user_id}}", TRUE);
+	$cat_name = $tp->parseTemplate("{EXTENDED={$key}.text.{$user['user_id']}}", TRUE);
 	if($cat_name != FALSE && count($ueFieldList[$catnum]))
 	{
 		$ret .= str_replace("{EXTENDED_NAME}", $key, $EXTENDED_CATEGORY_START);

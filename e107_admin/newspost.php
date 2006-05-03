@@ -11,8 +11,8 @@
 |        GNU General Public License (http://gnu.org).
 |
 |   $Source: /cvsroot/e107/e107_0.7/e107_admin/newspost.php,v $
-|   $Revision: 1.105 $
-|   $Date: 2006/02/09 01:42:31 $
+|   $Revision: 1.119 $
+|   $Date: 2006/04/19 20:01:10 $
 |   $Author: e107coders $
 +---------------------------------------------------------------+
 
@@ -25,10 +25,25 @@ if (!getperms("H")) {
 }
 require_once(e_HANDLER."calendar/calendar_class.php");
 $cal = new DHTML_Calendar(true);
-function headerjs()
-{
-	global $cal;
-	return $cal->load_files();
+function headerjs(){
+  	global $cal;
+	$js = "
+		<script type='text/javascript'>
+			function preview_image(){
+				var ta;
+				ta = document.getElementById('news_pic').value;
+				if(ta){
+            		document.getElementById('prev_image').src = '".e_IMAGE."newspost_images/' + ta;
+                }else{
+                	document.getElementById('prev_image').src = '".e_IMAGE."generic/blank.gif';
+				}
+				return;
+			}
+		</script>";
+
+    $js .= $cal->load_files();
+
+   return $js;
 }
 $e_sub_cat = 'news';
 $e_wysiwyg = "data,news_extended";
@@ -149,10 +164,7 @@ if (isset($_POST['preview'])) {
 }
 
 if (isset($_POST['submit_news'])) {
-    if(e_WYSIWYG){
-		$_POST['data'] = $tp->createConstants($_POST['data']); // convert e107_images to {e_IMAGE} etc.
-		$_POST['news_extended'] = $tp->createConstants($_POST['news_extended']);
-	}
+
 	$newspost->submit_item($sub_action, $id);
 	$action = "main";
 	unset($sub_action, $id);
@@ -225,20 +237,8 @@ if ($action == "create") {
 			$row = $sql->db_Fetch();
 			extract($row);
 			$_POST['news_title'] = $news_title;
-
-			if(e_WYSIWYG){
-
-				$_POST['data'] = $tp->toHTML($news_body,$parseBB = TRUE); // parse the bbcodes to we can edit as html.
-            	$_POST['data'] = $tp->replaceConstants($_POST['data'],TRUE); // eg. replace {e_IMAGE} with e107_images/ and NOT ../e107_images
-				$_POST['news_extended'] = $tp->toHTML($news_extended,$parseBB = TRUE);
-            	$_POST['news_extended'] = $tp->replaceConstants($_POST['news_extended'],TRUE);
-
-			}else{
-
-				$_POST['data'] = $news_body;
-				$_POST['news_extended'] = $news_extended;
-			}
-
+			$_POST['data'] = $news_body;
+			$_POST['news_extended'] = $news_extended;
 			$_POST['news_allow_comments'] = $news_allow_comments;
 			$_POST['news_class'] = $news_class;
 			$_POST['news_summary'] = $news_summary;
@@ -304,7 +304,7 @@ class newspost {
 			<tr>
 			<td style='width:5%' class='fcaption'><a href='".e_SELF."?main.news_id.".($id == "desc" ? "asc" : "desc").".$from'>".LAN_NEWS_45."</a></td>
 			<td style='width:55%' class='fcaption'><a href='".e_SELF."?main.news_title.".($id == "desc" ? "asc" : "desc").".$from'>".NWSLAN_40."</a></td>
-			<td style='width:15%' class='fcaption'>Render-type</td>
+			<td style='width:15%' class='fcaption'>".LAN_NEWS_49."</td>
 			<td style='width:15%' class='fcaption'>".LAN_OPTIONS."</td>
 			</tr>";
 			$ren_type = array("default","title","other-news","other-news 2");
@@ -398,39 +398,15 @@ class newspost {
 		// ##### Display creation form ---------------------------------------------------------------------------------------------------------
 		/* 08-08-2004 - unknown - fixed `Insert Image' display to use $IMAGES_DIRECTORY */
 		global $sql, $rs, $ns, $pref, $fl, $IMAGES_DIRECTORY, $tp, $pst, $e107;
-		$thumblist = $fl->get_files(e_IMAGE."newspost_images/", 'thumb_');
-
-
 		$rejecthumb = array('$.','$..','/','CVS','thumbs.db','*._$', 'index', 'null*');
-		$imagelist = $fl->get_files(e_IMAGE."newspost_images/","",$rejecthumb);
-
-		$filelist = array();
-		$downloadList = array();
-
-		$sql->db_Select("download", "*", "download_class != ".e_UC_NOBODY);
-		while ($row = $sql->db_Fetch()) {
-			extract($row);
-			if($download_url)
-			{
-				$filelist[] = array("id" => $download_id, "name" => $download_name, "url" => $download_url, "class" => $download_class);
-				$downloadList[] = $download_url;
-			}
+		if($imagelist = $fl->get_files(e_IMAGE."newspost_images/",".jpg|.gif|.png",$rejecthumb)){
+        	sort($imagelist);
 		}
-
-		$tmp = $fl->get_files(e_FILE."downloads/","",$rejecthumb);
-		foreach($tmp as $value)
-		{
-			if(!in_array($value['fname'], $downloadList))
-			{
-				$filelist[] = array("id" => 0, "name" => $value['fname'], "url" => $value['fname']);
-			}
-		}
-
 		if ($sub_action == "sn" && !$_POST['preview']) {
 			if ($sql->db_Select("submitnews", "*", "submitnews_id=$id", TRUE)) {
 				list($id, $submitnews_name, $submitnews_email, $_POST['news_title'], $submitnews_category, $_POST['data'], $submitnews_datestamp, $submitnews_ip, $submitnews_auth, $submitnews_file) = $sql->db_Fetch();
 
-				if ($pref['wysiwyg'])
+				if (e_WYSIWYG)
 				{
 					$_POST['data'] .= "<br /><b>".NWSLAN_49." ".$submitnews_name."</b>";
 					$_POST['data'] .= ($submitnews_file)? "<br /><br /><img src='".e_IMAGE."newspost_images/$submitnews_file' style='float:right; margin-left:5px;margin-right:5px;margin-top:5px;margin-bottom:5px; border:1px solid' />":	"";
@@ -496,19 +472,19 @@ class newspost {
 		<td style='width:20%' class='forumheader3'>".NWSLAN_13.":<br /></td>
 		<td style='width:80%;margin-left:auto' class='forumheader3'>";
 
-		$insertjs = (!$pref['wysiwyg']) ? "rows='15' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'": "rows='25' ";
+		$insertjs = (!e_WYSIWYG) ? "rows='15' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'": "rows='25' ";
 		$_POST['data'] = $tp->toForm($_POST['data']);
 		$text .= "<textarea class='tbox' id='data' name='data'  cols='80'  style='width:100%' $insertjs>".(strstr($tp->post_toForm($_POST['data']), "[img]http") ? $_POST['data'] : str_replace("[img]../", "[img]", $tp->post_toForm($_POST['data'])))."</textarea>
 		";
 
 		//Main news body textarea
-		if (!$pref['wysiwyg']) {
+		if (!e_WYSIWYG) {
 			$text .= "<input id='helpb' class='helpbox' type='text' name='helpb' size='100' style='width:95%'/>
-			<br />". display_help("helpb");
+			<br />". display_help("helpb", 'news');
 		} // end of htmlarea check.
 
 		//Extended news form textarea
-		if($pref['wysiwyg']){ $ff_expand = "tinyMCE.execCommand('mceResetDesignMode')";  } // Fixes Firefox issue with hidden wysiwyg textarea.
+		if(e_WYSIWYG){ $ff_expand = "tinyMCE.execCommand('mceResetDesignMode')";  } // Fixes Firefox issue with hidden wysiwyg textarea.
 		$text .= "
 		</td>
 		</tr>
@@ -518,8 +494,8 @@ class newspost {
 		<a style='cursor: pointer; cursor: hand' onclick=\"expandit(this);$ff_expand\">".NWSLAN_83."</a>
 		<div style='display:none'>
 		<textarea class='tbox' id='news_extended' name='news_extended' cols='80' style='width:95%' $insertjs>".(strstr($tp->post_toForm($_POST['news_extended']), "[img]http") ? $tp->post_toForm($_POST['news_extended']) : str_replace("[img]../", "[img]", $tp->post_toForm($_POST['news_extended'])))."</textarea>";
-		if (!$pref['wysiwyg']) {
-			$text .="<br />". display_help("helpb");
+		if (!e_WYSIWYG) {
+			$text .="<br />". display_help("helpb", 'news');
 		}
 		$text .= "
 		</div>
@@ -527,7 +503,7 @@ class newspost {
 		</tr>
 
 		<tr>
-		<td style='width:20%' class='forumheader3'>".NWSLAN_66."</td>
+		<td style='width:20%' class='forumheader3'>".NWSLAN_66.":</td>
 		<td style='width:80%' class='forumheader3'>
 		<a style='cursor: pointer; cursor: hand' onclick='expandit(this);'>".NWSLAN_69."</a>
 		<div style='display: none;'>";
@@ -565,7 +541,7 @@ class newspost {
 			</div>
 			<table style='width:100%'>
 			<tr><td><input type='button' class='button' value='".LAN_NEWS_26."' onclick=\"duplicateHTML('upline','up_container');\"  /></td>
-			<td><span class='smalltext'>".LAN_NEWS_25."</span>&nbsp;<input class='tbox' type='text' name='resize_value' value='".$_POST['resize_value']."' size='3' />&nbsp;px</td>
+			<td><span class='smalltext'>".LAN_NEWS_25."</span>&nbsp;<input class='tbox' type='text' name='resize_value' value='".($_POST['resize_value'] ? $_POST['resize_value'] : '100')."' size='3' />&nbsp;px</td>
 			<td><input class='button' type='submit' name='submitupload' value='".NWSLAN_66."' /></td>
 			</tr></table>";
 
@@ -575,137 +551,28 @@ class newspost {
 		</tr>
 
 		<tr>
-		<td class='forumheader3'>".LAN_NEWS_41."</td>
+		<td class='forumheader3'>".LAN_NEWS_47.":</td>
 		<td class='forumheader3'>
 		<a style='cursor: pointer' onclick='expandit(this);'>".LAN_NEWS_23."</a>
-		<div style='display: none;'>
+		<div style='display: none;'><br />";
 
-		(".LAN_NEWS_38.")<br />
-		<input class='tbox' type='text' id='news_thumbnail' name='news_thumbnail' size='60' value='".$_POST['news_thumbnail']."' maxlength='100' />
-		<input class='button' type ='button' style='cursor:hand' size='30' value='".NWSLAN_118."' onclick='expandit(this)' />
-		<div id='newsicn' style='display:none;{head}'>";
-
-		foreach($thumblist as $icon){
-			$text .= "<a href=\"javascript:insertext('".$icon['fname']."','news_thumbnail','newsicn')\"><img src='".$icon['path'].$icon['fname']."' style='border:0' alt='' /></a>\n ";
+		$text .= "<select id='news_pic' multiple='multiple' class='tbox' style='height:100px;float:left' name='news_thumbnail' id='news_thumbnail' onchange='preview_image();'>
+		<option value=''> -- ".LAN_NEWS_48." -- </option>";
+		foreach($imagelist as $icon)
+		{
+			$selected = ($_POST['news_thumbnail'] == $icon['fname']) ? " selected='selected'" : "";
+			$text .= "<option value='".$icon['fname']."'".$selected.">".$icon['fname']."</option>\n";
 		}
-
-		$text .= "</div></div>
+		$text .= "</select>";
+		$pvw_default = ($_POST['news_thumbnail']) ? e_IMAGE."newspost_images/".$_POST['news_thumbnail'] : e_IMAGE."generic/blank.gif";
+        $text .= "&nbsp;<img id='prev_image' src='{$pvw_default}' alt='' style='width:100px;height:100px' />";
+		$text .= "</div>
 		</td>
 		</tr>
 		";
 
-		if (!$pref['wysiwyg'])
-		{
-
-			$text .= "\n\n<!-- wysiwyg off -->\n\n<tr>
-			<td class='forumheader3'>".LAN_NEWS_42."</td>
-			<td class='forumheader3'>
-			<a style='cursor: pointer' onclick='expandit(this);'>".LAN_NEWS_40."</a>
-			<div style='display: none;'>
-			<br />
-			";
-			if(!count($filelist))
-			{
-				$text .= LAN_NEWS_43;
-			}
-			else
-			{
-				$text .= LAN_NEWS_39."<br /><br />";
-				foreach($filelist as $file)
-				{
-
-					if(isset($file['class']))
-					{
-						$ucinfo = "^".$file['class'];
-						$ucname = r_userclass_name($file['class']);
-					}
-					else
-					{
-						$ucinfo = "";
-						$ucname = r_userclass_name(0);
-					}
-
-					if($file['id'])
-					{
-						$text .= "<a href='javascript:addtext(\"[file=request.php?".$file['id']."{$cinfo}]".$file['name']."[/file]\");'><img src='".e_IMAGE."generic/".IMODE."/file.png' alt='' style='border:0px;vertical-align:middle;' /> ".$file['name']."</a> - $ucname<br />";
-					}
-					else
-					{
-						$text .= "<a href='javascript:addtext(\"[file=request.php?".$file['url']."{$cinfo}]".$file['name']."[/file]\");'><img src='".e_IMAGE."generic/".IMODE."/file.png' alt='' style='border:0px;vertical-align:middle;' /> ".$file['name']."</a> - $ucname<br />";
-					}
-				}
-			}
-
-			$text .= "</div>
-			</td>
-			</tr>\n";
-
-			$text .= "<tr>
-			<td class='forumheader3'>Images</td>
-			<td class='forumheader3'>
-			<a style='cursor: pointer' onclick='expandit(this);'>".LAN_NEWS_38."</a>
-			<div style='display: none;'>
-			<br />
-			";
-			if(!count($imagelist))
-			{
-				$text .= LAN_NEWS_43;
-			}
-			else
-			{
-				$text .= LAN_NEWS_39."<br /><br />";
-				foreach($imagelist as $image)
-				{
-					if(strstr($image['fname'], "thumb"))
-					{
-						$fi = str_replace("thumb_", "", $image['fname']);
-						if(file_exists(e_IMAGE."newspost_images/".$fi))
-						{
-							// thumb and main image found
-							$text .= "<a href='javascript:addtext(\"[link=".$IMAGES_DIRECTORY."newspost_images/".$fi."][img]{E_IMAGE}newspost_images/".$image['fname']."[/img][/link]\");'><img src='".e_IMAGE."generic/".IMODE."/image.png' alt='' style='border:0px;vertical-align:middle;' /> ".$image['fname']."</a> (link to full image will be generated)<br />
-							";
-						}
-						else
-						{
-							$text .= "<a href='javascript:addtext(\"[img]{E_IMAGE}newspost_images/".$image['fname']."[/img]\");'><img src='".e_IMAGE."generic/".IMODE."/image.png' alt='' style='border:0px;vertical-align:middle;' /> ".$image['fname']."</a><br />
-							";
-						}
-					}
-					else
-					{
-						$text .= "<a href='javascript:addtext(\"[img]{E_IMAGE}newspost_images/".$image['fname']."[/img]\");'><img src='".e_IMAGE."generic/".IMODE."/image.png' alt='' style='border:0px;vertical-align:middle;' /> ".$image['fname']."</a><br />
-						";
-					}
-				}
-			}
-            /*
-			$text .= "</div>
-			</td>
-			</tr>\n";
-
-
-
-			<input class='tbox' type='text' name='news_image' size='60' value='".$_POST['news_image']."' maxlength='100' />
-			<input class='button' type ='button' style='cursor:hand' size='30' value='View images' onclick='expandit(this)' />
-			<div id='imagefile' style='display:none;{head}'>";
-
-			$text .= "Multiple images can be added. Once an image has been selected, type {NEWSIMAGE=imagenumber} into your text to display it, eg {NEWSIMAGE=1}, {NEWSIMAGE=2).<br /><br />";
-
-			foreach($imagelist as $file){
-			$text .= "<a href=\"javascript:appendtext('".$file['fname']."|','news_image','null')\">".$file['fname']."</a><br />";
-			}
-			*/
-
-
-			$text .= "</div>
-			</td>
-			</tr>\n
-
-			<!-- end of wysiwyg off -->\n\n";
-		}
-
 		$text .= "<tr>
-		<td style='width:20%' class='forumheader3'>".NWSLAN_15."</td>
+		<td style='width:20%' class='forumheader3'>".NWSLAN_15.":</td>
 		<td style='width:80%' class='forumheader3'>
 		<a style='cursor: pointer; cursor: hand' onclick='expandit(this);'>".NWSLAN_18."</a>
 		<div style='display: none;'>
@@ -917,10 +784,6 @@ class newspost {
 		$_POST['comment_total'] = $comment_total;
 		$_PR = $_POST;
 
-		if(e_WYSIWYG){
-            $_PR['data'] = $tp->createConstants($_PR['data']); // convert e107_images/ to {e_IMAGE} etc.
- 			$_PR['news_extended'] = $tp->createConstants($_PR['news_extended']);
-		}
 
 		$_PR['news_body'] = $tp->post_toHTML($_PR['data'],FALSE);
 		$_PR['news_title'] = $tp->post_toHTML($_PR['news_title']);
@@ -1268,5 +1131,6 @@ function newspost_adminmenu() {
 	global $action;
 	$newspost->show_options($action);
 }
+
 
 ?>

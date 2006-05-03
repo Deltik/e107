@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_themes/templates/header_default.php,v $
-|     $Revision: 1.78 $
-|     $Date: 2006/01/26 21:57:06 $
-|     $Author: sweetas $
+|     $Revision: 1.81 $
+|     $Date: 2006/04/25 00:40:53 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -264,6 +264,17 @@ if ($e107_popup != 1) {
 		parseheader(($ph ? $cust_header : $HEADER));
 	}
 	$sql->db_Mark_Time("Main Page Body");
+
+
+	if(ADMIN){
+		if(file_exists('install.php')){ echo "<div class='installe' style='text-align:center'><br /><b>*** ".CORE_LAN4." ***</b><br />".CORE_LAN5."</div><br /><br />"; }
+	}
+
+
+// Display Welcome Message when old method activated.
+
+	echo $tp->parseTemplate("{WMESSAGE=header}");
+
 
 
 	if(defined("PREVIEWTHEME")) {

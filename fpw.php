@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/fpw.php,v $
-|     $Revision: 1.13 $
-|     $Date: 2006/01/31 03:07:19 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.17 $
+|     $Date: 2006/03/13 21:53:47 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
@@ -22,6 +22,7 @@ if(USER){
 	header("location:".e_BASE."index.php");
 	exit;
 }
+
 
 $use_imagecode = ($pref['fpwcode'] && extension_loaded("gd"));
 if ($use_imagecode) {
@@ -53,6 +54,7 @@ function fpw_error($txt) {
 }
 
 if (e_QUERY) {
+	define("FPW_ACTIVE","TRUE");    
 	$tmp = explode(".", e_QUERY);
 	$tmpinfo = preg_replace("#[\W_]#", "", $tp -> toDB($tmp[0], true));
 	if ($sql->db_Select("tmp", "*", "tmp_info LIKE '%.{$tmpinfo}' ")) {
@@ -88,10 +90,14 @@ if (isset($_POST['pwsubmit'])) {
 			fpw_error(LAN_FPW3);
 		}
 	}
-	
+
 	$clean_email = check_email($tp -> toDB($_POST['email']));
 	$clean_username = $tp -> toDB($_POST['username']);
-	if ($sql->db_Select("user", "*", "user_email='{$clean_email}' AND user_loginname='{$clean_username}' ")) {
+	$query = "user_email='{$clean_email}' ";
+	// Allow admins to remove 'username' from fpw_template.php if they wish.
+	$query .= (isset($_POST['username'])) ? " AND user_loginname='{$clean_username}'" : "";
+
+	if ($sql->db_Select("user", "*", $query)) {
 		$row = $sql->db_Fetch();
 		 extract($row);
 

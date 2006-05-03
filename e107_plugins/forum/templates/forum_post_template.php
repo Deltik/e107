@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/forum/templates/forum_post_template.php,v $
-|     $Revision: 1.16 $
-|     $Date: 2006/02/08 02:59:04 $
+|     $Revision: 1.19 $
+|     $Date: 2006/04/04 23:19:05 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
@@ -42,12 +42,12 @@ $subjectbox = "<tr>
 }
 
 // the poll is optional, be careful when changing the values here, only change if you know what you're doing ...
-if(!$poll)
+if(!$poll_form)
 {
 	if(is_readable(e_PLUGIN."poll/poll_class.php")) {
 		require_once(e_PLUGIN."poll/poll_class.php");
 		$pollo = new poll;
-		$poll = $pollo -> renderPollForm("forum");
+		$poll_form = $pollo -> renderPollForm("forum");
 	}
 }
 
@@ -157,6 +157,8 @@ $FORUMPOST_REPLY = "
 <tr style='vertical-align:top'>
 <td colspan='2' class='forumheader' style='text-align:center'>
 {BUTTONS}
+</td>
+</tr>
 </table>
 {FORMEND}
 
@@ -175,7 +177,7 @@ $FORUMPOST_REPLY = "
 ";
 }
 
-if(!$LASTFORUMPOSTS_START)
+if(!$LATESTPOSTS_START)
 {
 $LATESTPOSTS_START = "
 <table style='width:100%' class='fborder'>
@@ -190,9 +192,11 @@ if(!$LATESTPOSTS_POST)
 {
 $LATESTPOSTS_POST = "
 <tr>
-<td class='forumheader3' style='width:20%' style='vertical-align:top'><b>{POSTER}</b></td>
+<td class='forumheader3' style='width:20%;vertical-align:top'><b>{POSTER}</b></td>
 <td class='forumheader3' style='width:80%'>
-<div class='smallblacktext' style='text-align:right'>".IMAGE_post2." ".LAN_322."{THREADDATESTAMP}</div>{POST}</td>
+	<div class='smallblacktext' style='text-align:right'>".IMAGE_post2." ".LAN_322."{THREADDATESTAMP}</div>
+	{POST}
+</td>
 </tr>
 ";
 }
@@ -209,11 +213,13 @@ if(!$THREADTOPIC_REPLY)
 $THREADTOPIC_REPLY = "
 <table style='width:100%' class='fborder'>
 <tr>
-<td colspan='2' class='fcaption' style='vertical-align:top'>".LAN_100."</td></tr>
+	<td colspan='2' class='fcaption' style='vertical-align:top'>".LAN_100."</td>
+</tr>
 <tr>
-<td class='forumheader3' style='width:20%' style='vertical-align:top'><b>{POSTER}</b></td>
-<td class='forumheader3' style='width:80%'>
-<div class='smallblacktext' style='text-align:right'>".IMAGE_post2." ".LAN_322."{THREADDATESTAMP}</div>{POST}</td>
+	<td class='forumheader3' style='width:20%;vertical-align:top'><b>{POSTER}</b></td>
+	<td class='forumheader3' style='width:80%'>
+		<div class='smallblacktext' style='text-align:right'>".IMAGE_post2." ".LAN_322."{THREADDATESTAMP}</div>{POST}
+	</td>
 </tr>
 </table>
 ";

@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/forum/forum_viewtopic.php,v $
-|     $Revision: 1.56 $
-|     $Date: 2006/02/03 19:57:50 $
+|     $Revision: 1.62 $
+|     $Date: 2006/04/30 23:48:40 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
@@ -257,33 +257,22 @@ if (isset($_POST['pollvote']))
 
 			$sql->db_Update("polls", "poll_votes = '$votep' WHERE poll_id=".intval($poll_id));
 			$POLLMODE = "voted";
+			js_location(e_SELF.(e_QUERY ? "?".e_QUERY : ''));
 
 		}
 	}
 }
 
+
 if (stristr($thread_info['head']['thread_name'], "[".LAN_430."]"))
 {
-	if ($sql->db_Select("polls", "*", "poll_datestamp='{$thread_info['head']['thread_id']}'"))
+	if(!defined("POLLCLASS"))
 	{
-		$pollArray = $sql -> db_Fetch();
-
-		$cookiename = "poll_".$pollArray['poll_id'];
-		if(isset($_COOKIE[$cookiename]))
-		{
-			$POLLMODE = "voted";
-		}
-		else
-		{
-			$POLLMODE = "notvoted";
-		}
-		if(!defined("POLLCLASS"))
-		{
-			require(e_PLUGIN."poll/poll_class.php");
-		}
-		$poll = new poll;
-		$pollstr = "<div class='spacer'>".$poll->render_poll($pollArray, "forum", $POLLMODE, TRUE)."</div>";
+		require(e_PLUGIN."poll/poll_class.php");
 	}
+	$_qry = "SELECT * FROM #polls WHERE `poll_datestamp` = '{$thread_info['head']['thread_id']}'";
+	$poll = new poll;
+	$pollstr = "<div class='spacer'>".$poll->render_poll($_qry, "forum", "query", TRUE)."</div>";
 }
 //Load forum templates
 
@@ -331,7 +320,7 @@ if(is_array($FORUM_CRUMB))
 	$replace 	= array($forum_info['forum_name'],"href='".e_PLUGIN."forum/forum_viewforum.php?{$forum_info['forum_id']}'");
 	$FORUM_CRUMB['forum']['value'] = str_replace($search, $replace, $FORUM_CRUMB['forum']['value']);
 	$FORUM_CRUMB['fieldlist'] = "sitename,forums,subparent,forum";
-	
+
 	$BREADCRUMB = $tp->parseTemplate("{BREADCRUMB=FORUM_CRUMB}", true);
 
 }
@@ -364,7 +353,7 @@ $pref['forum_postspage'] = ($pref['forum_postspage'] ? $pref['forum_postspage'] 
 $pages = ceil(($replies+1)/$pref['forum_postspage']);
 if ($pages > 1)
 {
-	$parms = ($replies+1).",{$pref['forum_postspage']},{$from},".e_SELF.'?'.$thread_id.'.[FROM]';
+	$parms = ($replies+1).",{$pref['forum_postspage']},{$from},".e_SELF.'?'.$thread_id.'.[FROM],off';
 	$GOTOPAGES = $tp->parseTemplate("{NEXTPREV={$parms}}");
 }
 
@@ -386,18 +375,22 @@ $forstr = preg_replace("/\{(.*?)\}/e", '$\1', $FORUMSTART);
 unset($forrep);
 if (!$FORUMREPLYSTYLE) $FORUMREPLYSTYLE = $FORUMTHREADSTYLE;
 $alt = FALSE;
-for($i = 0; $i < count($thread_info)-1; $i++) {
+for($i = 0; $i < count($thread_info)-1; $i++)
+{
 	unset($post_info);
 	$post_info = $thread_info[$i];
 	$loop_uid = intval($post_info['user_id']);
-	if (!$post_info['thread_user']) {
+	if (!$post_info['thread_user'])
+	{
 		// guest
 		$tmp = explode(chr(1), $post_info['thread_anon']);
 		$ip = $tmp[1];
 		$host = $e107->get_host_name($ip);
 		$post_info['iphost'] = "<div class='smalltext' style='text-align:right'>IP: <a href='".e_ADMIN."userinfo.php?$ip'>$ip ( $host )</a></div>";
 		$post_info['anon'] = TRUE;
-	} else {
+	}
+	else
+	{
 		$post_info['anon'] = FALSE;
 	}
 	$e_hide_query = "SELECT thread_id FROM #forum_t WHERE (`thread_parent` = {$thread_id} OR `thread_id` = {$thread_id}) AND FLOOR(thread_user) = ".USERID;
@@ -421,7 +414,7 @@ for($i = 0; $i < count($thread_info)-1; $i++) {
 		$forthr = $tp->parseTemplate($FORUMTHREADSTYLE, TRUE, $forum_shortcodes)."\n";
 	}
 }
-
+unset($loop_uid);
 
 if (((check_class($forum_info['forum_postclass']) && check_class($forum_info['parent_postclass'])) || MODERATOR) && $thread_info['head']['thread_active'] )
 {
@@ -480,7 +473,7 @@ function showmodoptions()
 		$type = 'reply';
 		$ret = "<form method='post' action='".e_SELF."?".e_QUERY."' id='frmMod_{$forum_id}_{$post_info['thread_id']}'>";
 	}
-	
+
 	$ret .= "
 		<div>
 		<a href='".e_PLUGIN."forum/forum_post.php?edit.{$post_info['thread_id']}.{$from}'>".IMAGE_admin_edit."</a>
@@ -506,7 +499,7 @@ function forumjump()
 	{
 		$text .= "\n<option value='".$key."'>".$val."</option>";
 	}
-	$text .= "</select> <input class='button' type='submit' name='fjsubmit' value='".LAN_03."' />&nbsp;&nbsp;&nbsp;&nbsp;<a href='".e_SELF."?".$_SERVER['QUERY_STRING']."#top'>".LAN_10."</a></p></form>";
+	$text .= "</select> <input class='button' type='submit' name='fjsubmit' value='".LAN_03."' />&nbsp;&nbsp;&nbsp;&nbsp;<a href='".e_SELF."?".e_QUERY."#top' onclick=\"window.scrollTo(0,0);\">".LAN_10."</a></p></form>";
 	return $text;
 }
 
@@ -578,11 +571,18 @@ function rpg($user_join, $user_forums)
 		$lvl_exp = ($user_forums - $lvl_posts_for_this) . "/" . ($lvl_posts_for_next - $lvl_posts_for_this);
 		$lvl_exp_percent = floor((($user_forums - $lvl_posts_for_this) / max(1, ($lvl_posts_for_next - $lvl_posts_for_this ) ) ) * 100);
 	}
-	$rpg_info .= "<div style='padding:2px;'>";
+
+	$bar_image = THEME."images/bar.jpg";
+	if(!is_readable($bar_image))
+	{
+		$bar_image = e_PLUGIN."forum/images/".IMODE."/bar.jpg";
+	}
+		
+	$rpg_info .= "<div style='padding:2px; white-space:nowrap'>";
 	$rpg_info .= "<b>Level = ".$lvl_level."</b><br />";
-	$rpg_info .= "HP = ".$lvl_hp."<br /><img src='".THEME."images/bar.jpg' height='10' alt='' style='border:#345487 1px solid; width:".$lvl_hp_percent."'><br />";
-	$rpg_info .= "EXP = ".$lvl_exp."<br /><img src='".THEME."images/bar.jpg' height='10' alt='' style='border:#345487 1px solid; width:".$lvl_exp_percent."'><br />";
-	$rpg_info .= "MP = ".$lvl_mp."<br /><img src='".THEME."images/bar.jpg' height='10' alt='' style='border:#345487 1px solid; width:".$lvl_mp_percent."'><br />";
+	$rpg_info .= "HP = ".$lvl_hp."<br /><img src='{$bar_image}' alt='' style='border:#345487 1px solid; height:10px; width:".$lvl_hp_percent."%'><br />";
+	$rpg_info .= "EXP = ".$lvl_exp."<br /><img src='{$bar_image}' alt='' style='border:#345487 1px solid; height:10px; width:".$lvl_exp_percent."%'><br />";
+	$rpg_info .= "MP = ".$lvl_mp."<br /><img src='{$bar_image}' alt='' style='border:#345487 1px solid; height:10px; width:".$lvl_mp_percent."%'><br />";
 	$rpg_info .= "</div>";
 	return $rpg_info;
 }

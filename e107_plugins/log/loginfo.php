@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     �Steve Dunstan 2001-2002
+|     ?Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/log/loginfo.php,v $
-|     $Revision: 1.12 $
-|     $Date: 2006/01/24 06:18:27 $
-|     $Author: streaky $
+|     $Revision: 1.14 $
+|     $Date: 2006/02/19 16:08:44 $
+|     $Author: lisa_ $
 +----------------------------------------------------------------------------+
 */
 
@@ -80,13 +80,20 @@ if ($tmp = gethostbyaddr(getenv('REMOTE_ADDR'))) {
 }
 
 /* last 20 visitors */
-if(count($visitInfo) == 20) {
-	$visitInfo = array_shift($visitInfo);
+if(count($visitInfo) >= 20) {
+	$length = 20;
+	$offset = count($visitInfo)-$length;
+	$visitInfo = array_slice($visitInfo, $offset, $length);
 }
-$visitInfo[$ip] = $tmp.chr(1).time().chr(1).$os.chr(1).$browser.chr(1).$screenstats.chr(1).$ref;
 
-$varStart = chr(36);
-$quote = chr(34);
+$visitInfo[$tmp] = array(
+	'host'    => trim($tmp),
+	'date'    => time(),
+	'os'      => trim($os),
+	'browser' => trim($browser),
+	'screen'  => trim($screenstats),
+	'referer' => substr(trim($ref), 0, 255),
+);
 
 $data = "<?php
 

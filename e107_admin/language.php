@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/language.php,v $
-|     $Revision: 1.28 $
-|     $Date: 2005/12/25 01:26:59 $
-|     $Author: sweetas $
+|     $Revision: 1.30 $
+|     $Date: 2006/04/17 14:52:38 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 require_once("../class2.php");
@@ -40,7 +40,7 @@ if (isset($_POST['submit_prefs']) ) {
 	$pref['sitelanguage'] = $_POST['sitelanguage'];
 
 	save_prefs();
-	$ns->tablerender("Saved", "<div style='text-align:center'>".LAN_SAVED."</div>");
+	$ns->tablerender(LAN_SAVED, "<div style='text-align:center'>".LAN_SETSAVED."</div>");
 
 }
 
@@ -95,60 +95,61 @@ if (isset($_POST['create_tables']) && $_POST['language']) {
 
 
 
-	if(isset($message)){
-		$ns->tablerender("Result", $message);
+	if(isset($message) && $message){
+  		$ns->tablerender(LAN_OK, $message);
 	}
 
 
 // ------------- render form ---------------------------------------------------
 
+if(isset($pref['multilanguage']) && $pref['multilanguage']){
+	$caption = LANG_LAN_16; // language
+	$text = MLAD_LAN_4."<br /><br />";
 
-$caption = ADLAN_132; // language
-$text = MLAD_LAN_4."<br /><br />";
 
+	// Choose Language to Edit:
+	$text = "<div style='text-align:center'>
+	<div style='".ADMIN_WIDTH."; height:150px; overflow:auto; margin-left: auto; margin-right: auto;'>
+	<table class='fborder' style='width:99%; margin-top: 1px;'>
+	<tr><td class='fcaption'>".ADLAN_132."</td>
+	<td class='fcaption'>".LANG_LAN_03."</td>
+	<td class='fcaption'>".LAN_OPTIONS."</td>
+	</tr>\n\n";
+	sort($lanlist);
+	for($i = 0; $i < count($lanlist); $i++) {
+		$installed = 0;
 
-// Choose Language to Edit:
-$text = "<div style='text-align:center'>
-	<div style='".ADMIN_WIDTH."; height:150px; overflow:auto; margin-left: auto; margin-right: auto;'>";
-
-$text .= "<table class='fborder' style='width:99%; margin-top: 1px;'>\n";
-$text .= "<tr><td class='fcaption'>".ADLAN_132."</td>";
-$text .= "<td class='fcaption'>".LANG_LAN_03."</td><td class='fcaption'>".LAN_OPTIONS."</td>";
-$text .= "</tr>\n\n";
-sort($lanlist);
-for($i = 0; $i < count($lanlist); $i++) {
-	$installed = 0;
-
-	$text .= "<tr><td class='forumheader3' style='width:30%'>".$lanlist[$i]."</td><td class='forumheader3'>\n";
-	foreach ($tabs as $tab_name) {
-		if (db_Table_exists(strtolower($lanlist[$i])."_".$tab_name)) {
-			$text .= $tab_name.", ";
-			$installed++;
+		$text .= "<tr><td class='forumheader3' style='width:30%'>".$lanlist[$i]."</td><td class='forumheader3'>\n";
+		foreach ($tabs as $tab_name) {
+			if (db_Table_exists(strtolower($lanlist[$i])."_".$tab_name)) {
+				$text .= $tab_name.", ";
+				$installed++;
+			}
 		}
-	}
 
-	$text .= (!$installed)? "<div style='text-align:center'><i>".LANG_LAN_05."</i></div>" :
-	 "";
-	$text .= "</td><td class='forumheader3' style='width:10%;white-space:nowrap;text-align:right'>\n";
-	$text .= $rs->form_open("post", e_SELF."?modify", "lang_form_".str_replace(" ", "_", $lanlist[$i]));
-	$text .= "<div style='text-align: center'>\n";
+		$text .= (!$installed)? "<div style='text-align:center'><i>".LANG_LAN_05."</i></div>" :
+	 	"";
+		$text .= "</td><td class='forumheader3' style='width:10%;white-space:nowrap;text-align:right'>\n";
+		$text .= $rs->form_open("post", e_SELF."?modify", "lang_form_".str_replace(" ", "_", $lanlist[$i]));
+		$text .= "<div style='text-align: center'>\n";
 
-	if ($installed) {
-		$text .= " <input type='submit' class='button' name='edit_existing' value='".LAN_EDIT."' />\n";
-		$text .= " <input type='submit' class='button' name='del_existing' value='".LAN_DELETE."' onclick=\"return jsconfirm('Delete all tables in ".$lanlist[$i]." ?')\" />\n";
-	} else {
-		$text .= "<input type='submit' class='button' name='edit_existing' value='".LAN_CREATE."' />\n";
-	}
-	$text .= "<input type='hidden' name='lang_choices' value='".$lanlist[$i]."' />";
-	$text .= "</div>";
-	$text .= $rs->form_close();
-	$text .= "</td></tr>";
+		if ($installed) {
+			$text .= " <input type='submit' class='button' name='edit_existing' value='".LAN_EDIT."' />\n";
+			$text .= " <input type='submit' class='button' name='del_existing' value='".LAN_DELETE."' onclick=\"return jsconfirm('Delete all tables in ".$lanlist[$i]." ?')\" />\n";
+		} else {
+			$text .= "<input type='submit' class='button' name='edit_existing' value='".LAN_CREATE."' />\n";
+		}
+		$text .= "<input type='hidden' name='lang_choices' value='".$lanlist[$i]."' />";
+   		$text .= "</div>";
+		$text .= $rs->form_close();
+		$text .= "</td></tr>";
 
 }
 
-$text .= "</table></div></div>";
+	$text .= "</table></div></div>";
 
-$ns->tablerender($caption, $text);
+	$ns->tablerender($caption, $text);
+}
 
 if (!$_POST['language'] && !$_POST['edit_existing']) {
 	multilang_prefs();
@@ -210,16 +211,7 @@ require_once(e_ADMIN."footer.php");
 
 // ---------------------------------------------------------------------------
 function multilang_prefs() {
-	global $ns, $pref;
-
-	$handle = opendir(e_LANGUAGEDIR);
-	while ($file = readdir($handle)) {
-		if ($file != "." && $file != ".." && $file != "/") {
-			$lanlist[] = $file;
-		}
-	}
-	closedir($handle);
-
+	global $ns, $pref,$lanlist;
 
 	$text = "<div style='text-align:center'>
 		<form method='post' action='".e_SELF."' id='linkform'>
@@ -234,16 +226,12 @@ function multilang_prefs() {
 
 	$text .= "
 		<select name='sitelanguage' class='tbox'>\n";
-	$counter = 0;
-	$sellan = preg_replace("/lan_*.php/i", "", $pref['sitelanguage']);
-	while (isset($lanlist[$counter])) {
-		if ($lanlist[$counter] == $sellan) {
-			$text .= "<option selected='selected'>".$lanlist[$counter]."</option>\n";
-		} else {
-			$text .= "<option>".$lanlist[$counter]."</option>\n";
+		$sellan = preg_replace("/lan_*.php/i", "", $pref['sitelanguage']);
+		foreach($lanlist as $lan){
+			$sel =  ($lan == $sellan) ? "selected='selected'" : "";
+    		$text .= "<option value='{$lan}' {$sel}>".$lan."</option>\n";
 		}
-		$counter++;
-	}
+
 	$text .= "</select>
 		</td>
 		</tr>";
@@ -268,7 +256,7 @@ function multilang_prefs() {
 		</form>
 		</div>";
 
-	$caption = LANG_LAN_13; // "Multi-Language Preferences";
+	$caption = LANG_LAN_13; // "Language Preferences";
 	$ns->tablerender($caption, $text);
 }
 

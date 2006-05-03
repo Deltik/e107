@@ -11,15 +11,16 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/def_e107_prefs.php,v $
-|     $Revision: 1.47 $
-|     $Date: 2006/01/12 17:27:11 $
-|     $Author: streaky $
+|     $Revision: 1.55 $
+|     $Date: 2006/04/29 20:34:37 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
 
 $pref = array (
+  'install_date' => time(),
   'sitename' => LAN_PREF_1,
   'siteurl' => $e_HTTP,
   'sitebutton' => 'button.png',
@@ -27,9 +28,16 @@ $pref = array (
   'sitedescription' => '',
   'siteadmin' => $site_admin_user,
   'siteadminemail' => $site_admin_email,
-  'sitetheme' => 'jayya',
+  'sitecontactinfo' => '[b]My Company[/b]
+13 My Address St.
+City, State, Country
+[b]Phone:[/b] 555-555-5555
+[b]Email:[/b] sales@mydomain.com',
+  'sitetheme' => 'reline',
+  'themecss' => 'style.css',
   'image_preload' => '0',
-  'admintheme' => 'jayya',
+  'admintheme' => 'reline',
+  'admincss' => 'style.css',
   'adminstyle' => 'classis',
   'sitedisclaimer' => LAN_PREF_3,
   'newsposts' => '10',
@@ -54,14 +62,6 @@ $pref = array (
   'meta_tag' => '',
   'user_reg_veri' => '1',
   'email_notify' => '0',
-  'forum_poll' => '0',
-  'forum_popular' => '10',
-  'forum_track' => '0',
-  'forum_eprefix' => '[forum]',
-  'forum_enclose' => '1',
-  'forum_title' => LAN_PREF_5,
-  'forum_postspage' => '10',
-  'forum_highlightsticky' => '1',
   'user_tracking' => 'cookie',
   'cookie_name' => 'e107cookie',
   'resize_method' => 'gd2',
@@ -87,28 +87,21 @@ $pref = array (
   'plug_status' => 'rss_menu',
   'plug_latest' => '',
   'wmessage_sc' => '0',
-  'frontpage' => 
+  'frontpage' =>
   array (
     'all' => 'news.php',
   ),
   'signup_text' => '',
   'admin_alerts_ok' => '1',
-  'real' => '1',
-  'url' => '1',
-  'icq' => '1',
-  'aim' => '1',
-  'msn' => '1',
-  'dob' => '1',
-  'loc' => '1',
-  'sig' => '1',
-  'avt' => '1',
-  'zone' => '1',
-  'usrclass' => '1',
   'link_replace' => '0',
   'link_text' => '',
   'signcode' => '0',
   'logcode' => '0',
-  'signup_options' => '1.......1.1.1.1',
+  'signup_option_realname' => '1',
+  'signup_option_signature' => '1',
+  'signup_option_image' => '1',
+  'signup_option_timezone' => '1',
+  'signup_option_class' => '1',
   'newsposts_archive' => '0',
   'newsposts_archive_title' => '',
   'news_cats' => '',
@@ -160,7 +153,8 @@ $pref = array (
   'rss_feeds' => '1',
   'admincss' => 'style.css',
   'developer' => '0',
-  'download_email' => '0'
+  'download_email' => '0',
+  'comments_disabled' => '0'
 );
 
 ?>

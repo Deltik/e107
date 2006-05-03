@@ -12,9 +12,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/login.php,v $
-|     $Revision: 1.34 $
-|     $Date: 2006/02/08 01:34:41 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.36 $
+|     $Date: 2006/02/24 18:36:35 $
+|     $Author: whoisrich $
 +----------------------------------------------------------------------------+
 */
 

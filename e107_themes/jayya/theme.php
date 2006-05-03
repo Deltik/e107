@@ -11,16 +11,17 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_themes/jayya/theme.php,v $
-|     $Revision: 1.48 $
-|     $Date: 2006/01/12 09:52:21 $
-|     $Author: lisa_ $
+|     $Revision: 1.53 $
+|     $Date: 2006/04/26 13:41:54 $
+|     $Author: sweetas $
 +----------------------------------------------------------------------------+
 */
 
+// Protect the file from direct access
 if (!defined('e107_INIT')) { exit; }
 
-// [multilanguage]
 
+// Get language definition files for this theme
 @include_once(e_THEME."jayya/languages/".e_LANGUAGE.".php");
 @include_once(e_THEME."jayya/languages/English.php");
 
@@ -115,18 +116,29 @@ define('LINKALIGN', 'left');
 
 // [newsstyle]
 
+$sc_style['NEWSIMAGE']['pre'] = "<td style='padding-right: 7px; vertical-align: top'>";
+$sc_style['NEWSIMAGE']['post'] = "</td>";
+
 $NEWSSTYLE = "<div class='cap_border'><div class='main_caption'><div class='bevel'>
 {STICKY_ICON}{NEWSTITLE}
 </div></div></div>
 <div class='menu_content'>
+<table style='width: 100%'>
+<tr>
+{NEWSIMAGE}
+<td style='width: 100%; vertical-align: top'>
 {NEWSBODY}
 {EXTENDED}
-<br /></div>
+<br />
+</td>
+</tr>
+</table>
+</div>
 <div class='menu_content'>
 <table class='news_info'>
 <tr>
 <td style='text-align: center; padding: 3px; padding-bottom: 0px; white-space: nowrap'>
-<img src='".THEME_ABS."images/postedby_16.png' style='width: 16px; height: 16px' alt='' />
+{NEWSICON}
 </td>
 <td style='width: 100%; padding: 0px; padding-bottom: 0px; padding-left: 2px'>
 ".LAN_THEME_5." 
@@ -150,7 +162,7 @@ $NEWSSTYLE = "<div class='cap_border'><div class='main_caption'><div class='beve
 
 define('ICONMAIL', 'email_16.png');
 define('ICONPRINT', 'print_16.png');
-define('ICONSTYLE', 'float: left; border:0');
+define('ICONSTYLE', 'border: 0px');
 define('COMMENTLINK', LAN_THEME_2);
 define('COMMENTOFFSTRING', LAN_THEME_1);
 define('PRE_EXTENDEDSTRING', '<br /><br />[ ');

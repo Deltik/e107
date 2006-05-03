@@ -12,9 +12,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/sitelinks_class.php,v $
-|     $Revision: 1.82 $
-|     $Date: 2006/01/24 07:18:19 $
-|     $Author: sweetas $
+|     $Revision: 1.87 $
+|     $Date: 2006/04/23 04:54:09 $
+|     $Author: e107coders $
 +---------------------------------------------------------------+
 */
 
@@ -35,6 +35,7 @@ class sitelinks
 
 	function getlinks($cat=1)
 	{
+
 		global $sql;
 		if ($sql->db_Select('links', '*', "link_category = ".intval($cat)." and link_class IN (".USERCLASS_LIST.") ORDER BY link_order ASC")){
 			while ($row = $sql->db_Fetch())
@@ -56,7 +57,7 @@ class sitelinks
 	{
 		global $pref, $ns, $e107cache;
 
-		if (($data = $e107cache->retrieve('sitelinks_'.$cat)) && !strpos(e_SELF,e_ADMIN) ) {
+		if (($data = $e107cache->retrieve('sitelinks_'.md5($cat.e_PAGE.e_QUERY))) && !strpos(e_SELF,e_ADMIN) ) {
 			return $data;
 		}
 
@@ -108,7 +109,7 @@ class sitelinks
 			foreach ($this->eLinkList['head_menu'] as $key => $link){
 				$main_linkid = "sub_".$link['link_id'];
 
-				$link['link_expand'] = (isset($pref['sitelinks_expandsub']) && isset($this->eLinkList[$main_linkid]) && is_array($this->eLinkList[$main_linkid])) ?  TRUE : FALSE;
+				$link['link_expand'] = (isset($pref['sitelinks_expandsub']) && !defined("LINKSRENDERONLYMAIN") && isset($this->eLinkList[$main_linkid]) && is_array($this->eLinkList[$main_linkid])) ?  TRUE : FALSE;
 
 				$render_link[$key] = $this->makeLink($link,'', $style, $css_class);
 
@@ -158,7 +159,7 @@ class sitelinks
 			}
 		}
 		$text .= "\n\n\n<!--- end Site Links -->\n\n\n";
-		$e107cache->set('sitelinks_'.$cat, $text);
+		$e107cache->set('sitelinks_'.$cat.md5(e_PAGE.e_QUERY), $text);
 	 	return $text;
 	}
 
@@ -206,9 +207,9 @@ class sitelinks
 
 			if ($linkInfo['link_open'] == 4 || $linkInfo['link_open'] == 5){
 				$dimen = ($linkInfo['link_open'] == 4) ? "600,400" : "800,600";
-				$href = " href=\"javascript:open_window('".$linkInfo['link_url']."',{$dimen})\"";
+				$href = " href=\"javascript:open_window('".$tp -> replaceConstants($linkInfo['link_url'])."',{$dimen})\"";
 			} else {
-				$href = " href='".$linkInfo['link_url']."'";
+				$href = " href='".$tp -> replaceConstants($linkInfo['link_url'])."'";
 			}
 
 			// Open link in a new window.  (equivalent of target='_blank' )
@@ -246,6 +247,7 @@ function hilite($link,$enabled=''){
 	global $PLUGINS_DIRECTORY,$tp,$pref;
     if(!$enabled){ return FALSE; }
 
+	$tmp = explode("?",$link);
 
 // ----------- highlight overriding - set the link matching in the page itself.
 
@@ -258,8 +260,9 @@ function hilite($link,$enabled=''){
 
 // --------------- highlighting for 'HOME'. ----------------
 	global $pref;
-	if(strpos(e_SELF,$pref['frontpage']['all']) && $link == e_HTTP."index.php"){
-		return TRUE;
+	list($fp,$fp_q) = explode("?",$pref['frontpage']['all']);
+	if(strpos(e_SELF,"/".$pref['frontpage']['all'])!== FALSE && $fp_q == $tmp[1] && $link == e_HTTP."index.php"){
+	  	return TRUE;
 	}
 
 // --------------- highlighting for plugins. ----------------
@@ -286,7 +289,7 @@ function hilite($link,$enabled=''){
 // eg. news.php?list.1 or news.php?cat.2 etc
 
 		if (strpos($link, "news.php?") !== FALSE && strpos(e_SELF,"/news.php")) {
-            $tmp = explode("?",$link);
+
 			$lnk = explode(".",$tmp[1]); // link queries.
 			$qry = explode(".",e_QUERY); // current page queries.
 
@@ -315,11 +318,11 @@ function hilite($link,$enabled=''){
 			$linkq = $subq[1];
 			$thelink = str_replace("../", "", $link);
 			if((strpos(e_SELF,$thelink) !== false) && (strpos(e_QUERY,$linkq) !== false)){
-		  		return true;
+		   		return true;
 			}
 		}
 		if(!preg_match("/all|item|cat|list/", e_QUERY) && (strpos(e_SELF, str_replace("../", "",$link)) !== false)){
-			return true;
+		  	return true;
 		}
 
 		return false;

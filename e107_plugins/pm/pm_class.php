@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/pm/pm_class.php,v $
-|     $Revision: 1.10 $
-|     $Date: 2006/01/05 09:06:46 $
-|     $Author: sweetas $
+|     $Revision: 1.15 $
+|     $Date: 2006/04/24 14:23:59 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 
@@ -107,6 +107,7 @@ class private_message
 					}
 					if(check_class($pm_prefs['notify_class'], $u['user_class']))
 					{
+						$vars['to_info'] = $u;
 						$this->pm_send_notify($u['user_id'], $vars, $pmid, count($a_list));
 					}
 				}
@@ -282,8 +283,8 @@ class private_message
 	function pm_getuid($var)
 	{
 		global $sql, $tp;
-		$var = trim($var);
-		if($sql->db_Select("user", "user_id, user_name, user_class, user_email", "user_name LIKE '".$tp -> toDB($var)."'"))
+
+		if($sql->db_Select("user", "user_id, user_name, user_class, user_email", "user_name LIKE '".$sql -> escape(trim($var), TRUE)."'"))
 		{
 			$row = $sql->db_Fetch();
 			return $row;
@@ -305,7 +306,7 @@ class private_message
 		elseif($class)
 		{
 			$regex = "(^|,)(".$tp -> toDB($class).")(,|$)";
-			$qry = "SELECT user_id, user_name, user_email, user_class FROM #user WHERE user_class REGEXP {$regex}";
+			$qry = "SELECT user_id, user_name, user_email, user_class FROM #user WHERE user_class REGEXP '{$regex}'";
 		}
 		if($sql->db_Select_gen($qry))
 		{

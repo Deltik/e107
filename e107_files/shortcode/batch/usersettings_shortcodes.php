@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/usersettings_shortcodes.php,v $
-|     $Revision: 1.13 $
-|     $Date: 2006/01/12 19:54:17 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.16 $
+|     $Date: 2006/02/21 17:37:05 $
+|     $Author: whoisrich $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -21,8 +21,15 @@ include_once(e_HANDLER.'shortcode_handler.php');
 $usersettings_shortcodes = $tp -> e_sc -> parse_scbatch(__FILE__);
 /*
 SC_BEGIN USERNAME
-global $rs, $curVal;
-return $rs->form_text("username", 20, $curVal['user_name'], 100, "tbox");
+global $rs, $curVal, $pref;
+if (check_class($pref['displayname_class']))
+{
+	return $rs->form_text("username", 20, $curVal['user_name'], $pref['displayname_maxlength'], "tbox");
+}
+else
+{
+	return $curVal['user_name'];
+}
 SC_END
 
 SC_BEGIN LOGINNAME
@@ -92,13 +99,13 @@ if($sql->db_Select("userclass_classes", "*", "userclass_editclass IN(".$tp -> to
 	foreach($ucList as $row)
 	{
 		$inclass = check_class($row['userclass_id'], $curVal['user_class']) ? TRUE : FALSE;
-		if(isset($_POST['usrclass']))
+		if(isset($_POST['class']))
 		{
-			$inclass = in_array($row['userclass_id'], $_POST['usrclass']);
+			$inclass = in_array($row['userclass_id'], $_POST['class']);
 		}
 		$frm_checked = $inclass ? "checked='checked'" : "";
 		$ret .= "<tr><td class='defaulttext'>";
-		$ret .= "<input type='checkbox' name='usrclass[]' value='{$row['userclass_id']}' $frm_checked />\n";
+		$ret .= "<input type='checkbox' name='class[]' value='{$row['userclass_id']}' $frm_checked />\n";
 		$ret .= $tp->toHTML($row['userclass_name'], "", "defs")."</td>";
 		$ret .= "<td class='smalltext'>".$tp->toHTML($row['userclass_description'], "", "defs")."</td>";
 		$ret .= "</tr>\n";
@@ -123,7 +130,7 @@ SC_END
 
 SC_BEGIN TIMEZONE
 global $curVal;
-$ret = "<select name='user_timezone' class='tbox'>\n";
+$ret = "<select name='timezone' class='tbox'>\n";
 $timezone = array("-12", "-11", "-10", "-9", "-8", "-7", "-6", "-5", "-4", "-3", "-2", "-1", "GMT", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "+11", "+12", "+13");
 $timearea = array("International DateLine West", "Samoa", "Hawaii", "Alaska", "Pacific Time (US and Canada)", "Mountain Time (US and Canada)", "Central Time (US and Canada), Central America", "Eastern Time (US and Canada)", "Atlantic Time (Canada)", "Greenland, Brasilia, Buenos Aires, Georgetown", "Mid-Atlantic", "Azores", "GMT - UK, Ireland, Lisbon", "West Central Africa, Western Europe", "Greece, Egypt, parts of Africa", "Russia, Baghdad, Kuwait, Nairobi", "Abu Dhabi, Kabul", "Islamabad, Karachi", "Astana, Dhaka", "Bangkok, Rangoon", "Hong Kong, Singapore, Perth, Beijing", "Tokyo, Seoul", "Brisbane, Canberra, Sydney, Melbourne", "Soloman Islands", "New Zealand", "Nuku'alofa");
 $count = 0;

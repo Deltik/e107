@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/forum/templates/forum_viewtopic_template.php,v $
-|     $Revision: 1.18 $
-|     $Date: 2006/01/13 02:10:33 $
+|     $Revision: 1.20 $
+|     $Date: 2006/04/21 02:10:15 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */

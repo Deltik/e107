@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/login_menu/login_menu_shortcodes.php,v $
-|     $Revision: 1.1 $
-|     $Date: 2005/12/24 14:20:30 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.3 $
+|     $Date: 2006/04/24 19:04:36 $
+|     $Author: sweetas $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -47,7 +47,7 @@ SC_BEGIN LM_REMEMBERME
 global $pref;
 if($pref['user_tracking'] != "session")
 {
-	return "<br /><input type='checkbox' name='autologin' value='1' />".LOGIN_MENU_L6;
+	return "<br /><input type='checkbox' name='autologin' value='1' checked='checked' />".LOGIN_MENU_L6;
 }
 SC_END
 
@@ -56,13 +56,13 @@ global $pref;
 if ($pref['user_reg']) {
 	if (!$pref['auth_method'] || $pref['auth_method'] == 'e107')
 	{
-		return "<a href='".e_SIGNUP."'>".LOGIN_MENU_L3."</a>";
+		return "<a class='login_menu_link' href='".e_SIGNUP."'>".LOGIN_MENU_L3."</a>";
 	}
 }
 SC_END
 
 SC_BEGIN LM_FPW_LINK
-return "<a href='".e_BASE."fpw.php'>".LOGIN_MENU_L4."</a>";
+return "<a class='login_menu_link' href='".e_BASE."fpw.php'>".LOGIN_MENU_L4."</a>";
 SC_END
 
 */

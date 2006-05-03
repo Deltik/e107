@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/sql/core_sql.php,v $
-|     $Revision: 1.44 $
-|     $Date: 2006/01/05 06:40:17 $
-|     $Author: sweetas $
+|     $Revision: 1.46 $
+|     $Date: 2006/04/16 08:35:10 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 header("location:../index.php");
@@ -140,7 +140,8 @@ CREATE TABLE download (
   download_mirror_type tinyint(1) unsigned NOT NULL default '0',
   download_visible varchar(255) NOT NULL default '0',
   PRIMARY KEY  (download_id),
-  UNIQUE KEY download_name (download_name)
+  UNIQUE KEY download_name (download_name),
+  KEY download_category (download_category)
 ) TYPE=MyISAM;
 # --------------------------------------------------------
 
@@ -185,7 +186,9 @@ CREATE TABLE download_requests (
   download_request_ip varchar(30) NOT NULL default '',
   download_request_download_id int(10) unsigned NOT NULL default '0',
   download_request_datestamp int(10) unsigned NOT NULL default '0',
-  PRIMARY KEY  (download_request_id)
+  PRIMARY KEY  (download_request_id),
+  KEY download_request_userid (download_request_userid),
+  KEY download_request_download_id (download_request_download_id)
 ) TYPE=MyISAM;
 # --------------------------------------------------------
 
@@ -356,7 +359,7 @@ CREATE TABLE preset (
   preset_value varchar(255) NOT NULL default '',
   PRIMARY KEY  (preset_id)
 ) TYPE=MyISAM;
-			
+
 # --------------------------------------------------------
 
 #

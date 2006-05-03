@@ -11,9 +11,9 @@
 |       GNU General Public License (http://gnu.org).
 |
 |		$Source: /cvsroot/e107/e107_0.7/e107_plugins/list_new/list_class.php,v $
-|		$Revision: 1.8 $
-|		$Date: 2006/01/05 09:06:46 $
-|		$Author: sweetas $
+|		$Revision: 1.10 $
+|		$Date: 2006/02/20 08:52:46 $
+|		$Author: lisa_ $
 +---------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -118,6 +118,9 @@ class listclass {
 	function getContentSections($mode){
 		global $sql, $sections, $titles, $content_types, $content_name;
 
+		if(!$content_install = $sql -> db_Select("plugin", "*", "plugin_path = 'content' AND plugin_installflag = '1' ")){
+			return;
+		}
 		$datequery = " AND (content_datestamp=0 || content_datestamp < ".time().") AND (content_enddate=0 || content_enddate>".time().") ";
 
 		//get main parent types
@@ -289,7 +292,7 @@ class listclass {
 		$this -> getContentSections("");
 
 		//require is needed here instead of require_once, since both the menu and the page could be visible at the same time
-		if(in_array($arr[9], $content_types)){
+		if(is_array($content_types) && in_array($arr[9], $content_types)){
 			$file = $content_name;
 			if(file_exists(e_PLUGIN.$file."/e_list.php")){
 				global $contentmode;

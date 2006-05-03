@@ -11,13 +11,14 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/usersettings.php,v $
-|     $Revision: 1.62 $
-|     $Date: 2006/02/07 02:50:48 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.67 $
+|     $Date: 2006/03/26 16:50:16 $
+|     $Author: sweetas $
 +----------------------------------------------------------------------------+
 */
 
 require_once("class2.php");
+require_once(e_HANDLER."ren_help.php");
 require_once(e_HANDLER."user_extended_class.php");
 $ue = new e107_user_extended;
 
@@ -46,16 +47,18 @@ if (isset($_POST['sub_review'])) {
     header("location:".e_BASE."subcontent.php?review");
     exit;
 }
+
 if (!USER) {
     header("location:".e_BASE."index.php");
     exit;
 }
-require_once(e_HANDLER."ren_help.php");
 
-if (e_QUERY && !ADMIN) {
+if (!ADMIN && e_QUERY && e_QUERY != "update") {
     header("location:".e_BASE."usersettings.php");
     exit;
 }
+
+require_once(e_HANDLER."ren_help.php");
 
 if(is_readable(THEME."usersettings_template.php"))
 {
@@ -71,7 +74,7 @@ require_once(e_HANDLER."calendar/calendar_class.php");
 $cal = new DHTML_Calendar(true);
 $_uid = is_numeric(e_QUERY) ? intval(e_QUERY) : "";
 
-$signupval = explode(".", $pref['signup_options']);
+require_once(HEADERF);
 
 // Save Form Data  --------------------------------------->
 
@@ -89,9 +92,6 @@ if (isset($_POST['updatesettings']))
 
 	$_POST['image'] = str_replace(array('\'', '"', '(', ')'), '', $_POST['image']);   // these are invalid anyways, so why allow them? (XSS Fix)
 	// check prefs for required fields =================================.
-
-	$signup_title = array(LAN_308, LAN_120, LAN_121, LAN_122);
-	$signup_name = array("realname", "signature", "image", "user_timezone");
 
 	if ($_POST['image'] && $size = getimagesize($_POST['image'])) {
 		$avwidth = $size[0];
@@ -112,14 +112,17 @@ if (isset($_POST['updatesettings']))
 		}
 	}
 
-	for ($i = 0; $i < count($signup_title); $i++)
+	$signup_option_title = array(LAN_308, LAN_120, LAN_121, LAN_122, LAN_USET_6);
+	$signup_option_names = array("realname", "signature", "image", "timezone", "class");
+
+	foreach($signup_option_names as $key => $value)
 	{
-		$postvalue = $signup_name[$i];
-		if ($signupval[$i] == 2 && $_POST[$postvalue] == "" && !$_uid)
+		if ($pref['signup_option_'.$value] == 2 && !$_POST[$value] && !$_uid)
 		{
-			$error .= LAN_SIGNUP_6.$signup_title[$i].LAN_SIGNUP_7."\\n";
+			$error .= LAN_SIGNUP_6.$signup_option_title[$key].LAN_SIGNUP_7."\\n";
 		}
-	}
+    }
+
 
 	if($sql->db_Select('user_extended_struct'))	{
 		while($row = $sql->db_Fetch()) {
@@ -195,20 +198,22 @@ if (isset($_POST['updatesettings']))
 		$password2 = "";
 	}
 
-	if (!preg_match('/^[-!#$%&\'*+\\.\/0-9=?A-Z^_`{|}~]+@([-0-9A-Z]+\.)+([0-9A-Z]){2,4}$/i', $_POST['email'])) {
+	if (!check_email($_POST['email'])) {
 	  	$error .= LAN_106."\\n";
 	}
 
-	if ($sql->db_Select("user", "user_name, user_email", "user_email='".$tp -> toDB(check_email($_POST['email']))."' AND user_id !=".USERID."' ")) {
+	if ($sql->db_Select("user", "user_name, user_email", "user_email='".$tp -> toDB($_POST['email'])."' AND user_id !=".USERID."' ")) {
 	  	$error .= LAN_408."\\n";
 	}
 
 	$username = strip_tags($_POST['username']);
 	$loginname = strip_tags($_POST['loginname']);
+	
 	if (!$loginname)
 	{
+		$sql->db_Select("user", "user_loginname", "user_id='".intval($inp)."'");
 		$row = $sql -> db_Fetch();
-		$loginname = $row['user_name'];
+		$loginname = $row['user_loginname'];
 	}
 	
 	$user_sess = "";
@@ -246,6 +251,15 @@ if (isset($_POST['updatesettings']))
 
 	if (!$error)
 	{
+		if (check_class($pref['displayname_class']))
+		{
+			$username = substr($username, 0, $pref['displayname_maxlength']);
+		}
+		else
+		{
+			$username = substr($loginname, 0, $pref['displayname_maxlength']);
+		}
+
 		$_POST['signature'] = $tp->toDB($_POST['signature']);
 		$_POST['realname'] = $tp->toDB($_POST['realname']);
 
@@ -270,7 +284,7 @@ if (isset($_POST['updatesettings']))
 
 		if ($ret == '')
 		{
-			$sql->db_Update("user", "user_name='".$tp -> toDB($username)."' {$pwreset} ".$sesschange.", user_email='".$tp -> toDB(check_email($_POST['email']))."', user_signature='".$_POST['signature']."', user_image='".$tp -> toDB($_POST['image'])."', user_timezone='".$tp -> toDB($_POST['user_timezone'])."', user_hideemail='".$tp -> toDB($_POST['hideemail'])."', user_login='".$_POST['realname']."' {$new_customtitle}, user_xup='".$tp -> toDB($_POST['user_xup'])."' WHERE user_id='".intval($inp)."' ");
+			$sql->db_Update("user", "user_name='".$tp -> toDB($username)."' {$pwreset} ".$sesschange.", user_email='".$tp -> toDB($_POST['email'])."', user_signature='".$_POST['signature']."', user_image='".$tp -> toDB($_POST['image'])."', user_timezone='".$tp -> toDB($_POST['timezone'])."', user_hideemail='".$tp -> toDB($_POST['hideemail'])."', user_login='".$_POST['realname']."' {$new_customtitle}, user_xup='".$tp -> toDB($_POST['user_xup'])."' WHERE user_id='".intval($inp)."' ");
 			// If user has changed display name, update the record in the online table
 			if($username != USERNAME && !$_uid)
 			{
@@ -300,7 +314,7 @@ if (isset($_POST['updatesettings']))
 					foreach($ucList as $c)
 					{
 						$cid = $c['userclass_id'];
-						if(!in_array($cid, $_POST['usrclass']))
+						if(!in_array($cid, $_POST['class']))
 						{
 							unset($newclist[$cid]);
 						}
@@ -338,8 +352,6 @@ if (isset($_POST['updatesettings']))
 	}
 }
 // -------------------
-
-require_once(HEADERF);
 
 if(isset($message))
 {
@@ -410,8 +422,7 @@ require_once(FOOTERF);
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
-function req($field)
-{
+function req($field) {
 	global $pref;
 	if ($field == 2)
 	{

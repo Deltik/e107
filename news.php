@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/news.php,v $
-|     $Revision: 1.92 $
-|     $Date: 2006/01/31 04:55:00 $
-|     $Author: qnome $
+|     $Revision: 1.97 $
+|     $Date: 2006/04/24 23:46:36 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
@@ -35,7 +35,6 @@ if (!defined("ITEMVIEW")){
 		define("ITEMVIEW", $pref['newsposts']);
 	}
 }
-if(ADMIN && file_exists("install.php")){ echo "<div class='installe' style='text-align:center'><b>*** ".LAN_NEWS_3." ***</b><br />".LAN_NEWS_4."</div><br /><br />"; }
 
 if (e_QUERY) {
 	$tmp = explode(".", e_QUERY);
@@ -136,10 +135,14 @@ if ($action == 'cat' || $action == 'all'){
 
 	$icon = ($row['category_icon']) ? "<img src='".e_IMAGE."icons/".$row['category_icon']."' alt='' />" : "";
 	$parms = $news_total.",".$amount.",".$from.",".e_SELF.'?'.$action.".".$sub_action.".[FROM]";
-	$text .= ($news_total > $amount) ? LAN_NEWS_22."&nbsp;".$tp->parseTemplate("{NEXTPREV={$parms}}") : "";
+	$text .= "<div class='nextprev'>".$tp->parseTemplate("{NEXTPREV={$parms}}")."</div>";
+
+    if(!$NEWSLISTTITLE){
+		$NEWSLISTTITLE = LAN_82." '{$category_name}'";
+	}
 
 	ob_start();
-	$ns->tablerender(LAN_82." '{$category_name}'", $text);
+	$ns->tablerender($NEWSLISTTITLE, $text);
 	$cache_data = ob_get_flush();
 	setNewsCache($cacheString, $cache_data);
 	require_once(FOOTERF);
@@ -268,7 +271,7 @@ if($tmp_cache = checkCache($cacheString)){
 	require_once(HEADERF);
 
 	if(!$action){
-		render_wmessage();
+
 		if (isset($pref['fb_active'])){  // --->feature box
 			require_once(e_PLUGIN."featurebox/featurebox.php");
 		}
@@ -299,7 +302,7 @@ if($action != "" && !is_numeric($action)){
 
 require_once(HEADERF);
 if(!$action){
-	render_wmessage();   // --> wmessage.
+
 	if (isset($pref['fb_active'])){   // --->feature box
 		require_once(e_PLUGIN."featurebox/featurebox.php");
 	}
@@ -453,7 +456,7 @@ if ($action != "item") {
 		$action = "";
 	}
 	$parms = $news_total.",".ITEMVIEW.",".$from.",".e_SELF.'?'."[FROM].".$action.(isset($sub_action) ? ".".$sub_action : "");
-	$nextprev = ($news_total > ITEMVIEW) ? LAN_NEWS_22."&nbsp;".$tp->parseTemplate("{NEXTPREV={$parms}}") : "";
+	$nextprev = $tp->parseTemplate("{NEXTPREV={$parms}}");
 	echo ($nextprev ? "<div class='nextprev'>".$nextprev."</div>" : "");
 }
 
@@ -512,29 +515,6 @@ function renderCache($cache, $nfp = FALSE){
 	require_once(FOOTERF);
 	exit;
 }
-
-
-
-function render_wmessage(){
-
-	global $pref,$sql,$ns,$tp;
-	if (!$pref['wmessage_sc']) {
-		if (!defined("WMFLAG")) {
-			$sql->db_Select("generic", "gen_chardata", "gen_type='wmessage' AND gen_intdata REGEXP '".e_CLASS_REGEXP."' ORDER BY gen_intdata ASC");
-			while ($row = $sql->db_Fetch()){
-				$wmessage .= $tp->toHTML($row['gen_chardata'], TRUE, 'parse_sc', 'admin')."<br />";
-			}
-		}
-		if (isset($wmessage)) {
-			if ($pref['wm_enclose']) {
-				$ns->tablerender("", $wmessage, "wm");
-			} else {
-				echo $wmessage;
-			}
-		}
-	}
-}
-
 
 function render_newscats(){  // --  CNN Style Categories. ----
 	global $pref,$ns,$tp;

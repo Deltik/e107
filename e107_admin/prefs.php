@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/prefs.php,v $
-|     $Revision: 1.78 $
-|     $Date: 2006/02/07 15:35:43 $
+|     $Revision: 1.89 $
+|     $Date: 2006/05/01 23:58:46 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
@@ -38,28 +38,26 @@ if (!$pref['timezone']) {
 require_once(e_HANDLER."form_handler.php");
 $rs = new form;
 
-$signup_title = array(CUSTSIG_2, "null", "null", "null", "null", "null", "null", CUSTSIG_6, CUSTSIG_7, CUSTSIG_8, CUSTSIG_17);
-$signup_name = array("real", "null", "null", "null", "null", "null", "null", "sig", "avt", "zone", "usrclass");
-
+if ($_POST['submit_resetdisplaynames'])
+{
+    $sql -> db_Update("user", "user_name=user_loginname");
+	$message = PRFLAN_157;
+}
 
 if (isset($_POST['updateprefs']))
 {
 	unset($_POST['updateprefs']);
+
 	$_POST['cookie_name'] = str_replace(array(" ","."), "_", $_POST['cookie_name']);
 	$_POST['cookie_name'] = preg_replace("#[^a-zA-Z0-9_]#", "", $_POST['cookie_name']);
+
+	$_POST['siteurl']     = trim($_POST['siteurl']) ? trim($_POST['siteurl']) : SITEURL;
+	$_POST['siteurl']     = substr($_POST['siteurl'], -1) == "/" ? $_POST['siteurl'] : $_POST['siteurl']."/";
 
 	foreach($_POST as $key => $value)
 	{
 		$pref[$key] = $tp->toDB($value);
 	}
-	$signup_options = "";
-	for ($i = 0; $i < count($signup_title); $i++)
-	{
-		$valuesignup = $signup_name[$i];
-		$signup_options .= $_POST[$valuesignup];
-		$signup_options .= $i < (count($signup_title)-1) ? "." : "";
-	}
-	$pref['signup_options'] = $signup_options;
 
 	$e107cache->clear();
 	save_prefs();
@@ -146,7 +144,8 @@ $text = "<script type=\"text/javascript\">
 	<tr>
 	<td style='width:50%' class='forumheader3'>".PRFLAN_3."</td>
 	<td style='width:50%; text-align:right' class='forumheader3'>
-	<input class='tbox' type='text' name='siteurl' size='50' value='".SITEURL."' maxlength='150' />
+	<input class='tbox' type='text' name='siteurl' size='50' value='".$pref['siteurl']."' maxlength='150' /><br />
+	".($pref['siteurl'] == SITEURL ? "" : "<br />( ".PRFLAN_159.": <b>".SITEURL."</b> )")."
 	</td>
 	</tr>
 
@@ -158,12 +157,15 @@ $text = "<script type=\"text/javascript\">
 	</td>
 	</tr>
 
-
 	<tr>
 	<td style='width:50%' class='forumheader3'>".PRFLAN_4."</td>
-	<td style='width:50%; text-align:right' class='forumheader3'>
-	<input class='tbox' type='text' name='sitebutton' size='50' value='".SITEBUTTON."' maxlength='150' />
-	</td>
+	<td style='width:50%; text-align:right' class='forumheader3'>";
+
+    $param = "sitebutton,".e_IMAGE.",".SITEBUTTON.",81px,30px,";
+    $text .= $tp->parseTemplate("{IMAGESELECTOR={$param}}");
+
+	$text .= "
+		</td>
 	</tr>
 	<tr>
 
@@ -194,6 +196,20 @@ $text = "<script type=\"text/javascript\">
 	</td>
 	</tr>
 	<tr>
+
+	<td style='width:50%' class='forumheader3'>".PRFLAN_162."<br /><span class='smalltext'>".PRFLAN_163."</span></td>
+	<td style='width:50%; text-align:right' class='forumheader3'>
+	<textarea class='tbox' name='sitecontactinfo' cols='59' rows='6'>".$pref['sitecontactinfo']."</textarea>
+	</td>
+	</tr>
+
+	<tr>
+	<td style='width:50%' class='forumheader3'>".PRFLAN_164."<br /><span class='smalltext'>".PRFLAN_165."</span></td>
+	<td style='width:50%; text-align:right' class='forumheader3'>
+	<input type='radio' name='contact_emailcopy' value='1'".($pref['contact_emailcopy'] ? " checked='checked'" : "")." /> ".PRFLAN_112."&nbsp;&nbsp;
+	<input type='radio' name='contact_emailcopy' value='0'".(!$pref['contact_emailcopy'] ? " checked='checked'" : "")." /> ".PRFLAN_113."
+	</td>
+	</tr>
 
 	<td style='width:50%' class='forumheader3'>".PRFLAN_9."</td>
 	<td style='width:50%; text-align:right' class='forumheader3'>
@@ -384,8 +400,8 @@ $text .= "<div id='registration' style='display:none; text-align:center'><table 
 
 	<select name='user_reg_veri' class='tbox'>";
 	$veri_list[0] = PRFLAN_152;
-  $veri_list[1] = PRFLAN_31;
-  $veri_list[2] = PRFLAN_153;
+	$veri_list[1] = PRFLAN_31;
+	$veri_list[2] = PRFLAN_153;
 
 	foreach($veri_list as $v => $v_title){
 		$sel = ($pref['user_reg_veri'] == $v) ? "selected='selected'" : "";
@@ -393,6 +409,14 @@ $text .= "<div id='registration' style='display:none; text-align:center'><table 
 	}
 
 	$text .="</select></td>
+	</tr>
+
+	<tr>
+	<td style='width:50%' class='forumheader3'>".PRFLAN_160."<br /></td>
+	<td class='forumheader3' style='width:50%;text-align:right' >
+	<input type='radio' name='signup_remote_emailcheck' value='1'".($pref['signup_remote_emailcheck'] ? " checked='checked'" : "")." /> ".PRFLAN_112."&nbsp;&nbsp;
+	<input type='radio' name='signup_remote_emailcheck' value='0'".(!$pref['signup_remote_emailcheck'] ? " checked='checked'" : "")." /> ".PRFLAN_113."
+	</td>
 	</tr>
 
 	<tr>
@@ -426,6 +450,8 @@ $text .= "<div id='registration' style='display:none; text-align:center'><table 
 	</td>
 	</tr>
 
+
+
 	<tr>
 	<td style='width:50%' class='forumheader3'>".PRFLAN_136."</td>
 	<td class='forumheader3' style='width:50%;text-align:right' >
@@ -439,6 +465,22 @@ $text .= "<div id='registration' style='display:none; text-align:center'><table 
 	<textarea class='tbox' name='signup_disallow_text' cols='1' rows='3' style='width: 80%;'>".$pref['signup_disallow_text']."</textarea>
 	</td>
 	</tr>
+
+	<tr>
+	<td style='width:50%' class='forumheader3'>".PRFLAN_155.":</td>
+	<td class='forumheader3' style='width:50%;text-align:right' >
+	".r_userclass('displayname_class',$pref['displayname_class'],'off','nobody, public, admin, classes')."
+	<input class='button' type='submit' name='submit_resetdisplaynames' value='".PRFLAN_156."' />
+	</td>
+	</tr>
+
+	<tr>
+	<td style='width:50%' class='forumheader3'>".PRFLAN_158.":</td>
+	<td class='forumheader3' style='width:50%;text-align:right' >
+	<input type='text' class='tbox' size='3' name='displayname_maxlength' value='".$pref['displayname_maxlength']."' />
+	</td>
+	</tr>
+
 	";
 
 $text .= pref_submit();
@@ -469,22 +511,22 @@ $text .= "<div id='signup' style='display:none; text-align:center'>
 	<td class='forumheader'>".CUSTSIG_13."</td>
 	<td class='forumheader'>".CUSTSIG_14."</td>
 	</tr>";
-$signupval = explode(".", $pref['signup_options']);
-for ($i = 0; $i < count($signup_title); $i++)
-{
-	if($signup_title[$i] != "null")
+
+    $signup_option_title = array(CUSTSIG_2, CUSTSIG_6, CUSTSIG_7, CUSTSIG_8, CUSTSIG_17);
+    $signup_option_names = array("signup_option_realname", "signup_option_signature", "signup_option_image", "signup_option_timezone", "signup_option_class");
+
+	foreach($signup_option_names as $key => $value)
 	{
 		$text .= "
-			<tr>
-				<td style='width:50%' class='forumheader3'>".$signup_title[$i]."</td>
-				<td style='width:50%' class='forumheader3' >". ($signupval[$i] == "0" || $$signup_name[$i] == "" ? "<input type='radio' name='".$signup_name[$i]."' value='0' checked='checked' /> ".CUSTSIG_12 : "<input type='radio' name='".$signup_name[$i]."' value='0' /> ".CUSTSIG_12)."&nbsp;&nbsp;". ($signupval[$i] == "1" ? "<input type='radio' name='".$signup_name[$i]."' value='1' checked='checked' /> ".CUSTSIG_14 : "<input type='radio' name='".$signup_name[$i]."' value='1' /> ".CUSTSIG_14)."&nbsp;&nbsp;". ($signupval[$i] == "2" ? "<input type='radio' name='".$signup_name[$i]."' value='2' checked='checked' /> ".CUSTSIG_15 : "<input type='radio' name='".$signup_name[$i]."' value='2' /> ".CUSTSIG_15)."&nbsp;&nbsp;</td>
-			</tr>";
+		<tr>
+			<td style='width:50%' class='forumheader3'>".$signup_option_title[$key]."</td>
+			<td style='width:50%' class='forumheader3'>".
+			(!$pref[$value]        ? "<input type='radio' name='{$value}' value='0' checked='checked' /> ".CUSTSIG_12 : "<input type='radio' name='{$value}' value='0' /> ".CUSTSIG_12)."&nbsp;&nbsp;".
+			( $pref[$value] == "1" ? "<input type='radio' name='{$value}' value='1' checked='checked' /> ".CUSTSIG_14 : "<input type='radio' name='{$value}' value='1' /> ".CUSTSIG_14)."&nbsp;&nbsp;".
+			( $pref[$value] == "2" ? "<input type='radio' name='{$value}' value='2' checked='checked' /> ".CUSTSIG_15 : "<input type='radio' name='{$value}' value='2' /> ".CUSTSIG_15)."&nbsp;&nbsp;
+			</td>
+		</tr>";
 	}
-	else
-	{
-		$text .= "<input type='hidden' name='{$signup_name[$i]}' value='0' />";
-	}
-}
 
 // Custom Fields.
 
@@ -808,6 +850,14 @@ $text .= "<div id='comments' style='display:none; text-align:center'>
 	</td>
 	</tr>
 
+	<tr>
+	<td style='width:50%' class='forumheader3'>".PRFLAN_161.": </td>
+	<td style='width:50%; text-align:right' class='forumheader3'>
+	<input type='radio' name='comments_disabled' value='1'".($pref['comments_disabled'] ? " checked='checked'" : "")." /> ".PRFLAN_112."&nbsp;&nbsp;
+	<input type='radio' name='comments_disabled' value='0'".(!$pref['comments_disabled'] ? " checked='checked'" : "")." /> ".PRFLAN_113."
+	</td>
+	</tr>
+
 	";
 
 $text .= pref_submit();
@@ -831,7 +881,7 @@ $text .= "<div id='advanced' style='display:none; text-align:center'>
 	</tr>
 
 	<tr>
-	<td style='width:50%' class='forumheader3'>".PRFLAN_17."<br /><span class='smalltext'>&nbsp</span></td>
+	<td style='width:50%' class='forumheader3'>".PRFLAN_17."<br /><span class='smalltext'>&nbsp;</span></td>
 	<td style='width:50%; text-align:right' class='forumheader3'>
 	<input type='radio' name='compress_output' value='1'".($pref['compress_output'] ? " checked='checked'" : "")." /> ".PRFLAN_112."&nbsp;&nbsp;
 	<input type='radio' name='compress_output' value='0'".(!$pref['compress_output'] ? " checked='checked'" : "")." /> ".PRFLAN_113."
@@ -839,7 +889,7 @@ $text .= "<div id='advanced' style='display:none; text-align:center'>
 	</tr>
 
 	<tr>
-	<td style='width:50%' class='forumheader3'>".PRFLAN_150."<br /><span class='smalltext'>&nbsp</span></td>
+	<td style='width:50%' class='forumheader3'>".PRFLAN_150."<br /><span class='smalltext'>&nbsp;</span></td>
 	<td style='width:50%; text-align:right' class='forumheader3'>{$auth_dropdown}</td>
 	</tr>
 
