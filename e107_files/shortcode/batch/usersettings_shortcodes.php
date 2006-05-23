@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/usersettings_shortcodes.php,v $
-|     $Revision: 1.16 $
-|     $Date: 2006/02/21 17:37:05 $
-|     $Author: whoisrich $
+|     $Revision: 1.18 $
+|     $Date: 2006/05/16 03:11:13 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -200,7 +200,7 @@ if ($pref['photo_upload'] && FILE_UPLOADS)
 SC_END
 
 SC_BEGIN XUP
-global $pref;
+global $pref,$curVal;
 if(isset($pref['xup_enabled']) && $pref['xup_enabled'] == 1)
 {
 	return 	"<input class='tbox' type='text' name='user_xup' size='50' value='{$curVal['user_xup']}' maxlength='100' />";
@@ -228,7 +228,7 @@ foreach($catList as $cat)
 	cachevars("extendedcat_{$cat['user_extended_struct_id']}", $cat);
 	$ret .= $tp->parseTemplate("{USEREXTENDED_CAT={$cat['user_extended_struct_id']}}", FALSE, $usersettings_shortcodes);
 }
-return $ret;	
+return $ret;
 SC_END
 
 SC_BEGIN USEREXTENDED_CAT
@@ -244,7 +244,7 @@ if(!$catInfo)
 	$qry = "
 	SELECT * FROM #user_extended_struct
 	WHERE user_extended_struct_applicable IN (".$tp -> toDB($curVal['userclass_list'], true).")
-	AND user_extended_struct_write IN (".$tp -> toDB($curVal['userclass_list'], true).")
+	AND user_extended_struct_write IN (".USERCLASS_LIST.")
 	AND user_extended_struct_id = ".intval($parm)."
 	";
 	if($sql->db_Select_gen($qry))
@@ -258,7 +258,7 @@ if($catInfo)
 	$qry = "
 	SELECT * FROM #user_extended_struct
 	WHERE user_extended_struct_applicable IN (".$tp -> toDB($curVal['userclass_list'], true).")
-	AND user_extended_struct_write IN (".$tp -> toDB($curVal['userclass_list'], true).")
+	AND user_extended_struct_write IN (".USERCLASS_LIST.")
 	AND user_extended_struct_parent = ".intval($parm)."
 	AND user_extended_struct_type != 0
 	ORDER BY user_extended_struct_order ASC
@@ -297,7 +297,7 @@ if(!$fInfo)
 	$qry = "
 	SELECT * FROM #user_extended_struct
 	WHERE user_extended_struct_applicable IN (".$tp -> toDB($curVal['userclass_list'], true).")
-	AND user_extended_struct_write IN (".$tp -> toDB($curVal['userclass_list'], true).")
+	AND user_extended_struct_write IN (".USERCLASS_LIST.")
 	AND user_extended_struct_name = '".$tp -> toDB($parm, true)."'
 	";
 	if($sql->db_Select_gen($qry))
@@ -313,7 +313,7 @@ if($fInfo)
 	{
 		$fname = str_replace("{FIELDNAME}", $fname, $REQUIRED_FIELD);
 	}
-	
+
 	$parms = explode("^,^",$fInfo['user_extended_struct_parms']);
 
 	$fhide="";
@@ -337,7 +337,7 @@ if($fInfo)
 }
 
 $extended_showed['field'][$parm] = 1;
-return $ret;	
+return $ret;
 SC_END
 
 */

@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/user.php,v $
-|     $Revision: 1.30 $
-|     $Date: 2006/03/03 23:36:47 $
-|     $Author: e107coders $
+|     $Revision: 1.32 $
+|     $Date: 2006/05/19 01:57:10 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
@@ -49,7 +49,7 @@ if (!USER) {
 
 if (isset($_POST['records'])) {
 	$records = intval($_POST['records']);
-	$order = $tp -> toDB($_POST['order']);
+	$order = ($_POST['order'] == 'ASC' ? 'ASC' : 'DESC');
 	$from = 0;
 }
 else if(!e_QUERY) {
@@ -64,7 +64,7 @@ else if(!e_QUERY) {
 		$qs = explode(".", e_QUERY);
 		$from = intval($qs[0]);
 		$records = intval($qs[1]);
-		$order = $tp -> toDB($qs[2], true);
+		$order = ($qs[2] == 'ASC' ? 'ASC' : 'DESC');
 	}
 }
 if ($records > 30) {

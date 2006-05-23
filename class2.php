@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/class2.php,v $
-|     $Revision: 1.277 $
-|     $Date: 2006/04/30 23:48:39 $
+|     $Revision: 1.281 $
+|     $Date: 2006/05/15 13:32:20 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
@@ -94,6 +94,11 @@ if (strpos($_SERVER['PHP_SELF'], "trackback") === false) {
 if (preg_match("#\[(.*?)](.*)#", $_SERVER['QUERY_STRING'], $matches)) {
 	define("e_MENU", $matches[1]);
 	define("e_QUERY", $matches[2]);
+	parse_str(e_MENU, $_emenu);
+	if(isset($_emenu['lan']))
+	{
+		$_GET['elan'] = $_emenu['lan'];
+	}
 } else {
 	define("e_MENU", "");
 	define("e_QUERY", $_SERVER['QUERY_STRING']);
@@ -253,7 +258,7 @@ if ($pref['user_tracking'] == "session") {
 	session_start();
 }
 
-define("e_SELF", ($pref['ssl_enabled'] ? "https://".$_SERVER['HTTP_HOST'].($_SERVER['PHP_SELF'] ? $_SERVER['PHP_SELF'] : $_SERVER['SCRIPT_FILENAME']) : "http://".$_SERVER['HTTP_HOST'].($_SERVER['PHP_SELF'] ? $_SERVER['PHP_SELF'] : $_SERVER['SCRIPT_FILENAME'])));
+define("e_SELF", ($pref['ssl_enabled'] == '1' ? "https://".$_SERVER['HTTP_HOST'].($_SERVER['PHP_SELF'] ? $_SERVER['PHP_SELF'] : $_SERVER['SCRIPT_FILENAME']) : "http://".$_SERVER['HTTP_HOST'].($_SERVER['PHP_SELF'] ? $_SERVER['PHP_SELF'] : $_SERVER['SCRIPT_FILENAME'])));
 
 
 // if the option to force users to use a particular url for the site is enabled, redirect users there
@@ -538,7 +543,7 @@ define("TIMEOFFSET", $e_deltaTime);
 
 $sql->db_Mark_Time('Start: Get menus');
 
-$menu_data = $e107cache->retrieve("menus_".USERCLASS_LIST);
+$menu_data = $e107cache->retrieve("menus_".USERCLASS_LIST."_".md5(e_LANGUAGE));
 $menu_data = $eArrayStorage->ReadArray($menu_data);
 if(!is_array($menu_data)) {
 	if ($sql->db_Select('menus', '*', "menu_location > 0 AND menu_class IN (".USERCLASS_LIST.") ORDER BY menu_order")) {
@@ -550,7 +555,7 @@ if(!is_array($menu_data)) {
 	$menu_data['menu_list'] = $eMenuList;
 	$menu_data['menu_active'] = $eMenuActive;
 	$menu_data = $eArrayStorage->WriteArray($menu_data, false);
-	$e107cache->set("menus_".USERCLASS_LIST, $menu_data);
+	$e107cache->set("menus_".USERCLASS_LIST."_".md5(e_LANGUAGE), $menu_data);
 	unset($menu_data);
 } else {
 	$eMenuList = $menu_data['menu_list'];
@@ -778,7 +783,7 @@ function getperms($arg, $ap = ADMINPERMS) {
  *
  * @return array
  */
-function get_user_data($uid, $extra = "", $force_join = TRUE)
+function get_user_data($uid, $extra = "")
 {
 	global $pref, $sql;
 	$uid = intval($uid);
@@ -788,56 +793,55 @@ function get_user_data($uid, $extra = "", $force_join = TRUE)
 	{
 		return $ret;
 	}
-	if($force_join == TRUE || array_key_exists('ue_upgrade', $pref) || array_key_exists('signup_maxip'))
-	{
-		$qry = "
-		SELECT u.*, ue.* FROM #user AS u
-		LEFT JOIN #user_extended AS ue ON ue.user_extended_id = u.user_id
-		WHERE u.user_id='{$uid}' {$extra}
-		";
-	}
-	else
+
+	$qry = "
+	SELECT u.*, ue.* FROM #user AS u
+	LEFT JOIN #user_extended AS ue ON ue.user_extended_id = u.user_id
+	WHERE u.user_id='{$uid}' {$extra}
+	";
+	if (!$sql->db_Select_gen($qry))
 	{
 		$qry = "SELECT * FROM #user AS u WHERE u.user_id='{$uid}' {$extra}";
-	}
-	if ($sql->db_Select_gen($qry))
-	{
-		$var = $sql->db_Fetch();
-		$extended_struct = getcachedvars("extended_struct");
-		if(!$extended_struct)
+		if(!$sql->db_Select_gen($qry))
 		{
-			unset($extended_struct);
-			$qry = "SHOW COLUMNS FROM #user_extended ";
-			if($sql->db_Select_gen($qry))
-			{
-				while($row = $sql->db_Fetch())
-				{
-					if($row['Default'] != "")
-					{
-						$extended_struct[] = $row;
-					}
-				}
-				if(isset($extended_struct))
-				{
-					cachevars("extended_struct", $extended_struct);
-				}
-			}
+			return FALSE;
 		}
+	}
 
-		if(isset($extended_struct))
+	$var = $sql->db_Fetch();
+	$extended_struct = getcachedvars("extended_struct");
+	if(!$extended_struct)
+	{
+		unset($extended_struct);
+		$qry = "SHOW COLUMNS FROM #user_extended ";
+		if($sql->db_Select_gen($qry))
 		{
-			foreach($extended_struct as $row)
+			while($row = $sql->db_Fetch())
 			{
-				if($row['Default'] != "" && ($var[$row['Field']] == NULL || $var[$row['Field']] == "" ))
+				if($row['Default'] != "")
 				{
-					$var[$row['Field']] = $row['Default'];
+					$extended_struct[] = $row;
 				}
 			}
+			if(isset($extended_struct))
+			{
+				cachevars("extended_struct", $extended_struct);
+			}
 		}
-		cachevars("userdata_{$uid}", $var);
-		return $var;
 	}
-	return FALSE;
+
+	if(isset($extended_struct))
+	{
+		foreach($extended_struct as $row)
+		{
+			if($row['Default'] != "" && ($var[$row['Field']] == NULL || $var[$row['Field']] == "" ))
+			{
+				$var[$row['Field']] = $row['Default'];
+			}
+		}
+	}
+	cachevars("userdata_{$uid}", $var);
+	return $var;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//

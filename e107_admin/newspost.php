@@ -11,8 +11,8 @@
 |        GNU General Public License (http://gnu.org).
 |
 |   $Source: /cvsroot/e107/e107_0.7/e107_admin/newspost.php,v $
-|   $Revision: 1.119 $
-|   $Date: 2006/04/19 20:01:10 $
+|   $Revision: 1.123 $
+|   $Date: 2006/05/14 00:28:40 $
 |   $Author: e107coders $
 +---------------------------------------------------------------+
 
@@ -27,21 +27,7 @@ require_once(e_HANDLER."calendar/calendar_class.php");
 $cal = new DHTML_Calendar(true);
 function headerjs(){
   	global $cal;
-	$js = "
-		<script type='text/javascript'>
-			function preview_image(){
-				var ta;
-				ta = document.getElementById('news_pic').value;
-				if(ta){
-            		document.getElementById('prev_image').src = '".e_IMAGE."newspost_images/' + ta;
-                }else{
-                	document.getElementById('prev_image').src = '".e_IMAGE."generic/blank.gif';
-				}
-				return;
-			}
-		</script>";
-
-    $js .= $cal->load_files();
+    $js = $cal->load_files();
 
    return $js;
 }
@@ -110,10 +96,7 @@ if ($delete == "main" && $del_id)
 			$newspost->show_message(NWSLAN_31." #".$del_id." ".NWSLAN_32);
 			$e107cache->clear("news.php");
 
-			/* bugtracker #1477 - delete associated comments */
-			$sql->db_Delete("comments", "comment_item_id='$del_id' AND comment_type='0' ");
-			/* end */
-
+			admin_purge_related("news", $del_id);
 		}
 	}
 	unset($delete, $del);
@@ -126,8 +109,10 @@ if ($delete == "category" && $del_id) {
 	}
 }
 
-if ($delete == "sn" && $del_id) {
-	if ($sql->db_Delete("submitnews", "submitnews_id='$del_id' ")) {
+if($delete == "sn" && $del_id)
+{
+	if ($sql->db_Delete("submitnews", "submitnews_id='$del_id' "))
+	{
 		$newspost->show_message(NWSLAN_34." #".$del_id." ".NWSLAN_32);
 		$e107cache->clear("news.php");
 		unset($delete, $del_id);
@@ -317,7 +302,7 @@ class newspost {
 
 				$text .= "<tr>
 				<td style='width:5%' class='forumheader3'>$news_id</td>
-				<td style='width:55%' class='forumheader3'><a href='".e_BASE."comment.php?comment.news.$news_id'>".($news_title ? $tp->toHTML($news_title) : "[".NWSLAN_42."]")."</a></td>
+				<td style='width:55%' class='forumheader3'><a href='".e_BASE."comment.php?comment.news.$news_id'>".($news_title ? $tp->toHTML($news_title,"","no_make_clickable") : "[".NWSLAN_42."]")."</a></td>
 				<td style='20%' class='forumheader3'>";
 				$text .= $ren_type[$news_render_type];
 				if($news_sticky)
@@ -394,14 +379,11 @@ class newspost {
 
 	function create_item($sub_action, $id)
 	{
-		global $cal, $IMAGES_DIRECTORY;
+		global $cal;
 		// ##### Display creation form ---------------------------------------------------------------------------------------------------------
 		/* 08-08-2004 - unknown - fixed `Insert Image' display to use $IMAGES_DIRECTORY */
-		global $sql, $rs, $ns, $pref, $fl, $IMAGES_DIRECTORY, $tp, $pst, $e107;
-		$rejecthumb = array('$.','$..','/','CVS','thumbs.db','*._$', 'index', 'null*');
-		if($imagelist = $fl->get_files(e_IMAGE."newspost_images/",".jpg|.gif|.png",$rejecthumb)){
-        	sort($imagelist);
-		}
+		global $sql, $rs, $ns, $pref, $tp, $pst, $e107;
+
 		if ($sub_action == "sn" && !$_POST['preview']) {
 			if ($sql->db_Select("submitnews", "*", "submitnews_id=$id", TRUE)) {
 				list($id, $submitnews_name, $submitnews_email, $_POST['news_title'], $submitnews_category, $_POST['data'], $submitnews_datestamp, $submitnews_ip, $submitnews_auth, $submitnews_file) = $sql->db_Fetch();
@@ -554,18 +536,18 @@ class newspost {
 		<td class='forumheader3'>".LAN_NEWS_47.":</td>
 		<td class='forumheader3'>
 		<a style='cursor: pointer' onclick='expandit(this);'>".LAN_NEWS_23."</a>
-		<div style='display: none;'><br />";
+		<div style='display: none'><br />";
 
-		$text .= "<select id='news_pic' multiple='multiple' class='tbox' style='height:100px;float:left' name='news_thumbnail' id='news_thumbnail' onchange='preview_image();'>
-		<option value=''> -- ".LAN_NEWS_48." -- </option>";
-		foreach($imagelist as $icon)
-		{
-			$selected = ($_POST['news_thumbnail'] == $icon['fname']) ? " selected='selected'" : "";
-			$text .= "<option value='".$icon['fname']."'".$selected.">".$icon['fname']."</option>\n";
-		}
-		$text .= "</select>";
-		$pvw_default = ($_POST['news_thumbnail']) ? e_IMAGE."newspost_images/".$_POST['news_thumbnail'] : e_IMAGE."generic/blank.gif";
-        $text .= "&nbsp;<img id='prev_image' src='{$pvw_default}' alt='' style='width:100px;height:100px' />";
+        $parms = "name=news_thumbnail";
+		$parms .= "&path=".e_IMAGE."newspost_images/";
+		$parms .= "&default=".$_POST['news_thumbnail'];
+		$parms .= "&width=100px";
+		$parms .= "&height=100px";
+		$parms .= "&multiple=TRUE";
+		$parms .= "&label=-- ".LAN_NEWS_48." --";
+
+        $text .= $tp->parseTemplate("{IMAGESELECTOR={$parms}}");
+
 		$text .= "</div>
 		</td>
 		</tr>
@@ -1110,7 +1092,7 @@ class newspost {
 				$buttext = ($submitnews_auth == 0)? NWSLAN_58 :	NWSLAN_103;
 				$text .= $rs->form_open("post", e_SELF."?sn", "myform__{$submitnews_id}", "", "", " onsubmit=\"return jsconfirm('".$tp->toJS(NWSLAN_38." [ID: $submitnews_id ]")."')\"   ")
 				."<div>".$rs->form_button("button", "category_edit_{$submitnews_id}", $buttext, "onclick=\"document.location='".e_SELF."?create.sn.$submitnews_id'\"")."
-				".$rs->form_button("submit", "sn_delete_{$submitnews_id}", LAN_DELETE)."
+				".$rs->form_button("submit", "delete[sn_{$submitnews_id}]", LAN_DELETE)."
 				</div>".$rs->form_close()."
 				</td>
 				</tr>\n";

@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/poll/poll_class.php,v $
-|     $Revision: 1.41 $
-|     $Date: 2006/02/18 14:10:36 $
-|     $Author: lisa_ $
+|     $Revision: 1.43 $
+|     $Date: 2006/05/17 15:37:36 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -32,6 +32,10 @@ class poll
 		global $sql;
 		if ($sql -> db_Delete("polls", " poll_id='".intval($existing)."' "))
 		{
+			if(function_exists("admin_purge_related"))
+			{
+				admin_purge_related("poll", $existing);
+			}
 			return "Poll deleted.";
 		}
 	}
@@ -206,6 +210,13 @@ class poll
 					$pollArray['poll_votes'] = $votep;
 	
 					$sql->db_Update("polls", "poll_votes = '$votep', poll_ip='".$poll_ip.$userid."^' WHERE poll_id=".$poll_id);
+					echo "
+				<script type='text/javascript'>
+				<!--
+				setcook({$poll_id});
+				//-->
+				</script>
+				";					
 					$POLLMODE = "voted";
 	
 			}
@@ -319,7 +330,7 @@ class poll
 					}
 					$count ++;
 				}
-				$SUBMITBUTTON = "<input class='button' type='submit' name='pollvote' value='".POLLAN_30."' onclick='setcook(\"".$pollArray['poll_id']."\");' />";
+				$SUBMITBUTTON = "<input class='button' type='submit' name='pollvote' value='".POLLAN_30."' />";
 				if(('preview' == $type || $preview == TRUE) && strpos(e_SELF, "viewtopic") === FALSE)
 				{
 					$SUBMITBUTTON = "[".POLLAN_30."]";
