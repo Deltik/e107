@@ -11,13 +11,15 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_themes/templates/signup_template.php,v $
-|     $Revision: 1.4 $
-|     $Date: 2006/04/26 07:08:10 $
-|     $Author: e107coders $
+|     $Revision: 1.8 $
+|     $Date: 2006/11/16 19:50:45 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
+if (!defined("USER_WIDTH")){ define("USER_WIDTH","width:100%"); }
+
 
 define("REQUIRED_FIELD_MARKER", "<span style='text-align:right;font-size:15px; color:red'> *</span>");
 
@@ -49,7 +51,7 @@ $USERCLASS_SUBSCRIBE_START = "
 <td class='forumheader3' style='width:30%;vertical-align:top'>".LAN_USET_5." ".req($pref['signup_option_class'])."
 <br /><span class='smalltext'>".LAN_USET_6."</span></td>
 <td class='forumheader3' style='width:70%'>
-<table style='width:100%'>
+<table style='".USER_WIDTH."'>
 ";
 }
 
@@ -112,7 +114,7 @@ $SIGNUP_SIGNATURE_START = "
 
 $SIGNUP_SIGNATURE_END = "
 </textarea><br />
-	<div style='width:99%'>{REN_HELP}</div>
+	<div style='".USER_WIDTH."'>{REN_HELP}</div>
 	</td></tr>
 ";
 
@@ -151,8 +153,7 @@ $sc_style['SIGNUP_IMAGECODE']['post'] = "
 
 if(!defined($COPPA_TEMPLATE))
 {
-$COPPA_TEMPLATE = LAN_109 . "
-<a href='http://www.cdt.org/legislation/105th/privacy/coppa.html'>".LAN_SIGNUP_14."</a>. ".LAN_SIGNUP_15." <a href='mailto:".SITEADMINEMAIL."'>".LAN_SIGNUP_14."</a> ".LAN_SIGNUP_16."
+$COPPA_TEMPLATE = LAN_109." <a href='http://www.cdt.org/legislation/105th/privacy/coppa.html'>".LAN_SIGNUP_14."</a>. ".LAN_SIGNUP_15." <a href='mailto:".SITEADMINEMAIL."'>".LAN_SIGNUP_14."</a> ".LAN_SIGNUP_16."
 <br />
 <br />
 <div style='text-align:center'><b>".LAN_SIGNUP_17."</b>
@@ -169,7 +170,7 @@ $COPPA_FAIL = "<div style='text-align:center'>".LAN_SIGNUP_9."</div>";
 if(!defined($SIGNUP_TEXT))
 {
 $SIGNUP_TEXT =
-LAN_309." <b>".LAN_SIGNUP_29."</b><br />".LAN_SIGNUP_30."<br />
+LAN_309." <b>".LAN_SIGNUP_29."</b><br /><br />".LAN_SIGNUP_30."<br />
 ";
 }
 
@@ -177,11 +178,11 @@ if(!defined($SIGNUP_XUP_FORM))
 {
 $SIGNUP_XUP_FORM = "
 	<div style='padding:10px;text-align:center'>
-	<input class='button' type ='button' style='cursor:hand' size='30' value='".LAN_SIGNUP_35."' onclick=\"expandit('xup','default')\" />
+	<input class='button' type ='button' style='cursor:hand' size='30' value=\"".LAN_SIGNUP_35."\" onclick=\"expandit('xup','default')\" />
 	</div>
 
 	<div id='xup' style='display:none' >
-	<table style='width: 100%;'>
+	<table style='".USER_WIDTH."'>
 	<tr>
 	<td class='forumheader3' style='width:30%;white-space:nowrap'>".LAN_SIGNUP_31."
 	</td>
@@ -219,7 +220,7 @@ $SIGNUP_XUP_FORM = "
 
 	<tr>
 	<td class='forumheader' colspan='2'  style='text-align:center'>
-	<input class='button' type='submit' name='register' value='".LAN_123."' />
+	<input class='button' type='submit' name='register' value=\"".LAN_123."\" />
 	</td>
 	</tr>
 
@@ -232,7 +233,7 @@ if(!defined($SIGNUP_BEGIN))
 {
 $SIGNUP_BEGIN = "
 {SIGNUP_FORM_OPEN}
-<div style='text-align:center;width:100%'>
+<div style='text-align:center;".USER_WIDTH."'>
 {SIGNUP_SIGNUP_TEXT}
 <br />
 ".LAN_400."<br /><br /></div>";
@@ -243,7 +244,7 @@ if(!defined($SIGNUP_BODY))
 $SIGNUP_BODY = "
 {SIGNUP_XUP}
 <div id='default'>
-<table class='fborder' style='width:99%'>
+<table class='fborder' style='".USER_WIDTH."'>
 {SIGNUP_DISPLAYNAME}
 <tr>
 <td class='forumheader3' style='width:30%;white-space:nowrap' >".LAN_9."<span style='font-size:15px; color:red'> *</span><br /><span class='smalltext'>".LAN_10."</span></td>
@@ -294,7 +295,7 @@ $SIGNUP_BODY = "
 {SIGNUP_IMAGECODE}
 <tr style='vertical-align:top'>
 <td class='forumheader' colspan='2'  style='text-align:center'>
-<input class='button' type='submit' name='register' value='".LAN_123."' />
+<input class='button' type='submit' name='register' value=\"".LAN_123."\" />
 <br />
 </td>
 </tr>

@@ -12,9 +12,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/lan_prefs.php,v $
-|     $Revision: 1.53 $
-|     $Date: 2006/05/02 00:00:04 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.59 $
+|     $Date: 2006/11/20 12:52:37 $
+|     $Author: mrpete $
 +----------------------------------------------------------------------------+
 */
 
@@ -57,7 +57,7 @@ define("PRFLAN_40", "Filter profanities?");
 define("PRFLAN_41", "if checked swearing will be replaced with string below");
 define("PRFLAN_42", "Replace string");
 define("PRFLAN_43", "Filter words");
-define("PRFLAN_44", "words to censor, seperate with a comma");
+define("PRFLAN_44", "words to censor, separate with a comma");
 define("PRFLAN_45", "Use COPPA on signup page?");
 define("PRFLAN_46", "for more info on COPPA see");
 define("PRFLAN_47", "Security &amp; Protection");
@@ -98,7 +98,7 @@ define("CUSTSIG_15", "Required");
 define("CUSTSIG_16", "Minimum Length for Passwords");
 define("CUSTSIG_17", "Subscribe to content/mailouts");
 define("CUSTSIG_18", "Disallow usernames");
-define("CUSTSIG_19", "usernames containing the following text will be rejected, seperate entries by commas");
+define("CUSTSIG_19", "usernames containing the following text will be rejected, separate entries by commas");
 
 define("PRFLAN_91", "If someone is attacking your site by multiple requests to your server, his IP will be automatically banned ! Don't replace a correct server config !!!");
 define("PRFLAN_92", "Secure signup verification -- hide password in email?");
@@ -109,13 +109,13 @@ define("PRFLAN_96", "Will display info on all admin pages for each plugin suppor
 define("PRFLAN_97", "Unique 'Plugins info' menu:");
 define("PRFLAN_98", "If unchecked, each plugin will display its own info in an individual menu. If checked all info will be displayed in one menu.");
 define("PRFLAN_101", "Text rendering");
-define("PRFLAN_102", "Replace links");
-define("PRFLAN_103", "If ticked, posted links will be replaced by the text entered in the textbox below, will stop very long links breaking layout");
-define("PRFLAN_104", "Link replace text");
-define("PRFLAN_105", "text to replace links with, image can be used by using &lt;img tag, with full path to image");
+define("PRFLAN_102", "Replace clickable URLs");
+define("PRFLAN_103", "If ticked, and 'Make Clickable' (above) is also ticked, posted URLs are displayed as a hyperlink using text from the textbox below. This keeps very long URLs from breaking layout.");
+define("PRFLAN_104", "URL replacement text");
+define("PRFLAN_105", "Replacement visible text for clickable URLs. Image can be used by using &lt;img&gt; tag, with full path to image");
 define("PRFLAN_106", "Core preferences saved to database.");
 define("PRFLAN_107", "Email link replace text");
-define("PRFLAN_108", "text to replace email links with, image can be used by using &lt;img tag, with full path to image");
+define("PRFLAN_108", "text to replace email links with, image can be used by using &lt;img&gt; tag, with full path to image");
 define("PRFLAN_109", "Wrap long words in main text");
 define("PRFLAN_110", "words longer than the length entered will be wrapped onto a new line");
 define("PRFLAN_111", "Wrap long words in menu text");
@@ -132,8 +132,8 @@ define("PRFLAN_123", "Will display a what-you-see-is-what-you-get editor in text
 define("PRFLAN_124", "Use 'classic' nextprev look");
 define("PRFLAN_125", "Turning this on will show the nextprev pages as 1 2 3 ... 21 22 23, instead of the new look with the dropdown.");
 define("PRFLAN_126", "Text to display on signup page");
-define("PRFLAN_127", "Make posted links clickable");
-define("PRFLAN_128", "Turning this on will convert posted links to hyperlinks");
+define("PRFLAN_127", "Make URLs clickable");
+define("PRFLAN_128", "Turning this on will convert posted URLs to hyperlinks");
 define("PRFLAN_129", "Disallow multiple logins");
 define("PRFLAN_130", "Activating this will prevent more than one person logging in with the same username/password (login detail sharing)");
 define("PRFLAN_131", "Activate use of [php] bbcode");
@@ -144,7 +144,7 @@ define("PRFLAN_135", "for example, if your site URL above is set http://foo.com,
 define("PRFLAN_136", "Maximum Signups permitted from the same IP address.");
 define("PRFLAN_137", "Display Memory Usage");
 define("PRFLAN_138", "Enable Image-code verification during forgotten password.");
-define("PRFLAN_139", "Display warning when main administrator password hasnt changed for at least 30 days");
+define("PRFLAN_139", "Display warning when main administrator password hasn't changed for at least 30 days");
 define("PRFLAN_140", "Text to display after signup form has been submitted.");
 define("PRFLAN_141", "Allow registration using XML User Profiles");
 define("PRFLAN_142", "Flood Only");
@@ -173,8 +173,18 @@ define("PRFLAN_160", "Check remote servers when validating email addresses.");
 define("PRFLAN_161", "Disable all comments on the site");
 
 define("PRFLAN_162", "Site Contact Information");
-define("PRFLAN_163", "eg. Company Name, Address, Phone etc.");
+define("PRFLAN_163", "e.g. Company Name, Address, Phone, etc.");
 
 define("PRFLAN_164", "Allow users to email copy of contact email to self");
 define("PRFLAN_165", "Possible opening for allowing spam, use with caution");
+define("PRFLAN_166", "Show emoticon images on comment form?");
+
+define("PRFLAN_167", "Make entering an email addresses optional"); // subject to change.
+define("PRFLAN_168", "Site Contact Person(s)");
+define("PRFLAN_169", "If the chosen group contains more than one person, the user will be asked to select a person from the group.");
+
+define("PRFLAN_170", "Use reverse DNS to allow host banning");
+define("PRFLAN_171", "Turning this option on will allow you to ban users by hostname, rather then just IP or email address.  <br />NOTE: This may affect pageload times on some hosts");
+
+
 ?>

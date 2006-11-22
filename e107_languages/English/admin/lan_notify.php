@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/lan_notify.php,v $
-|     $Revision: 1.1 $
-|     $Date: 2005/05/29 18:19:25 $
-|     $Author: sweetas $
+|     $Revision: 1.3 $
+|     $Date: 2006/09/16 18:18:04 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -18,7 +18,7 @@ define("NT_LAN_5", "Class");
 define("NT_LAN_6", "Email");
 
 define("NU_LAN_1", "User Events");
-define("NU_LAN_2", "User sign up");
+define("NU_LAN_2", "User signup");
 define("NU_LAN_3", "User account verification");
 define("NU_LAN_4", "User login");
 define("NU_LAN_5", "User logout");
@@ -31,5 +31,8 @@ define("NN_LAN_2", "News item submitted by user");
 define("NN_LAN_3", "News item posted by admin");
 define("NN_LAN_4", "News item edited by admin");
 define("NN_LAN_5", "News item deleted by admin");
+
+define("NF_LAN_1", "File Events");
+define("NF_LAN_2", "File uploaded by user");
 
 ?>

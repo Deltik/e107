@@ -12,13 +12,14 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/request.php,v $
-|     $Revision: 1.36 $
-|     $Date: 2006/04/05 12:19:17 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.40 $
+|     $Date: 2006/11/09 09:28:58 $
+|     $Author: lisa_ $
 +----------------------------------------------------------------------------+
 */
 
 require_once("class2.php");
+include_lan(e_LANGUAGEDIR.e_LANGUAGE."/lan_download.php");
 
 if (!e_QUERY || isset($_POST['userlogin'])) {
 	header("location: {$e107->base_path}");
@@ -107,7 +108,7 @@ if (preg_match("#.*\.[a-z,A-Z]{3,4}#", e_QUERY)) {
 
 if ($type == "file")
 {
-	$qry = "SELECT d.*, dc.download_category_class FROM #download as d LEFT JOIN #download_category AS dc ON dc.download_category_id = d.download_id WHERE d.download_id = {$id}";
+	$qry = "SELECT d.*, dc.download_category_class FROM #download as d LEFT JOIN #download_category AS dc ON dc.download_category_id = d.download_category WHERE d.download_id = {$id}";
 	if ($sql->db_Select_gen($qry)) {
 		$row = $sql->db_Fetch();
 		if (check_class($row['download_category_class']) && check_class($row['download_class'])) {
@@ -167,7 +168,7 @@ if ($type == "file")
 				echo $binary_data;
 				exit();
 			}
-			if (strstr($download_url, "http://") || strstr($download_url, "ftp://" || strstr($download_url, "https://"))) {
+			if (strstr($download_url, "http://") || strstr($download_url, "ftp://") || strstr($download_url, "https://")) {
 				header("Location: {$download_url}");
 				exit();
 			} else {
@@ -281,7 +282,7 @@ function send_file($file) {
 		exit();
 	}
 	@set_time_limit(10 * 60);
-	@ini_set("max_execution_time", 10 * 60);
+	@e107_ini_set("max_execution_time", 10 * 60);
 	while (@ob_end_clean()); // kill all output buffering else it eats server resources
 	$filename = $file;
 	$file = basename($file);
@@ -368,8 +369,7 @@ function check_download_limits() {
 			$row=$sql->db_Fetch();
 			if($row['count'] >= $limits['gen_intdata']) {
 				// Exceeded download count limit
-				@include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_download.php");
-				@include_once(e_LANGUAGEDIR."English/lan_download.php");
+
 				require_once(HEADERF);
 				$ns->tablerender(LAN_dl_61, LAN_dl_62);
 				require(FOOTERF);
@@ -393,8 +393,6 @@ function check_download_limits() {
 			$row=$sql->db_Fetch();
 			if($row['total_bw'] / 1024 > $limit['gen_user_id']) {
 				//Exceed bandwith limit
-				@include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_download.php");
-				@include_once(e_LANGUAGEDIR."English/lan_download.php");
 				require(HEADERF);
 				$ns->tablerender(LAN_dl_61, LAN_dl_62);
 				require(FOOTERF);

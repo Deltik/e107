@@ -4,8 +4,8 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/lan_mailout.php,v $
-|     $Revision: 1.11 $
-|     $Date: 2006/05/12 22:50:40 $
+|     $Revision: 1.14 $
+|     $Date: 2006/08/10 16:11:50 $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -61,5 +61,43 @@ define("MAILAN_32", "Email address");
 define("MAILAN_33", "Incoming Mail");
 define("MAILAN_34", "Account Name");
 define("MAILAN_35", "Password");
-define("MAILAN_36", "Delete Bounced Mails after checking");  
+define("MAILAN_36", "Delete Bounced Mails after checking");
+
+define("MAILAN_37", "Proceed");
+define("MAILAN_38", "Cancel");
+define("MAILAN_39", "Emailing");
+define("MAILAN_40", "You need to rename <b>e107.htaccess</b> to <b>.htaccess</b> in");
+define("MAILAN_41", "before sending mail from this page.");
+define("MAILAN_42", "Warning");
+define("MAILAN_43", "Username");
+define("MAILAN_44", "User Login");
+define("MAILAN_45", "User Email");
+define("MAILAN_46", "User-Match");
+define("MAILAN_47", "contains");
+define("MAILAN_48", "equals");
+define("MAILAN_49", "Id");
+define("MAILAN_50", "Author");
+define("MAILAN_51", "Subject");
+define("MAILAN_52", "Lastmod");
+define("MAILAN_53", "Admins");
+define("MAILAN_54", "Self");
+define("MAILAN_55", "Userclass");
+define("MAILAN_56", "Send Mail");
+define("MAILAN_57", "Keep SMTP session alive");
+define("MAILAN_58", "There is a problem with the attachment:");
+define("MAILAN_59", "Mailing Progress");
+define("MAILAN_60", "Sending...");
+define("MAILAN_61", "There are no remaining emails to be sent.");
+define("MAILAN_62", "Emails sent:");
+define("MAILAN_63", "Emails failed:");
+define("MAILAN_64", "Total time elapsed:");
+define("MAILAN_65", "seconds");
+define("MAILAN_66", "Cancelled Successfully");
+define("MAILAN_67", "Use 'POP before SMTP' authentication"); 
+
+
+
+
+
+
 ?>

@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/lan_plugin.php,v $
-|     $Revision: 1.16 $
-|     $Date: 2006/03/16 15:58:14 $
-|     $Author: lisa_ $
+|     $Revision: 1.21 $
+|     $Date: 2006/08/27 02:24:44 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 define("EPL_ADLAN_0", "Install");
@@ -29,7 +29,7 @@ define("EPL_ADLAN_16", "Plugin Information");
 define("EPL_ADLAN_17", "More info...");
 define("EPL_ADLAN_18", "Unable to successfully create table(s) for this plugin.");
 define("EPL_ADLAN_19", "Database tables successfully created.");
-define("EPL_ADLAN_20", "Preference settings successfully created.");
+// define("EPL_ADLAN_20", "Preference settings successfully created."); // duplicate of EPL_ADLAN_8;
 
 define("EPL_ADLAN_21", "Plugin is already installed.");
 define("EPL_ADLAN_22", "Installed");
@@ -50,7 +50,7 @@ define("EPL_ADLAN_36", "Parser code insert failed, incorrectly formatted.");
 
 define("EPL_ADLAN_37", "Upload plugin (.zip or .tar.gz format)");
 define("EPL_ADLAN_38", "Upload Plugin");
-define("EPL_ADLAN_39", "The file could not be uploaded as the ".e_PLUGIN." folder does not have the correct permissions - please CHMOD to 777 and reupload the file.");
+define("EPL_ADLAN_39", "The file could not be uploaded as the ".e_PLUGIN." folder does not have the correct permissions - please CHMOD to 777 and re-upload the file.");
 define("EPL_ADLAN_40", "Admin Message");
 define("EPL_ADLAN_41", "That file does not appear to be a valid .zip or .tar archive.");
 define("EPL_ADLAN_42", "An error has occurred, unable to un-archive the file");
@@ -66,33 +66,23 @@ define("EPL_NOINSTALL", "No install required, just activate from your menus scre
 define("EPL_DIRECTORY", "directory.");
 define("EPL_NOINSTALL_1", "No install required, to remove delete the ");
 define("EPL_UPGRADE", "Upgrade");
-define("EPL_CONFIGURE", "Configure");
-
-define("EPL_ADLAN_46", "RSS settings successfully created");
-define("EPL_ADLAN_47", "RSS settings successfully deleted");
-define("EPL_ADLAN_48", "Unable to successfully create RSS settings");
-define("EPL_ADLAN_49", "Unable to successfully delete RSS settings");
 
 define("EPL_ADLAN_50", "Comments successfully deleted");
 
-define("EPL_ADLAN_51", "No");
-define("EPL_ADLAN_52", "Yes");
 define("EPL_ADLAN_53", "Directory not writable");
 define("EPL_ADLAN_54", "Please select the option for uninstalling the plugin:");
 define("EPL_ADLAN_55", "Uninstall plugin");
-define("EPL_ADLAN_56", "Yes");
+
 define("EPL_ADLAN_57", "Delete plugin tables");
 define("EPL_ADLAN_58", "If the tables are not removed, the plugin can be reinstalled with no data loss.  The creation of tables during the reinstall will fail. Tables will have to be manually deleted to remove.");
 define("EPL_ADLAN_59", "Delete plugin files");
 define("EPL_ADLAN_60", "e107 will attempt to remove all plugin related files.");
-define("EPL_ADLAN_61", "Confirm uninstall");
+// define("EPL_ADLAN_61", "Confirm uninstall"); // duplicated. can be deleted.
 define("EPL_ADLAN_62", "Cancel uninstall");
 define("EPL_ADLAN_63", "Uninstall:");
-define("EPL_ADLAN_64", "");
-define("EPL_ADLAN_65", "");
-define("EPL_ADLAN_66", "");
-define("EPL_ADLAN_67", "");
-define("EPL_ADLAN_68", "");
-define("EPL_ADLAN_69", "");
+
+define("LAN_UPGRADE_SUCCESSFUL", "Upgrade Successful");
+define("LAN_INSTALL_SUCCESSFUL", "Installation Successful");
+
 
 ?>

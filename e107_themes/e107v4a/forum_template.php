@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_themes/e107v4a/forum_template.php,v $
-|     $Revision: 1.11 $
-|     $Date: 2006/01/15 19:08:25 $
+|     $Revision: 1.14 $
+|     $Date: 2006/11/09 18:19:47 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
@@ -21,6 +21,7 @@ if (!defined('e107_INIT')) { exit; }
 
 $sc_style['ANON_IP']['pre'] = "<br /><span class='smalltext'>";
 $sc_style['ANON_IP']['post'] = "</span>";
+$location_tpl = (array_key_exists('user_location', $currentUser) ? "{USER_EXTENDED=location.text}: {USER_EXTENDED=location.value}" : "");
 
 $FORUMSTART = "
 <table style='width:100%' class='nforumholder' cellpadding='0' cellspacing='0'>
@@ -69,7 +70,7 @@ $FORUMTHREADSTYLE = "
 </td>
 </tr>
 <tr>
-<td class='nforumthread' style='vertical-align:top'>\n{AVATAR}\n<span class='smalltext'>\n{CUSTOMTITLE}\n{LEVEL}\n{MEMBERID}\n{JOINED}\n{EXTENDED=location.text}: {EXTENDED=location.value}<br />\n{POSTS}\n</span>\n</td>
+<td class='nforumthread' style='vertical-align:top'>\n{AVATAR}\n<div class='smalltext'>\n{CUSTOMTITLE}\n{LEVEL}\n{MEMBERID}\n{JOINED}\n{$location_tpl}<br />\n{POSTS}\n</div>\n</td>
 <td class='nforumthread' style='vertical-align:top'>{POLL}\n{POST}\n{SIGNATURE}\n</td>
 </tr>
 <tr>
@@ -101,7 +102,7 @@ $FORUMREPLYSTYLE = "
 </td>
 </tr>
 <tr>
-<td class='nforumthread' style='vertical-align:top'>\n{AVATAR}\n<span class='smalltext'>\n{CUSTOMTITLE}\n{LEVEL}\n{MEMBERID}\n{JOINED}\n{EXTENDED=location.text}: {EXTENDED=location.value}<br />\n{POSTS}\n</span>\n</td>
+<td class='nforumthread' style='vertical-align:top'>\n{AVATAR}\n<span class='smalltext'>\n{CUSTOMTITLE}\n{LEVEL}\n{MEMBERID}\n{JOINED}\n{$location_tpl}<br />\n{POSTS}\n</span>\n</td>
 <td class='nforumthread' style='vertical-align:top'>\n{POST}\n{SIGNATURE}\n</td>
 </tr>
 <tr>
@@ -192,6 +193,8 @@ $FORUM_VIEW_START_CONTAINER = "
 </table>
 ";
 
+$sc_style['PAGES']['pre'] = "<span class='smalltext'>";
+$sc_style['PAGES']['post'] = "</span>";
 
 $FORUM_VIEW_FORUM = "
 <tr>
@@ -200,7 +203,7 @@ $FORUM_VIEW_FORUM = "
 
 <table style='width:100%'>
 <tr>
-<td style='width:90%'><span class='mediumtext'><b>{THREADNAME}</b></span> <span class='smalltext'>{PAGES}</span></td>
+<td style='width:90%'><span class='mediumtext'><b>{THREADNAME}</b></span> {PAGES}</td>
 <td style='width:10%; white-space:nowrap;'>{ADMIN_ICONS}</td>
 </tr>
 </table>
@@ -212,12 +215,14 @@ $FORUM_VIEW_FORUM = "
 <td style='vertical-align:top; text-align:center; width:20%' class='nforumview2'><span class='smalltext'>{LASTPOST}</span></td>
 </tr>";
 
+$sc_style['THREADPAGES']['pre'] = "<span class='mediumtext'>";
+$sc_style['THREADPAGES']['post'] = "</span>";
 
 $FORUM_VIEW_END = "
 </table>
 <table style='width:100%'>
 <tr>
-<td style='width:80%'><span class='mediumtext'>{THREADPAGES}</span>
+<td style='width:80%'>{THREADPAGES}
 {FORUMJUMP}
 </td>
 <td style='width:20%; text-align:right'>

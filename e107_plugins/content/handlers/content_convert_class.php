@@ -12,8 +12,8 @@
 |        GNU General Public License (http://gnu.org).
 |
 |		$Source: /cvsroot/e107/e107_0.7/e107_plugins/content/handlers/content_convert_class.php,v $
-|		$Revision: 1.16 $
-|		$Date: 2005/12/29 22:19:37 $
+|		$Revision: 1.21 $
+|		$Date: 2006/07/28 14:07:15 $
 |		$Author: lisa_ $
 +---------------------------------------------------------------+
 */
@@ -26,6 +26,8 @@ $datequery		= " AND content_datestamp < ".time()." AND (content_enddate=0 || con
 
 $lan_file = $plugindir.'languages/'.e_LANGUAGE.'/lan_content.php';
 include_once(file_exists($lan_file) ? $lan_file : $plugindir.'languages/English/lan_content.php');
+$lan_file = $plugindir.'languages/'.e_LANGUAGE.'/lan_content_admin.php';
+include_once(file_exists($lan_file) ? $lan_file : $plugindir.'languages/English/lan_content_admin.php');
 
 require_once($plugindir."handlers/content_class.php");
 $aa = new content;
@@ -45,7 +47,7 @@ class content_convert{
 				mysql_query("ALTER TABLE ".MPREFIX."pcontent ADD content_score TINYINT ( 3 ) UNSIGNED NOT NULL DEFAULT '0';");
 				mysql_query("ALTER TABLE ".MPREFIX."pcontent ADD content_meta TEXT NOT NULL;");
 				mysql_query("ALTER TABLE ".MPREFIX."pcontent ADD content_layout VARCHAR ( 255 ) NOT NULL DEFAULT '';");
-				$text = "Content Management Plugin table structure updated<br />";
+				$text = CONTENT_ADMIN_CONVERSION_LAN_64."<br />";
 			}
 			return $text;
 		}
@@ -59,9 +61,9 @@ class content_convert{
 				while($row = $sql -> db_Fetch()){
 					if(is_numeric($row['content_author'])){
 					}else{
-						$upgrade = TRUE;
 						$tmp = explode("^", $row['content_author']);
 						if($tmp[0] == "0"){
+							$upgrade = TRUE;
 							$newauthor = $tmp[1].($tmp[2] ? "^".$tmp[2] : "");
 							$sql1 -> db_Update("pcontent", " content_author = '".$newauthor."' WHERE content_id='".$row['content_id']."' ");
 						}
@@ -69,20 +71,255 @@ class content_convert{
 				}
 			}
 			if($upgrade){
-				return "Content Management Plugin : content_author updated<br />";
+				return CONTENT_ADMIN_CONVERSION_LAN_65."<br />";
 			}else{
 				return FALSE;
 			}
 		}
 
+		//update preferences storage method
+		function upgrade_1_22(){
+			global $sql, $sql2, $eArrayStorage, $tp, $aa;
+
+			$upgrade = TRUE;
+
+			$sqlc = new db;
+			$sqld = new db;
+
+			//convert preferences for core default preferences
+			if($sqlc -> db_Select("core", "*", "e107_name='pcontent' ")){
+				$row = $sqlc -> db_Fetch();
+
+				$tmp = $eArrayStorage->ReadArray($row['e107_value']);
+
+				//replace the id value for the content_pref
+				$content_pref = array();
+				foreach($tmp as $k=>$v){
+					if(substr($k,-2) == "_0"){
+						$k = str_replace("_0", "", $k);
+					}
+					if(strpos($k, "content_") === 0){
+						$content_pref[$k] = $tp->toDB($v);
+					}
+				}
+				if(!isset($content_pref['content_admin_subheading'])){
+					//add new options to the preferences
+					$content_pref = $this->upgrade_1_22_prefs($content_pref);
+
+					$tmp1 = $eArrayStorage->WriteArray($content_pref);
+					$sqld -> db_Update("core", "e107_value = '{$tmp1}' WHERE e107_name = 'pcontent' ");
+				}else{
+					$upgrade=FALSE;
+				}
+			}
+
+			//convert preferences for all main parents
+			if($sqlc -> db_Select("pcontent", "content_id, content_heading, content_pref", "LEFT(content_parent, 1) = '0' ")){
+				while($row=$sqlc->db_Fetch()){
+
+					$id = $row['content_id'];
+					$tmp = $eArrayStorage->ReadArray($row['content_pref']);
+
+					//replace the id value for the content_pref
+					$l = strlen($id);
+					$content_pref = array();
+					foreach($tmp as $k=>$v){
+						if(substr($k,-($l+1)) == "_".$id){
+							$k = str_replace("_".$id, "", $k);
+						}
+						if(strpos($k, "content_") === 0){
+							$content_pref[$k] = $tp->toDB($v);
+						}
+					}
+					//add new options to the preferences
+					if(!isset($content_pref['content_admin_subheading'])){
+						$content_pref = $this->upgrade_1_22_prefs($content_pref);
+
+						$tmp1 = $eArrayStorage->WriteArray($content_pref);
+						$sqld -> db_Update("pcontent", "content_pref='{$tmp1}' WHERE content_id='$id' ");
+					}else{
+						$upgrade=FALSE;
+					}
+
+					//update menus
+					$plugintable	= "pcontent";
+					$plugindir		= e_PLUGIN."content/";
+					if(!is_object($aa)){
+						require_once($plugindir."handlers/content_class.php");
+						$aa = new content;
+					}
+					if($row['content_parent']==0){
+						//remove menu
+						@unlink(e_PLUGIN."content/menus/content_".$row['content_heading']."_menu.php");
+						//create menu
+						$aa -> CreateParentMenu($id);
+					}
+				}
+			}
+
+			if($upgrade===TRUE){
+				return CONTENT_ADMIN_CONVERSION_LAN_66."<br />";
+			}
+		}
+
+		//add new preferences that come with this upgrade
+		function upgrade_1_22_prefs($content_pref){
+
+			//create : item page
+			$content_pref['content_admin_subheading'] = '1';
+			$content_pref['content_admin_summary'] = '1';
+			$content_pref['content_admin_startdate'] = '1';
+			$content_pref['content_admin_enddate'] = '1';
+
+			//create : category page
+			$content_pref['content_admincat_subheading'] = '1';
+			$content_pref['content_admincat_comment'] = '1';
+			$content_pref['content_admincat_rating'] = '1';
+			$content_pref['content_admincat_pe'] = '1';
+			$content_pref['content_admincat_visibility'] = '1';
+			$content_pref['content_admincat_startdate'] = '1';
+			$content_pref['content_admincat_enddate'] = '1';
+			$content_pref['content_admincat_uploadicon'] = '1';
+			$content_pref['content_admincat_selecticon'] = '1';
+
+			//create : submit page
+			$content_pref['content_submit_subheading'] = '1';
+			$content_pref['content_submit_summary'] = '1';
+			$content_pref['content_submit_startdate'] = '1';
+			$content_pref['content_submit_enddate'] = '1';
+
+			//content manager
+			$content_pref['content_manager_approve'] = '255';
+			$content_pref['content_manager_personal'] = '255';
+			$content_pref['content_manager_category'] = '255';
+
+			return $content_pref;
+		}
+
+
+		//update preferences storage method
+		function upgrade_1_23(){
+			global $sql, $sql2, $eArrayStorage, $tp, $aa;
+
+			$upgrade = TRUE;
+
+			$sqlc = new db;
+			$sqld = new db;
+			//add new preferences in core
+			if($sqlc -> db_Select("core", "*", "e107_name='pcontent' ")){
+				$row = $sqlc -> db_Fetch();
+
+				$content_pref = $eArrayStorage->ReadArray($row['e107_value']);
+
+				//add new options to the preferences
+				if(!isset($content_pref['content_admin_subheading'])){
+					$content_pref = $this->upgrade_1_23_prefs($content_pref);
+
+					$tmp1 = $eArrayStorage->WriteArray($content_pref);
+					$sqld -> db_Update("core", "e107_value = '{$tmp1}' WHERE e107_name = 'pcontent' ");
+				}else{
+					$upgrade=FALSE;
+				}
+			}
+
+			//add new preferences for each main parent
+			if($sqlc -> db_Select("pcontent", "content_id, content_heading, content_pref", "content_parent = '0' ")){
+				while($row=$sqlc->db_Fetch()){
+
+					$id = $row['content_id'];
+					$content_pref = $eArrayStorage->ReadArray($row['content_pref']);
+
+					if(!isset($content_pref['content_admin_subheading'])){
+						//add new options to the preferences
+						$content_pref = $this->upgrade_1_23_prefs($content_pref);
+
+						$tmp1 = $eArrayStorage->WriteArray($content_pref);
+						$sqld -> db_Update("pcontent", "content_pref='{$tmp1}' WHERE content_id='$id' ");
+					}else{
+						$upgrade=FALSE;
+					}
+				}
+			}
+			if($upgrade===TRUE){
+				return CONTENT_ADMIN_CONVERSION_LAN_67."<br />";
+			}
+		}
+		//add new preferences that come with this upgrade
+		function upgrade_1_23_prefs($content_pref){
+
+			$content_pref['content_list_caption'] = CONTENT_LAN_23;			//caption for recent list
+			$content_pref['content_list_caption_append_name'] = '1';		//append category heading to caption
+			$content_pref['content_catall_caption'] = CONTENT_LAN_25;		//caption for all categories page
+			$content_pref['content_cat_caption'] = CONTENT_LAN_26;			//caption for single category page
+			$content_pref['content_cat_caption_append_name'] = '1';			//append category heading to caption
+			$content_pref['content_cat_sub_caption'] = CONTENT_LAN_28;		//caption for subcategories
+			$content_pref['content_cat_item_caption'] = CONTENT_LAN_31;		//caption for items in category
+			$content_pref['content_author_index_caption'] = CONTENT_LAN_32;	//caption for author index page
+			$content_pref['content_author_caption'] = CONTENT_LAN_32;		//caption for single author page
+			$content_pref['content_author_caption_append_name'] = '1';		//append author name to caption
+			$content_pref['content_archive_caption'] = CONTENT_LAN_84;		//caption for archive page
+			$content_pref['content_top_icon_width'] = '';					//use this size for icon
+			$content_pref['content_top_caption'] = CONTENT_LAN_38;			//caption for top rated page
+			$content_pref['content_top_caption_append_name'] = '1';			//append category heading to caption
+			$content_pref['content_score_icon_width'] = '';					//use this size for icon
+			$content_pref['content_score_caption'] = CONTENT_LAN_87;		//caption for top score page
+			$content_pref['content_score_caption_append_name'] = '1';		//append category heading to caption
+
+			return $content_pref;
+		}
+
+		//update custom theme
+		function upgrade_1_24(){
+			global $sql, $sql2, $eArrayStorage, $tp, $aa;
+
+			$upgrade = TRUE;
+
+			$sqlc = new db;
+			$sqld = new db;
+			//add new preferences in core
+			if($sqlc -> db_Select("core", "*", "e107_name='pcontent' ")){
+				$row = $sqlc -> db_Fetch();
+
+				$content_pref = $eArrayStorage->ReadArray($row['e107_value']);
+
+				//update theme
+				if(strpos($content_pref['content_theme'], "{e_")!==FALSE){
+				}else{
+					$content_pref['content_theme'] = "{e_PLUGIN}content/templates/".$content_pref['content_theme']."/";
+				}
+
+				$tmp1 = $eArrayStorage->WriteArray($content_pref);
+				$sqld -> db_Update("core", "e107_value = '{$tmp1}' WHERE e107_name = 'pcontent' ");
+			}
+
+			//add new preferences for each main parent
+			if($sqlc -> db_Select("pcontent", "content_id, content_heading, content_pref", "content_parent = '0' ")){
+				while($row=$sqlc->db_Fetch()){
+
+					$id = $row['content_id'];
+					$content_pref = $eArrayStorage->ReadArray($row['content_pref']);
+
+					//update theme
+					if(strpos($content_pref['content_theme'], "{e_")!==FALSE){
+					}else{
+						$content_pref['content_theme'] = "{e_PLUGIN}content/templates/".$content_pref['content_theme']."/";
+					}
+
+					$tmp1 = $eArrayStorage->WriteArray($content_pref);
+					$sqld -> db_Update("pcontent", "content_pref='{$tmp1}' WHERE content_id='$id' ");
+				}
+			}
+			return CONTENT_ADMIN_CONVERSION_LAN_68."<br />";
+		}
+
 		//convert rows
 		function upgrade_1_1(){
-				global $sql, $tp, $plugintable, $eArrayStorage;
+				global $sql, $sql2, $tp, $plugintable, $eArrayStorage;
 				$plugintable	= "pcontent";
 
 				$count = "0";
 				$sql = new db;
-				$thiscount = $sql -> db_Count("pcontent", "(*)");
+				$thiscount = $sql -> db_Select("pcontent", "*", "ORDER BY content_id ", "mode=no_where" );
 				if($thiscount > 0){
 					while($row = $sql -> db_Fetch()){
 
@@ -99,7 +336,7 @@ class content_convert{
 							$newparent = substr(strrchr($row['content_parent'], "."),1);
 						}
 
-						$sql -> db_Update("pcontent", " content_parent = '".$newparent."', content_pref='' WHERE content_id='".$row['content_id']."' ");
+						$sql2 -> db_Update("pcontent", " content_parent = '".$newparent."', content_pref='' WHERE content_id='".$row['content_id']."' ");
 					}
 				}
 				return CONTENT_ADMIN_CONVERSION_LAN_58."<br /><br />".CONTENT_ADMIN_CONVERSION_LAN_46."<br />";

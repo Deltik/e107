@@ -12,8 +12,8 @@
 |        GNU General Public License (http://gnu.org).
 |
 |		$Source: /cvsroot/e107/e107_0.7/e107_plugins/content/admin_content_config.php,v $
-|		$Revision: 1.60 $
-|		$Date: 2006/02/13 10:13:22 $
+|		$Revision: 1.63 $
+|		$Date: 2006/07/30 13:14:09 $
 |		$Author: lisa_ $
 +---------------------------------------------------------------+
 */
@@ -116,12 +116,48 @@ if(isset($delete) && $delete == 'submitted'){
 	}
 }
 
+//update options
 if(isset($_POST['updateoptions'])){
 	$content_pref	= $aa -> UpdateContentPref($_POST['options_type']);
 	$message		= CONTENT_ADMIN_CAT_LAN_22."<br /><br />";
 	if($_POST['options_type'] != "0"){
 		$message		.= $aa -> CreateParentMenu($_POST['options_type']);
 	}
+	$e107cache->clear($plugintable);
+}
+
+//update the inheritance of options
+if(isset($_POST['updateinherit'])){
+	foreach($_POST['id'] as $k=>$v){
+		//get current
+		$sql -> db_Select($plugintable, "content_pref", "content_id='".intval($k)."' ");
+		$row = $sql -> db_Fetch();
+		$content_pref = $eArrayStorage->ReadArray($row['content_pref']);
+		//assign or remove inherit option
+		if(isset($_POST['content_inherit']) && isset($_POST['content_inherit'][$k]) ){
+			$content_pref['content_inherit'] = "1";
+		}else{
+			unset($content_pref['content_inherit']);
+		}
+		//update
+		$tmp = $eArrayStorage->WriteArray($content_pref);
+		$sql2 -> db_Update($plugintable, "content_pref='{$tmp}' WHERE content_id='".intval($k)."' ");
+	}
+	$message		= CONTENT_ADMIN_CAT_LAN_22."<br /><br />";
+	$e107cache->clear($plugintable);
+}
+
+//update manager classes into preferences
+if(isset($_POST['update_manager'])){
+	$content_pref	= $aa -> UpdateContentPref($_POST['options_type']);
+	$message		= CONTENT_ADMIN_CAT_LAN_22."<br /><br />";
+	$e107cache->clear($plugintable);
+}
+
+//update page restriction classes into preferences
+if(isset($_POST['update_restrict'])){
+	$content_pref	= $aa -> UpdateContentPref($_POST['options_type']);
+	$message		= CONTENT_ADMIN_CAT_LAN_22."<br /><br />";
 	$e107cache->clear($plugintable);
 }
 
@@ -329,7 +365,7 @@ if(!e_QUERY){																//show main categories
 	}elseif($qs[0] == "manager" && !isset($qs[1]) ){
 		if(!getperms("0")){ header("location:".e_SELF); exit; }
 		//$aform -> show_admin_contentmanager();
-		$aform -> show_manage("manager");
+		$aform -> manager();
 	
 	//category content manager : view contentmanager
 	}elseif($qs[0] == "manager" && isset($qs[1]) && is_numeric($qs[1]) ){
@@ -338,14 +374,14 @@ if(!e_QUERY){																//show main categories
 			$message = $adb -> dbAssignAdmins("admin", intval($qs[1]), $qs[2]);
 			$ns -> tablerender("", "<div style='text-align:center'><b>".$message."</b></div>");
 		}
-		$aform -> show_admin_contentmanager_category();
+		$aform -> manager_category();
 
 
 
 
 	//overview all categories
 	}elseif($qs[0] == "cat" && !isset($qs[1]) ){
-		$aform -> show_manage("category");
+		$aform -> manage_cat();
 
 	//create category
 	}elseif($qs[0] == "cat" && $qs[1] == "create" ){
@@ -377,7 +413,18 @@ if(!e_QUERY){																//show main categories
 		$aform -> show_create_category();
 
 
+
+	//restrict : choose category
+	}elseif($qs[0] == "restrict" && !isset($qs[1]) ){
+		//if(!getperms("0")){ header("location:".e_SELF); exit; }
+		$aform -> restrict();
+	
+	//restrict : view restrict for main parent
+	}elseif($qs[0] == "restrict" && isset($qs[1]) && is_numeric($qs[1]) ){
+		//if(!getperms("0")){ header("location:".e_SELF); exit; }
+		$aform -> restrict_category();
 	}
+
 }
 
 // ##### End --------------------------------------------------------------------------------------
@@ -387,6 +434,9 @@ if(!e_QUERY){																//show main categories
 function admin_content_config_adminmenu(){
 
                 global $sql, $plugintable, $aa;
+
+				//toggle to show categories in admin right hand menu
+				$showadmincat = TRUE;
 
 				if(e_QUERY){
 					$qs		=	explode(".", e_QUERY);
@@ -422,8 +472,10 @@ function admin_content_config_adminmenu(){
 				$var['option']['text']			= CONTENT_ADMIN_MENU_LAN_6;
                 $var['option']['link']			= e_SELF."?option";
 
-				$var['manager']['text']			= CONTENT_ADMIN_MENU_LAN_17;
-                $var['manager']['link']			= e_SELF."?manager";
+				if(getperms("0")){ 
+					$var['manager']['text']			= CONTENT_ADMIN_MENU_LAN_17;
+					$var['manager']['link']			= e_SELF."?manager";
+				}
 
                 if($submittedcontents = $sql -> db_Count($plugintable, "(*)", "WHERE content_refer ='sa' ")){
                         $var['submitted']['text']	= CONTENT_ADMIN_MENU_LAN_4." (".$submittedcontents.")";
@@ -436,10 +488,10 @@ function admin_content_config_adminmenu(){
 					unset($var);
 					$var=array();
 					$var['creation']['text']		= CONTENT_ADMIN_MENU_LAN_7;
+					$var['catcreation']['text']		= CONTENT_ADMIN_MENU_LAN_23;
 					$var['submission']['text']		= CONTENT_ADMIN_MENU_LAN_8;
 					$var['paththeme']['text']		= CONTENT_ADMIN_MENU_LAN_9;
 					$var['general']['text']			= CONTENT_ADMIN_MENU_LAN_10;
-					$var['contentmanager']['text']	= CONTENT_ADMIN_MENU_LAN_19;
 					$var['menu']['text']			= CONTENT_ADMIN_MENU_LAN_14;
 
 					$sql = new db;
@@ -460,45 +512,48 @@ function admin_content_config_adminmenu(){
 					show_admin_menu(CONTENT_ADMIN_MENU_LAN_21.": ".$content_heading."", $act, $var, TRUE);
 				
 				}else{
-						$sql2 = new db;
-						if($category_total = $sql2 -> db_Select($plugintable, "content_id, content_heading", "content_parent='0' ")){
-							while($row = $sql2 -> db_Fetch()){
+						
+						if($showadmincat){
+							$sql2 = new db;
+							if($category_total = $sql2 -> db_Select($plugintable, "content_id, content_heading", "content_parent='0' ")){
+								while($row = $sql2 -> db_Fetch()){
 
-								unset($var);
-								$var=array();
+									unset($var);
+									$var=array();
 
-								$array		= $aa -> getCategoryTree("", $row['content_id'], FALSE);	//get all categories from each main parent
-								$newarray	= array_merge_recursive($array);
+									$array		= $aa -> getCategoryTree("", $row['content_id'], FALSE);	//get all categories from each main parent
+									$newarray	= array_merge_recursive($array);
 
-								$newparent=array();
-								for($a=0;$a<count($newarray);$a++){
-									for($b=0;$b<count($newarray[$a]);$b++){
-										$newparent[$newarray[$a][$b]] = $newarray[$a][$b+1];
-										$b++;
+									$newparent=array();
+									for($a=0;$a<count($newarray);$a++){
+										for($b=0;$b<count($newarray[$a]);$b++){
+											$newparent[$newarray[$a][$b]] = $newarray[$a][$b+1];
+											$b++;
+										}
 									}
-								}
 
-								foreach($newparent as $key => $value){
-									$var['c'.$key]['text']	= $value;
-									$var['c'.$key]['link']	= e_SELF."?content.".$key;
-								}
-								if( isset($qs[0]) && $qs[0] == "content" && isset($qs[1]) && $qs[1] == "create"){
-									$act = "";
-								}elseif( isset($qs[0]) && $qs[0] == "cat" && isset($qs[1]) && ($qs[1] == "create" || $qs[1] == "edit") ){
-									$act = "";
-								}elseif( isset($qs[0]) && $qs[0] == "order" ){
-									$act = "";
-								}elseif( isset($qs[0]) && $qs[0] == "manager" ){
-									$act = "";
-								}else{
-									if(isset($qs[0]) && isset($qs[1]) ){
-										$act = "c".$qs[1];
+									foreach($newparent as $key => $value){
+										$var['c'.$key]['text']	= $value;
+										$var['c'.$key]['link']	= e_SELF."?content.".$key;
+									}
+									if( isset($qs[0]) && $qs[0] == "content" && isset($qs[1]) && $qs[1] == "create"){
+										$act = "";
+									}elseif( isset($qs[0]) && $qs[0] == "cat" && isset($qs[1]) && ($qs[1] == "create" || $qs[1] == "edit") ){
+										$act = "";
+									}elseif( isset($qs[0]) && $qs[0] == "order" ){
+										$act = "";
+									}elseif( isset($qs[0]) && $qs[0] == "manager" ){
+										$act = "";
 									}else{
-										$act = "c";
+										if(isset($qs[0]) && isset($qs[1]) ){
+											$act = "c".$qs[1];
+										}else{
+											$act = "c";
+										}
 									}
-								}
 
-								show_admin_menu(CONTENT_ADMIN_MENU_LAN_5." : ".$row['content_heading']."", $act, $var);
+									show_admin_menu(CONTENT_ADMIN_MENU_LAN_5." : ".$row['content_heading']."", $act, $var);
+								}
 							}
 						}
 				}
@@ -506,135 +561,6 @@ function admin_content_config_adminmenu(){
 }
 // ##### End --------------------------------------------------------------------------------------
 
-
 require_once(e_ADMIN."footer.php");
-
-function headerjs(){
-	global $tp, $plugindir;
-
-	$script = "
-	<script type='text/javascript' src='".$plugindir."content.js'></script>\n
-	<script type=\"text/javascript\">
-
-	function confirm2_(mode, number, name){
-	if(mode == 'image'){
-	var x=confirm(\"".CONTENT_ADMIN_JS_LAN_2." [".CONTENT_ADMIN_JS_LAN_4.": \" + name + \"] \");
-	}
-	if(mode == 'icon'){
-	var x=confirm(\"".CONTENT_ADMIN_JS_LAN_7." [".CONTENT_ADMIN_JS_LAN_8.": \" + name + \"] \");
-	}
-	if(mode == 'file'){
-	var x=confirm(\"".CONTENT_ADMIN_JS_LAN_3." [".CONTENT_ADMIN_JS_LAN_5.": \" + name + \"] \");
-	}
-	var i;
-	var imagemax = 10;
-	if(x){
-	if(mode == 'image'){
-	for (i = 0; i < imagemax; i++){
-	if(number == i){
-	document.getElementById('content_images' + i).value = '';
-	}
-	}
-	}
-	if(mode == 'icon'){
-	document.getElementById('content_icon').value = '';
-	}
-	if(mode == 'file'){
-	for (i = 0; i < imagemax; i++){
-	if(number == i){
-	document.getElementById('content_files' + i).value = '';
-	}
-	}
-	}
-	}
-	}
-	//<![CDATA[
-	// Adapted from original:  Kathi O'Shea (Kathi.O'Shea@internet.com)
-	function moveOver() {
-	var boxLength = document.getElementById('assignclass2').length;
-	var selectedItem = document.getElementById('assignclass1').selectedIndex;
-	var selectedText = document.getElementById('assignclass1').options[selectedItem].text;
-	var selectedValue = document.getElementById('assignclass1').options[selectedItem].value;
-	var i;
-	//var newvalues;
-	var isNew = true;
-	if (boxLength != 0) {
-	for (i = 0; i < boxLength; i++) {
-	thisitem = document.getElementById('assignclass2').options[i].text;
-	if (thisitem == selectedText) {
-	isNew = false;
-	break;
-	}
-	}
-	}
-	if (isNew) {
-	newoption = new Option(selectedText, selectedValue, false, false);
-	document.getElementById('assignclass2').options[boxLength] = newoption;
-	document.getElementById('assignclass1').options[selectedItem].text = '';
-	}
-	document.getElementById('assignclass1').selectedIndex=-1;
-	}
-
-
-	function removeMe() {
-	var boxLength = document.getElementById('assignclass2').length;
-	var boxLength2 = document.getElementById('assignclass1').length;
-	arrSelected = new Array();
-	var count = 0;
-	for (i = 0; i < boxLength; i++) {
-	if (document.getElementById('assignclass2').options[i].selected) {
-	arrSelected[count] = document.getElementById('assignclass2').options[i].value;
-	var valname = document.getElementById('assignclass2').options[i].text;
-	for (j = 0; j < boxLength2; j++) {
-	if (document.getElementById('assignclass1').options[j].value == arrSelected[count]){
-	document.getElementById('assignclass1').options[j].text = valname;
-	}
-	}
-
-	// document.getElementById('assignclass1').options[i].text = valname;
-	}
-	count++;
-	}
-	var x;
-	for (i = 0; i < boxLength; i++) {
-	for (x = 0; x < arrSelected.length; x++) {
-	if (document.getElementById('assignclass2').options[i].value == arrSelected[x]) {
-	document.getElementById('assignclass2').options[i] = null;
-	}
-	}
-	boxLength = document.getElementById('assignclass2').length;
-	}
-	}
-
-	function clearMe(clid) {
-	location.href = document.location + \".clear\";
-	}
-
-	function saveMe(clid) {
-	var strValues = \"\";
-	var boxLength = document.getElementById('assignclass2').length;
-	var count = 0;
-	if (boxLength != 0) {
-	for (i = 0; i < boxLength; i++) {
-	if (count == 0) {
-	strValues = document.getElementById('assignclass2').options[i].value;
-	} else {
-	strValues = strValues + \",\" + document.getElementById('assignclass2').options[i].value;
-	}
-	count++;
-	}
-	}
-	if (strValues.length == 0) {
-	//alert(\"You have not made any selections\");
-	}
-	else {
-	location.href = document.location + \".\" + strValues;
-	}
-	}
-	//]]>
-	</script>";
-
-	return $script;
-}
 
 ?>

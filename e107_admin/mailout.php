@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/mailout.php,v $
-|     $Revision: 1.52 $
-|     $Date: 2006/05/12 22:50:40 $
-|     $Author: e107coders $
+|     $Revision: 1.58 $
+|     $Date: 2006/11/17 09:23:20 $
+|     $Author: lisa_ $
 +----------------------------------------------------------------------------+
 */
 
@@ -34,16 +34,17 @@ include_lan(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_users.php");
 require_once(e_HANDLER."userclass_class.php");
 
 if (isset($_POST['testemail'])) {
-    if(SITEADMINEMAIL == ""){
+    if(trim($_POST['testaddress']) == ""){
 		$message = MAILAN_19;
 	}else{
 		$mailheader_e107id = USERID;
 		require_once(e_HANDLER."mail.php");
 		$add = ($pref['mailer']) ? " (".strtoupper($pref['mailer']).")" : " (PHP)";
-		if (!sendemail(SITEADMINEMAIL, PRFLAN_66." ".SITENAME.$add, PRFLAN_67)) {
+		$sendto = trim($_POST['testaddress']);
+		if (!sendemail($sendto, PRFLAN_66." ".SITENAME.$add, PRFLAN_67,USERNAME)) {
 			$message = ($pref['mailer'] == "smtp")  ? PRFLAN_75 : PRFLAN_68;
 		} else {
-			$message = PRFLAN_69;
+			$message = PRFLAN_69. "(".$sendto.")";
 		}
 	}
 }
@@ -134,11 +135,14 @@ if (isset($_POST['submit'])) {
 	}
 	ob_end_flush();
 
+	$debug = (e_MENU == "debug") ? "?[debug]" : "";
+
 	$text = "<div style='text-align:center'>
-		<form method='post' action='".e_HANDLER."phpmailer/mailout_process.php' name='mailform' onsubmit=\"open('', 'popup','width=230,height=170,resizable=1,scrollbars=0');this.target = 'popup';return true;\" >
+		<form method='post' action='".e_HANDLER."phpmailer/mailout_process.php".$debug."' name='mailform' onsubmit=\"open('', 'popup','width=230,height=170,resizable=1,scrollbars=0');this.target = 'popup';return true;\" >
 		<div>";
 
-    foreach($_POST as $key=>$val){
+    foreach($_POST as $key=>$val)
+	{
 		$text .= "<input type='hidden' name='".$key."' value='".stripslashes($tp->post_toForm($val))."' />\n";
     }
 
@@ -146,8 +150,8 @@ if (isset($_POST['submit'])) {
 
 	$text .= "<div>$c ".MAILAN_24."</div>";
 
-	$text .= "<div><br /><input class='button' type='submit' name='send_mails' value='Proceed' />
-	<input class='button' type='submit' name='cancel_emails' value='Cancel' />
+	$text .= "<div><br /><input class='button' type='submit' name='send_mails' value='".MAILAN_37."' />
+	<input class='button' type='submit' name='cancel_emails' value='".MAILAN_38."' />
 	</div>";
 	$text .= "</form><br /><br /></div>";
 
@@ -232,7 +236,7 @@ if (isset($_POST['submit'])) {
 	</div>";
 
 
- 	$ns->tablerender("Emailing ($c) ", $text);
+ 	$ns->tablerender(MAILAN_39." ($c) ", $text);
 	require_once(e_ADMIN."footer.php");
 	exit;
 }
@@ -248,6 +252,9 @@ if (isset($_POST['updateprefs'])) {
 	$pref['smtp_server'] = $tp->toDB($_POST['smtp_server']);
 	$pref['smtp_username'] = $tp->toDB($_POST['smtp_username']);
 	$pref['smtp_password'] = $tp->toDB($_POST['smtp_password']);
+	$pref['smtp_keepalive'] = $_POST['smtp_keepalive'];
+	$pref['smtp_pop3auth'] = $_POST['smtp_pop3auth'];
+
 	$pref['mail_pause'] = $_POST['mail_pause'];
 	$pref['mail_pausetime'] = $_POST['mail_pausetime'];
 	$pref['mail_bounce_email'] = $_POST['mail_bounce_email'];
@@ -298,13 +305,13 @@ function show_mailform($foo=""){
 	$text = "";
 
 	if(strpos($_SERVER['SERVER_SOFTWARE'],"mod_gzip") && !is_readable(e_HANDLER."phpmailer/.htaccess")){
-		$warning = "You need to rename <b>e107.htaccess</b> to <b>.htaccess</b> in ".$HANDLERS_DIRECTORY."phpmailer/ before sending mail from this page.";
-		$ns -> tablerender("Warning", $warning);
+		$warning = MAILAN_40." ".$HANDLERS_DIRECTORY."phpmailer/ ".MAILAN_41;
+		$ns -> tablerender(MAILAN_42, $warning);
 	}
 
-
+	$debug = (e_MENU == "debug") ? "?[debug]" : "";
 	$text .= "<div style='".ADMIN_WIDTH." text-align:center'>
-	<form method='post' action='".e_SELF."' id='mailout_form'>
+	<form method='post' action='".e_SELF.$debug."' id='mailout_form'>
 	<table class='fborder' style='".ADMIN_WIDTH."'  cellpadding='0' cellspacing='0'>
 	<tr>
 	<td style='width:30%' class='forumheader3'>".MAILAN_01.": </td>
@@ -333,11 +340,11 @@ function show_mailform($foo=""){
 	// User Search Field.
 
 
-		$u_array = array("user_name"=>"Username","user_login"=>"User Login","user_email"=>"User Email");
+		$u_array = array("user_name"=>MAILAN_43,"user_login"=>MAILAN_44,"user_email"=>MAILAN_45);
 
 		$text .= "
 		<tr>
-			<td style='width:35%' class='forumheader3'>User-Match
+			<td style='width:35%' class='forumheader3'>".MAILAN_46."
 			<select name='user_search_name' class='tbox'>
 			<option value=''>&nbsp;</option>";
 
@@ -346,7 +353,7 @@ function show_mailform($foo=""){
 			}
 
 	$text .= "
-		</select> contains </td>
+		</select> ".MAILAN_47." </td>
 		<td style='width:65%' class='forumheader3'>
 		<input type='text' name='user_search_value' class='tbox' style='width:80%' value='' />
 		</td></tr>
@@ -356,7 +363,7 @@ function show_mailform($foo=""){
 
 		$text .= "
 		<tr>
-			<td class='forumheader3'>User-Match
+			<td class='forumheader3'>".MAILAN_46."
 			<select name='extended_1_name' class='tbox'>
 			<option value=''>&nbsp;</option>";
 			$sql -> db_Select("user_extended_struct");
@@ -365,7 +372,7 @@ function show_mailform($foo=""){
 			}
 
 		$text .= "
-		</select> equals </td>
+		</select> ".MAILAN_48." </td>
 		<td  class='forumheader3'>
 		<input type='text' name='extended_1_value' class='tbox' style='width:80%' value='' />
 		</td></tr>
@@ -377,7 +384,7 @@ function show_mailform($foo=""){
 
 		$text .= "
 		<tr>
-			<td class='forumheader3'>User-Match
+			<td class='forumheader3'>".MAILAN_46."
 			<select name='extended_2_name' class='tbox'>
 			<option value=''>&nbsp;</option>";
 			$sql -> db_Select("user_extended_struct");
@@ -386,7 +393,7 @@ function show_mailform($foo=""){
 			}
 
 		$text .= "
-		</select> equals </td>
+		</select> ".MAILAN_48." </td>
 		<td  class='forumheader3'>
 		<input type='text' name='extended_2_value' class='tbox' style='width:80%' value='' />
 		</td></tr>
@@ -458,29 +465,36 @@ function show_mailform($foo=""){
 
 	<tr>
 	<td colspan='2'  class='forumheader3'>
-	<textarea rows='10' cols='20' id='email_body' name='email_body'  class='tbox' style='width:100%;height:200px' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'>
-	$email_body
-	</textarea>
+	<textarea rows='10' cols='20' id='email_body' name='email_body'  class='tbox' style='width:100%;height:200px' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'>".$email_body."</textarea>
 	</td>
 	</tr>";
 
 	$text .="
 	<tr>
 	<td style='width:100%' class='forumheader3' colspan='2'>
-	<div style='width:100%;text-align:center;vertical-align: middle;' >".display_help("helpb")
-	."<span style='vertical-align: super;margin-left:5%;margin-bottom:auto;margin-top:auto'>";
-	if($pref['wysiwyg']) {
-		$text .="<input type='button' class='button' name='usrname' value=\"".MAILAN_16."\" onclick=\"tinyMCE.selectedInstance.execCommand('mceInsertContent',0,'{USERNAME}')\" />
+	<div style='width:100%;text-align:center;vertical-align: middle;' >";
+
+    global $eplug_bb;
+
+    $eplug_bb[] = array(
+			"name"		=> 'shortcode',
+			"onclick"	=> 'expandit',
+			"onclick_var" => "sc_selector",
+			"icon"		=> e_IMAGE."generic/bbcode/shortcode.png",
+			"helptext"	=> MAILAN_11,
+			"function"	=> "sc_Select",
+			"function_var"	=> "sc_selector"
+	);
+
+	$text .= display_help("helpb",'mailout');
+
+	if(e_WYSIWYG) {
+		$text .="<span style='vertical-align: super;margin-left:5%;margin-bottom:auto;margin-top:auto'><input type='button' class='button' name='usrname' value=\"".MAILAN_16."\" onclick=\"tinyMCE.selectedInstance.execCommand('mceInsertContent',0,'{USERNAME}')\" />
 		<input type='button' class='button' name='usrlink' value=\"".MAILAN_17."\" onclick=\"tinyMCE.selectedInstance.execCommand('mceInsertContent',0,'{SIGNUP_LINK}')\" />
-		<input type='button' class='button' name='usrid' value=\"".MAILAN_18."\" onclick=\"tinyMCE.selectedInstance.execCommand('mceInsertContent',0,'{USERID}')\" />";
-	} else {
- 		$text .="<input type='button' class='button' name='usrname' value=\"".MAILAN_16."\" onclick=\"addtext('{USERNAME}')\" />
- 		<input type='button' class='button' name='usrlink' value=\"".MAILAN_17."\" onclick=\"addtext('{SIGNUP_LINK}')\" />
- 		<input type='button' class='button' name='usrid' value=\"".MAILAN_18."\" onclick=\"addtext('{USERID}')\" />";
+		<input type='button' class='button' name='usrid' value=\"".MAILAN_18."\" onclick=\"tinyMCE.selectedInstance.execCommand('mceInsertContent',0,'{USERID}')\" /></span>";
 	}
 
-
- 	$text .="</span>
+ 	$text .="
 	</div></td>
 	</tr>";
 
@@ -515,8 +529,9 @@ $text = "
 	<div id='mail' style='text-align:center;'>
 	<table style='".ADMIN_WIDTH."' class='fborder'>
 	<tr>
-	<td style='width:40%' class='forumheader3'><span title='".PRFLAN_64."' style='cursor:help'>".PRFLAN_63."</span><br /></td>
-	<td style='width:60%; text-align:right' class='forumheader3'><input class='button' type='submit' name='testemail' value=\"".PRFLAN_65." ".SITEADMINEMAIL."\" />
+	<td style='width:30%' class='forumheader3'><span title='".PRFLAN_64."' style='cursor:help'>".PRFLAN_63."</span><br /></td>
+	<td style='width:70%; text-align:right' class='forumheader3'><input class='button' type='submit' name='testemail' value=\"".PRFLAN_65."\" />
+	<input name='testaddress' class='tbox' type='text' value=\"".SITEADMINEMAIL."\" />
 	</td>
 	</tr>
 
@@ -530,7 +545,11 @@ $text = "
 		$text .= "<option value='$opt' $sel>$opt</option>\n";
 	}
 	$text .="</select><br />";
+
+
 // SMTP. -------------->
+
+
 	$smtpdisp = ($pref['mailer'] != "smtp") ? "display:none;" : "";
 	$text .= "<div id='smtp' style='$smtpdisp text-align:right'><table style='margin-right:0px;margin-left:auto;border:0px'>";
 	$text .= "	<tr>
@@ -554,9 +573,29 @@ $text = "
 	</td>
 	</tr>
 
+	<tr>
+	<td colspan='2' style='text-align:right' >".MAILAN_57.":&nbsp;
+	";
+	$checked = (isset($pref['smtp_keepalive']) && $pref['smtp_keepalive']==1) ? "checked='checked'" : "";
+	$text .= "<input type='checkbox' name='smtp_keepalive' value='1' {$checked} />
+	</td>
+	</tr>
+
+	<tr>
+	<td colspan='2' style='text-align:right' >".MAILAN_67.":&nbsp;
+	";
+	$checked = (isset($pref['smtp_pop3auth']) && $pref['smtp_pop3auth']==1) ? "checked='checked'" : "";
+	$text .= "<input type='checkbox' name='smtp_pop3auth' value='1' {$checked} />
+	</td>
+	</tr>
+
+
+
 	</table></div>";
 
 // Sendmail. -------------->
+
+
 	$senddisp = ($pref['mailer'] != "sendmail") ? "display:none;" : "";
 	$text .= "<div id='sendmail' style='$senddisp text-align:right'><table style='margin-right:0px;margin-left:auto;border:0px'>";
 	$text .= "
@@ -588,8 +627,8 @@ $text = "
 	</tr>\n
 
 	<tr>
-	<td style='width:40%;vertical-align:top' class='forumheader3'>".MAILAN_31."</td>
-	<td style='width:60%; text-align:right' class='forumheader3'>
+	<td style='vertical-align:top' class='forumheader3'>".MAILAN_31."</td>
+	<td style=' text-align:right' class='forumheader3'>
 		".MAILAN_32.": <input class='tbox' size='40' type='text' name='mail_bounce_email' value=\"".$pref['mail_bounce_email']."\" /><br />
 		".MAILAN_33." (POP3):  <input class='tbox' size='40' type='text' name='mail_bounce_pop3' value=\"".$pref['mail_bounce_pop3']."\" /><br />
 		".MAILAN_34.":  <input class='tbox' size='40' type='text' name='mail_bounce_user' value=\"".$pref['mail_bounce_user']."\" /><br />
@@ -649,10 +688,10 @@ function showList()
 			<table style='".ADMIN_WIDTH."' class='fborder'>
 
 			<tr>
-			<td style='width:5%; text-align: center;' class='fcaption'>Id</td>
-			<td style='width:10%' class='fcaption'>Author</td>
-			<td style='width:40%' class='fcaption'>Subject</td>
-			<td style='width:20%; text-align: center;' class='fcaption'>Lastmod</td>
+			<td style='width:5%; text-align: center;' class='fcaption'>".MAILAN_49."</td>
+			<td style='width:10%' class='fcaption'>".MAILAN_50."</td>
+			<td style='width:40%' class='fcaption'>".MAILAN_51."</td>
+			<td style='width:20%; text-align: center;' class='fcaption'>".MAILAN_52."</td>
 			<td style='width:5%; text-align: center;' class='fcaption'>".LAN_OPTIONS."</td>
 			</tr>
 			";
@@ -693,8 +732,8 @@ function userclasses($name) {
 	$text .= "<select style='width:80%' class='tbox' name='$name' >
 		<option value='all'>".MAILAN_12."</option>
 		<option value='unverified'>".MAILAN_13."</option>
-		<option value='admin'>Admins</option>
-		<option value='self'>Self</option>";
+		<option value='admin'>".MAILAN_53."</option>
+		<option value='self'>".MAILAN_54."</option>";
 	$query = "SELECT uc.*, count(u.user_id) AS members
 			FROM #userclass_classes AS uc
 			LEFT JOIN #user AS u ON u.user_class REGEXP concat('(^|,)',uc.userclass_id,'(,|$)')
@@ -704,7 +743,7 @@ function userclasses($name) {
 	$sql->db_Select_gen($query);
 	while ($row = $sql->db_Fetch()) {
 		$public = ($row['userclass_editclass'] == 0)? "(".MAILAN_10.")" : "";
-		$text .= "<option value='{$row['userclass_id']}' >Userclass - {$row['userclass_name']}  $public [{$row['members']}]</option>";
+		$text .= "<option value='{$row['userclass_id']}' >".MAILAN_55." - {$row['userclass_name']}  $public [{$row['members']}]</option>";
 	}
 	$text .= " </select>";
 
@@ -717,7 +756,7 @@ function mailout_adminmenu() {
 	if($action == "edit"){
     	$action = "post";
 	}
-    $var['post']['text'] = "Send Mail";
+    $var['post']['text'] = MAILAN_56;
 	$var['post']['link'] = e_SELF;
 	$var['post']['perm'] = "W";
     $var['list']['text'] = LAN_SAVED;
@@ -732,7 +771,34 @@ function mailout_adminmenu() {
 }
 
 
+function sc_Select($container='sc_selector') {
+	$text ="
+<!-- Start of Shortcode selector -->
+	<div style='margin-left:0px;margin-right:0px; position:relative;z-index:1000;float:right;display:none' id='{$container}'>
+	<div style='position:absolute; bottom:30px; right:125px'>
+	<table class='fborder' style='background-color: #fff'>
+	<tr><td class='forumheader3'>
+	<select class='tbox' name='sc_sel' onchange=\"addtext(this.value); expandit('{$container}')\">
+	<option value=''> -- </option>\n";
 
+	$sc = array(
+		"{USERNAME}" => MAILAN_16,
+        "{SIGNUP_LINK}" => MAILAN_17,
+        "{USERID}" => MAILAN_18
+	);
+
+	foreach($sc as $key=>$val){
+		$text .= "<option value='".$key."'>".$val."</option>\n";
+	}
+	$text .="
+	</select></td></tr>	\n </table></div>
+	</div>
+\n<!-- End of SC selector -->
+
+";
+
+	return $text;
+}
 
 
 

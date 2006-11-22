@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/featurebox/plugin.php,v $
-|     $Revision: 1.5 $
-|     $Date: 2006/01/22 07:08:15 $
+|     $Revision: 1.7 $
+|     $Date: 2006/07/13 21:14:05 $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -41,7 +41,6 @@ $eplug_menu_name = "";
 // Name of the admin configuration file --------------------------------------------------------------------------
 $eplug_conffile = "admin_config.php";
 
-$eplug_sc = array("");
 
 // Icon image and caption text ------------------------------------------------------------------------------------
 $eplug_icon = $eplug_folder."/images/featurebox_32.png";
@@ -66,22 +65,6 @@ $eplug_tables = array(
   fb_template varchar(50) NOT NULL default '',
   PRIMARY KEY  (fb_id)
 ) TYPE=MyISAM AUTO_INCREMENT=1 ;");
-
-$eplug_rss['featurebox'] = array(
-	"query" => "SELECT * FROM #featurebox WHERE fb_class = 0",
-	"author" => "",
-	"link" => "",
-	"itemid" => "",
-	"title" => "fb_title",
-	"description" => "fb_text",
-	"categoryid" => "",
-	"categoryname" => "",
-	"categorylink" => "",
-	"datestamp" => "",
-	"enc_url" => "",
-	"enc_leng" => "",
-	"enc_type" => ""
-);
 
 // Create a link in main menu (yes=TRUE, no=FALSE) -------------------------------------------------------------
 $eplug_link = FALSE;

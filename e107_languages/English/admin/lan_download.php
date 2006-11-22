@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/lan_download.php,v $
-|     $Revision: 1.13 $
-|     $Date: 2006/03/05 06:10:42 $
-|     $Author: e107coders $
+|     $Revision: 1.17 $
+|     $Date: 2006/08/27 02:24:44 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 define("DOWLAN_1", "Download added to database.");
@@ -40,7 +40,7 @@ define("DOWLAN_31", "Categories");
 define("DOWLAN_32", "Downloads Options");
 define("DOWLAN_33", "Are you sure you want to delete this download?");
 define("DOWLAN_34", "Are you sure you want to delete this download category?");
-define("DOWLAN_35", "Download");
+
 define("DOWLAN_36", "deleted");
 define("DOWLAN_37", "Parent");
 define("DOWLAN_38", "No existing categories");
@@ -65,7 +65,6 @@ define("DOWLAN_56", "Sort by ");
 
 
 define("DOWLAN_59", "Filename");
-define("DOWLAN_60", "Author");
 
 define("DOWLAN_62", "Ascending");
 define("DOWLAN_63", "Descending");
@@ -128,9 +127,12 @@ define("DOWLAN_146", "Custom Download-denial message or URL");
 
 
 define("DOWLAN_147", "Icon for empty category");
-define("DOWLAN_148", "Check to update datestamp to current time");
+define("DOWLAN_148", "Check to update date stamp to current time");
 define("DOWLAN_149", "Or click here to use an external file");
 
 define("DOWLAN_150", "Email admin when broken download reported");
+define("DOWLAN_151", "Broken-download reporting available to");
 
+define("DOWLAN_152", "Couldn't move file");
+define("DOWLAN_153", "Move file into download folder");   
 ?>

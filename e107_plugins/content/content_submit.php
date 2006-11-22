@@ -12,8 +12,8 @@
 |        GNU General Public License (http://gnu.org).
 |
 |		$Source: /cvsroot/e107/e107_0.7/e107_plugins/content/content_submit.php,v $
-|		$Revision: 1.20 $
-|		$Date: 2006/02/13 10:13:22 $
+|		$Revision: 1.24 $
+|		$Date: 2006/07/28 14:07:14 $
 |		$Author: lisa_ $
 +---------------------------------------------------------------+
 */
@@ -39,7 +39,19 @@ $eArrayStorage = new ArrayData();
 
 //these have to be set for the tinymce wysiwyg
 $e_wysiwyg	= "content_text";
-$WYSIWYG	= true;
+if(check_class($pref['post_html']) && $pref['wysiwyg'] && $e_wysiwyg == TRUE){
+	require_once(e_HANDLER."tiny_mce/wysiwyg.php");
+	define("e_WYSIWYG",TRUE);
+	$tiny = wysiwyg($e_wysiwyg);
+}else{
+	define("e_WYSIWYG",FALSE);
+}
+
+//include js
+function headerjs(){
+	global $tiny;
+	echo $tiny;
+}
 
 global $tp;
 
@@ -52,10 +64,6 @@ if(e_QUERY){
 
 // define e_pagetitle
 $aa -> setPageTitle();
-
-//include js
-//function headerjs(){
-//}
 
 require_once(HEADERF);
 
@@ -88,9 +96,12 @@ if(!isset($qs[0])){
 	if(!$sql -> db_Select($plugintable, "content_id, content_heading, content_subheading, content_icon, content_pref", "content_parent = '0' AND content_class REGEXP '".e_CLASS_REGEXP."' ORDER BY content_heading")){
 		$text .= "<div style='text-align:center;'>".CONTENT_ADMIN_SUBMIT_LAN_0."</div>";
 	}else{
-		
 		if(!isset($CONTENT_SUBMIT_TYPE_TABLE)){
-			require_once($plugindir."templates/content_submit_type_template.php");
+			if(is_readable(e_THEME.$pref['sitetheme']."/content/content_submit_type_template.php")){
+				require_once(e_THEME.$pref['sitetheme']."/content/content_submit_type_template.php");
+			}else{
+				require_once(e_PLUGIN."content/templates/content_submit_type_template.php");
+			}
 		}
 		$sql2 = "";
 		$content_submit_type_table_string = "";
@@ -99,12 +110,12 @@ if(!isset($qs[0])){
 			if(!is_object($sql2)){ $sql2 = new db; }
 
 			$content_pref					= $eArrayStorage->ReadArray($row['content_pref']);
-			$content_pref["content_cat_icon_path_large_{$row['content_id']}"] = ($content_pref["content_cat_icon_path_large_{$row['content_id']}"] ? $content_pref["content_cat_icon_path_large_{$row['content_id']}"] : "{e_PLUGIN}content/images/cat/48/" );
-			$content_pref["content_cat_icon_path_small_{$row['content_id']}"] = ($content_pref["content_cat_icon_path_small_{$row['content_id']}"] ? $content_pref["content_cat_icon_path_small_{$row['content_id']}"] : "{e_PLUGIN}content/images/cat/16/" );
-			$content_cat_icon_path_large	= $tp -> replaceConstants($content_pref["content_cat_icon_path_large_{$row['content_id']}"]);
-			$content_cat_icon_path_small	= $tp -> replaceConstants($content_pref["content_cat_icon_path_small_{$row['content_id']}"]);
-			$content_icon_path				= $tp -> replaceConstants($content_pref["content_icon_path_{$row['content_id']}"]);
-			if($content_pref["content_submit_{$row['content_id']}"] && check_class($content_pref["content_submit_class_{$row['content_id']}"])){
+			$content_pref["content_cat_icon_path_large"] = ($content_pref["content_cat_icon_path_large"] ? $content_pref["content_cat_icon_path_large"] : "{e_PLUGIN}content/images/cat/48/" );
+			$content_pref["content_cat_icon_path_small"] = ($content_pref["content_cat_icon_path_small"] ? $content_pref["content_cat_icon_path_small"] : "{e_PLUGIN}content/images/cat/16/" );
+			$content_cat_icon_path_large	= $tp -> replaceConstants($content_pref["content_cat_icon_path_large"]);
+			$content_cat_icon_path_small	= $tp -> replaceConstants($content_pref["content_cat_icon_path_small"]);
+			$content_icon_path				= $tp -> replaceConstants($content_pref["content_icon_path"]);
+			if($content_pref["content_submit"] && check_class($content_pref["content_submit_class"])){
 				$content_submit_type_table_string .= $tp -> parseTemplate($CONTENT_SUBMIT_TYPE_TABLE, FALSE, $content_shortcodes);
 				$count = $count + 1;
 			}

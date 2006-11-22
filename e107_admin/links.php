@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/links.php,v $
-|     $Revision: 1.55 $
-|     $Date: 2006/03/22 01:58:18 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.66 $
+|     $Date: 2006/11/12 02:24:21 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -76,7 +76,7 @@ if(isset($_POST['generate_sublinks']) && isset($_POST['sublink_type']) && $_POST
 	while($row = $sql-> db_Fetch()){
 		$subcat = $row[($sublink['fieldid'])];
 		$name = $row[($sublink['fieldname'])];
-		$subname = "submenu.$link_name.$name";
+		$subname = $name;  // eliminate old embedded hierarchy from names. (e.g. 'submenu.TopName.name')
 		$suburl = str_replace("#",$subcat,$sublink['url']);
 		$subicon = ($sublink['fieldicon']) ? $row[($sublink['fieldicon'])] : $link_button;
 		$subdiz = ($sublink['fielddiz']) ? $row[($sublink['fielddiz'])] : $link_description;
@@ -128,6 +128,7 @@ if (isset($_POST['updateoptions'])) {
 	$pref['linkpage_screentip'] = $_POST['linkpage_screentip'];
 	$pref['sitelinks_expandsub'] = $_POST['sitelinks_expandsub'];
 	save_prefs();
+	$e107cache->clear("sitelinks");
 	$linkpost->show_message(LCLAN_1);
 }
 
@@ -176,11 +177,12 @@ exit;
 class links
 {
 	var $link_total;
-	
+	var $aIdOptPrep, $aIdOptData, $aIdOptTest;
+
 	function getLinks()
 	{
 		global $sql;
-		if($this->link_total = $sql->db_Select("links", "*", "ORDER BY link_order, link_id ASC", "nowhere"))
+		if($this->link_total = $sql->db_Select("links", "*", "ORDER BY link_category,link_order, link_id ASC", "nowhere"))
 		{
 			while($row = $sql->db_Fetch())
 			{
@@ -193,10 +195,25 @@ class links
 
 	function linkName($text)
 	{
-		if(substr($text, 0, 8) == "submenu.")
+		// This function is ONLY needed for link databases that have been upgraded from
+		// before 0.7+ -- all new link collections make use of link_parent instead
+		// of hierarchy embedded in the link_name. (Unfortunately, the upgraded
+		// data still includes embedded coding.)
+
+		if(substr($text, 0, 8) == "submenu.") // for backwards compatibility only.
 		{
 			$tmp = explode(".",$text);
-			return $tmp[2];
+			switch (count($tmp)) {
+			case 3: // submenu.parent.node
+				$tmp = $tmp[2]; break;
+			case 5: // submenu.parent.midlev.child.node
+				$tmp = $tmp[4]; break;
+			case 2: // submenu.parent (invalid?)
+			default:
+				$parentLen = strlen($tmp[1]);
+				$tmp = substr($text,8+$parentLen+1); // Skip submenu.parent.
+			}
+			return $tmp;
 		}
 		else
 		{
@@ -204,14 +221,27 @@ class links
 		}
 	}
 
-	function dropdown($curval="", $id=0, $indent=0)
-	{
-		global $linkArray;
+	function dropdown($curval="", $lid=0, $indent=0)
+	{   // Drop-down list using on the parent_id. :)
+		global $linkArray,$id,$sub_action;
+
 		if(0 == $indent) {$ret = "<option value=''>".LINKLAN_3."</option>\n";}
-		foreach($linkArray[$id] as $l)
+		foreach($linkArray[$lid] as $l)
 		{
 			$s = ($l['link_id'] == $curval ? " selected='selected' " : "" );
-			$ret .= "<option value='{$l['link_id']}|".$this->linkName($l['link_name'])."' {$s}>".str_pad("", $indent*36, "&nbsp;").$this->linkName($l['link_name'])."</option>\n";
+			$thename = $this->linkName($l['link_name']);
+			 // prevent making self the parent.
+			if ($l['link_id'] == $id) { $thename = "(".$thename.")"; }
+			if($sub_action == "sub")
+			{
+				$thelink = ($l['link_id'] != $lid) ? $l['link_id'] : $l['link_parent'] ;
+            }
+			else
+			{
+            	$thelink = ($l['link_id'] != $id) ? $l['link_id'] : $l['link_parent'] ;
+			}
+			$ret .= "<option value='".$thelink."' {$s}>".str_pad("", $indent*36, "&nbsp;").$thename." </option>\n";
+
 			if(array_key_exists($l['link_id'], $linkArray))
 			{
 				$ret .= $this->dropdown($curval, $l['link_id'], $indent+1);
@@ -219,7 +249,7 @@ class links
 		}
 		return $ret;
 	}
-			
+
 
 	function existing($id=0, $level=0)
 	{
@@ -242,19 +272,29 @@ class links
 		global $sql, $rs, $ns, $tp, $linkArray;
 		if (count($linkArray))
 		{
+
+			$this->prepIdOpts(); // Prepare the options list for all links
 			$text = $rs->form_open("post", e_SELF, "myform_{$link_id}", "", "");
 			$text .= "<div style='text-align:center'>
 				<table class='fborder' style='".ADMIN_WIDTH."'>
+				<colgroup>
+      		<col width=\"5%\" />
+      		<col width=\"60%\" />
+      		<col width=\"15%\" />
+      		<col width=\"10%\" />
+      		<col width=\"5%\" />
+      		<col width=\"5%\" />
+				</colgroup>
 				<tr>
-				<td class='fcaption' style='width:5%'>".LCLAN_89."</td>
-				<td class='fcaption' style='width:60%'>".LCLAN_90."</td>
-				<td class='fcaption' style='width:15%'>".LAN_OPTIONS."</td>
-				<td class='fcaption' style='width:10%'>".LCLAN_95."</td>
-				<td class='fcaption' style='width:5%'>".LCLAN_91."</td>
-				<td class='fcaption' style='width:5%'>".LAN_ORDER."</td>
+				<td class='fcaption'>".LCLAN_89."</td>
+				<td class='fcaption'>".LCLAN_15."</td>
+				<td class='fcaption'>".LAN_OPTIONS."</td>
+				<td class='fcaption'>".LCLAN_95."</td>
+				<td class='fcaption'>".LCLAN_91."</td>
+				<td class='fcaption'>".LAN_ORDER."</td>
 				</tr>";
 				$text .= $this->existing(0);
-				
+
 			$text .= "<tr>
 				<td class='forumheader' colspan='6' style='text-align:center'><input class='button' type='submit' name='update' value='".LAN_UPDATE."' /></td>
 				</tr>";
@@ -266,17 +306,37 @@ class links
 		$ns->tablerender(LCLAN_8, $text);
 	}
 
+	function prepIdOpts() {
+		for($a = 1; $a <= $this->link_total; $a++) {
+			$sTxt = "".$a;
+			$this->aIdOptData[] = array('val'=>'|||.'.$a, 'txt'=>$sTxt);	// Later, ||| becomes Id
+			$this->aIdOptTest[] = $sTxt;
+		}
+		$this->aIdOptPrep = $this->prepOpts($this->aIdOptData);
+	}
+
 	function display_row($row2, $indent = FALSE) {
-		global $sql, $rs, $ns, $tp, $linkArray;
+		global $sql, $rs, $ns, $tp, $linkArray,$previous_cat;
 		extract($row2);
-		if(strpos($link_name, "submenu.") !== FALSE || $link_parent !=0){
-			if(substr($link_name,0,8) == "submenu."){
-				$tmp = explode(".",$link_name);
-				$sublinkname = $tmp[2];
-			}else{
-			$sublinkname = $link_name;
-			}
-			$link_name = $sublinkname;
+
+		//
+		if($link_category > 1 && $link_category != $previous_cat)
+		{
+        	$text .= "
+				<tr>
+					<td class='fcaption'>".LCLAN_89."</td>
+					<td class='fcaption'>".LCLAN_15." (".LCLAN_12.": ".$link_category.")</td>
+					<td class='fcaption'>".LAN_OPTIONS."</td>
+					<td class='fcaption'>".LCLAN_95."</td>
+					<td class='fcaption'>".LCLAN_91."</td>
+					<td class='fcaption'>".LAN_ORDER."</td>
+				</tr>";
+			$previous_cat = $link_category;
+		}
+
+		if(strpos($link_name, "submenu.") !== FALSE || $link_parent !=0) // 'submenu' for upgrade compatibility only.
+		{
+			$link_name = $this->linkName( $link_name );
 		}
 
 		if ($indent) {
@@ -285,10 +345,10 @@ class links
 			$subindent = "<td".$subspacer.">".$subimage."</td>";
 		}
 
-				$text .= "<tr><td class='forumheader3' style='width:5%; text-align: center; vertical-align: middle' title='".$link_description."'>";
+				$text .= "<tr><td class='forumheader3' style='text-align: center; vertical-align: middle' title='".$link_description."'>";
 				$text .= $link_button ? "<img src='".e_IMAGE."icons/".$link_button."' alt='' /> ":
 				"";
-				$text .= "</td><td style='width:60%' class='forumheader3' title='".$link_description."'>
+				$text .= "</td><td class='forumheader3' title='".$link_description."'>
 				<table cellspacing='0' cellpadding='0' border='0' style='width: 100%'>
 				<tr>
 				".$subindent."
@@ -296,22 +356,19 @@ class links
 				</tr>
 				</table>
 				</td>";
-				$text .= "<td style='width:15%; text-align:center; white-space: nowrap' class='forumheader3'>";
+				$text .= "<td style='text-align:center; white-space: nowrap' class='forumheader3'>";
 				$text .= "<a href='".e_SELF."?create.sub.{$link_id}'><img src='".e_IMAGE."admin_images/sublink_16.png' title='".LINKLAN_10."' alt='".LINKLAN_10."' /></a>&nbsp;";
 				$text .= "<a href='".e_SELF."?create.edit.{$link_id}'>".ADMIN_EDIT_ICON."</a>&nbsp;";
 				$text .= "<input type='image' title='".LAN_DELETE."' name='main_delete_{$link_id}' src='".ADMIN_DELETE_ICON_PATH."' onclick=\"return jsconfirm('".$tp->toJS(LCLAN_58." [ $link_name ]")."') \" />";
 				$text .= "</td>";
-				$text .= "<td style='width:10%; text-align:center' class='forumheader3'>".r_userclass("link_class[".$link_id."]", $link_class, "off", "public,guest,nobody,member,admin,classes")."</td>";
-				$text .= "<td style='width:5%; text-align:center; white-space: nowrap' class='forumheader3'>";
+				$text .= "<td style='text-align:center' class='forumheader3'>".r_userclass("link_class[".$link_id."]", $link_class, "off", "public,guest,nobody,member,admin,classes")."</td>";
+				$text .= "<td style='text-align:center; white-space: nowrap' class='forumheader3'>";
 				$text .= "<input type='image' src='".e_IMAGE."admin_images/up.png' title='".LCLAN_30."' value='".$link_id.".".$link_order."' name='inc' />";
 				$text .= "<input type='image' src='".e_IMAGE."admin_images/down.png' title='".LCLAN_31."' value='".$link_id.".".$link_order."' name='dec' />";
 				$text .= "</td>";
-				$text .= "<td style='width:5%; text-align:center' class='forumheader3'>";
+				$text .= "<td style='text-align:center' class='forumheader3'>";
 				$text .= "<select name='link_order[]' class='tbox'>\n";
-				for($a = 1; $a <= $this->link_total; $a++) {
-					$selected = ($link_order == $a) ? "selected='selected'" : "";
-					$text .= "<option value='".$link_id.".".$a."' $selected>".$a."</option>\n";
-				}
+				$text .= $this->genOpts( $this->aIdOptPrep, $this->aIdOptTest, $link_order, $link_id );
 				$text .= "</select>";
 				$text .= "</td>";
 				$text .= "</tr>";
@@ -320,13 +377,16 @@ class links
 
 	}
 
+
 	function show_message($message) {
 		global $ns;
 		$ns->tablerender(LAN_UPDATE, "<div style='text-align:center'><b>".$message."</b></div>");
 	}
 
+
+
 	function create_link($sub_action, $id) {
-		global $sql, $rs, $ns, $pst;
+		global $sql, $rs, $ns, $pst,$tp;
 		$preset = $pst->read_preset("admin_links");
 		extract($preset);
 
@@ -344,18 +404,16 @@ class links
 			$link_parent = $id;
 		}
 
-		if(strpos($link_name, "submenu.") !== FALSE){
-			$tmp = explode(".",$link_name);
-			$link_name = $tmp[2];
+		if(strpos($link_name, "submenu.") !== FALSE){  // 'submenu' for upgrade compatibility only.
+			$link_name = $this->linkName( $link_name );
 		}
 
-		$handle = opendir(e_IMAGE."icons");
-		while ($file = readdir($handle)) {
-			if ($file != "." && $file != ".." && $file != "/" && $file != "CVS") {
-				$iconlist[] = $file;
-			}
-		}
-		closedir($handle);
+        require_once(e_HANDLER."file_class.php");
+        $fl = new e_file;
+
+        if($iconlist = $fl->get_files(e_IMAGE."icons/", ".jpg|.gif|.png|.JPG|.GIF|.PNG")){
+        	sort($iconlist);
+        }
 
 		$text = "<div style='text-align:center'>
 			<form method='post' action='".e_SELF."' id='linkform'>
@@ -379,8 +437,13 @@ class links
 			<tr>
 			<td style='width:30%' class='forumheader3'>".LCLAN_16.": </td>
 			<td style='width:70%' class='forumheader3'>
-			<input class='tbox' type='text' name='link_url' size='60' value='$link_url' maxlength='200' />
-			</td>
+			<input class='tbox' type='text' name='link_url' size='60' value='".$tp->replaceConstants($link_url,TRUE)."' maxlength='200' />";
+            if(e_MENU == "debug")
+			{
+				$text .= $link_url;
+			}
+			$text .= "
+            </td>
 			</tr>
 
 			<tr>
@@ -398,8 +461,10 @@ class links
 					<input class='button' type ='button' style='cursor:hand' size='30' value='".LCLAN_39."' onclick='expandit(this)' />
 			<div id='linkicn' style='display:none;{head}'>";
 
-		while (list($key, $icon) = each($iconlist)) {
-			$text .= "<a href=\"javascript:insertext('$icon','link_button','linkicn')\"><img src='".e_IMAGE."icons/".$icon."' style='border:0' alt='' /></a> ";
+		foreach($iconlist as $icon)
+		{
+			$filepath = str_replace(e_IMAGE."icons/","",$icon['path'].$icon['fname']);
+			$text .= "<a href=\"javascript:insertext('".$filepath."','link_button','linkicn')\"><img src='".$icon['path'].$icon['fname']."' style='border:0' alt='' /></a> ";
 		}
 
 		// 1 = _blank
@@ -445,7 +510,8 @@ class links
 			<tr style='vertical-align:top'>
 			<td colspan='2' style='text-align:center' class='forumheader'>";
 		if ($id && $sub_action == "edit") {
-			$text .= "<input class='button' type='submit' name='add_link' value='".LCLAN_27."' />\n<input type='hidden' name='link_id' value='$link_id'>";
+			$text .= "<input class='button' type='submit' name='add_link' value='".LCLAN_27."' />\n
+						<input type='hidden' name='link_id' value='$link_id' />";
 		} else {
 			$text .= "<input class='button' type='submit' name='add_link' value='".LCLAN_28."' />";
 		}
@@ -457,38 +523,27 @@ class links
 		$ns->tablerender(LCLAN_29, $text);
 	}
 
+
 	function submit_link($sub_action, $id) {
 		global $sql, $e107cache, $tp;
 		if(!is_object($tp)) {
 			$tp=new e_parse;
 		}
-		$_POST['link_name'] = $tp->toDB($_POST['link_name']);
-		if($_POST['link_parent']){
-			$tmp = explode("|",$_POST['link_parent']);
-			$link_name = $tp->toDB(("submenu.".$tmp[1].".".$_POST['link_name']));
-			$parent_id = intval($tmp[0]);
-		}else{
-			$parent_id = 0;
-			$link_name = $_POST['link_name'];
-		}
-		$link_url = $tp->toDB($_POST['link_url']);
+
+		$parent_id = ($_POST['link_parent']) ? intval($_POST['link_parent']) : 0;
+
+		$link_name = $tp->toDB($_POST['link_name']);
+		$link_url = $tp->createConstants($_POST['link_url']);
+		$link_url = str_replace("&","&amp;",$link_url); // xhtml compliant links.
+
 		$link_description = $tp->toDB($_POST['link_description']);
 		$link_button = $tp->toDB($_POST['link_button']);
 
 		$link_t = $sql->db_Count("links", "(*)");
 		if ($id) {
 			$sql->db_Update("links", "link_parent='$parent_id', link_name='$link_name', link_url='$link_url', link_description='$link_description', link_button= '$link_button', link_category='".$_POST['linkrender']."', link_open='".$_POST['linkopentype']."', link_class='".$_POST['link_class']."' WHERE link_id='$id'");
-			//rename all sublinks
-			if($sql->db_Select("links", "*", "link_parent='{$id}'"))
-			{
-				$childList = $sql->db_getList();
-				foreach($childList as $c)
-				{
-					$old = explode(".", $c['link_name'], 3);
-					$newname = "submenu.".$_POST['link_name'].".".$old[2];
-					$sql->db_Update("links", "link_name = '{$newname}' WHERE link_id = '{$c['link_id']}'");
-				}
-			}
+			//rename all sublinks to eliminate old embedded 'submenu' etc hierarchy.
+		    // this is for upgrade compatibility only. Current hierarchy uses link_parent.
 
 			$e107cache->clear("sitelinks");
 			$this->show_message(LCLAN_3);
@@ -650,6 +705,65 @@ function sublink_list($name=""){
 	return $sublink_type;
 
 }
+
+function prepOpts($aData)
+{
+//
+// Prepare an array that can rapidly (no looping)
+// generate an HTML option string, with one item possibly selected.
+// prepOpts returns a prepared array containing the possible values in this form:
+//
+// <option value="xxxxx"
+// >text for first</option><option value="yyyy"
+// >text for next</option>
+//
+// $aData is an array containing value/text pairs:
+// each entry is array( 'val'=>value, 'txt'=>text )
+//
+
+$i=0;
+	foreach($aData as $aVal)
+	{
+		$sVal = $aVal['val'];
+		$sTxt = $aVal['txt'];
+		$sOut="";
+
+		if ($i) $sOut = '>'.$sTxtPrev.'</option>';
+		$sOut .= '<option value="'.$sVal.'"';
+
+		$aPrep[$i++] = $sOut;
+		$sTxtPrev = $sTxt;
+	}
+	if ($i) {  // terminate final option
+		$aPrep[$i] = '>'.$sTxtPrev.'</option>';
+	}
+
+	return $aPrep;
+}
+
+function genOpts($aPrep, $aTest,$sSelected, $sId)
+{
+//
+// Generate an HTML option string, with one item possibly selected.
+// aGen is a prepared array containing the possible values in this form.
+// if sSelected matches an aTest entry, that entry is selected.
+// aTest can be any array that matches one-for-one with the options
+//
+// if $sId is nonblank, a global search/replace is done to change all "|||" to $sId.
+
+  $iKey = array_search( $sSelected, $aTest);
+  if ($iKey !== FALSE) {
+  	$aNew = $aPrep;
+  	$aNew[$iKey] .= " selected='selected'";
+  	$sOut = implode($aNew);
+  }
+  else {
+		$sOut = implode($aPrep);
+	}
+	if (strlen($sId)) $sOut = str_replace("|||",$sId,$sOut);
+	return $sOut;
+}
+
 
 }
 

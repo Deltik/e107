@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/forum/forum_class.php,v $
-|     $Revision: 1.52 $
-|     $Date: 2006/05/16 17:29:51 $
+|     $Revision: 1.65 $
+|     $Date: 2006/11/15 12:57:18 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
@@ -85,7 +85,8 @@ class e107forum
 			else
 			{
 				$id = intval($id);
-				$forum_lpinfo = "";
+				$forum_lp_user = '';
+				$forum_lp_info = '';
 				if($update_threads == TRUE)
 				{
 					if ($sql2->db_Select('forum_t', 'thread_id', "thread_forum_id = $id AND thread_parent = 0"))
@@ -103,8 +104,8 @@ class e107forum
 					$forum_lp_user = $tmp[0];
 					$last_id = $row['thread_parent'] ? $row['thread_parent'] : $row['thread_id'];
 					$forum_lp_info = $row['thread_datestamp'].".".$last_id;
-					$sql->db_Update('forum', "forum_lastpost_user = '{$forum_lp_user}', forum_lastpost_info = '{$forum_lp_info}' WHERE forum_id={$id}");
 				}
+				$sql->db_Update('forum', "forum_lastpost_user = '{$forum_lp_user}', forum_lastpost_info = '{$forum_lp_info}' WHERE forum_id={$id}");
 			}
 		}
 	}
@@ -148,10 +149,10 @@ class e107forum
 		return FALSE;
 	}
 
-	function forum_getmods($uclass)
+	function forum_getmods($uclass = e_UC_ADMIN)
 	{
 		global $sql;
-		if($uclass == e_UC_ADMIN)
+		if($uclass == e_UC_ADMIN || trim($uclass) == '')
 		{
 			$sql->db_Select('user', 'user_id, user_name',"user_admin = 1");
 		}
@@ -172,7 +173,7 @@ class e107forum
 		global $sql;
 		$qry = "
 		SELECT f.*, u.user_name FROM #forum AS f
-		LEFT JOIN #user AS u ON FLOOR(f.forum_lastpost_user) = u.user_id
+		LEFT JOIN #user AS u ON SUBSTRING_INDEX(f.forum_lastpost_user,'.',1) = u.user_id
 		WHERE forum_parent != 0 AND forum_sub = 0
 		ORDER BY f.forum_order ASC
 		";
@@ -200,7 +201,7 @@ class e107forum
 		$where = ($forum_id != "" && $forum_id != 'bysub' ? "AND forum_sub = ".intval($forum_id) : "");
 		$qry = "
 		SELECT f.*, u.user_name FROM #forum AS f
-		LEFT JOIN #user AS u ON FLOOR(f.forum_lastpost_user) = u.user_id
+		LEFT JOIN #user AS u ON SUBSTRING_INDEX(f.forum_lastpost_user,'.',1) = u.user_id
 		WHERE forum_sub != 0 {$where}
 		ORDER BY f.forum_order ASC
 		";
@@ -327,11 +328,11 @@ class e107forum
 			{
 				$ret[$row['forum_id']] = $row['forum_name'];
 			}
-		
+
 		}
 		return $ret;
 	}
-	
+
 	function thread_update($thread_id, $newvals)
 	{
 		global $sql, $tp;
@@ -351,8 +352,8 @@ class e107forum
 		global $sql;
 		$qry = "
 		SELECT t.*, u.user_name, lpu.user_name AS lastpost_username from #forum_t as t
-		LEFT JOIN #user AS u ON FLOOR(t.thread_user) = u.user_id
-		LEFT JOIN #user AS lpu ON FLOOR(t.thread_lastuser) = lpu.user_id
+		LEFT JOIN #user AS u ON SUBSTRING_INDEX(t.thread_user,'.',1) = u.user_id
+		LEFT JOIN #user AS lpu ON SUBSTRING_INDEX(t.thread_lastuser,'.',1) = lpu.user_id
 		WHERE t.thread_forum_id = $forum_id AND t.thread_parent = 0
 		ORDER BY
 		t.thread_s DESC,
@@ -385,7 +386,7 @@ class e107forum
 		}
 		$qry = "
 		SELECT t.thread_user, t.thread_datestamp, u.user_name FROM #forum_t AS t
-		LEFT JOIN #user AS u ON FLOOR(t.thread_user) = u.user_id
+		LEFT JOIN #user AS u ON SUBSTRING_INDEX(t.thread_user,'.',1) = u.user_id
 		{$where}
 		ORDER BY t.thread_datestamp DESC	LIMIT 0,1
 		";
@@ -521,9 +522,11 @@ class e107forum
 		$sortdir = "ASC";
 
 		$qry = "
-		SELECT t.*, u.* FROM #forum_t as t
+		SELECT t.*, u.*, ue.* FROM #forum_t as t
 		LEFT JOIN #user AS u
-		ON FLOOR(t.thread_user) = u.user_id
+		ON SUBSTRING_INDEX(t.thread_user,'.',1) = u.user_id
+		LEFT JOIN #user_extended AS ue
+		ON SUBSTRING_INDEX(t.thread_user,'.',1) = ue.user_extended_id
 		WHERE t.thread_parent = $thread_id
 		ORDER by t.thread_datestamp {$sortdir}
 		LIMIT ".intval($start).",".intval($limit);
@@ -538,9 +541,11 @@ class e107forum
 			}
 		}
 		$qry = "
-		SELECT t.*,u.* from #forum_t AS t
+		SELECT t.*,u.*,ue.* from #forum_t AS t
 		LEFT JOIN #user AS u
-		ON FLOOR(t.thread_user) = u.user_id
+		ON SUBSTRING_INDEX(t.thread_user,'.',1) = u.user_id
+		LEFT JOIN #user_extended AS ue
+		ON SUBSTRING_INDEX(t.thread_user,'.',1) = ue.user_extended_id
 		WHERE t.thread_id = $thread_id
 		LIMIT 0,1
 		";
@@ -599,7 +604,7 @@ class e107forum
 		$qry = "
 		SELECT t.*, u.user_name, u.user_id, u.user_email from #forum_t AS t
 		LEFT JOIN #user AS u
-		ON FLOOR(t.thread_user) = u.user_id
+		ON SUBSTRING_INDEX(t.thread_user,'.',1) = u.user_id
 		WHERE t.thread_id = $thread_id
 		LIMIT 0,1
 		";
@@ -625,7 +630,7 @@ class e107forum
 			$qry = "
 			SELECT t.*, u.user_name, u.user_id from #forum_t AS t
 			LEFT JOIN #user AS u
-			ON FLOOR(t.thread_user) = u.user_id
+			ON SUBSTRING_INDEX(t.thread_user,'.',1) = u.user_id
 			WHERE t.thread_id = ".intval($parent_id)."
 			LIMIT 0,1
 			";
@@ -660,7 +665,7 @@ class e107forum
 		{
 			return -1;
 		}
-		
+
 		$post_user = $thread_poster['post_userid'].".".$thread_poster['post_user_name'];
 		$thread_post_user = $post_user;
 		if($thread_poster['post_userid'] == 0)
@@ -759,7 +764,7 @@ class e107forum
 		SELECT ft.*, fp.thread_name as post_subject, fp.thread_total_replies as replies, u.user_id, u.user_name, f.forum_class
 		FROM #forum_t AS ft
 		LEFT JOIN #forum_t as fp ON fp.thread_id = ft.thread_parent
-		LEFT JOIN #user as u ON u.user_id = FLOOR(ft.thread_user) 
+		LEFT JOIN #user as u ON u.user_id = SUBSTRING_INDEX(ft.thread_user,'.',1)
 		LEFT JOIN #forum as f ON f.forum_id = ft.thread_forum_id
 		WHERE ft.thread_datestamp > ".USERLV. "
 		AND f.forum_class IN (".USERCLASS_LIST.")
@@ -812,7 +817,7 @@ class e107forum
 		}
 	}
 
-	function forum_update_counts($forumID)
+	function forum_update_counts($forumID, $recalc_threads = false)
 	{
 		global $sql;
 		if($forumID == 'all')
@@ -829,14 +834,25 @@ class e107forum
 		$threads = $sql->db_Count("forum_t", "(*)", "WHERE thread_forum_id=$forumID AND thread_parent = 0");
 		$replies = $sql->db_Count("forum_t", "(*)", "WHERE thread_forum_id=$forumID AND thread_parent != 0");
 		$sql->db_Update("forum", "forum_threads='$threads', forum_replies='$replies' WHERE forum_id='$forumID'");
+		if($recalc_threads == true)
+		{
+			$sql->db_Select("forum_t", "thread_parent, count(*) as replies", "thread_forum_id = $forumID GROUP BY thread_parent");
+			$tlist = $sql->db_getList();
+			foreach($tlist as $t)
+			{
+				$tid = $t['thread_parent'];
+				$replies = intval($t['replies']);
+				$sql->db_Update("forum_t", "thread_total_replies='$replies' WHERE thread_id='$tid'");
+			}
+		}
 	}
-	
+
 	function get_user_counts()
 	{
 		global $sql;
 		$qry = "
 		SELECT u.user_id AS uid, count(t.thread_user) AS cnt FROM #forum_t AS t
-		LEFT JOIN #user AS u on FLOOR(t.thread_user) = u.user_id
+		LEFT JOIN #user AS u on SUBSTRING_INDEX(t.thread_user,'.',1)  = u.user_id
 		WHERE u.user_id > 0
 		GROUP BY uid
 		";
@@ -846,11 +862,96 @@ class e107forum
 			$ret = array();
 			while($row = $sql->db_Fetch())
 			{
-				$ret[$row['uid']] = $row['cnt'];	
+				$ret[$row['uid']] = $row['cnt'];
 			}
 			return $ret;
 		}
 		return FALSE;
+	}
+	
+	/*
+	 * set bread crumb
+	 * $forum_href override ONLY applies when template is missing FORUM_CRUMB
+	 * $thread_title is needed for post-related breadcrumbs
+	 */
+	function set_crumb($forum_href=FALSE,$thread_title="")
+	{
+		global $FORUM_CRUMB,$forum_info,$thread_info,$tp;
+		global $BREADCRUMB,$BACKLINK;  // Eventually we should deprecate BACKLINK
+		
+		if(is_array($FORUM_CRUMB))
+		{
+			$search 	= array("{SITENAME}", "{SITENAME_HREF}");
+			$replace 	= array(SITENAME, "href='".e_BASE."index.php'");
+			$FORUM_CRUMB['sitename']['value'] = str_replace($search, $replace, $FORUM_CRUMB['sitename']['value']);
+		
+			$search 	= array("{FORUMS_TITLE}", "{FORUMS_HREF}");
+			$replace 	= array(LAN_01, "href='".e_PLUGIN."forum/forum.php'");
+			$FORUM_CRUMB['forums']['value'] = str_replace($search, $replace, $FORUM_CRUMB['forums']['value']);
+		
+			$search 	= "{PARENT_TITLE}";
+			$replace 	= $tp->toHTML($forum_info['parent_name']);
+			$FORUM_CRUMB['parent']['value'] = str_replace($search, $replace, $FORUM_CRUMB['parent']['value']);
+
+			if($forum_info['sub_parent'])
+			{
+				$search 	= array("{SUBPARENT_TITLE}", "{SUBPARENT_HREF}");
+				$forum_sub_parent = (substr($forum_info['sub_parent'], 0, 1) == "*" ? substr($forum_info['sub_parent'], 1) : $forum_info['sub_parent']);
+				$replace 	= array($forum_sub_parent, "href='".e_PLUGIN."forum/forum_viewforum.php?{$forum_info['forum_sub']}'");
+				$FORUM_CRUMB['subparent']['value'] = str_replace($search, $replace, $FORUM_CRUMB['subparent']['value']);
+			}
+			else
+			{
+				$FORUM_CRUMB['subparent']['value'] = "";
+			}
+
+			$search 	= array("{FORUM_TITLE}", "{FORUM_HREF}");
+			$tmpFname = $forum_info['forum_name'];
+			if(substr($tmpFname, 0, 1) == "*") { $tmpFname = substr($tmpFname, 1); }
+			$replace 	= array($tmpFname,"href='".e_PLUGIN."forum/forum_viewforum.php?{$forum_info['forum_id']}'");
+			$FORUM_CRUMB['forum']['value'] = str_replace($search, $replace, $FORUM_CRUMB['forum']['value']);
+
+			if(strlen($thread_title))
+			{
+				$search 	= array("{THREAD_TITLE}");
+				$replace 	= array($thread_title);
+				$FORUM_CRUMB['thread']['value'] = str_replace($search, $replace, $FORUM_CRUMB['thread']['value']);
+			}
+			else
+			{
+				$FORUM_CRUMB['thread']['value'] = "";
+			}
+
+			$FORUM_CRUMB['fieldlist'] = "sitename,forums,parent,subparent,forum,thread";
+			$BREADCRUMB = $tp->parseTemplate("{BREADCRUMB=FORUM_CRUMB}", true);
+
+		}
+		else
+		{
+			$dfltsep = " :: ";
+			$BREADCRUMB = "<a class='forumlink' href='".e_BASE."index.php'>".SITENAME."</a>".$dfltsep."<a class='forumlink' href='".e_PLUGIN."forum/forum.php'>".LAN_01."</a>".$dfltsep;
+			if($forum_info['sub_parent'])
+			{
+				$forum_sub_parent = (substr($forum_info['sub_parent'], 0, 1) == "*" ? substr($forum_info['sub_parent'], 1) : $forum_info['sub_parent']);
+				$BREADCRUMB .= "<a class='forumlink' href='".e_PLUGIN."forum/forum_viewforum.php?{$forum_info['forum_sub']}'>{$forum_sub_parent}</a>".$dfltsep;
+			}
+			
+			$tmpFname = $forum_info['forum_name'];
+			if(substr($tmpFname, 0, 1) == "*") { $tmpFname = substr($tmpFname, 1); }
+			if ($forum_href)
+			{
+				$BREADCRUMB .= "<a class='forumlink' href='".e_PLUGIN."forum/forum_viewforum.php?{$forum_info['forum_id']}'>".$tp->toHTML($tmpFname, TRUE, 'no_hook,emotes_off')."</a>";
+			} else
+			{
+				$BREADCRUMB .= $tmpFname;
+			}
+
+			if(strlen($thread_title))
+			{
+				$BREADCRUMB .= $dfltsep.$thread_title;
+			}
+		}
+		$BACKLINK = $BREADCRUMB;
 	}
 }
 
@@ -872,50 +973,49 @@ class e107forum
 *
 * @access public
 */
-function img_path($filename, $eMLANG_folder = FALSE, $eMLANG_pref = FALSE)
+function img_path($filename)
 {
 	global $pref;
-	if ($eMLANG_folder)
-	{
-		return eMLANG_path($filename, $eMLANG_folder);
-	}
-	else
-	{
-		if(file_exists(THEME.'forum/'.$filename))
+
+	$multilang = array("reply.png","newthread.png","moderator.png","main_admin.png","admin.png");
+	$ML = (in_array($filename,$multilang)) ? TRUE : FALSE;
+
+		if(file_exists(THEME.'forum/'.$filename) || is_readable(THEME.'forum/'.e_LANGUAGE."_".$filename))
 		{
-			$image = THEME.'forum/'.$filename;
+			$image = ($ML && is_readable(THEME.'forum/'.e_LANGUAGE."_".$filename)) ? THEME.'forum/'.e_LANGUAGE."_".$filename :  THEME.'forum/'.$filename;
 		}
 		else
 		{
 			if(defined("IMODE"))
 			{
-				$image = e_PLUGIN."forum/images/".IMODE."/".$filename;
+				if($ML)
+				{
+                	$image = (is_readable(e_PLUGIN."forum/images/".IMODE."/".e_LANGUAGE."_".$filename)) ? e_PLUGIN."forum/images/".IMODE."/".e_LANGUAGE."_".$filename : e_PLUGIN."forum/images/".IMODE."/English_".$filename;
+				}
+				else
+				{
+                	$image = e_PLUGIN."forum/images/".IMODE."/".$filename;
+				}
 			}
 			else
 			{
-				$image = e_PLUGIN."forum/images/lite/".$filename;
+				if($ML)
+				{
+					$image = (is_readable(e_PLUGIN."forum/images/lite/".e_LANGUAGE."_".$filename)) ? e_PLUGIN."forum/images/lite/".e_LANGUAGE."_".$filename : e_PLUGIN."forum/images/lite/English_".$filename;
+				}
+				else
+                {
+           			$image = e_PLUGIN."forum/images/lite/".$filename;
+				}
+
 			}
 		}
-	}
+
 	return $image;
 }
 
-function eMLANG_path($file_name, $sub_folder)
-{
-	if (file_exists(THEME.$sub_folder."/".e_LANGUAGE."/".$file_name))
-	{
-		return THEME.$sub_folder."/".e_LANGUAGE."/".$file_name;
-	}
-	if (file_exists(THEME.$sub_folder."/".$file_name))
-	{
-		return THEME.$sub_folder."/".$file_name;
-	}
-	if (file_exists(e_IMAGE.$sub_folder."/".e_LANGUAGE."/".$file_name))
-	{
-		return e_IMAGE.$sub_folder."/".e_LANGUAGE."/".$file_name;
-	}
-	return e_PLUGIN.$sub_folder."/images/".$file_name;
-}
+
+
 
 if (file_exists(THEME.'forum/forum_icons_template.php'))
 {

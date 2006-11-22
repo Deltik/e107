@@ -4,8 +4,8 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/lan_users.php,v $
-|     $Revision: 1.23 $
-|     $Date: 2006/05/12 22:50:40 $
+|     $Revision: 1.27 $
+|     $Date: 2006/10/31 21:16:29 $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -38,7 +38,7 @@ define("USRLAN_17", "Confirm Delete User");
 // define("USRLAN_28", "Sort");
 
 define("USRLAN_30", "Ban");
-// define("USRLAN_31", "Ban -unactivated-");
+// define("USRLAN_31", "Ban -inactivated-");
 define("USRLAN_32", "Activate");
 define("USRLAN_33", "Unban");
 define("USRLAN_34", "Remove admin status");
@@ -59,7 +59,7 @@ define("USRLAN_50", "default is 100");
 define("USRLAN_51", "Update Options");
 define("USRLAN_52", "Member Options");
 define("USRLAN_53", "Allow members to upload a photograph?");
-define("USRLAN_54", "Click here to delete all un-activated users");
+define("USRLAN_54", "Click here to delete all inactivated users");
 define("USRLAN_55", "Prune");
 define("USRLAN_56", "Deleted");
 define("USRLAN_57", "Deleting un-activated members ...");
@@ -129,8 +129,8 @@ define("USRLAN_132", "Enable");
 define("USRLAN_133", "Force user to update settings");
 define("USRLAN_134", "Enabling this option will automatically send the user to their user-settings if a required user field is not filled.");
 
-define("USRLAN_135", "No IP address found in user's info, IP not banned");
-define("USRLAN_136", "Multiple users found with IP address of {IP}, IP not banned.");
+define("USRLAN_135", "No IP address found in user's info; IP not banned");
+define("USRLAN_136", "Multiple users found with IP address of {IP}; IP not banned.");
 define("USRLAN_137", "Users IP address of {IP} banned.");
 
 define("LAN_MAINADMIN","Main Admin");
@@ -186,5 +186,7 @@ define("USRLAN_142", "with the following activation link");
 define("LAN_BOUNCED","Bounced");
 define("USRLAN_143", "Check For Bounces");
 define("USRLAN_144", "Resend Confirmation Email to All");
+define("USRLAN_145", "Bounced users");
+define("USRLAN_146", "Member information is available to");
 
 ?>

@@ -11,15 +11,22 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/links_page/links_template.php,v $
-|     $Revision: 1.17 $
-|     $Date: 2005/12/14 19:28:44 $
-|     $Author: sweetas $
+|     $Revision: 1.24 $
+|     $Date: 2006/08/24 14:50:28 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
 
 global $sc_style, $link_shortcodes;
+if(!defined("USER_WIDTH")){ define("USER_WIDTH","width:97%"); }
+
+// ##### NEXT PREV --------------------------------------------------
+if(!isset($LINK_NP_TABLE)){
+	$LINK_NP_TABLE = "<div class='nextprev'>{LINK_NEXTPREV}</div>";
+}
+// ##### ----------------------------------------------------------------------
 
 //general : backlink to link frontpage
 $sc_style['LINK_NAVIGATOR']['pre'] = "<td style='text-align:right;'>";
@@ -45,7 +52,7 @@ $sc_style['LINK_MANAGE_NEWLINK']['pre'] = "<div style='text-align:right;'>";
 $sc_style['LINK_MANAGE_NEWLINK']['post'] = " >></div>";
 
 $LINK_TABLE_MANAGE_START = "
-	".$rs -> form_open("post", e_SELF."?".e_QUERY, "linkmanagerform", "", "enctype='multipart/form-data'", "")."
+	<form method='post' action='".e_SELF."?".e_QUERY."' id='linkmanagerform' enctype='multipart/form-data'>
 	<table class='fborder' style='width:100%;' cellspacing='0' cellpadding='0'>
 	<tr>
 	<td style='width:15%' class='fcaption'>".LAN_LINKS_MANAGER_5."</td>
@@ -60,7 +67,7 @@ $LINK_TABLE_MANAGE = "
 	<td style='width:10%; padding-bottom:5px; text-align:center; vertical-align:top;' class='forumheader3'>{LINK_MANAGE_OPTIONS}</td>
 	</tr>";
 
-$LINK_TABLE_MANAGE_END = "</table>".$rs -> form_close()."<br />{LINK_MANAGE_NEWLINK}";
+$LINK_TABLE_MANAGE_END = "</table></form><br />{LINK_MANAGE_NEWLINK}";
 
 
 
@@ -110,37 +117,70 @@ $LINK_MAIN_TABLE_END_ALL = "
 
 // LINKS ITEM ----------------------------------------------------------------------------
 
-$sc_style['LINK_BUTTON']['pre'] = "<td rowspan='2' class='forumheader3' style='width:10%; text-align:center'>";
+$sc_style['LINK_BUTTON']['pre'] = "<td class='forumheader3' style='width:5%; text-align:center'>";
 $sc_style['LINK_BUTTON']['post'] = "</td>";
 
-$sc_style['LINK_URL']['pre'] = "<i>";
-$sc_style['LINK_URL']['post'] = "</i><br />";
+$sc_style['LINK_COMMENT']['pre'] = "<td class='forumheader3' style='width:5%; text-align:center'>";
+$sc_style['LINK_COMMENT']['post'] = "</td>";
 
-$sc_style['LINK_DESC']['post'] = "<br />";
+$sc_style['LINK_RATING']['pre'] = "<td class='forumheader3' style='width:5%; text-align:center'>";
+$sc_style['LINK_RATING']['post'] = "</td>";
+
+$sc_style['LINK_REFER']['pre'] = "<td class='forumheader3' style='width:5%; text-align:center'>";
+$sc_style['LINK_REFER']['post'] = "</td>";
+
+$sc_style['LINK_URL']['pre'] = "<span class='smalltext'>";
+$sc_style['LINK_URL']['post'] = "</span>";
+
+$sc_style['LINK_DESC']['pre'] = "<span class='smalltext'>";
+$sc_style['LINK_DESC']['post'] = "</span>";
+
+$sc_style['LINK_REFER_LAN']['pre'] = "<td class='fcaption' style='text-align:center;width:5%'>";
+$sc_style['LINK_REFER_LAN']['post'] = "</td>";
+
+$sc_style['LINK_COMMENT_LAN']['pre'] = "<td class='fcaption' style='width:5%'>";
+$sc_style['LINK_COMMENT_LAN']['post'] = "</td>";
+
+$sc_style['LINK_RATING_LAN']['pre'] = "<td class='fcaption' style='width:5%'>";
+$sc_style['LINK_RATING_LAN']['post'] = "</td>";
+
+$sc_style['LINK_BUTTON_LAN']['pre'] = "<td class='fcaption' style='width:5%'>";
+$sc_style['LINK_BUTTON_LAN']['post'] = "</td>";
+
+$sc_style['LINK_CAT_DESC']['pre'] = "<br /><span class='smalltext'><i>";
+$sc_style['LINK_CAT_DESC']['post'] = "</i></span>";
+
+$LINK_TABLE_CAPTION = LCLAN_ITEM_24."{NAVIGATOR}" ;
 
 $LINK_TABLE_START = "
-	<div style='text-align:center'>";
+	<div style='text-align:center'>
+	<table class='fborder' style='".USER_WIDTH.";margin-bottom:20px;'>
+	<tr>
+	<td colspan='{BUTTON_COLUMN}' class='fcaption'>".LAN_LINKS_32." {LINK_CAT_NAME} {LINK_CAT_TOTAL} {LINK_CAT_DESC} </td>
+   	{LINK_RATING_LAN}
+	{LINK_COMMENT_LAN}
+	{LINK_REFER_LAN}
+	</tr>";
 
-$LINK_TABLE = "<div style='text-align:center'>
-	<table class='fborder' style='width:95%; margin-bottom:20px;'>
+$LINK_TABLE = "
+
 	<tr>
 		{LINK_BUTTON}
-		<td class='fcaption' style='width:90%'>
-			{LINK_NEW} {LINK_APPEND} {LINK_NAME} </a>
-		</td>
-		<td class='fcaption' style='white-space:nowrap'>
-		{LINK_COMMENT}&nbsp;{LINK_REFER}
-		</td>
-	</tr>
-	<tr><td colspan='2' class='forumheader3'>
-	{LINK_URL}
+		<td class='forumheader3' style='width:60%'>
+			{LINK_NEW} {LINK_APPEND} {LINK_NAME} </a><br />
+    {LINK_URL=link}
 	{LINK_DESC}
-	{LINK_RATING}
-	</td></tr>
-	</table></div>";
+
+		</td>
+    	{LINK_RATING}
+	{LINK_COMMENT}
+	{LINK_REFER}
+
+	</tr>
+	";
 
 $LINK_TABLE_END = "
-	</div>";
+	</table></div>";
 
 
 
@@ -181,7 +221,7 @@ $LINK_RATED_TABLE = "
 	</tr>
 	{LINK_RATED_URL}
 	{LINK_RATED_CATEGORY}
-	{LINK_RATED_DESC}		
+	{LINK_RATED_DESC}
 	</table>";
 
 $LINK_RATED_TABLE_END = "
@@ -194,7 +234,7 @@ $sc_style['LINK_SUBMIT_PRETEXT']['post'] = "</td></tr>";
 // SUBMIT -----------------------------------------------------------------------------------
 $LINK_SUBMIT_TABLE = "
 	<div style='text-align:center'>
-	<form method='post' action='".e_SELF.(e_QUERY ? "?".e_QUERY : "")."'>	
+	<form method='post' action='".e_SELF.(e_QUERY ? "?".e_QUERY : "")."'>
 	<table class='fborder' style='width:100%' cellspacing='0' cellpadding='0'>
 	{LINK_SUBMIT_PRETEXT}
 	<tr>
@@ -215,7 +255,7 @@ $LINK_SUBMIT_TABLE = "
 	</tr>
 	<tr>
 		<td class='forumheader3' style='width:30%'>".LCLAN_SL_14."</td>
-		<td class='forumheader3' style='width:30%'><input class='tbox' type='text' name='link_button' size='60' value='' maxlength='200' /></td>
+		<td class='forumheader3' style='width:30%'><input class='tbox' type='text' name='link_but' size='60' value='' maxlength='200' /></td>
 	</tr>
 	<tr>
 		<td colspan='2' style='text-align:center' class='forumheader3'><span class='smalltext'>".LCLAN_SL_15."</span></td>

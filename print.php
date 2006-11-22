@@ -11,12 +11,16 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/print.php,v $
-|     $Revision: 1.6 $
-|     $Date: 2005/09/06 01:52:25 $
+|     $Revision: 1.10 $
+|     $Date: 2006/11/18 18:42:12 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
+$HEADER="";
+$FOOTER="";
+require_once(HEADERF);
+
 $qs = explode(".", e_QUERY);
 if ($qs[0] == "") {
 	header("location:".e_BASE."index.php");
@@ -62,11 +66,11 @@ else
 	}
 	$news_datestamp = $con->convert_date($news_datestamp, "long");
 	$text = "<font style=\"font-size: 11px; color: black; font-family: tahoma, verdana, arial, helvetica; text-decoration: none\">
-	<b>".LAN_135.": ".$news_title."</b>
+	<b>".LAN_PRINT_135.": ".$news_title."</b>
 	<br />
-	(".LAN_86." ".$category_name.")
+	(".LAN_PRINT_86." ".$category_name.")
 	<br />
-	".LAN_94." ".$a_name."<br />
+	".LAN_PRINT_94." ".$a_name."<br />
 	".$news_datestamp."
 	<br /><br />".
 	$news_body;
@@ -75,23 +79,24 @@ else
 	if ($news_source != ""){ $text .= "<br /><br />".$news_source; }
 	if ($news_url != ""){ $text .= "<br />".$news_url; }
 	 
-	$text .= "<br /><br /><hr />".
-	LAN_303.SITENAME."
+	$text .= "<br /><br /></font><hr />".
+	LAN_PRINT_303.SITENAME."
 	<br />
 	( http://".$_SERVER[HTTP_HOST].e_HTTP."comment.php?comment.news.".$news_id." )
-	</font>";
+	";
+}
+
+if(defined("TEXTDIRECTION") && TEXTDIRECTION == "rtl"){
+	$align = 'right';
+}else{
+	$align = 'left';
 }
 
 echo "
-	<div style=\"text-align:center\">
-	";
-	echo $tp->parseTemplate("{LOGO}", TRUE);
-	echo "
-	</div>
-	<hr />
-	<br />
-	";
-echo $text;
-echo "<br /><br /><div style='text-align:center'><form><input type='button' value='".LAN_307."' onClick='window.print()'></form></div>";
-	
+<div style='text-align:".$align."'>".$tp->parseTemplate("{LOGO}", TRUE)."</div><hr /><br />
+<div style='text-align:".$align."'>".$text."</div><br /><br />
+<div style='text-align:".$align."'><form action=''><input type='button' value='".LAN_PRINT_307."' onClick='window.print()' /></form></div>";
+
+require_once(FOOTERF);
+
 ?>

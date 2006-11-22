@@ -11,12 +11,12 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/emailprint_class.php,v $
-|     $Revision: 1.8 $
-|     $Date: 2006/02/17 23:49:04 $
-|     $Author: lisa_ $
+|     $Revision: 1.11 $
+|     $Date: 2006/09/03 13:43:18 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
-	
+
 if (!defined('e107_INIT')) { exit; }
 
 @include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_print.php");
@@ -51,15 +51,15 @@ class emailprint {
 		}
 
 		if ($look == 0 || $look == 1) {
-			$ico_mail = (file_exists(THEME."generic/email.png") ? THEME."generic/email.png" : e_IMAGE."generic/".IMODE."/email.png");
-			$text_emailprint .= "<a href='".e_BASE."email.php?".$email.".".$id."'><img src='".$ico_mail."' style='border:0' alt='".LAN_email_7."' title='".LAN_email_7."' /></a> ";
+			$ico_mail = (file_exists(THEME."images/email.png") ? THEME."images/email.png" : e_IMAGE."generic/".IMODE."/email.png");
+			$text_emailprint .= "<a href='".e_BASE."email.php?".$email.".".$id."'><img src='".$ico_mail."' style='border:0' alt='".LAN_EMAIL_7."' title='".LAN_EMAIL_7."' /></a> ";
 		}
 		if ($look == 0 || $look == 2) {
-			$ico_print = (file_exists(THEME."generic/printer.png") ? THEME."generic/printer.png" : e_IMAGE."generic/".IMODE."/printer.png");
-			$text_emailprint .= "<a href='".e_BASE."print.php?".$print.".".$id."'><img src='".$ico_print."' style='border:0' alt='".LAN_PRINT_1."' title='".LAN_PRINT_1."'/></a>";
+			$ico_print = (file_exists(THEME."images/printer.png") ? THEME."images/printer.png" : e_IMAGE."generic/".IMODE."/printer.png");
+			$text_emailprint .= "<a href='".e_BASE."print.php?".$print.".".$id."'><img src='".$ico_print."' style='border:0' alt='".LAN_PRINT_1."' title='".LAN_PRINT_1."' /></a>";
 		}
 		return $text_emailprint;
 	}
 }
-	
+
 ?>

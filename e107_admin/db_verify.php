@@ -11,61 +11,49 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/db_verify.php,v $
-|     $Revision: 1.18 $
-|     $Date: 2005/08/23 09:36:30 $
-|     $Author: sweetas $
+|     $Revision: 1.23 $
+|     $Date: 2006/10/29 01:00:20 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 require_once("../class2.php");
 $e_sub_cat = 'database';
 require_once("auth.php");
 
+
 $filename = "sql/core_sql.php";
-@$fd = fopen ($filename, "r");
+$fd = fopen ($filename, "r");
 $sql_data = @fread($fd, filesize($filename));
-@fclose ($fd);
+fclose ($fd);
 
 if (!$sql_data) {
 	echo DBLAN_1."<br /><br />";
 	exit;
 }
 
-$tables["core"] = $sql_data;
+ $tables["core"] = $sql_data;
 
 if (!getperms("0")) {
 	header("location:".e_BASE."index.php");
 	exit;
 }
 
-//Get installed plugins
-if($sql->db_Select("plugin","plugin_path","plugin_installflag = '1'")){
-	while($row = $sql->db_Fetch()){
-		$pluginList[] = $row['plugin_path'];
-	}
-}
-
 //Get any plugin _sql.php files
-$handle = opendir(e_PLUGIN);
-$c = 1;
-while (false !== ($file = readdir($handle))) {
-	if ($file != "." && $file != ".." && is_dir(e_PLUGIN.$file) && in_array($file, $pluginList))
-	{
-		$plugin_handle = opendir(e_PLUGIN.$file."/");
-		while (false !== ($file2 = readdir($plugin_handle)))
-		{
-			if (preg_match("/(.*?)_sql.php/", $file2, $matches))
-			{
-				$filename = e_PLUGIN.$file."/".$file2;
-				@$fd = fopen ($filename, "r");
-				$sql_data = @fread($fd, filesize($filename));
-				@fclose ($fd);
-				$tables[$matches[1]] = $sql_data;
-			}
+
+    foreach($pref['e_sql_list'] as $path => $file)
+    {
+        $filename = e_PLUGIN.$path."/".$file.".php";
+		if(is_readable($filename)){
+        	$fd = fopen($filename, "r");
+        	$sql_data = fread($fd, filesize($filename));
+        	fclose ($fd);
+			$id = str_replace("_sql","",$file);
+        	$tables[$id] = $sql_data;
+		}else{
+        	echo $filename." is not readable<br />";
 		}
-		closedir($plugin_handle);
-	}
-}
-closedir($handle);
+    }
+
 
 
 function read_tables($tab) {
@@ -135,7 +123,7 @@ function check_tables($what) {
 	$table_list = "";
 	read_tables($what);
 
-	$text = "<form method='POST' action='".e_SELF."' id='checktab'>
+	$text = "<form method='post' action='".e_SELF."' id='checktab'>
 		<div style='text-align:center'>
 		<table style='".ADMIN_WIDTH."' class='fborder'>
 		<tr>
@@ -145,7 +133,7 @@ function check_tables($what) {
 		<td class='fcaption' style='text-align:center'>".DBLAN_7."</td>
 		</tr>";
 	foreach(array_keys($table_list) as $k) {
-		$text .= "<tr>";
+
 		$prefix = MPREFIX;
 		$current_tab = get_current($k, $prefix);
 		unset($fields);
@@ -256,9 +244,9 @@ global $table_list;
 // -------------------- Table Fixing ------------------------------
 
 if(isset($_POST['do_fix'])){
-	$text = "<div><table class='fborder' style='width:100%'>";
+	$text = "<div><table class='fborder' style='".ADMIN_WIDTH."'>";
 	foreach( $_POST['fix_active'] as $key=>$val){
-		
+
 		if (MAGIC_QUOTES_GPC == TRUE) {
 			$table = stripslashes($_POST['fix_table'][$key][0]);
 			$newval = stripslashes($_POST['fix_newval'][$key][0]);
@@ -270,7 +258,8 @@ if(isset($_POST['do_fix'])){
 			$mode = $_POST['fix_mode'][$key][0];
 			$after = $_POST['fix_after'][$key][0];
 		}
-		
+
+
 		$field= $key;
 
 		if($mode == "alter"){
@@ -286,7 +275,11 @@ if(isset($_POST['do_fix'])){
 		}
 
 		if($mode == "index"){
-			$query = "ALTER TABLE `".MPREFIX.$table."` ADD INDEX (`$field`) ";
+			$query = "ALTER TABLE `".MPREFIX.$table."` ADD INDEX `$field` (`$newval`)";
+		}
+
+		if($mode == "indexdrop"){
+			$query = "ALTER TABLE `".MPREFIX.$table."` DROP INDEX `$field`";
 		}
 
 		if($mode == "create"){
@@ -302,7 +295,7 @@ if(isset($_POST['do_fix'])){
 	}
 		$text .= "</table></div>";
 		$text .="<div style='text-align:center'><br />
-				<form method='POST' action='db.php'>
+				<form method='post' action='db.php'>
 				<input class='button' type='submit' name='back' value='".DBLAN_17."' />
 				</form>
 				</div>";
@@ -313,16 +306,16 @@ if(isset($_POST['do_fix'])){
 
 
 // ---------------------- Main Form and Submit. ------------------------
-if (!$_POST) {
+if (!$_POST['db_verify'] && !$_POST['do_fix']) {
 	$text = "
-		<form method='POST' action='".e_SELF."'>
+		<form method='post' action='".e_SELF."'>
 		<table border=0 align='center'>
 		<tr><td>".DBLAN_14."<br /><br />";
 	foreach(array_keys($tables) as $x) {
-		$text .= "<input type='checkbox' name='table_".$x."'>".$x."<br />";
+		$text .= "<input type='checkbox' name='table_".$x."' />".$x."<br />";
 	}
 	$text .= "
-		<br /><input class='button' type='submit' value='".DBLAN_15."'>
+		<br /><input class='button' name='db_verify' type='submit' value='".DBLAN_15."' />
 		</td></tr></table></form>";
 	$ns->tablerender(DBLAN_16, $text);
 } else {
@@ -331,7 +324,7 @@ if (!$_POST) {
 			$xx = $match[1];
 			$str = "<br />
 				<div style='text-align:center'>
-				<form method='POST' action='db.php'>
+				<form method='post' action='db.php'>
 				<input class='button' type='submit' name='back' value='".DBLAN_17."' />
 				</form>
 				</div>";
@@ -347,7 +340,7 @@ function fix_form($table,$field, $newvalue,$mode,$after =''){
 
 	if(stristr($field, "KEY ") !== FALSE){
 		$field = chop(str_replace("KEY ","",$field));
-		$mode = "index";
+		$mode = ($mode == "drop") ? "indexdrop" : "index";
 		$search = array("(",")");
 		$newvalue = str_replace($search,"",$newvalue);
 	}
@@ -358,9 +351,9 @@ function fix_form($table,$field, $newvalue,$mode,$after =''){
 
 	$text .= "<input type='checkbox'  name=\"fix_active[$field][]\" value='1' /> ".DBLAN_19."\n"; // 'attempt to fix'
 	$text .= "<input type='hidden' name=\"fix_newval[$field][]\" value=\"$newvalue\" />\n";
-	$text .= "<input type='hidden'  name=\"fix_table[$field][]\" value=\"$table\" / >\n";
-	$text .= "<input type='hidden'  name=\"fix_mode[$field][]\" value=\"$mode\" / >\n";
-	$text .= ($after) ? "<input type='hidden'  name=\"fix_after[$field][]\" value=\"$after\" / >\n" : "";
+	$text .= "<input type='hidden'  name=\"fix_table[$field][]\" value=\"$table\" />\n";
+	$text .= "<input type='hidden'  name=\"fix_mode[$field][]\" value=\"$mode\" />\n";
+	$text .= ($after) ? "<input type='hidden'  name=\"fix_after[$field][]\" value=\"$after\" />\n" : "";
 
 	return $text;
 }

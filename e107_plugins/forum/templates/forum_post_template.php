@@ -11,13 +11,14 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/forum/templates/forum_post_template.php,v $
-|     $Revision: 1.19 $
-|     $Date: 2006/04/04 23:19:05 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.22 $
+|     $Date: 2006/11/09 16:56:30 $
+|     $Author: mrpete $
 +----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
+if(!defined("USER_WIDTH")){ define("USER_WIDTH","width:95%"); }
 
 // the user box and subject box are not always displayed, therefore we need to define them /in case/ they are, if not they'll be ignored.
 
@@ -93,7 +94,7 @@ $FORUMPOST = "
 <div style='text-align:center'>
 <div class='spacer'>
 {FORMSTART}
-<table style='width:95%' class='fborder'>
+<table style='".USER_WIDTH."' class='fborder'>
 <tr>
 <td colspan='2' class='fcaption'>{BACKLINK}
 </td>
@@ -103,7 +104,7 @@ $FORUMPOST = "
 <tr>
 <td class='forumheader2' style='width:20%'>{POSTTYPE}</td>
 <td class='forumheader2' style='width:80%'>
-{POSTBOX}<br />{EMOTES}<br />{EMAILNOTIFY}<br />{POSTTHREADAS}
+{POSTBOX}<br />{EMAILNOTIFY}<br />{POSTTHREADAS}
 </td>
 </tr>
 
@@ -119,7 +120,7 @@ $FORUMPOST = "
 </table>
 {FORMEND}
 
-<table style='width:95%'>
+<table style='".USER_WIDTH."'>
 <tr>
 <td>
 {FORUMJUMP}
@@ -136,7 +137,7 @@ $FORUMPOST_REPLY = "
 <div style='text-align:center'>
 <div class='spacer'>
 {FORMSTART}
-<table style='width:95%' class='fborder'>
+<table style='".USER_WIDTH."' class='fborder'>
 <tr>
 <td colspan='2' class='fcaption'>{BACKLINK}
 </td>
@@ -146,7 +147,7 @@ $FORUMPOST_REPLY = "
 <tr>
 <td class='forumheader2' style='width:20%'>{POSTTYPE}</td>
 <td class='forumheader2' style='width:80%'>
-{POSTBOX}<br />{EMOTES}<br />{EMAILNOTIFY}<br />{POSTTHREADAS}
+{POSTBOX}<br />{EMAILNOTIFY}<br />{POSTTHREADAS}
 </td>
 </tr>
 
@@ -162,7 +163,7 @@ $FORUMPOST_REPLY = "
 </table>
 {FORMEND}
 
-<table style='width:95%'>
+<table style='".USER_WIDTH."'>
 <tr>
 <td>
 {FORUMJUMP}
@@ -180,7 +181,7 @@ $FORUMPOST_REPLY = "
 if(!$LATESTPOSTS_START)
 {
 $LATESTPOSTS_START = "
-<table style='width:100%' class='fborder'>
+<table style='".USER_WIDTH."' class='fborder'>
 <tr>
 <td colspan='2' class='fcaption' style='vertical-align:top'>".
 LAN_101."{LATESTPOSTSCOUNT}".LAN_102."
@@ -211,7 +212,7 @@ $LATESTPOSTS_END = "
 if(!$THREADTOPIC_REPLY)
 {
 $THREADTOPIC_REPLY = "
-<table style='width:100%' class='fborder'>
+<table style='".USER_WIDTH."' class='fborder'>
 <tr>
 	<td colspan='2' class='fcaption' style='vertical-align:top'>".LAN_100."</td>
 </tr>
@@ -224,5 +225,22 @@ $THREADTOPIC_REPLY = "
 </table>
 ";
 }
+
+$FORUM_CRUMB['sitename']['value'] = "<a class='forumlink' {SITENAME_HREF}>{SITENAME}</a>";
+$FORUM_CRUMB['sitename']['sep'] = " :: ";
+
+$FORUM_CRUMB['forums']['value'] = "<a class='forumlink' {FORUMS_HREF}>{FORUMS_TITLE}</a>";
+$FORUM_CRUMB['forums']['sep'] = " :: ";
+
+$FORUM_CRUMB['parent']['value'] = "{PARENT_TITLE}";
+$FORUM_CRUMB['parent']['sep'] = " :: ";
+
+$FORUM_CRUMB['subparent']['value'] = "<a class='forumlink' {SUBPARENT_HREF}>{SUBPARENT_TITLE}</a>";
+$FORUM_CRUMB['subparent']['sep'] = " :: ";
+
+$FORUM_CRUMB['forum']['value'] = "<a class='forumlink' {FORUM_HREF}>{FORUM_TITLE}</a>";
+$FORUM_CRUMB['forum']['sep'] = " :: ";
+
+$FORUM_CRUMB['thread']['value'] = "{THREAD_TITLE}";
 
 ?>

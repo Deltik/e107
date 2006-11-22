@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_themes/templates/email_template.php,v $
-|     $Revision: 1.7 $
-|     $Date: 2005/12/14 19:28:53 $
-|     $Author: sweetas $
+|     $Revision: 1.9 $
+|     $Date: 2006/07/12 08:15:58 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -25,8 +25,27 @@ $SIGNUPEMAIL_LINKSTYLE = ""; // css to use on links eg. color:red;
 $SIGNUPEMAIL_IMAGES =  e_IMAGE.$pref['sitebutton']; // comma separated paths to image to embed. referenced below with {IMAGE1} (IMAGE2} etc.
 $SIGNUPEMAIL_CC = "";  // comma separated email addresses to put in CC of the signup email.
 $SIGNUPEMAIL_BCC = "";   // comma separated email addresses to put in BCC of the signup email.
-$SIGNUPEMAIL_ATTACHMENTS = ""; // files-path array of attachments. eg. array(e_FILE."myfile.zip",e_FILE."myotherfile.zip"); 
+$SIGNUPEMAIL_ATTACHMENTS = ""; // files-path array of attachments. eg. array(e_FILE."myfile.zip",e_FILE."myotherfile.zip");
 $SIGNUPEMAIL_BACKGROUNDIMAGE = "";// relative path to a background image eg. e_IMAGE."mybackground.jpg";
+
+
+$EMAIL_HEADER = "
+<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">
+<html xmlns='http://www.w3.org/1999/xhtml' >
+<head><meta http-equiv='content-type' content='text/html; charset=".CHARSET."' />
+{STYLESHEET}
+</head>
+<body>
+<div style='padding:10px'>
+";
+
+
+$EMAIL_FOOTER = "
+<br /><br />
+{SITENAME=link}
+</div>
+</body>
+</html>";
 
 
 

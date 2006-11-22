@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/usersettings_shortcodes.php,v $
-|     $Revision: 1.18 $
-|     $Date: 2006/05/16 03:11:13 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.21 $
+|     $Date: 2006/10/25 15:27:19 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -58,17 +58,31 @@ return $rs->form_text("realname", 20, $curVal['user_login'], 100, "tbox");
 SC_END
 
 SC_BEGIN PASSWORD1
-global $rs, $curVal;
-return $rs->form_password("password1", 40, "", 20);
+global $rs, $curVal, $pref;
+if(!isset($pref['auth_method']) || $pref['auth_method'] == '' || $pref['auth_method'] == 'e107' || $pref['auth_method'] == '>e107')
+{
+	return $rs->form_password("password1", 40, "", 20);
+}
+
+return "";
 SC_END
 
 SC_BEGIN PASSWORD2
-global $rs, $curVal;
-return $rs->form_password("password2", 40, "", 20);
+global $rs, $curVal, $pref;
+if(!isset($pref['auth_method']) || $pref['auth_method'] == '' || $pref['auth_method'] == 'e107' || $pref['auth_method'] == '>e107')
+{
+	return $rs->form_password("password2", 40, "", 20);
+}
+
+return "";
 SC_END
 
 SC_BEGIN PASSWORD_LEN
 global $pref;
+if(!isset($pref['auth_method']) || ($pref['auth_method'] != 'e107' && $pref['auth_method'] != '>e107'))
+{
+	return "";
+}
 return $pref['signup_pass_len'];
 SC_END
 
@@ -120,7 +134,7 @@ global $curVal;
 parse_str($parm);
 $cols = (isset($cols) ? $cols : 58);
 $rows = (isset($rows) ? $rows : 4);
-return "<textarea class='tbox' name='signature' cols='{$cols}' rows='{$rows}' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'>".$curVal['user_signature']."</textarea>";
+return "<textarea class='tbox signature' name='signature' cols='{$cols}' rows='{$rows}' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'>".$curVal['user_signature']."</textarea>";
 SC_END
 
 SC_BEGIN SIGNATURE_HELP

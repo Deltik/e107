@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/forum/forum_post.php,v $
-|     $Revision: 1.65 $
-|     $Date: 2006/02/20 14:18:17 $
+|     $Revision: 1.69 $
+|     $Date: 2006/11/08 00:27:19 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
@@ -186,14 +186,15 @@ if (isset($_POST['fpreview']))
 	}
 	$ns->tablerender(LAN_323, $text);
 	$anonname = $tp->post_toHTML($_POST['anonname'], FALSE);
-	$post = $tp->post_toHTML($_POST['post'], false);
+
+  	$post = $tp->post_toForm($_POST['post']); 
 	$subject = $tp->post_toHTML($_POST['subject'], false);
 
 	if ($action == "edit")
 	{
 		if ($_POST['subject'])
 		{
-			$action = "nt";
+			$action = "edit";
 		}
 		else
 		{
@@ -330,10 +331,14 @@ if (isset($_POST['update_thread']))
 			require_once(FOOTERF);
 			exit;
 		}
+
 		$newvals['thread_edit_datestamp'] = time();
 		$newvals['thread_thread'] = $_POST['post'];
 		$newvals['thread_name'] = $_POST['subject'];
-		$newvals['thread_active'] = ($_POST['email_notify']) ? '99' : '1';
+		if(isset($_POST['email_notify']))
+		{
+			$newvals['thread_active'] = '99';
+		}
 		if (isset($_POST['threadtype']) && MODERATOR)
 		{
 			$newvals['thread_s'] = $_POST['threadtype'];
@@ -399,7 +404,7 @@ if ($action == 'edit' || $action == 'quote')
 	$subject = $thread_info['0']['thread_name'];
 	$post = $tp->toForm($thread_info[0]['thread_thread']);
 	$post = preg_replace("/&lt;span class=&#39;smallblacktext&#39;.*\span\>/", "", $post);
-	
+
 	if ($action == 'quote') {
 		$post = preg_replace("#\[hide].*?\[/hide]#s", "", $post);
 		$tmp = explode(chr(1), $thread_info[0]['user_name']);
@@ -559,7 +564,7 @@ function redirect($url)
 function process_upload()
 {
 	global $pref, $forum_info, $thread_info;
-	
+
 	if(isset($thread_info['head']['thread_id']))
 	{
 		$tid = $thread_info['head']['thread_id'];
@@ -568,7 +573,7 @@ function process_upload()
 	{
 		$tid = 0;
 	}
-	
+
 	if (isset($_FILES['file_userfile']['error']) && $_FILES['file_userfile']['error'] != 4)
 	{
 		require_once(e_HANDLER."upload_handler.php");
@@ -603,7 +608,7 @@ function process_upload()
 						}
 						else
 						{
-							//resize failed, show original 
+							//resize failed, show original
 							$parms = image_getsize(e_FILE."public/".$upload['name']);
 							$_POST['post'] .= "[br][img{$parms}]".e_FILE."public/".$upload['name']."[/img]";
 						}
@@ -621,7 +626,7 @@ function process_upload()
 					//echo "<pre>"; print_r($upload); echo "</pre>";
 					$_POST['post'] .= "[br][file=".e_FILE."public/".$upload['name']."]".$upload['name']."[/file]";
 				}
-				
+
 			}
 		}
 	}

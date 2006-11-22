@@ -31,7 +31,9 @@ SC_END
 	
 SC_BEGIN PRIVMESSAGE
 global $post_info, $tp;
-return $tp->parseTemplate("{SENDPM={$post_info['user_id']}}");
+if($post_info['user_id'] > 0){
+	return $tp->parseTemplate("{SENDPM={$post_info['user_id']}}");
+}
 SC_END
 	
 SC_BEGIN AVATAR
@@ -151,7 +153,7 @@ SC_END
 SC_BEGIN WEBSITE
 global $post_info, $tp;
 if ($post_info['user_homepage']) {
-return LAN_08.": ".$post_info['user_homeapage']."<br />";
+return LAN_08.": ".$post_info['user_homepage']."<br />";
 }
 SC_END
 	
@@ -241,6 +243,7 @@ global $post_info, $gen;
 if ($post_info['thread_edit_datestamp']) {
 return $gen->convert_date($post_info['thread_edit_datestamp'],'forum');
 }
+return "";
 SC_END
 
 SC_BEGIN POLL

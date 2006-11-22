@@ -12,8 +12,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/index.php,v $
-|     $Revision: 1.21 $
-|     $Date: 2006/04/22 19:30:47 $
+|     $Revision: 1.26 $
+|     $Date: 2006/11/13 10:21:17 $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -43,7 +43,7 @@ if (!is_array($pref['frontpage']) && $pref['frontpage'] != 'Array') {
 	save_prefs();
 }
 
-$query = (e_QUERY && e_QUERY != '' ? '?'.e_QUERY : '');
+$query = (e_QUERY && e_QUERY != '' && !$_GET['elan']) ? '?'.e_QUERY : '';
 
 if ($pref['membersonly_enabled'] && !USER) {
 	header('location: '.e_LOGIN);
@@ -77,14 +77,20 @@ if(isset($pref['frontpage_method']) && $pref['frontpage_method'] == "include") {
 		$e_QUERY = preg_match('/^page\.php\?([0-9]*)$/', $location);
 		require_once("page.php");
 	} else {
-		header("Location: {$location}");
+
+	  	header("Location: {$location}");
 		exit();
 	}
 } else {
-	if($location == "index.php"){
-    	require_once(HEADERF);
-		require_once(FOOTERF);
-	}else{
+	list($page,$str) = explode("?",$location."?"); // required to prevent infinite looping when queries are  used on index.php.
+	if($page == "index.php") // Welcome Message is the front-page.
+	{
+      	require_once(HEADERF);
+	 	require_once(FOOTERF);
+	  	exit;
+	}
+	elseif($page != "index.php") // redirect to different frontpage.
+	{
 		header("Location: {$location}");
 	}
 

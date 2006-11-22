@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/newsfeed/plugin.php,v $
-|     $Revision: 1.4 $
-|     $Date: 2006/01/22 19:53:06 $
+|     $Revision: 1.6 $
+|     $Date: 2006/08/25 15:37:54 $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -23,7 +23,7 @@ if (!defined('e107_INIT')) { exit; }
 @include_once(e_PLUGIN."newsfeed/languages/English.php");
 
 // Plugin info -------------------------------------------------------------------------------------------------------
-$eplug_name = NFLAN_01;
+$eplug_name = "NFLAN_01";
 $eplug_version = "2.0";
 $eplug_author = "Steve Dunstan (jalist)";
 $eplug_url = "http://e107.org";
@@ -40,8 +40,6 @@ $eplug_menu_name = "newsfeed_menu";
 
 // Name of the admin configuration file --------------------------------------------------------------------------
 $eplug_conffile = "admin_config.php";
-
-$eplug_sc = array("");
 
 // Icon image and caption text ------------------------------------------------------------------------------------
 $eplug_icon = $eplug_folder."/images/newsfeed_32.png";

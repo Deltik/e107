@@ -11,8 +11,8 @@
 |    GNU    General Public  License (http://gnu.org).
 |
 |    $Source: /cvsroot/e107/e107_0.7/e107_plugins/links_page/admin_linkspage_config.php,v $
-|    $Revision: 1.5 $
-|    $Date: 2005/07/13 09:51:41 $
+|    $Revision: 1.8 $
+|    $Date: 2006/11/01 18:48:46 $
 |    $Author: lisa_ $
 +----------------------------------------------------------------------------+
 */
@@ -21,6 +21,7 @@ require_once("../../class2.php");
 if (!getperms("P")) {
 	header("location:".e_BASE."index.php");
 }
+require_once(e_PLUGIN.'links_page/link_shortcodes.php');
 require_once(e_PLUGIN.'links_page/link_defines.php');
 require_once(e_ADMIN."auth.php");
 require_once(e_HANDLER."userclass_class.php");
@@ -31,7 +32,7 @@ $fl = new e_file;
 e107_require_once(e_HANDLER.'arraystorage_class.php');
 $eArrayStorage = new ArrayData();
 require_once(e_PLUGIN.'links_page/link_class.php');
-$lc = new linkclass();
+$lc = new linkclass;
 
 $lan_file = $plugindir."languages/".e_LANGUAGE.".php";
 include_once(file_exists($lan_file) ? $lan_file : $plugindir."languages/English.php");
@@ -53,17 +54,17 @@ if(e_QUERY){
 	}
 }
 if(isset($_POST['delete'])){
-	$tmp = array_pop(array_flip($_POST['delete']));
+	$tmp = array_pop($tmp = array_flip($_POST['delete']));
 	list($delete, $del_id) = explode("_", $tmp);
 }
 if (isset($_POST['create_category'])) {
-	$lc -> dbCategoryCreate($_POST);
+	$lc -> dbCategoryCreate();
 }
 if (isset($_POST['update_category'])) {
-	$lc -> dbCategoryUpdate($_POST);
+	$lc -> dbCategoryUpdate();
 }
 if (isset($_POST['updateoptions'])) {
-	$linkspage_pref = $lc -> UpdateLinksPagePref($_POST);
+	$linkspage_pref = $lc -> UpdateLinksPagePref();
 	$lc -> show_message(LCLAN_ADMIN_6);
 }
 if (isset($_POST['add_link'])) {
@@ -71,11 +72,11 @@ if (isset($_POST['add_link'])) {
 }
 //upload link icon
 if(isset($_POST['uploadlinkicon'])){
-	$lc -> uploadLinkIcon($_POST);
+	$lc -> uploadLinkIcon();
 }
 //upload category icon
 if(isset($_POST['uploadcatlinkicon'])){
-	$lc -> uploadCatLinkIcon($_POST);
+	$lc -> uploadCatLinkIcon();
 }
 //update link order
 if (isset($_POST['update_order'])) {
@@ -106,9 +107,15 @@ if (isset($delete) && $delete == 'main') {
 }
 //delete category
 if (isset($delete) && $delete == 'category') {
-	if ($sql->db_Delete("links_page_cat", "link_category_id='$del_id' ")) {
-		$lc->show_message(LCLAN_ADMIN_12." #".$del_id." ".LCLAN_ADMIN_11);
-		unset($id);
+	//check if links are present for this category
+	if($sql->db_Select("links_page", "*", "link_category='$del_id' ")) {
+		$lc->show_message(LCLAN_ADMIN_12." #".$del_id." ".LAN_DELETED_FAILED."<br />".LCLAN_ADMIN_15);
+	//no? then we can safely remove this category
+	}else{
+		if ($sql->db_Delete("links_page_cat", "link_category_id='$del_id' ")) {
+			$lc->show_message(LCLAN_ADMIN_12." #".$del_id." ".LCLAN_ADMIN_11);
+			unset($id);
+		}
 	}
 }
 //delete submitted link
@@ -117,7 +124,6 @@ if (isset($delete) && $delete == 'sn') {
 		$lc->show_message(LCLAN_ADMIN_13);
 	}
 }
-
 
 
 //show link categories (cat edit)

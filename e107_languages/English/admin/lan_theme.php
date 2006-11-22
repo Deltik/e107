@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/lan_theme.php,v $
-|     $Revision: 1.7 $
-|     $Date: 2005/03/15 12:09:30 $
-|     $Author: stevedunstan $
+|     $Revision: 1.9 $
+|     $Date: 2006/08/27 02:24:44 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 define("TPVLAN_1", "You are looking at a preview of the <b>'".PREVIEWTHEMENAME."'</b> theme. It has not been set as the main theme for your site, it has been activated to provide a preview of how the theme looks.<br />To set this theme as your site theme, <a href='".e_ADMIN."theme.php'>return to your theme manager</a> and select 'Set As Site Theme'.<br />To preview more themes please <a href='".e_ADMIN."theme.php'>click here</a>");
@@ -24,7 +24,7 @@ define("TPVLAN_12", "No preview available");
 
 define("TPVLAN_13", "Upload theme (.zip or .tar.gz format)");
 define("TPVLAN_14", "Upload Theme");
-define("TPVLAN_15", "The file could not be uploaded as the ".e_THEME." folder does not have the correct permissions - please CHMOD to 777 and reupload the file.");
+define("TPVLAN_15", "The file could not be uploaded as the ".e_THEME." folder does not have the correct permissions - please CHMOD to 777 and re-upload the file.");
 define("TPVLAN_16", "Admin Message");
 define("TPVLAN_17", "That file does not appear to be a valid .zip or .tar archive.");
 define("TPVLAN_18", "An error has occurred, unable to un-archive the file");
@@ -33,7 +33,7 @@ define("TPVLAN_20", "Auto theme upload and extraction is disabled as your themes
 
 define("TPVLAN_21", "This is the currently selected site theme");
 
-define("TPVLAN_22", "this theme has multiple stylesheets");
+define("TPVLAN_22", "This theme has multiple stylesheets");
 define("TPVLAN_23", "default stylesheet");
 define("TPVLAN_24", "no information");
 define("TPVLAN_25", "To choose which stylesheet to use, please go to <a href='".e_ADMIN."prefs.php'>preferences</a> and click on 'Theme'.");

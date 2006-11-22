@@ -11,14 +11,14 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_themes/templates/usersettings_template.php,v $
-|     $Revision: 1.5 $
-|     $Date: 2006/02/20 18:34:14 $
-|     $Author: whoisrich $
+|     $Revision: 1.7 $
+|     $Date: 2006/10/18 16:34:48 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
-
+if (!defined("USER_WIDTH")){ define("USER_WIDTH","width:auto"); }
 global $usersettings_shortcodes, $pref;
 
 
@@ -28,6 +28,25 @@ $sc_style['CUSTOMTITLE']['pre'] = "
 <td style='width:60%' class='forumheader2'>
 ";
 $sc_style['CUSTOMTITLE']['post'] = "</td></tr>";
+
+$sc_style['PASSWORD1']['pre'] = "
+	<tr>
+	<td style='width:40%' class='forumheader3'>".LAN_152."<br /><span class='smalltext'>".LAN_401."</span></td>
+	<td style='width:60%' class='forumheader2'>
+";
+
+$sc_style['PASSWORD2']['pre'] = "
+	</td>
+	</tr>
+
+	<tr>
+	<td style='width:40%' class='forumheader3'>".LAN_153."<br /><span class='smalltext'>".LAN_401."</span></td>
+	<td style='width:60%' class='forumheader2'>
+";
+$sc_style['PASSWORD2']['post'] = "
+	</td>
+	</tr>
+";
 
 $sc_style['PASSWORD_LEN']['pre'] = "<br /><span class='smalltext'>  (".LAN_SIGNUP_1." ";
 $sc_style['PASSWORD_LEN']['post'] = " ".LAN_SIGNUP_2.")</span>";
@@ -76,13 +95,13 @@ $USEREXTENDED_FIELD = "
 <td style='width:60%' class='forumheader3'>
 {FIELDVAL} {HIDEFIELD}
 </td>
-</tr> 
+</tr>
 ";
 $REQUIRED_FIELD = "{FIELDNAME}<span style='text-align:right;font-size:15px; color:red'> *</span>";
 
 $USERSETTINGS_EDIT = "
 <div style='text-align:center'>
-	<table style='width:auto' class='fborder'>
+	<table style='".USER_WIDTH."' class='fborder'>
 
 	<tr>
 	<td colspan='2' class='forumheader'>".LAN_418."</td>
@@ -111,20 +130,9 @@ $USERSETTINGS_EDIT = "
 
 	{CUSTOMTITLE}
 
-	<tr>
-	<td style='width:40%' class='forumheader3'>".LAN_152."<br /><span class='smalltext'>".LAN_401."</span></td>
-	<td style='width:60%' class='forumheader2'>
 	{PASSWORD1}
 	{PASSWORD_LEN}
-	</td>
-	</tr>
-
-	<tr>
-	<td style='width:40%' class='forumheader3'>".LAN_153."<br /><span class='smalltext'>".LAN_401."</span></td>
-	<td style='width:60%' class='forumheader2'>
 	{PASSWORD2}
-	</td>
-	</tr>
 
 	<tr>
 	<td style='width:40%' class='forumheader3'>".LAN_112."</td>
@@ -182,7 +190,7 @@ $USERSETTINGS_EDIT = "
 	{AVATAR_CHOOSE}
 	</td>
 	</tr>
-	
+
 	{AVATAR_UPLOAD}
 	{PHOTO_UPLOAD}
 	{XUP}
@@ -193,6 +201,6 @@ $USERSETTINGS_EDIT = "
 	</table>
 	</div>
 	";
-	
+
 
 ?>

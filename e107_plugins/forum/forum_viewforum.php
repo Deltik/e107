@@ -11,15 +11,15 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/forum/forum_viewforum.php,v $
-|     $Revision: 1.54 $
-|     $Date: 2006/05/16 17:29:51 $
+|     $Revision: 1.61 $
+|     $Date: 2006/11/12 05:47:19 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 
 require_once("../../class2.php");
 $lan_file = e_PLUGIN.'forum/languages/'.e_LANGUAGE.'/lan_forum_viewforum.php';
-include(file_exists($lan_file) ? $lan_file : e_PLUGIN.'forum/languages/English/lan_forum_viewforum.php');
+include_once(file_exists($lan_file) ? $lan_file : e_PLUGIN.'forum/languages/English/lan_forum_viewforum.php');
 
 if (isset($_POST['fjsubmit'])) {
 	header("location:".e_PLUGIN."forum/forum_viewforum.php?".$_POST['forumjump']);
@@ -35,17 +35,13 @@ else
 {
 	$tmp = explode(".", e_QUERY);
 	$forum_id = intval($tmp[0]);
-	$from = intval($tmp[1]);
-	if (!$from)
-	{
-		$from = 0;
-	}
+	$thread_from = (isset($tmp[1]) ? intval($tmp[1]) : 0);
 }
 $view = 25;
 
 if(is_numeric(e_MENU))
 {
-	$from = (intval(e_MENU)-1)*$view;
+	$thread_from = (intval(e_MENU)-1)*$view;
 }
 require_once(e_PLUGIN.'forum/forum_class.php');
 $forum = new e107forum;
@@ -81,10 +77,11 @@ if (!$FORUM_VIEW_START) {
 }
 
 
-$forum_info['forum_name'] = $tp->toHTML($forum_info['forum_name'], TRUE, 'no_hook');
+$forum_info['forum_name'] = $tp->toHTML($forum_info['forum_name'], TRUE, 'no_hook, emotes_off');
 $forum_info['forum_description'] = $tp->toHTML($forum_info['forum_description'], TRUE, 'no_hook');
 
-define("e_PAGETITLE", LAN_01." / ".$forum_info['forum_name']);
+$_forum_name = (substr($forum_info['forum_name'], 0, 1) == "*" ? substr($forum_info['forum_name'], 1) : $forum_info['forum_name']);
+define("e_PAGETITLE", LAN_01." / ".$_forum_name);
 define("MODERATOR", $forum_info['forum_moderators'] != "" && check_class($forum_info['forum_moderators']));
 $modArray = $forum->forum_getmods($forum_info['forum_moderators']);
 $message = "";
@@ -123,7 +120,7 @@ if ($pages)
 {
 	if(strpos($FORUM_VIEW_START, 'THREADPAGES') !== FALSE || strpos($FORUM_VIEW_END, 'THREADPAGES') !== FALSE)
 	{
-		$parms = "{$topics},{$view},{$from},".e_SELF.'?'.$forum_id.'.[FROM],off';
+		$parms = "{$topics},{$view},{$thread_from},".e_SELF.'?'.$forum_id.'.[FROM],off';
 		$THREADPAGES = LAN_316." ".$tp->parseTemplate("{NEXTPREV={$parms}}");
 	}
 }
@@ -148,49 +145,7 @@ if(substr($forum_info['sub_parent'], 0, 1) == "*")
 	$forum_info['sub_parent'] = substr($forum_info['sub_parent'], 1);
 }
 
-if(is_array($FORUM_CRUMB))
-{
-	$search 	= array("{SITENAME}", "{SITENAME_HREF}");
-	$replace 	= array(SITENAME, "href='".e_BASE."index.php'");
-	$FORUM_CRUMB['sitename']['value'] = str_replace($search, $replace, $FORUM_CRUMB['sitename']['value']);
-
-	$search 	= array("{FORUMS_TITLE}", "{FORUMS_HREF}");
-	$replace 	= array(LAN_01, "href='".e_PLUGIN."forum/forum.php'");
-	$FORUM_CRUMB['forums']['value'] = str_replace($search, $replace, $FORUM_CRUMB['forums']['value']);
-
-	$search 	= array("{PARENT_TITLE}");
-	$replace 	= array($tp->toHTML($forum_info['parent_name']));
-	$FORUM_CRUMB['parent']['value'] = str_replace($search, $replace, $FORUM_CRUMB['parent']['value']);
-
-	if($forum_info['sub_parent'])
-	{
-		$search 	= array("{SUBPARENT_TITLE}", "{SUBPARENT_HREF}");
-		$replace 	= array($forum_info['sub_parent'], "href='".e_PLUGIN."forum/forum_viewforum.php?{$forum_info['forum_sub']}'");
-		$FORUM_CRUMB['subparent']['value'] = str_replace($search, $replace, $FORUM_CRUMB['subparent']['value']);
-	}
-	else
-	{
-		$FORUM_CRUMB['subparent']['value'] = "";
-	}
-
-	$search 	= array("{FORUM_TITLE}");
-	$replace 	= array($forum_info['forum_name']);
-	$FORUM_CRUMB['forum']['value'] = str_replace($search, $replace, $FORUM_CRUMB['forum']['value']);
-	$FORUM_CRUMB['fieldlist'] = "sitename,forums,parent,subparent,forum";
-
-	$BREADCRUMB = $tp->parseTemplate("{BREADCRUMB=FORUM_CRUMB}", true);
-
-}
-else
-{
-	$BREADCRUMB = "<a class='forumlink' href='".e_BASE."index.php'>".SITENAME."</a> -> <a class='forumlink' href='".e_PLUGIN."forum/forum.php'>".LAN_01."</a> -> ";
-	if($forum_info['sub_parent'])
-	{
-		$BREADCRUMB .= "<a class='forumlink' href='".e_PLUGIN."forum/forum_viewforum.php?{$forum_info['forum_sub']}'>{$forum_info['sub_parent']}</a> -> ";
-	}
-	$BREADCRUMB .= $forum_info['forum_name']."</b>";
-}
-
+$forum->set_crumb(); // set $BREADCRUMB (and $BACKLINK)
 
 $FORUMTITLE = $forum_info['forum_name'];
 //$MODERATORS = LAN_404.": ".$forum_info['forum_moderators'];
@@ -245,7 +200,7 @@ $stuck = FALSE;
 $reg_threads = 0;
 $unstuck = FALSE;
 
-$thread_list = $forum->forum_get_topics($forum_id, $from, $view);
+$thread_list = $forum->forum_get_topics($forum_id, $thread_from, $view);
 $sub_list = $forum->forum_getsubs($forum_id);
 //print_a($sub_list);
 $gen = new convert;
@@ -409,7 +364,7 @@ function parse_thread($thread_info)
 		$ICON = IMAGE_closed;
 	}
 
-	$thread_name = strip_tags($tp->toHTML($thread_info['thread_name'], false, 'no_hook'));
+	$thread_name = strip_tags($tp->toHTML($thread_info['thread_name'], false, 'no_hook, emotes_off'));
 	if (strtoupper($THREADTYPE) == strtoupper(substr($thread_name, 0, strlen($THREADTYPE)))) {
 		$thread_name = substr($thread_name, strlen($THREADTYPE));
 	}
@@ -429,10 +384,27 @@ function parse_thread($thread_info)
 	$pages = ceil(($REPLIES+1)/$pref['forum_postspage']);
 	if ($pages > 1)
 	{
-		for($a = 0; $a <= ($pages-1); $a++)
+		if($pages > 6)
 		{
-			$PAGES .= $PAGES ? " " : "";
-			$PAGES .= "<a href='".e_PLUGIN."forum/forum_viewtopic.php?".$thread_info['thread_id'].".".($a * $pref['forum_postspage'])."'>".($a+1)."</a>";
+			for($a = 0; $a <= 2; $a++)
+			{
+				$PAGES .= $PAGES ? " " : "";
+				$PAGES .= "<a href='".e_PLUGIN."forum/forum_viewtopic.php?".$thread_info['thread_id'].".".($a * $pref['forum_postspage'])."'>".($a+1)."</a>";
+			}
+			$PAGES .= " ... ";
+			for($a = $pages-3; $a <= $pages-1; $a++)
+			{
+				$PAGES .= $PAGES ? " " : "";
+				$PAGES .= "<a href='".e_PLUGIN."forum/forum_viewtopic.php?".$thread_info['thread_id'].".".($a * $pref['forum_postspage'])."'>".($a+1)."</a>";
+			}
+		}
+		else
+		{
+			for($a = 0; $a <= ($pages-1); $a++)
+			{
+				$PAGES .= $PAGES ? " " : "";
+				$PAGES .= "<a href='".e_PLUGIN."forum/forum_viewtopic.php?".$thread_info['thread_id'].".".($a * $pref['forum_postspage'])."'>".($a+1)."</a>";
+			}
 		}
 		$PAGES = LAN_316." [&nbsp;".$PAGES."&nbsp;]";
 	}

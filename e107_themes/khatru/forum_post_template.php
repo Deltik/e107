@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_themes/khatru/forum_post_template.php,v $
-|     $Revision: 1.3 $
-|     $Date: 2005/12/21 17:03:51 $
-|     $Author: sweetas $
+|     $Revision: 1.5 $
+|     $Date: 2006/10/24 13:36:10 $
+|     $Author: mrpete $
 +----------------------------------------------------------------------------+
 */
 
@@ -49,7 +49,7 @@ $fileattach = "<tr><td colspan='2' class='nforumcaption2'>".($pref['image_post']
 <br />
 
 <div id='fiupsection'>
-<span id='fiupopt'><input class='tbox' name='file_userfile[]' type='file' size='47'></span>
+<span id='fiupopt'><input class='tbox' name='file_userfile[]' type='file' size='47' /></span>
 </div>
 <input class='button' type='button' name='addoption' value='".LAN_417."' onclick=\"duplicateHTML('fiupopt','fiupsection')\" />
 </td>
@@ -72,7 +72,7 @@ $FORUMPOST = "
 <tr>
 <td class='forumheader2' style='width:20%; vertical-align:top;'>{POSTTYPE}</td>
 <td style='width:80%'>
-{POSTBOX}<br />{EMOTES}<br />{EMAILNOTIFY}<br />{POSTTHREADAS}
+{POSTBOX}<br />{EMAILNOTIFY}<br />{POSTTHREADAS}
 </td>
 </tr>
 {POLL}

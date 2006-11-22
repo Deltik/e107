@@ -1,15 +1,20 @@
 <?php
 /*
-+---------------------------------------------------------------+
-|	e107 website system
++ ----------------------------------------------------------------------------+
+|     e107 website system
 |
-|	©Steve Dunstan 2001-2002
-|	http://e107.org
-|	jalist@e107.org
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
 |
-|	Released under the terms and conditions of the
-|	GNU General Public License (http://gnu.org).
-+---------------------------------------------------------------+
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_plugins/alt_auth/plugin.php,v $
+|     $Revision: 1.3 $
+|     $Date: 2006/08/03 13:46:17 $
+|     $Author: mcfly_e107 $
++----------------------------------------------------------------------------+
 */
 
 
@@ -52,7 +57,7 @@ $eplug_tables = array(
 "CREATE TABLE ".MPREFIX."alt_auth (
   auth_type varchar(20) NOT NULL default '',
   auth_parmname varchar(30) NOT NULL default '',
-  auth_parmval varchar(60) NOT NULL default ''
+  auth_parmval varchar(120) NOT NULL default ''
 ) TYPE=MyISAM;");
 
 

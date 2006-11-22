@@ -33,8 +33,12 @@ a:hover, a.visit:hover {
 	color: #000000;
 }
 
-img {	
+img {
 	border: 0px;
+}
+
+.linkspage_button{
+	border:0px;
 }
 
 form {
@@ -120,6 +124,12 @@ ul {
 }
 
 /* Theme Specific Classes */
+
+.page_container {
+	width: 100%;
+	border-collapse: collapse;
+	border-spacing: 0px;
+}
 
 .top_section, .main_section {
 	width: 100%;
@@ -234,7 +244,7 @@ ul {
 }
 
 .news_info {
-	width: *;
+	width: auto;
 	background-color: #f7f7f9;
 	border-collapse: collapse;
 	border-spacing: 0px;

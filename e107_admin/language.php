@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/language.php,v $
-|     $Revision: 1.30 $
-|     $Date: 2006/04/17 14:52:38 $
+|     $Revision: 1.37 $
+|     $Date: 2006/11/06 10:46:23 $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -33,11 +33,24 @@ $tabs = table_list(); // array("news","content","links");
 $lanlist = explode(",",e_LANLIST);
 $message = "";
 
+if (e_QUERY) {
+	$tmp = explode('.', e_QUERY);
+	$action = $tmp[0];
+	$sub_action = $tmp[1];
+	$id = $tmp[2];
+	unset($tmp);
+}
 
-if (isset($_POST['submit_prefs']) ) {
+if (isset($_POST['submit_prefs']) && isset($_POST['mainsitelanguage'])) {
 
-	$pref['multilanguage'] = $_POST['multilanguage'];
-	$pref['sitelanguage'] = $_POST['sitelanguage'];
+	$pref['multilanguage']	= $_POST['multilanguage'];
+	if($_POST['multilanguage_subdomain']){
+    	$pref['multilanguage_subdomain'] = ".".$_POST['multilanguage_subdomain'];
+	}else{
+    	$pref['multilanguage_subdomain'] = "";
+	}
+
+	$pref['sitelanguage'] = $_POST['mainsitelanguage'];
 
 	save_prefs();
 	$ns->tablerender(LAN_SAVED, "<div style='text-align:center'>".LAN_SETSAVED."</div>");
@@ -100,67 +113,33 @@ if (isset($_POST['create_tables']) && $_POST['language']) {
 	}
 
 
-// ------------- render form ---------------------------------------------------
 
-if(isset($pref['multilanguage']) && $pref['multilanguage']){
-	$caption = LANG_LAN_16; // language
-	$text = MLAD_LAN_4."<br /><br />";
+unset($text);
 
 
-	// Choose Language to Edit:
-	$text = "<div style='text-align:center'>
-	<div style='".ADMIN_WIDTH."; height:150px; overflow:auto; margin-left: auto; margin-right: auto;'>
-	<table class='fborder' style='width:99%; margin-top: 1px;'>
-	<tr><td class='fcaption'>".ADLAN_132."</td>
-	<td class='fcaption'>".LANG_LAN_03."</td>
-	<td class='fcaption'>".LAN_OPTIONS."</td>
-	</tr>\n\n";
-	sort($lanlist);
-	for($i = 0; $i < count($lanlist); $i++) {
-		$installed = 0;
-
-		$text .= "<tr><td class='forumheader3' style='width:30%'>".$lanlist[$i]."</td><td class='forumheader3'>\n";
-		foreach ($tabs as $tab_name) {
-			if (db_Table_exists(strtolower($lanlist[$i])."_".$tab_name)) {
-				$text .= $tab_name.", ";
-				$installed++;
-			}
-		}
-
-		$text .= (!$installed)? "<div style='text-align:center'><i>".LANG_LAN_05."</i></div>" :
-	 	"";
-		$text .= "</td><td class='forumheader3' style='width:10%;white-space:nowrap;text-align:right'>\n";
-		$text .= $rs->form_open("post", e_SELF."?modify", "lang_form_".str_replace(" ", "_", $lanlist[$i]));
-		$text .= "<div style='text-align: center'>\n";
-
-		if ($installed) {
-			$text .= " <input type='submit' class='button' name='edit_existing' value='".LAN_EDIT."' />\n";
-			$text .= " <input type='submit' class='button' name='del_existing' value='".LAN_DELETE."' onclick=\"return jsconfirm('Delete all tables in ".$lanlist[$i]." ?')\" />\n";
-		} else {
-			$text .= "<input type='submit' class='button' name='edit_existing' value='".LAN_CREATE."' />\n";
-		}
-		$text .= "<input type='hidden' name='lang_choices' value='".$lanlist[$i]."' />";
-   		$text .= "</div>";
-		$text .= $rs->form_close();
-		$text .= "</td></tr>";
-
-}
-
-	$text .= "</table></div></div>";
-
-	$ns->tablerender($caption, $text);
-}
-
-if (!$_POST['language'] && !$_POST['edit_existing']) {
+if (!e_QUERY || $action == 'main' && !$_POST['language'] && !$_POST['edit_existing']) {
 	multilang_prefs();
 }
-unset($text);
+
+if ($action == 'db') {
+	multilang_db();
+}
+
+if($action == "tools"){
+	show_tools();
+}
+
+
+
+
 
 // Grab Language configuration. ---
 if ($_POST['edit_existing']) {
-	$text = $rs->form_open("post", e_SELF);
-	$text .= "<div style='text-align:center'>";
-	$text .= "<table class='fborder' style='".ADMIN_WIDTH."'>\n";
+
+	$text .= "
+	<form method='post' action='".e_SELF."?db' >
+	<div style='text-align:center'>
+	<table class='fborder' style='".ADMIN_WIDTH."'>\n";
 
 	foreach ($tabs as $table_name) {
 		$installed = strtolower($_POST['lang_choices'])."_".$table_name;
@@ -175,9 +154,10 @@ if ($_POST['edit_existing']) {
 		}
 	}
 
-	$text .= "<tr><td class='forumheader3' colspan='2'>&nbsp;";
-	$text .= "<input type='hidden' name='language' value='".$_POST['lang_choices']."' />";
-	$text .= "</td></tr>";
+	$text .= "
+	<tr><td class='forumheader3' colspan='2'>&nbsp;
+	<input type='hidden' name='language' value='".$_POST['lang_choices']."' />
+	</td></tr>";
 
 	// ===========================================================================
 
@@ -220,12 +200,12 @@ function multilang_prefs() {
 
 	$text .= "<tr>
 
-		<td style='width:40%' class='forumheader3'>".LANG_LAN_14.": </td>
-		<td style='width:60%; text-align:center' class='forumheader3'>";
+		<td style='width:80%' class='forumheader3'>".LANG_LAN_14.": </td>
+		<td style='width:20%; text-align:center' class='forumheader3'>";
 
 
 	$text .= "
-		<select name='sitelanguage' class='tbox'>\n";
+		<select name='mainsitelanguage' class='tbox'>\n";
 		$sellan = preg_replace("/lan_*.php/i", "", $pref['sitelanguage']);
 		foreach($lanlist as $lan){
 			$sel =  ($lan == $sellan) ? "selected='selected'" : "";
@@ -238,13 +218,23 @@ function multilang_prefs() {
 
 	$text .= "
 		<tr>
-		<td style='width:40%' class='forumheader3'>".LANG_LAN_12.": </td>
-		<td style='width:60%;text-align:center' class='forumheader3'>";
+		<td style='width:80%' class='forumheader3'>".LANG_LAN_12.": </td>
+		<td style='width:20%;text-align:center' class='forumheader3'>";
 	$checked = ($pref['multilanguage'] == 1) ? "checked='checked'" : "";
 	$text .= "<input type='checkbox' name='multilanguage'   value='1' $checked />
 		</td>
 		</tr>
 		";
+
+	$text .= "
+	<tr>
+	<td style='width:80%' class='forumheader3'>".LANG_LAN_18."<br />
+	<span class='smalltext'>".LANG_LAN_19."<br />".LANG_LAN_20."</span></td>
+	<td style='width:20%;text-align:center' class='forumheader3'>www.";
+	$text .= "<input class='tbox' type='text' name='multilanguage_subdomain'   value=\"".substr($pref['multilanguage_subdomain'],1)."\" />
+	</td>
+	</tr>
+	";
 
 
 	$text .= "<tr style='vertical-align:top'>
@@ -348,7 +338,128 @@ function table_list() {
 	return $tabs;
 }
 
+
+// ------------- render form ---------------------------------------------------
+function multilang_db(){
+	global $pref,$ns,$tp,$rs,$lanlist,$tabs;
+
+	if(isset($pref['multilanguage']) && $pref['multilanguage']){
+		$caption = LANG_LAN_16; // language
+		$text = MLAD_LAN_4."<br /><br />";
+
+
+		// Choose Language to Edit:
+		$text = "<div style='text-align:center'>
+		<div style='".ADMIN_WIDTH.";margin-left: auto; margin-right: auto;'>
+		<table class='fborder' style='width:99%; margin-top: 1px;'>
+		<tr><td class='fcaption'>".ADLAN_132."</td>
+		<td class='fcaption'>".LANG_LAN_03."</td>
+		<td class='fcaption'>".LAN_OPTIONS."</td>
+		</tr>\n\n";
+		sort($lanlist);
+		for($i = 0; $i < count($lanlist); $i++)
+		{
+			$installed = 0;
+
+			$text .= "<tr><td class='forumheader3' style='width:30%'>".$lanlist[$i]."</td><td class='forumheader3'>\n";
+			foreach ($tabs as $tab_name) {
+				if (db_Table_exists(strtolower($lanlist[$i])."_".$tab_name)) {
+					$text .= $tab_name.", ";
+					$installed++;
+				}
+			}
+        	if($lanlist[$i] == $pref['sitelanguage']){
+        		$text .= "<div style='text-align:center'><i>".LANG_LAN_17."</i></div>";
+			}else{
+				$text .= (!$installed)? "<div style='text-align:center'><i>".LANG_LAN_05."</i></div>" : "";
+			}
+			$text .= "</td><td class='forumheader3' style='width:20%;white-space:nowrap;text-align:right'>\n";
+			$text .= $rs->form_open("post", e_SELF."?modify", "lang_form_".str_replace(" ", "_", $lanlist[$i]));
+			$text .= "<div style='text-align: center'>\n";
+   			if ($installed) {
+				$text .= " <input type='submit' class='button' name='edit_existing' value='".LAN_EDIT."' />\n";
+		   		$text .= " <input type='submit' class='button' name='del_existing' value='".LAN_DELETE."' onclick=\"return jsconfirm('Delete all tables in ".$lanlist[$i]." ?')\" />\n";
+			} elseif($lanlist[$i] != $pref['sitelanguage']) {
+				$text .= "<input type='submit' class='button' name='edit_existing' value='".LAN_CREATE."' />\n";
+			}
+			$text .= "<input type='hidden' name='lang_choices' value='".$lanlist[$i]."' />";
+   			$text .= "</div>";
+			$text .= $rs->form_close();
+			$text .= "</td></tr>";
+		}
+
+		$text .= "</table></div></div>";
+
+		$ns->tablerender($caption, $text);
+	}
+}
+
+
 // ----------------------------------------------------------------------------
 
+function show_tools()
+{
+	global $ns;
+
+	include_lan(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_lancheck.php");
+
+	$text .= "
+	<form name='lancheck' method='post' action='".e_ADMIN."lancheck.php'>
+	<table class='fborder' style='".ADMIN_WIDTH."'>
+	<tr>
+	<td class='fcaption'>".LAN_CHECK_1."</td>
+	<td class='forumheader3' style='text-align:center'>
+	<select name='language' class='tbox'>
+	<option value=''>".LAN_SELECT."</option>";
+
+	$languages = explode(",",e_LANLIST);
+	sort($languages);
+
+	foreach($languages as $lang)
+	{
+		if($lang != "English")
+		{
+	   		$text .= "<option value='{$lang}' >{$lang}</option>\n";
+		}
+	}
+
+	$text .= "
+	</select>
+	<input type='submit' name='language_sel' value=\"".LAN_CHECK_2."\" class='button' />
+	</td></tr>
+	</table></form>";
+
+	$ns->tablerender(LANG_LAN_21, $text);
+}
+
+
+// ----------------------------------------------------------------------------
+
+function language_adminmenu() {
+	global $action,$pref;
+	if ($action == "") {
+		$action = "main";
+	}
+
+	if($action == "modify"){
+    	$action = "db";
+	}
+	$var['main']['text'] = LAN_PREFS;
+	$var['main']['link'] = e_SELF;
+
+	if(isset($pref['multilanguage']) && $pref['multilanguage']){
+		$var['db']['text'] = LANG_LAN_03;
+		$var['db']['link'] = e_SELF."?db";
+	}
+
+	$lcnt = explode(",",e_LANLIST);
+    if(count($lcnt) > 1)
+	{
+		$var['tools']['text'] = ADLAN_CL_6;
+		$var['tools']['link'] = e_SELF."?tools";
+    }
+
+	show_admin_menu(ADLAN_132, $action, $var);
+}
 
 ?>

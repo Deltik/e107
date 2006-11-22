@@ -11,52 +11,54 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/rss_menu/rss_menu.php,v $
-|     $Revision: 1.12 $
-|     $Date: 2005/12/14 19:28:52 $
-|     $Author: sweetas $
+|     $Revision: 1.16 $
+|     $Date: 2006/10/21 13:06:21 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
 
-global $FILES_DIRECTORY,$pref;
+global $FILES_DIRECTORY,$pref,$sql;
 $path = e_PLUGIN."rss_menu/";
 
 $des = "";
+$topic = "";
 
-if(strstr(e_SELF, "comment.php")) {
+if(strstr(e_SELF, "comment.php") && $sql -> db_Select("rss", "rss_path", " rss_path = 'comments' LIMIT 1")) {
 	$type = 5;
-	$des = BACKEND_MENU_L4;
+	$des = RSS_MENU_L4;
 }
-if(strstr(e_SELF, "/forum")) {
+if(strstr(e_SELF, "/forum")&& $sql -> db_Select("rss", "rss_path", " rss_path = 'forum|name' LIMIT 1") ) {
 	$type = 6;
-	$des = BACKEND_MENU_L5;
+	$des = RSS_MENU_L5;
 }
-if(strstr(e_SELF, "forum_viewtopic")) {
+if(strstr(e_SELF, "forum_viewtopic") && $sql -> db_Select("rss", "rss_path", " rss_path = 'forum|topic' LIMIT 1")) {
 	$type = 7;
-	$des = BACKEND_MENU_L6;
+	$des = RSS_MENU_L6;
 }
-if(strstr(e_SELF, "chat.php")) {
+if(strstr(e_SELF, "chat.php")&& $sql -> db_Select("rss", "rss_path", " rss_path = 'chatbox_menu' LIMIT 1")) {
 	$type = 9;
-	$des = BACKEND_MENU_L7;
+	$des = RSS_MENU_L7;
 }
 
 if(strstr(e_SELF, "/bugtracker")) {
 	$type = 10;
-	$des = BACKEND_MENU_L8;
+	$des = RSS_MENU_L8;
 }
 
-if(strstr(e_SELF, "download.php")) {
+if(strstr(e_SELF, "download.php") && $sql -> db_Select("rss", "rss_path", " rss_path = 'download' LIMIT 1")) {
 	$type = 12;
-	$des = BACKEND_MENU_L9;
+	$des = RSS_MENU_L9;
 }
 
 if(!$des) {
 	$type = 1;
-	$des = BACKEND_MENU_L3;
+	$des = RSS_MENU_L3;
 }
 
 if(e_PAGE == "news.php" && $pref['rss_newscats'])
 {
+
 	$qry = explode(".",e_QUERY);
 	if($qry[0] == "cat" || $qry[0] == "list")
 	{
@@ -64,14 +66,16 @@ if(e_PAGE == "news.php" && $pref['rss_newscats'])
 	}
 }
 
-$text = "<div style='text-align:center' class='smalltext'>
-".$des.BACKEND_MENU_L1."<br />
-<div class='spacer'><a href='".$path."rss.php?$type.1.$topic'><img src='".$path."images/rss1.png' alt='rss1.0' style='border:0' /></a></div>
-<div class='spacer'><a href='".$path."rss.php?$type.2.$topic'><img src='".$path."images/rss2.png' alt='rss2.0' style='border:0' /></a></div>
-<div class='spacer'><a href='".$path."rss.php?$type.3.$topic'><img src='".$path."images/rss3.png' alt='rdf' style='border:0' /></a><br /></div>
+$text = "
+<div style='text-align:center' class='smalltext'>
+".$des.RSS_MENU_L1."<br />
+<div class='spacer'><a href='".$path."rss.php?$type.1".($topic ? ".".$topic : "")."'><img src='".$path."images/rss1.png' alt='rss1.0' style='border:0' /></a></div>
+<div class='spacer'><a href='".$path."rss.php?$type.2".($topic ? ".".$topic : "")."'><img src='".$path."images/rss2.png' alt='rss2.0' style='border:0' /></a></div>
+<div class='spacer'><a href='".$path."rss.php?$type.3".($topic ? ".".$topic : "")."'><img src='".$path."images/rss3.png' alt='rdf' style='border:0' /></a><br /></div>
 </div>";
 
-$caption = (file_exists(THEME."images/backend_menu.png") ? "<img src='".THEME_ABS."images/backend_menu.png' alt='' style='vertical-align:middle' /> ".BACKEND_MENU_L2 : BACKEND_MENU_L2);
+$caption = (file_exists(THEME."images/RSS_menu.png") ? "<img src='".THEME_ABS."images/RSS_menu.png' alt='' style='vertical-align:middle' /> ".RSS_MENU_L2 : RSS_MENU_L2);
 
 $ns->tablerender($caption, $text, 'backend');
+
 ?>

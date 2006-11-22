@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/search.php,v $
-|     $Revision: 1.53 $
-|     $Date: 2006/04/22 01:22:40 $
-|     $Author: e107coders $
+|     $Revision: 1.55 $
+|     $Date: 2006/11/09 20:48:27 $
+|     $Author: sweetas $
 +----------------------------------------------------------------------------+
 */
 
@@ -386,7 +386,7 @@ if (!isset($SEARCH_TOP_TABLE)) {
 $text = preg_replace("/\{(.*?)\}/e", '$\1', $SEARCH_TOP_TABLE);
 foreach ($enhanced_types as $en_id => $ENHANCED_TEXT) {
 	$ENHANCED_DISPLAY_ID = "en_".$en_id;
-	$ENHANCED_FIELD = "<input class='tbox' type='text' id='".$en_id."' name='".$en_id."' size='35' value='".$_GET[$en_id]."' maxlength='50' />";
+	$ENHANCED_FIELD = "<input class='tbox' type='text' id='".$en_id."' name='".$en_id."' size='35' value='".$tp->post_toForm($_GET[$en_id])."' maxlength='50' />";
 	$text .= preg_replace("/\{(.*?)\}/e", '$\1', $SEARCH_ENHANCED);
 }
 if ($search_prefs['user_select']) {
@@ -493,19 +493,26 @@ function parsesearch($text, $match) {
 }
 
 function headerjs() {
-	global $search_count, $google_id, $search_prefs, $js_adv;
+	global $search_count, $google_id, $search_prefs, $js_adv, $search_info;
 	if ($search_prefs['selector'] == 1) {
+		
+		$types = array_keys($search_info);
+		$types = implode("', '", $types);
+		
 		$script = "<script type='text/javascript'>
 		<!--
+		var i;
+		var stypes = new Array('".$types."');
+		
 		function checkAll(allbox) {
-			for (var i = 0; i < ".$search_count."; i++)
-			document.getElementById('searchform')[\"t[\" + i + \"]\"].checked = true ;
+			for (var i in stypes)
+			document.getElementById('searchform')[\"t[\" + stypes[i] + \"]\"].checked = true ;
 			uncheckG();
 		}
 
 		function uncheckAll(allbox) {
-			for (var i = 0; i < ".$search_count."; i++)
-			document.getElementById('searchform')[\"t[\" + i + \"]\"].checked = false ;
+			for (var i in stypes)
+			document.getElementById('searchform')[\"t[\" + stypes[i] + \"]\"].checked = false ;
 		}\n";
 
 		if (check_class($search_prefs['google'])) {

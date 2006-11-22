@@ -11,13 +11,15 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/newsfeed/templates/newsfeed_template.php,v $
-|     $Revision: 1.5 $
-|     $Date: 2005/12/14 19:28:51 $
-|     $Author: sweetas $
+|     $Revision: 1.7 $
+|     $Date: 2006/11/13 12:25:00 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
+
+$NEWSFEED_MAIN_CAPTION = NFLAN_38;
 
 $NEWSFEED_LIST_START = "
 <table style='width: 100%;' class='fborder'>\n";

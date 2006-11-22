@@ -11,36 +11,28 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/gsitemap.php,v $
-|     $Revision: 1.6 $
-|     $Date: 2006/04/15 17:44:17 $
-|     $Author: e107coders $
+|     $Revision: 1.10 $
+|     $Date: 2006/11/07 14:59:18 $
+|     $Author: lisa_ $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
-
-if (file_exists(e_PLUGIN."gsitemap/languages/gsitemap_".e_LANGUAGE.".php"))
-{
-	include_once(e_PLUGIN."gsitemap/languages/gsitemap_".e_LANGUAGE.".php");
-}
-else
-{
-	include_once(e_PLUGIN."gsitemap/languages/gsitemap_English.php");
-}
-
+include_lan(e_PLUGIN."gsitemap/languages/gsitemap_".e_LANGUAGE.".php");
 
 if(e_QUERY == "show")
 {
 	require_once(HEADERF);
 
-	$sql -> db_Select("gsitemap", "*", "gsitemap_active IN (".USERCLASS_LIST.") ");
+	$sql -> db_Select("gsitemap", "*", "gsitemap_active IN (".USERCLASS_LIST.") ORDER BY gsitemap_order ");
 	$nfArray = $sql -> db_getList();
-	$text = "<ul>";
+	$text = "<div style='text-align:left'><ul>";
 
 	foreach($nfArray as $nfa)
 	{
-		$text .= "<li>".$tp->toHTML($nfa['gsitemap_cat'],"","defs").": <a href='".$nfa['gsitemap_url']."'>".$tp->toHTML($nfa['gsitemap_name'],"","defs")."</a><br />\n";
+		$url = (substr($nfa['gsitemap_url'],0,4)== "http")? $nfa['gsitemap_url'] : SITEURL.$tp->replaceConstants($nfa['gsitemap_url'],TRUE);
+		$text .= "<li>".$tp->toHTML($nfa['gsitemap_cat'],"","defs").": <a href='".$url."'>".$tp->toHTML($nfa['gsitemap_name'],"","defs")."</a><br />\n";
 	}
-	$text .= "</ul>";
+	$text .= "</ul></div>";
 
 	$ns -> tablerender(SITENAME." : ".GSLAN_Name."", $text);
 
@@ -54,13 +46,14 @@ $xml = "<?xml version='1.0' encoding='UTF-8'?>
 xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'	xsi:schemaLocation='http://www.google.com/schemas/sitemap/0.84
 http://www.google.com/schemas/sitemap/0.84/sitemap.xsd'>";
 
-$sql -> db_Select("gsitemap", "*", "gsitemap_active IN (".USERCLASS_LIST.") ");
+$sql -> db_Select("gsitemap", "*", "gsitemap_active IN (".USERCLASS_LIST.") ORDER BY gsitemap_order ");
 $smArray = $sql -> db_getList();
 foreach($smArray as $sm)
 {
+	$loc = (substr($sm['gsitemap_url'],0,4)== "http")? $sm['gsitemap_url'] : SITEURL.$tp->replaceConstants($sm['gsitemap_url'],TRUE);
 	$xml .= "
 	<url>
-		<loc>".$tp->toRSS($sm['gsitemap_url'],TRUE)."</loc>
+		<loc>".$loc."</loc>
 		<lastmod>".get_iso_8601_date($sm['gsitemap_lastmod'])."</lastmod>
     		<changefreq>".$sm['gsitemap_freq']."</changefreq>
     		<priority>".$sm['gsitemap_priority']."</priority>

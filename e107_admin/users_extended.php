@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/users_extended.php,v $
-|     $Revision: 1.37 $
-|     $Date: 2006/04/29 06:53:08 $
-|     $Author: e107coders $
+|     $Revision: 1.39 $
+|     $Date: 2006/11/07 23:46:19 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 require_once("../class2.php");
@@ -91,12 +91,20 @@ if (isset($_POST['catdown_x']))
 
 if (isset($_POST['add_field']))
 {
-	if($_POST['user_type']==4){
+	if($_POST['user_type']==4)
+	{
     	$_POST['user_values'] = array($_POST['table_db'],$_POST['field_id'],$_POST['field_value'],$_POST['field_order']);
 	}
 	$new_values = make_delimited($_POST['user_values']);
 	$new_parms = $tp->toDB($_POST['user_include']."^,^".$_POST['user_regex']."^,^".$_POST['user_regexfail']."^,^".$_POST['user_hide']);
-	admin_update($ue->user_extended_add($_POST['user_field'], $_POST['user_text'], $_POST['user_type'], $new_parms, $new_values, $_POST['user_default'], $_POST['user_required'], $_POST['user_read'], $_POST['user_write'], $_POST['user_applicable'], 0, $_POST['user_parent']), 'insert', EXTLAN_29);
+	$result = admin_update($ue->user_extended_add($_POST['user_field'], $_POST['user_text'], $_POST['user_type'], $new_parms, $new_values, $_POST['user_default'], $_POST['user_required'], $_POST['user_read'], $_POST['user_write'], $_POST['user_applicable'], 0, $_POST['user_parent']), 'insert', EXTLAN_29);
+	if(!$result)
+	{
+		if($ue->user_extended_reserved($_POST['user_field']))
+		{
+			$message = "[user_".$tp->toHTML($_POST['user_field'])."] ".EXTLAN_74;
+		}
+	}
 }
 
 if (isset($_POST['update_field'])) {
@@ -890,7 +898,7 @@ function field_activate()
 		$tmp[$f]['parms'] = $tp->toDB($tmp[$f]['parms']);
 		if($ue->user_extended_add($tmp[$f]))
 		{
-			$ret .= "Field: $f has been activated <br />";
+			$ret .= EXTLAN_68." $f ".EXTLAN_69."<br />";
 
 			if($tmp[$f]['type']=="db field" && is_readable(e_ADMIN."sql/extended_".$f.".php")){
              	$ret .= (process_sql($f)) ? LAN_CREATED." user_extended_{$f}<br />" : LAN_CREATED_FAILED." user_extended_{$f}<br />";
@@ -898,7 +906,7 @@ function field_activate()
 		}
 		else
 		{
-			$ret .= "ERROR!!  Field: $f was not activated! <br />";
+			$ret .= EXTLAN_70." $f ".EXTLAN_71."<br />";
 		}
 	}
 	return $ret;
@@ -912,14 +920,14 @@ function field_deactivate()
 	{
 		if($ue->user_extended_remove($f, $f))
 		{
-			$ret .= "Field: $f has been deactivated <br />";
+			$ret .= EXTLAN_68." $f ".EXTLAN_72."<br />";
 			if(is_readable(e_ADMIN."sql/extended_".$f.".php")){
              	$ret .= (mysql_query("DROP TABLE ".MPREFIX."user_extended_".$f)) ? LAN_DELETED." user_extended_".$f."<br />" : LAN_DELETED_FAILED." user_extended_".$f."<br />";
 			}
 		}
 		else
 		{
-			$ret .= "ERROR!!  Field: $f was not deactivated! <br />";
+			$ret .= EXTLAN_70." $f ".EXTLAN_73."<br />";
 		}
 	}
 	return $ret;

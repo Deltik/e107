@@ -12,16 +12,16 @@
 | GNU General Public License (http://gnu.org).
 |
 | $Source: /cvsroot/e107/e107_0.7/e107_handlers/news_class.php,v $
-| $Revision: 1.71 $
-| $Date: 2006/04/12 14:58:12 $
-| $Author: sweetas $
+| $Revision: 1.74 $
+| $Date: 2006/07/12 07:54:09 $
+| $Author: e107coders $
 +---------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
 
 class news {
-	
+
 	function submit_item($news) {
 		global $sql, $tp, $e107cache, $e_event, $pref;
 		if (!is_object($tp)) $tp = new e_parse;
@@ -31,8 +31,10 @@ class news {
 		$news['news_body'] = $tp->toDB($news['data']);
 		$news['news_extended'] = $tp->toDB($news['news_extended']);
 		$news['news_summary'] = $tp->toDB($news['news_summary']);
+		$news['news_userid'] = ($news['news_userid']) ? $news['news_userid'] : USERID;
 		if(!isset($news['news_sticky'])) {$news['news_sticky'] = 0;}
 		$author_insert = ($news['news_author'] == 0) ? "news_author = '".USERID."'," : "";
+        $news['news_author'] = ($news['news_author']) ? $news['news_author'] : USERID;
 
 		if ($news['news_id']) {
 			$vals = "news_datestamp = '".intval($news['news_datestamp'])."', ".$author_insert." news_title='".$news['news_title']."', news_body='".$news['news_body']."', news_extended='".$news['news_extended']."', news_category='".intval($news['cat_id'])."', news_allow_comments='".intval($news['news_allow_comments'])."', news_start='".intval($news['news_start'])."', news_end='".intval($news['news_end'])."', news_class='".$tp->toDB($news['news_class'])."', news_render_type='".intval($news['news_rendertype'])."' , news_summary='".$news['news_summary']."', news_thumbnail='".$tp->toDB($news['news_thumbnail'])."', news_sticky='".intval($news['news_sticky'])."' WHERE news_id='".intval($news['news_id'])."' ";
@@ -44,7 +46,7 @@ class news {
 				$message = "<strong>".(!mysql_errno() ? LAN_NEWS_46 : LAN_NEWS_5)."</strong>";
 			}
 		} else {
-			if ($sql ->db_Insert('news', "0, '".$news['news_title']."', '".$news['news_body']."', '".$news['news_extended']."', ".intval($news['news_datestamp']).", ".USERID.", '".intval($news['cat_id'])."', '".intval($news['news_allow_comments'])."', '".intval($news['news_start'])."', '".intval($news['news_end'])."', '".$tp->toDB($news['news_class'])."', '".intval($news['news_rendertype'])."', '0' , '".$news['news_summary']."', '".$tp->toDB($news['news_thumbnail'])."', '".intval($news['news_sticky'])."' ")) {
+			if ($sql ->db_Insert('news', "0, '".$news['news_title']."', '".$news['news_body']."', '".$news['news_extended']."', ".intval($news['news_datestamp']).", ".intval($news['news_author']).", '".intval($news['cat_id'])."', '".intval($news['news_allow_comments'])."', '".intval($news['news_start'])."', '".intval($news['news_end'])."', '".$tp->toDB($news['news_class'])."', '".intval($news['news_rendertype'])."', '0' , '".$news['news_summary']."', '".$tp->toDB($news['news_thumbnail'])."', '".intval($news['news_sticky'])."' ")) {
 				$e_event -> trigger('newspost', $news);
 				$message = LAN_NEWS_6;
 				$e107cache -> clear('news.php');
@@ -106,7 +108,7 @@ class news {
 	}
 
 	function render_newsitem($news, $mode = 'default', $n_restrict = '', $NEWS_TEMPLATE = '', $param='') {
-		global $tp, $sql, $override, $pref, $ns, $NEWSSTYLE, $NEWSLISTSTYLE, $news_shortcodes;
+		global $tp, $sql, $override, $pref, $ns, $NEWSSTYLE, $NEWSLISTSTYLE, $news_shortcodes, $loop_uid;
 		if ($override_newsitem = $override -> override_check('render_newsitem')) {
 			$result = call_user_func($override_newsitem, $news, $mode, $n_restrict, $NEWS_TEMPLATE, $param);
 			if ($result == 'return') {
@@ -129,10 +131,10 @@ class news {
 
 		if (!$param) {
 			if (!defined("IMAGE_nonew_small")){
-				define("IMAGE_nonew_small", (file_exists(THEME."generic/nonew_comments.png") ? "<img src='".THEME_ABS."generic/nonew_comments.png' alt=''  /> " : "<img src='".e_IMAGE_ABS."generic/".IMODE."/nonew_comments.png' alt=''  />"));
+				define("IMAGE_nonew_small", (file_exists(THEME."images/nonew_comments.png") ? "<img src='".THEME_ABS."images/nonew_comments.png' alt=''  /> " : "<img src='".e_IMAGE_ABS."generic/".IMODE."/nonew_comments.png' alt=''  />"));
 			}
 			if (!defined("IMAGE_new_small"))	{
-				define("IMAGE_new_small", (file_exists(THEME."generic/new_comments.png") ? "<img src='".THEME_ABS."generic/new_comments.png' alt=''  /> " : "<img src='".e_IMAGE_ABS."generic/".IMODE."/new_comments.png' alt=''  /> "));
+				define("IMAGE_new_small", (file_exists(THEME."images/new_comments.png") ? "<img src='".THEME_ABS."images/new_comments.png' alt=''  /> " : "<img src='".e_IMAGE_ABS."generic/".IMODE."/new_comments.png' alt=''  /> "));
 			}
 			if (!defined("IMAGE_sticky")){
 				define("IMAGE_sticky", (file_exists(THEME."images/sticky.png") ? "<img src='".THEME_ABS."images/sticky.png' alt=''  /> " : "<img src='".e_IMAGE_ABS."generic/".IMODE."/sticky.png' alt='' style='width: 14px; height: 14px; vertical-align: bottom' /> "));
@@ -152,7 +154,7 @@ class news {
 			$param['catlink']  = (defined("NEWSLIST_CATLINK")) ? NEWSLIST_CATLINK : "";
 			$param['caticon'] =  (defined("NEWSLIST_CATICON")) ? NEWSLIST_CATICON : ICONSTYLE;
 		}
-		
+
 		cachevars('current_news_item', $news);
 		cachevars('current_news_param', $param);
 
@@ -175,16 +177,17 @@ class news {
 				}
 			}
 		}
+		$loop_uid = $news['news_author'];
 
 		require_once(e_FILE.'shortcode/batch/news_shortcodes.php');
-		$text = $tp -> parseTemplate($NEWS_PARSE, FALSE, $news_shortcodes);
+		$text = $tp -> parseTemplate($NEWS_PARSE, TRUE, $news_shortcodes);
 
 		if ($mode == 'return') {
 			return $text;
 		} else {
 			echo $text;
 			return TRUE;
-		}		
+		}
 	}
 
 	function make_xml_compatible($original) {

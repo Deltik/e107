@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/user_select_class.php,v $
-|     $Revision: 1.8 $
-|     $Date: 2005/12/28 14:03:36 $
-|     $Author: sweetas $
+|     $Revision: 1.10 $
+|     $Date: 2006/10/24 13:35:06 $
+|     $Author: mrpete $
 +----------------------------------------------------------------------------+
 */
 
@@ -84,6 +84,7 @@ class user_select {
 	}
 	
 	function select_form($type, $user_form, $user_value = '', $class_form = false, $class_value = '', $class = false) {
+		global $tp;
 		$text .= "<script type='text/javascript'>
 		<!--
 		function uc_switch(uctype) {
@@ -106,7 +107,7 @@ class user_select {
 			}
 			else
 			{
-				$text .= "<input class='tbox' type='text' name='".$form_id."' id='".$form_id."' size='25' maxlength='30' value='".$user_value."'>&nbsp;";
+				$text .= "<input class='tbox' type='text' name='".$form_id."' id='".$form_id."' size='25' maxlength='30' value='".$tp -> post_toForm($user_value)."'>&nbsp;";
 			}
 			$text .= "<img src='".e_IMAGE_ABS."generic/".IMODE."/user_select.png' 
 			style='width: 16px; height: 16px; vertical-align: top' alt='".US_LAN_4."...' 
@@ -131,7 +132,7 @@ class user_select {
 	}
 	
 	function popup() {
-		global $ns;
+		global $ns, $tp;
 		list($elementType, $elementID) = explode(".", e_QUERY);
 		if($elementType == 'textarea')
 		{
@@ -167,8 +168,8 @@ class user_select {
 		$text = "<form action='".e_SELF."?".e_QUERY."' method='POST'>
 			<table style='width:100%' class='fborder'>
 			<tr>
-			<td class='forumheader3' style='text-align: center'><input type='text' name='srch' class='tbox' value='".$_POST['srch']."' size='40'>
-			<input class='button' type='submit' name='dosrch' class='tbox' value='".US_LAN_6."'></td>
+			<td class='forumheader3' style='text-align: center'><input type='text' name='srch' class='tbox' value='".$tp -> post_toForm($_POST['srch'])."' size='40'>
+			<input class='button' type='submit' name='dosrch' class='tbox' value='".US_LAN_6."' /></td>
 			</tr>
 			</table>
 			</form>
@@ -196,7 +197,7 @@ class user_select {
 			}
 			$text .= "
 			</select>
-			<input type='button' class='button' value='".US_LAN_1."' onClick='SelectUser()'>
+			<input type='button' class='button' value='".US_LAN_1."' onClick='SelectUser()' />
 			</td>
 		 
 			</tr>

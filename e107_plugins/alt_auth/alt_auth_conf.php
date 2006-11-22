@@ -1,10 +1,29 @@
 <?php
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     ©Steve Dunstan 2001-2002
+|     http://e107.org
+|     jalist@e107.org
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_plugins/alt_auth/alt_auth_conf.php,v $
+|     $Revision: 1.5 $
+|     $Date: 2006/10/18 16:34:48 $
+|     $Author: mcfly_e107 $
++----------------------------------------------------------------------------+
+*/
 $eplug_admin = true;
 require_once("../../class2.php");
 if(!getperms("P")){header("location:".e_BASE."index.php"); exit; }
 require_once(e_HANDLER."form_handler.php");
 require_once(e_ADMIN."auth.php");
 include_lan(e_PLUGIN."alt_auth/languages/".e_LANGUAGE."/lan_alt_auth_conf.php");
+define("ALT_AUTH_ACTION", "main");
+require_once(e_PLUGIN."alt_auth/alt_auth_adminmenu.php");
 
 if(isset($_POST['updateprefs']))
 {
@@ -16,22 +35,13 @@ if(isset($_POST['updateprefs']))
 	exit;
 }
 
-$authlist[] = "e107";
-$handle=opendir(e_PLUGIN."alt_auth");
-while ($file = readdir($handle))
-{
-	if(preg_match("/^(.*)_auth\.php/",$file,$match))
-	{
-		$authlist[] = $match[1];
-	}
-}
-closedir($handle);
+$authlist = alt_auth_get_authlist();
 
 $auth_dropdown = "<select class='tbox' name='auth_method'>\n";
 foreach($authlist as $a)
 {
-	$s = ($pref['auth_method'] == $a) ? " SELECTED" : "";
-	$auth_dropdown .= "<option {$s}>".$a."</option>\n";
+	$s = ($pref['auth_method'] == $a) ? "selected='selected'" : "";
+	$auth_dropdown .= "<option value='{$a}' {$s}>".$a."</option>\n";
 }
 $auth_dropdown .= "</select>\n";
 
@@ -93,14 +103,13 @@ $text .= "<option value='1' {$sel} >".LAN_ALT_FALLBACK."</option>
 
 $ns -> tablerender("<div style='text-align:center'>".LAN_ALT_3."</div>", $text);
 
-$text="";
-foreach($authlist as $a){
-	if($a != 'e107'){
-		$text .= LAN_ALT_4." <a href='".e_PLUGIN."alt_auth/{$a}_conf.php'>{$a}</a><br />";
-	}
-}
-
-$ns -> tablerender("<div style='text-align:center'>".LAN_ALT_5."</div>", $text);
 
 require_once(e_ADMIN."footer.php");
+
+function alt_auth_conf_adminmenu()
+{
+	alt_auth_adminmenu();
+}
+
+
 ?>	

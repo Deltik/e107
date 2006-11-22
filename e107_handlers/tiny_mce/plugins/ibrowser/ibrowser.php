@@ -9,13 +9,13 @@
 // ------------------------------------------------
 //                                   www.j-cons.com
 // ================================================
-// $Revision: 1.4 $Date: 2004/10/04
+// $Revision: 1.8 $Date: 2004/10/04
 // ================================================
 //
 // $Source: /cvsroot/e107/e107_0.7/e107_handlers/tiny_mce/plugins/ibrowser/ibrowser.php,v $
-// $Revision: 1.4 $
-// $Date: 2006/03/03 05:07:12 $
-// $Author: e107coders $
+// $Revision: 1.8 $
+// $Date: 2006/10/24 13:39:45 $
+// $Author: mrpete $
 // +----------------------------------------------------------------------------+
 // Major Re-work by CaMer0n
 
@@ -28,7 +28,7 @@ unset($tinyMCE_imglib_include);
 // include image library config settings
 include 'config.php';
 
-$request_uri = urldecode(empty($HTTP_POST_VARS['request_uri'])?(empty($HTTP_GET_VARS['request_uri'])?'':$HTTP_GET_VARS['request_uri']):$HTTP_POST_VARS['request_uri']);
+$request_uri = urldecode(empty($_POST['request_uri'])?(empty($_GET['request_uri'])?'':$_GET['request_uri']):$_POST['request_uri']);
 
 // if set include file specified in $tinyMCE_imglib_include
 if (!empty($tinyMCE_imglib_include))
@@ -37,8 +37,8 @@ if (!empty($tinyMCE_imglib_include))
 }
 
 
-$imglib = isset($HTTP_POST_VARS['lib'])?$HTTP_POST_VARS['lib']:'';
-if (empty($imglib) && isset($HTTP_GET_VARS['lib'])) $imglib = $HTTP_GET_VARS['lib'];
+$imglib = isset($_POST['lib'])?$_POST['lib']:'';
+if (empty($imglib) && isset($_GET['lib'])) $imglib = $_GET['lib'];
 
 $value_found = false;
 // callback function for preventing listing of non-library directory
@@ -59,24 +59,12 @@ if (!$value_found || empty($imglib))
 $lib_options = liboptions($tinyMCE_imglibs,'',$imglib);
 
 
-$img = isset($HTTP_POST_VARS['imglist'])?$HTTP_POST_VARS['imglist']:'';
+$img = isset($_POST['imglist'])? $_POST['imglist']:'';
 
-$preview = '';
+$preview = e_IMAGE."generic/blank.gif";
 
 $errors = array();
-if (isset($HTTP_POST_FILES['img_file']['size']) && $HTTP_POST_FILES['img_file']['size']>0)
-{
-  if ($img = uploadImg('img_file'))
-  {
-    $preview = $tinyMCE_base_url.$imglib.$img;
-  }
-}
 
-// delete image
-if ($tinyMCE_img_delete_allowed && isset($HTTP_POST_VARS['lib_action'])
-	&& ($HTTP_POST_VARS['lib_action']=='delete') && !empty($img)) {
-  deleteImg();
-}
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
@@ -84,7 +72,7 @@ if ($tinyMCE_img_delete_allowed && isset($HTTP_POST_VARS['lib_action'])
 <title>{$lang_ibrowser_title}</title>
 <script type="text/javaScript" src="../../tiny_mce_popup.js"></script>
 <meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta http-equiv="Content-Type" content="text/html; charset=<?php echo CHARSET ?>" />
 <script type="text/javascript">
 	// click ok - select picture or save changes
 	function selectClick() {
@@ -274,9 +262,9 @@ if ($tinyMCE_img_delete_allowed && isset($HTTP_POST_VARS['lib_action'])
 <script type="text/javascript">
     window.name = 'imglibrary';
 </script>
-<form name="libbrowser" method="post" action="ibrowser.php?request_uri=<?php echo $HTTP_GET_VARS['request_uri']?>" enctype="multipart/form-data" target="imglibrary">
-  <input type="hidden" name="request_uri" value="<?php echo urlencode($request_uri)?>">
-  <input type="hidden" name="lib_action" value="">
+<form name="libbrowser" method="post" action="ibrowser.php?request_uri=<?php echo $_GET['request_uri']?>" enctype="multipart/form-data" target="imglibrary">
+  <input type="hidden" name="request_uri" value="<?php echo urlencode($request_uri)?>" />
+  <input type="hidden" name="lib_action" value="" />
   <fieldset style= "padding: 5 5 5 5; margin-top: -5px;">
   <legend>{$lang_ibrowser_img_sel}</legend>
   <table width="440" border="0" cellspacing="0" cellpadding="0">
@@ -301,11 +289,11 @@ if ($tinyMCE_img_delete_allowed && isset($HTTP_POST_VARS['lib_action'])
           </tr>
           <tr>
             <td><?php
-    if (!preg_match('#/$#', $HTTP_SERVER_VARS['DOCUMENT_ROOT'])){
-    //  $_root = $HTTP_SERVER_VARS['DOCUMENT_ROOT'].'/';
+    if (!preg_match('#/$#', $_SERVER['DOCUMENT_ROOT'])){
+    //  $_root = $_SERVER['DOCUMENT_ROOT'].'/';
 		$_root = e_BASE;
    } else {
-   //   $_root = $HTTP_SERVER_VARS['DOCUMENT_ROOT'];
+   //   $_root = $_SERVER['DOCUMENT_ROOT'];
       $_root = e_BASE;
 	}
   //  $d = @dir($_root.$imglib);
@@ -335,7 +323,7 @@ if ($tinyMCE_img_delete_allowed && isset($HTTP_POST_VARS['lib_action'])
 	  $size = getimagesize($tinyMCE_base_url.$imglib.$entry);
 	  $fsize = filesize($_root.$imglib.$entry);
    ?>
-            <option img_width="<?php echo $size[0]; ?>" img_height="<?php echo $size[1]; ?>" f_size="<?php echo filesize_h($fsize,2); ?>" value="<?php echo $size[0]; ?>|<?php echo $size[1]; ?>|<?php echo filesize_h($fsize,2); ?>|<?php echo $entry?>" <?php echo ($entry == $img)?'selected':''?>><?php echo $entry?></option>
+            <option  value="<?php echo $size[0]; ?>|<?php echo $size[1]; ?>|<?php echo filesize_h($fsize,2); ?>|<?php echo $entry?>" <?php echo ($entry == $img)?'selected':''?>><?php echo $entry?></option>
             <?php
 	  }
     }
@@ -351,10 +339,10 @@ if ($tinyMCE_img_delete_allowed && isset($HTTP_POST_VARS['lib_action'])
             <td colspan="3"><table width="100%"  border="0" cellspacing="0" cellpadding="0">
                 <tr>
                   <td width="40%"><?php if ($tinyMCE_img_delete_allowed) { ?>
-                    <input type="button" value="{$lang_ibrowser_delete}" class="bt" onClick="deleteClick();">
+                    <input type="button" value="{$lang_ibrowser_delete}" class="bt" onClick="deleteClick();" />
                     <?php } ?></td>
-                  <td align="right"><input type="button" name="selectbt" value="{$lang_ibrowser_select}" class="bt" onClick="selectClick();">
-                    <input type="button" value="{$lang_ibrowser_cancel}" class="bt" onClick="window.close();"></td>
+                  <td align="right"><input type="button" name="selectbt" value="{$lang_ibrowser_select}" class="bt" onClick="selectClick();" />
+                    <input type="button" value="{$lang_ibrowser_cancel}" class="bt" onClick="window.close();" /></td>
                 </tr>
               </table></td>
           </tr>
@@ -369,11 +357,11 @@ if ($tinyMCE_img_delete_allowed && isset($HTTP_POST_VARS['lib_action'])
       <td><table style='width:440px;border:0px' cellpadding="2" cellspacing="0">
           <tr>
             <td style='width:80px'>{$lang_ibrowser_src}:</td>
-            <td colspan="5"><input name="src" type="text" id="src" value="" style="width: 100%;" readonly="true"></td>
+            <td colspan="5"><input name="src" type="text" id="src" value="" style="width: 100%;" /></td>
           </tr>
           <tr>
             <td>{$lang_ibrowser_alt}:</td>
-            <td colspan="5"><input name="alt" type="text" id="alt" value="" style="width: 100%;" onChange="updateStyle()"></td>
+            <td colspan="5"><input name="alt" type="text" id="alt" value="" style="width: 100%;" onChange="updateStyle()" /></td>
           </tr>
           <tr>
             <td>{$lang_ibrowser_align}:</td>
@@ -385,7 +373,7 @@ if ($tinyMCE_img_delete_allowed && isset($HTTP_POST_VARS['lib_action'])
             <td width="5">&nbsp;</td>
             <td rowspan="8" align="left" valign="top" style='width:210px;overflow:hidden'>
 			<div id="stylepreview" style="padding:10px; width: 200px; height:100%; overflow:hidden; background-color:#ffffff; font-size:8px" class="previewWindow">
-                <p><img id="wrap" src="images/textflow.gif" width="45" height="45" align="" alt="" hspace="" vspace="" border="" style="float:right; margin-left:0px; margin-right:0px; margin-top:0px; margin-bottom:0px" />Lorem
+                <p><img id="wrap" src="images/textflow.gif" width="45" height="45" alt="" style="border:0px; float:right; margin-left:0px; margin-right:0px; margin-top:0px; margin-bottom:0px" />Lorem
                   ipsum, Dolor sit amet, consectetuer adipiscing loreum ipsum
                   edipiscing elit, sed diam nonummy nibh euismod tincidunt ut
                   laoreet dolore magna aliquam erat volutpat.Loreum ipsum edipiscing
@@ -400,19 +388,19 @@ if ($tinyMCE_img_delete_allowed && isset($HTTP_POST_VARS['lib_action'])
           </tr>
           <tr>
             <td>{$lang_ibrowser_size}:</td>
-            <td colspan="3"><input name="size" type="text" id="size" value="" readonly="true" style="width: 100%;"></td>
+            <td colspan="3"><input name="size" type="text" id="size" value="" readonly="true" style="width: 100%;" /></td>
             <td>&nbsp;</td>
           </tr>
           <tr>
             <td>{$lang_ibrowser_height}:</td>
-            <td width="40"><input name="height" type="text" id="height" value="" size="5" maxlength="4" style="text-align: right;" onChange="changeDim(0)"></td>
+            <td width="40"><input name="height" type="text" id="height" value="" size="5" maxlength="4" style="text-align: right;" onChange="changeDim(0)" /></td>
             <td width="25" rowspan="2" align="left" valign="middle"><a href="#" onClick="resetDim();" ><img src="images/constrain.gif" alt="{$lang_ibrowser_reset}" width="22" height="29" border="0"></a></td>
             <td rowspan="2">&nbsp;</td>
             <td>&nbsp;</td>
           </tr>
           <tr>
             <td>{$lang_ibrowser_width}:</td>
-            <td><input name="width" type="text" id="width" value="" size="5" maxlength="4" style="text-align: right;" onChange="changeDim(1)"></td>
+            <td><input name="width" type="text" id="width" value="" size="5" maxlength="4" style="text-align: right;" onChange="changeDim(1)" /></td>
             <td>&nbsp;</td>
           </tr>
           <tr>
@@ -452,42 +440,7 @@ if ($tinyMCE_img_delete_allowed && isset($HTTP_POST_VARS['lib_action'])
     </tr>
   </table>
   </fieldset>
-  <?php  if ($tinyMCE_upload_allowed) { ?>
-  <fieldset style= "padding: 5 5 5 5; margin-top: 10px;">
-  <legend>{$lang_ibrowser_img_upload}</legend>
-  <table width="440" border="0" cellpadding="0" cellspacing="0">
-    <tr>
-      <td><?php
-    if (!empty($errors))
-    {
-      echo '<span class="error">';
-      foreach ($errors as $err)
-      {
-        echo $err.'<br />';
-      }
-      echo '</span>';
-    }
-    ?>
-        <?php
-  if ($d) {
-  ?>
-        <table width="440" border="0" cellpadding="2" cellspacing="0">
-          <tr>
-            <td width="80">{$lang_ibrowser_uploadtxt}:</td>
-            <td colspan="2"><input type="file" name="img_file" style="width: 100%;"></td>
-          </tr>
-          <tr>
-            <td colspan="3"><input type="submit" name="btnupload" class="bt" value="{$lang_ibrowser_uploadbt}"></td>
-          </tr>
-        </table>
-        <?php
-  }
-  ?>
-      </td>
-    </tr>
-  </table>
-  </fieldset>
-  <?php  } ?>
+
 </form>
 </body>
 </html>
@@ -500,83 +453,7 @@ function liboptions($arr, $prefix = '', $sel = '')
   }
   return $buf;
 }
-// upload image
-function uploadImg($img) {
 
-  global $HTTP_POST_FILES;
-  global $HTTP_SERVER_VARS;
-  global $tinyMCE_valid_imgs;
-  global $imglib;
-  global $errors;
-  global $l;
-  global $tinyMCE_upload_allowed;
-
-  if (!$tinyMCE_upload_allowed) return false;
-
-  if (!preg_match('#/$#', $HTTP_SERVER_VARS['DOCUMENT_ROOT'])){
-	$_root = e_BASE;
-  } else {
-  	$_root = e_BASE;
-  }
-  if ($HTTP_POST_FILES[$img]['size']>0) {
-    $data['type'] = $HTTP_POST_FILES[$img]['type'];
-    $data['name'] = $HTTP_POST_FILES[$img]['name'];
-    $data['size'] = $HTTP_POST_FILES[$img]['size'];
-    $data['tmp_name'] = $HTTP_POST_FILES[$img]['tmp_name'];
-
-    // get file extension
-    $ext = strtolower(substr(strrchr($data['name'],'.'), 1));
-    if (in_array($ext,$tinyMCE_valid_imgs)) {
-      $dir_name = $_root.$imglib;
-
-      $img_name = $data['name'];
-      $i = 1;
-      while (file_exists($dir_name.$img_name)) {
-        $img_name = preg_replace('#(.*)(\.[a-zA-Z]+)$#', '\\1_'.$i.'\\2', $data['name']);
-        $i++;
-      }
-      if (!move_uploaded_file($data['tmp_name'], $dir_name.$img_name)) {
-        $errors[] = '{lang_ibrowser_errorupload}';
-        return false;
-      }
-
-      return $img_name;
-    }
-    else
-    {
-      $errors[] = '{$lang_ibrowser_errortype}';
-    }
-  }
-  return false;
-}
-
-function deleteImg()
-{
-  global $HTTP_SERVER_VARS;
-  global $imglib;
-  global $img;
-  global $tinyMCE_img_delete_allowed;
-  global $errors;
-  global $l;
-
-  if (!$tinyMCE_img_delete_allowed) return false;
-
-  if (!preg_match('#/$#', $HTTP_SERVER_VARS['DOCUMENT_ROOT']))
-    $_root = $HTTP_SERVER_VARS['DOCUMENT_ROOT'].'/';
-  else
-    $_root = $HTTP_SERVER_VARS['DOCUMENT_ROOT'];
-
-  $full_img_name = $_root.$imglib.$img;
-
-  if (@unlink($full_img_name)) {
-  	return true;
-  }
-  else
-  {
-  	$errors[] = '{$lang_ibrowser_errordelete}';
-	return false;
-  }
-}
 
 // Return the human readable size of a file
 // @param int $size a file size

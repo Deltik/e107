@@ -12,9 +12,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/bbcode_handler.php,v $
-|     $Revision: 1.40 $
-|     $Date: 2006/05/05 23:06:45 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.46 $
+|     $Date: 2006/10/21 11:04:44 $
+|     $Author: mrpete $
 +----------------------------------------------------------------------------+
 */
 
@@ -45,15 +45,21 @@ class e_bbcode
 		{
 			$this->bbLocation[$c] = 'core';
 		}
-		if(isset($pref['plug_bb']) && $pref['plug_bb'] != '')
+
+
+		// grab list of plugin bbcodes.
+		if(isset($pref['bbcode_list']) && $pref['bbcode_list'] != '')
 		{
-			$tmp = explode(',',$pref['plug_bb']);
-			foreach($tmp as $val)
+        	foreach($pref['bbcode_list'] as $path=>$namearray)
 			{
-				list($code, $location) = explode(':',$val);
-				$this->bbLocation[$code] = $location;
+				foreach($namearray as $code=>$uclass)
+				{
+                	$this->bbLocation[$code] = $path;
+				}
 			}
 		}
+
+
 		$this->bbLocation = array_diff($this->bbLocation, array(''));
 		krsort($this->bbLocation);
 		$this->List = array_keys($this->bbLocation);
@@ -66,6 +72,7 @@ class e_bbcode
 			unset($this->List[$c]);
 			array_unshift($this->List, "code");
 		}
+
 	}
 
 	function parseBBCodes($text, $p_ID)
@@ -78,7 +85,7 @@ class e_bbcode
 		$done = false;
 		$single_bb = false;
 		$i=0;
-		
+
 		$tmplist = array();
 		foreach($this->List as $code)
 		{
@@ -117,6 +124,14 @@ class e_bbcode
 				$text = preg_replace_callback($pattern, array($this, 'doCode'), $text);
 				$leftover_code = $_matches[1].$_matches[2];
 				$text = str_replace("[{$leftover_code}", "&#091;{$leftover_code}", $text);
+
+				if ($pos == ($i = strpos($text,"[{$code}")))
+    			{
+        			$pattern2 = "#\[({$code})(\d*)(.*?)\]#s";
+        			$text = preg_replace_callback($pattern2, array($this, 'doCode'), $text);
+        			$leftover_code = $_matches[1].$_matches[2];
+        			$text = str_replace("[{$leftover_code}", "&#091;{$leftover_code}", $text);
+    			}
 			}
 		}
 		return $text;
@@ -167,7 +182,7 @@ class e_bbcode
 			}
 		}
 		global $e107_debug;
-		if($e107_debug)
+		if(E107_DBG_BBSC)
 		{
 			trigger_error("starting bbcode [$code]", E_USER_ERROR);
 		}

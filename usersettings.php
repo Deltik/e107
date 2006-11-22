@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/usersettings.php,v $
-|     $Revision: 1.69 $
-|     $Date: 2006/05/18 15:12:58 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.79 $
+|     $Date: 2006/11/21 21:39:15 $
+|     $Author: mrpete $
 +----------------------------------------------------------------------------+
 */
 
@@ -67,7 +67,7 @@ if(is_readable(THEME."usersettings_template.php"))
 else
 {
 	include_once(e_THEME."templates/usersettings_template.php");
-}	
+}
 include_once(e_FILE."shortcode/batch/usersettings_shortcodes.php");
 
 require_once(e_HANDLER."calendar/calendar_class.php");
@@ -80,6 +80,17 @@ require_once(HEADERF);
 
 if (isset($_POST['updatesettings']))
 {
+	if(!varsettrue($pref['auth_method']) || $pref['auth_method'] == '>e107')
+	{
+		$pref['auth_method'] = 'e107';
+	}
+	
+	if($pref['auth_method'] != 'e107')
+	{
+		$_POST['password1'] = '';
+		$_POST['password2'] = '';
+	}
+
 	if ($_uid && ADMIN)
 	{
 		$inp = $_uid;
@@ -89,7 +100,6 @@ if (isset($_POST['updatesettings']))
 	{
 		$inp = USERID;
 	}
-
 	$_POST['image'] = str_replace(array('\'', '"', '(', ')'), '', $_POST['image']);   // these are invalid anyways, so why allow them? (XSS Fix)
 	// check prefs for required fields =================================.
 
@@ -101,15 +111,16 @@ if (isset($_POST['updatesettings']))
 		$pref['im_width'] = ($pref['im_width']) ? $pref['im_width'] : 120;
 		$pref['im_height'] = ($pref['im_height']) ? $pref['im_height'] : 100;
 		if ($avwidth > $pref['im_width']) {
-			$avmsg .= LAN_USET_1."<br />".LAN_USET_2.": {$pref['im_width']}<br /><br />";
+			$avmsg .= LAN_USET_1." ($avwidth)<br />".LAN_USET_2.": {$pref['im_width']}<br /><br />";
 		}
 		if ($avheight > $pref['im_height']) {
-			$avmsg .= LAN_USET_3."<br />".LAN_USET_4.": {$pref['im_height']}";
+			$avmsg .= LAN_USET_3." ($avheight)<br />".LAN_USET_4.": {$pref['im_height']}";
 		}
 		if ($avmsg) {
 			$_POST['image'] = "";
-			$messsage = $avmsg;
+			$error = $avmsg;
 		}
+
 	}
 
 	$signup_option_title = array(LAN_308, LAN_120, LAN_121, LAN_122, LAN_USET_6);
@@ -123,51 +134,6 @@ if (isset($_POST['updatesettings']))
 		}
     }
 
-
-	if($sql->db_Select('user_extended_struct'))	{
-		while($row = $sql->db_Fetch()) {
-			$extList["user_".$row['user_extended_struct_name']] = $row;
-		}
-	}
-
-	$ue_fields = "";
-	foreach($_POST['ue'] as $key => $val)
-	{
-		$err = false;
-		$parms = explode("^,^", $extList[$key]['user_extended_struct_parms']);
-		$regex = $tp->toText($parms[1]);
-		$regexfail = $tp->toText($parms[2]);
-		if(defined($regexfail)) {$regexfail = constant($regexfail);}
-		if($val == '' && $extList[$key]['user_extended_struct_required'] == 1 && !$_uid)
-		{
-			$error .= LAN_SIGNUP_6.substr($key,5)." ".LAN_SIGNUP_7."\\n";
-			$err = TRUE;
-		}
-		if($regex != "" && $val != "")
-		{
-			if(!preg_match($regex, $val))
-			{
-				$error .= $regexfail."\\n";
-				$err = TRUE;
-			}
-		}
-		if(!$err)
-		{
-			$val = $tp->toDB($val);
-			$ue_fields .= ($ue_fields) ? ", " : "";
-			$ue_fields .= $key."='".$val."'";
-		}
-	}
-	if($ue_fields)
-	{
-		$hidden_fields = implode("^", array_keys($_POST['hide']));
-		if($hidden_fields != "")
-		{
-			$hidden_fields = "^".$hidden_fields."^";
-		}
-		$ue_fields .= ", user_hidden_fields = '".$hidden_fields."'";
-	}
-
 	// ====================================================================
 
 	$pwreset = "";
@@ -176,9 +142,9 @@ if (isset($_POST['updatesettings']))
 	}
 	else
 	{
-		if($_POST['password1'] != "")
+		if(trim($_POST['password1']) != "")
 		{
-			$pwreset = ", user_password = '".md5($_POST['password1'])."' ";
+			$pwreset = "user_password = '".md5(trim($_POST['password1']))."', ";
 		}
 	}
 
@@ -192,15 +158,19 @@ if (isset($_POST['updatesettings']))
 		}
 	}
 
-	if (strlen($_POST['password1']) < $pref['signup_pass_len'] && $_POST['password1'] != "") {
+	if (strlen(trim($_POST['password1'])) < $pref['signup_pass_len'] && trim($_POST['password1']) != "") {
 		$error .= LAN_SIGNUP_4.$pref['signup_pass_len'].LAN_SIGNUP_5."\\n";
 		$password1 = "";
 		$password2 = "";
 	}
 
-	if (!check_email($_POST['email'])) 
+	if (isset($pref['disable_emailcheck']) && $pref['disable_emailcheck']==1)
 	{
-	  	$error .= LAN_106."\\n";
+	} else {
+		if (!check_email($_POST['email']))
+		{
+	  		$error .= LAN_106."\\n";
+		}
 	}
 
 	if ($sql->db_Select("user", "user_name, user_email", "user_email='".$tp -> toDB($_POST['email'])."' AND user_id !=".USERID."' ")) {
@@ -208,21 +178,13 @@ if (isset($_POST['updatesettings']))
 	}
 
 //	$username = strip_tags($_POST['username']);
-	$loginname = strip_tags($_POST['loginname']);
-	
-	if (!$loginname)
-	{
-		$sql->db_Select("user", "user_loginname", "user_id='".intval($inp)."'");
-		$row = $sql -> db_Fetch();
-		$loginname = $row['user_loginname'];
-	}
-	
+
 	$user_sess = "";
 	if ($file_userfile['error'] != 4)
 	{
 		require_once(e_HANDLER."upload_handler.php");
 		require_once(e_HANDLER."resize_handler.php");
-		
+
 		if ($uploaded = file_upload(e_FILE."public/avatars/", "avatar"))
 		{
 			if ($uploaded[0]['name'] && $pref['avatar_upload'])
@@ -247,27 +209,11 @@ if (isset($_POST['updatesettings']))
 
 	if ($user_sess != "")
 	{
-		$sesschange = ", user_sess = '".$tp->toDB($user_sess)."' ";
+		$sesschange = "user_sess = '".$tp->toDB($user_sess)."', ";
 	}
 
 	if (!$error)
 	{
-		if (isset($_POST['username']) && check_class($pref['displayname_class']))
-		{
-			$username = strip_tags($_POST['username']);
-			$username = $tp->toDB(substr($username, 0, $pref['displayname_maxlength']));
-			$new_username = "user_name = '{$username}'";
-		}
-
-		$_POST['signature'] = $tp->toDB($_POST['signature']);
-		$_POST['realname'] = $tp->toDB($_POST['realname']);
-
-		$new_customtitle = "";
-
-		if(isset($_POST['customtitle']) && ($pref['forum_user_customtitle'] || ADMIN))
-		{
-			$new_customtitle = ", user_customtitle = '".$tp->toDB($_POST['customtitle'])."' ";
-		}
 		unset($_POST['password1']);
 		unset($_POST['password2']);
 
@@ -283,7 +229,87 @@ if (isset($_POST['updatesettings']))
 
 		if ($ret == '')
 		{
-			$sql->db_Update("user", "{$new_username} {$pwreset} ".$sesschange.", user_email='".$tp -> toDB($_POST['email'])."', user_signature='".$_POST['signature']."', user_image='".$tp -> toDB($_POST['image'])."', user_timezone='".$tp -> toDB($_POST['timezone'])."', user_hideemail='".$tp -> toDB($_POST['hideemail'])."', user_login='".$_POST['realname']."' {$new_customtitle}, user_xup='".$tp -> toDB($_POST['user_xup'])."' WHERE user_id='".intval($inp)."' ");
+			$udata = get_user_data($inp);
+			$peer = ($inp == USERID ? false : true);
+			$loginname = strip_tags($_POST['loginname']);
+
+			if (!$loginname)
+			{
+				$sql->db_Select("user", "user_loginname", "user_id='".intval($inp)."'");
+				$row = $sql -> db_Fetch();
+				$loginname = $row['user_loginname'];
+			}
+			else
+			{
+				if(!check_class($pref['displayname_class'], $udata['user_class'], $peer))
+				{
+					$new_username = "user_name = '{$loginname}', ";
+				}
+			}
+
+			if (isset($_POST['username']) && check_class($pref['displayname_class']))
+			{
+				$username = strip_tags($_POST['username']);
+				$username = $tp->toDB(substr($username, 0, $pref['displayname_maxlength']));
+				$new_username = "user_name = '{$username}', ";
+			}
+			
+
+			$_POST['signature'] = $tp->toDB($_POST['signature']);
+			$_POST['realname'] = $tp->toDB($_POST['realname']);
+
+			$new_customtitle = "";
+
+			if(isset($_POST['customtitle']) && ($pref['forum_user_customtitle'] || ADMIN))
+			{
+				$new_customtitle = ", user_customtitle = '".$tp->toDB($_POST['customtitle'])."' ";
+			}
+
+			if($sql->db_Select('user_extended_struct'))	{
+				while($row = $sql->db_Fetch()) {
+					$extList["user_".$row['user_extended_struct_name']] = $row;
+				}
+			}
+
+			$ue_fields = "";
+			foreach($_POST['ue'] as $key => $val)
+			{
+				$err = false;
+				$parms = explode("^,^", $extList[$key]['user_extended_struct_parms']);
+				$regex = $tp->toText($parms[1]);
+				$regexfail = $tp->toText($parms[2]);
+				if(defined($regexfail)) {$regexfail = constant($regexfail);}
+				if($val == '' && $extList[$key]['user_extended_struct_required'] == 1 && !$_uid)
+				{
+					$error .= LAN_SIGNUP_6.substr($key,5)." ".LAN_SIGNUP_7."\\n";
+					$err = TRUE;
+				}
+				if($regex != "" && $val != "")
+				{
+					if(!preg_match($regex, $val))
+					{
+						$error .= $regexfail."\\n";
+						$err = TRUE;
+					}
+				}
+				if(!$err)
+				{
+					$val = $tp->toDB($val);
+					$ue_fields .= ($ue_fields) ? ", " : "";
+					$ue_fields .= $key."='".$val."'";
+				}
+			}
+			if($ue_fields)
+			{
+				$hidden_fields = implode("^", array_keys($_POST['hide']));
+				if($hidden_fields != "")
+				{
+					$hidden_fields = "^".$hidden_fields."^";
+				}
+				$ue_fields .= ", user_hidden_fields = '".$hidden_fields."'";
+			}
+
+			$sql->db_Update("user", "{$new_username} {$pwreset} {$sesschange} user_email='".$tp -> toDB($_POST['email'])."', user_signature='".$_POST['signature']."', user_image='".$tp -> toDB($_POST['image'])."', user_timezone='".$tp -> toDB($_POST['timezone'])."', user_hideemail='".$tp -> toDB($_POST['hideemail'])."', user_login='".$_POST['realname']."' {$new_customtitle}, user_xup='".$tp -> toDB($_POST['user_xup'])."' WHERE user_id='".intval($inp)."' ");
 			// If user has changed display name, update the record in the online table
 			if(isset($username) && ($username != USERNAME) && !$_uid)
 			{
@@ -327,7 +353,7 @@ if (isset($_POST['updatesettings']))
 					$sql->db_Update("user", "user_class='".$nid."' WHERE user_id='".intval($inp)."'");
 				}
 			}
-			
+
 			if($update_xup == TRUE)
 			{
 				require_once(e_HANDLER."login.php");
@@ -382,7 +408,7 @@ $tmp[] = e_UC_PUBLIC;
 if($curVal['user_admin'] == 1)
 {
 	$tmp[] = e_UC_ADMIN;
-}	
+}
 $curVal['userclass_list'] = implode(",", $tmp);
 
 if($_POST)

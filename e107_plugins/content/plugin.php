@@ -16,12 +16,12 @@
 if (!defined('e107_INIT')) { exit; }
 
 global $PLUGINS_DIRECTORY;
-$lan_file = e_PLUGIN."content/languages/".e_LANGUAGE."/lan_content_admin.php";
-include_once(file_exists($lan_file) ? $lan_file : e_PLUGIN."content/languages/English/lan_content_admin.php");
+@include_once(e_PLUGIN.'content/languages/'.e_LANGUAGE.'/lan_content_admin.php');
+@include_once(e_PLUGIN.'content/languages/English/lan_content_admin.php');
 
 // Plugin info -------------------------------------------------------------------------------------------------------
-$eplug_name = CONTENT_PLUGIN_LAN_1;
-$eplug_version = "1.21";
+$eplug_name = "CONTENT_PLUGIN_LAN_1";
+$eplug_version = "1.24";
 $eplug_author = "Eric Vanderfeesten (lisa)";
 $eplug_logo = "";
 $eplug_url = "http://eindhovenseschool.net";
@@ -49,11 +49,6 @@ $eplug_caption = CONTENT_PLUGIN_LAN_3;
 // List of preferences -----------------------------------------------------------------------------------------------
 $eplug_prefs = array();
 
-// List of comment_type ids used by this plugin. ----------------------------- 
-$eplug_comment_ids = array("pcontent");
-
-// List of bbcode -----------------------------------------------------------------------------------------------
-//$eplug_bb = array('pcontent');
 
 // List of table names -----------------------------------------------------------------------------------------------
 $eplug_table_names = array(
@@ -87,8 +82,8 @@ $eplug_tables = array(
 	content_layout varchar(255) NOT NULL default '',
 	PRIMARY KEY  (content_id)
 	) TYPE=MyISAM;",
-	"INSERT INTO ".MPREFIX."pcontent VALUES (1, 'content', '', '', '', '1', '', '', '', '0', '0', '0', '0', '', '".time()."', '0', '0', '', '1', '0', '', '')", 
-	"INSERT INTO ".MPREFIX."pcontent VALUES (2, 'article', '', '', '', '1', '', '', '', '0', '0', '0', '0', '', '".time()."', '0', '0', '', '2', '0', '', '')", 
+	"INSERT INTO ".MPREFIX."pcontent VALUES (1, 'content', '', '', '', '1', '', '', '', '0', '0', '0', '0', '', '".time()."', '0', '0', '', '1', '0', '', '')",
+	"INSERT INTO ".MPREFIX."pcontent VALUES (2, 'article', '', '', '', '1', '', '', '', '0', '0', '0', '0', '', '".time()."', '0', '0', '', '2', '0', '', '')",
 	"INSERT INTO ".MPREFIX."pcontent VALUES (3, 'review', '', '', '', '1', '', '', '', '0', '0', '0', '0', '', '".time()."', '0', '0', '', '3', '0', '', '')"
 );
 

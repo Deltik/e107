@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/upload.php,v $
-|     $Revision: 1.12 $
-|     $Date: 2006/01/10 19:22:30 $
+|     $Revision: 1.16 $
+|     $Date: 2006/10/22 22:57:54 $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -24,6 +24,8 @@ if (!$pref['upload_enabled'] || $pref['upload_class'] == 255) {
 }
 
 require_once(HEADERF);
+
+if (!defined("USER_WIDTH")){ define("USER_WIDTH","width:97%"); }
 
 if (!check_class($pref['upload_class'])) {
 	$text = "<div style='text-align:center'>".LAN_403."</div>";
@@ -56,7 +58,10 @@ if (isset($_POST['upload'])) {
 				$poster = (USER ? USERID.".".USERNAME : "0".$_POST['file_poster']);
 				$_POST['file_email'] = ($_POST['file_email'] ? $_POST['file_email'] : USEREMAIL);
 				$_POST['file_description'] = $tp->toDB($_POST['file_description']);
-				$sql->db_Insert("upload", "0, '".$tp -> toDB($poster)."', '".$tp -> toDB(check_email($_POST['file_email']))."', '".$tp -> toDB($_POST['file_website'])."', '".time()."', '".$tp -> toDB($_POST['file_name'])."', '".$tp -> toDB($_POST['file_version'])."', '".$file."', '".$image."', '".$tp -> toDB($_POST['file_description'])."', '".$tp -> toDB($_POST['file_demo'])."', '".$filesize."', 0, '".$tp -> toDB($_POST['download_category'])."'");
+				$file_time = time();
+				$sql->db_Insert("upload", "0, '".$tp -> toDB($poster)."', '".$tp -> toDB(check_email($_POST['file_email']))."', '".$tp -> toDB($_POST['file_website'])."', '".$file_time."', '".$tp -> toDB($_POST['file_name'])."', '".$tp -> toDB($_POST['file_version'])."', '".$file."', '".$image."', '".$tp -> toDB($_POST['file_description'])."', '".$tp -> toDB($_POST['file_demo'])."', '".$filesize."', 0, '".$tp -> toDB($_POST['download_category'])."'");
+                $edata_fu = array("upload_user" => $poster, "upload_email" => $_POST['file_email'], "upload_name" => $tp -> toDB($_POST['file_name']),"upload_file" => $file, "upload_version" => $_POST['file_version'], "upload_description" => $tp -> toDB($_POST['file_description']), "upload_size" => $filesize, "upload_category" => $tp -> toDB($_POST['download_category']), "upload_website" => $tp -> toDB($_POST['file_website']), "upload_image" => $image, "upload_demo" => $tp -> toDB($_POST['file_demo']), "upload_time" => $file_time);
+				$e_event->trigger("fileupload", $edata_fu);
 				$message .= "<br />".LAN_404;
 			}
 		}
@@ -75,22 +80,17 @@ if (isset($message)) {
 
 $text = "<div style='text-align:center'>
 	<form enctype='multipart/form-data' method='post' action='".e_SELF."'>
-	<table style='width:97%' class='fborder'>
+	<table style='".USER_WIDTH."' class='fborder'>
 	<tr>
 	<td style='width:20%' class='forumheader3'>".DOWLAN_11.":</td>
 	<td style='width:80%' class='forumheader3'>";
 
-$sql->db_Select("download_category", "*", "download_category_parent !=0");
-$text .= "<select name='download_category' class='tbox'>\n";
-while ($row = $sql->db_Fetch()) {
-	extract($row);
-	if ($download_category_id == $download_category) {
-		$text .= "<option value='$download_category_id' selected>".$tp->toHTML($download_category_name)."</option>\n";
-	} else {
-		$text .= "<option value='$download_category_id'>".$tp->toHTML($download_category_name)."</option>\n";
-	}
-}
-$text .= "</select>
+	require_once(e_FILE."shortcode/batch/download_shortcodes.php");
+	$dlparm = (isset($download_category)) ? $download_category : "";
+	$text .= $tp->parseTemplate("{DOWNLOAD_CATEGORY_SELECT={$dlparm}}",true,$download_shortcodes);
+
+
+$text .= "
 	</td>
 	</tr>
 

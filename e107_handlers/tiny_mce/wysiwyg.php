@@ -4,15 +4,15 @@
 |     e107 website system - Tiny MCE controller file.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/tiny_mce/wysiwyg.php,v $
-|     $Revision: 1.24 $
-|     $Date: 2006/04/30 23:06:43 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.29 $
+|     $Date: 2006/11/10 07:06:57 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
 function wysiwyg($formids){
 define("ADMIN","");
-global $pref,$HANDLERS_DIRECTORY;
+global $pref,$HANDLERS_DIRECTORY,$PLUGINS_DIRECTORY,$IMAGES_DIRECTORY;
 $lang = e_LANGUAGE;
 $tinylang = array(
 	"Arabic" => "ar",
@@ -53,23 +53,23 @@ $text .= ",plugins : 'table,contextmenu";
 
 $text .= ($pref['smiley_activate']) ? ",emoticons" : "";
 $text .= (ADMIN) ? ",ibrowser" : ",image";
-$text .= ",iespell,zoom,flash,forecolor";
+$text .= ",iespell,zoom,media,forecolor";
 $text .= "'\n"; // end of plugins list.
 
 $text .= ",theme_advanced_buttons1 : 'fontsizeselect,separator,bold,italic,underline,separator,justifyleft,justifycenter,justifyright,justifyfull,separator,bullist,numlist,outdent, indent,separator, forecolor,cut,copy,paste'";
 
 $text .= ",theme_advanced_buttons2   : 'tablecontrols,separator,undo,redo,separator,link,unlink";
 $text .= ($pref['smiley_activate']) ? ",emoticons" : "";
-$text .= ",charmap,iespell,flash";
+$text .= ",charmap,iespell,media";
 $text .= (ADMIN) ? ",ibrowser," : ",image";
 $text .= (ADMIN) ? ",code" : "";
 $text .= "'"; // end of buttons 2
 
 $text .= ",theme_advanced_buttons3 : ''";
 $text .= ",theme_advanced_toolbar_location : 'top'";
-$text .= ",extended_valid_elements : 'p[style],a[name|href|target|rel|title|style],img[class|src|style|alt|title|name],hr[class],span[class|style],div[class|style],table[class|style|cellpadding|cellspacing]'";
+$text .= ",extended_valid_elements : 'p[style],a[name|href|target|rel|title|style|class],img[class|src|style|alt|title|name],hr[class],span[align|class|style],div[align|class|style|height|width] ,table[class|style|cellpadding|cellspacing|background|height|width],td[background|style|class|valign|align|height|width]'";
 $text .= ",invalid_elements: 'p,font,align,script,applet,iframe'\n";
-// $text .= ",auto_cleanup_word: true\n";
+$text .= ",auto_cleanup_word: true\n";
 $text .= ",convert_fonts_to_spans : true\n";
 $text .= ",trim_span_elements: true\n";
 $text .= ",inline_styles: true\n";
@@ -79,7 +79,7 @@ $text .= ",force_p_newlines: false\n";
 $text .= ",entity_encoding: \"raw\" \n";
 $text .= ",convert_fonts_to_styles: true\n";
 $text .= ",remove_script_host : true\n";
-$text .= ",relative_urls: false\n";
+$text .= ",relative_urls: true\n";
 $text .= ",document_base_url: '".SITEURL."'\n";
 $text .= ",theme_advanced_styles: 'border=border;fborder=fborder;tbox=tbox;caption=caption;fcaption=fcaption;forumheader=forumheader;forumheader3=forumheader3'\n";
 $text .= ",popup_css: '".THEME."style.css'\n";
@@ -91,42 +91,70 @@ $text .= "
 
 	});
 
-function tinymce_html_bbcode_control(type, value) {
+function tinymce_html_bbcode_control(type, source) {
 
-	switch (type) {
+    switch (type) {
 
-		case 'get_from_editor':
+        case 'get_from_editor':
+            // Convert HTML to e107-BBcode
+            source = source.replace(/target=\"_blank\"/, 'rel=\"external\"');
+            source = source.replace(/^\s*|\s*$/g,'');
+            if(source != '')
+            {
+                source = '[html]\\n' + source + '\\n[/html]';
+/*
+				source = source.replace(/<\/strong>/gi,'[/b]');
+                source = source.replace(/<strong>/gi,'[b]');
+                source = source.replace(/<\/em>/gi,'[/i]');
+                source = source.replace(/<em>/gi,'[i]');
+                source = source.replace(/<\/u>/gi,'[/u]');
+                source = source.replace(/<u>/gi,'[u]');
+                source = source.replace(/<\/strong>/gi,'[/b]');
+                source = source.replace(/<img/gi,'[img');
+                source = source.replace(/<\/strong>/gi,'[/b]');
+				source = source.replace(/<a href=\"(.*?)\"(.*?)>(.*?)<\/a>/gi,'[link=$1 $2]$3[/link]');
+*/
 
-			value = value.replace(/target=\"_blank\"/, 'rel=\"external\"');
-			value = value.replace(/^\s*|\s*$/g,'');
-			if(value != '')
-			{
-				value = '[html]\\n' + value + '\\n[/html]';
-			}
+            }
 
-			break;
+		// Convert e107 paths.
 
-		case 'insert_to_editor':
+				source = source.replace('\"".$IMAGES_DIRECTORY."','\"{e_IMAGE}');
+				source = source.replace('\"".$PLUGINS_DIRECTORY."','\"{e_PLUGIN}');
+				source = source.replace('\'".$IMAGES_DIRECTORY."','\'{e_IMAGE}');
+				source = source.replace('\'".$PLUGINS_DIRECTORY."','\'{e_PLUGIN}');
 
-			value = value.replace(/rel=\"external\"/, 'target=\"_blank\"');
 
-			html_bbcode_check = value.slice(0,6);
+            break;
 
-			if (html_bbcode_check == '[html]') {
-				value = value.slice(6);
-			}
+        case 'insert_to_editor':
+		// Convert e107-BBcode to HTML
+            source = source.replace(/rel=\"external\"/, 'target=\"_blank\"');
 
-			html_bbcode_check = value.slice(-7);
+            html_bbcode_check = source.slice(0,6);
 
-			if (html_bbcode_check == '[/html]') {
-				value = value.slice(0, -7);
-			}
+            if (html_bbcode_check == '[html]') {
+                source = source.slice(6);
+            }
 
-			break;
-	}
+            html_bbcode_check = source.slice(-7);
 
-	return value;
+            if (html_bbcode_check == '[/html]') {
+                source = source.slice(0, -7);
+            }
+/*
+			source = source.replace(/\[b\]/gi,'<strong>');
+			source = source.replace(/\[\/b\]/gi,'<\/strong>');
+*/
+			source = source.replace(/\{e_IMAGE\}/gi,'".$IMAGES_DIRECTORY."');
+			source = source.replace(/\{e_PLUGIN\}/gi,'".$PLUGINS_DIRECTORY."');
+
+            break;
+    }
+
+    return source;
 }
+
 
 </script>\n
 ";

@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/chatbox_menu/admin_chatbox.php,v $
-|     $Revision: 1.16 $
-|     $Date: 2006/05/19 22:02:22 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.18 $
+|     $Date: 2006/11/20 12:49:40 $
+|     $Author: mrpete $
 +----------------------------------------------------------------------------+
 */
 require_once("../../class2.php");
@@ -29,8 +29,6 @@ require_once(e_HANDLER."userclass_class.php");
 if (isset($_POST['updatesettings'])) {
 
 	$pref['chatbox_posts'] = $_POST['chatbox_posts'];
-	$pref['cb_linkc'] = $tp->toDB($_POST['cb_linkc']);
-	$pref['cb_linkreplace'] = $_POST['cb_linkreplace'];
 	$pref['cb_layer'] = $_POST['cb_layer'];
 	$pref['cb_layer_height'] = ($_POST['cb_layer_height'] ? $_POST['cb_layer_height'] : 200);
 	$pref['cb_emote'] = $_POST['cb_emote'];
@@ -52,7 +50,7 @@ if (isset($_POST['prune'])) {
 if (isset($_POST['recalculate'])) {
 	$sql->db_Update("user", "user_chats = 0");
 	$qry = "SELECT u.user_id AS uid, count(c.cb_nick) AS count FROM #chatbox AS c
-		LEFT JOIN #user AS u on FLOOR(c.cb_nick) = u.user_id
+		LEFT JOIN #user AS u ON SUBSTRING_INDEX(c.cb_nick,'.',1) = u.user_id
 		WHERE u.user_id > 0
 		GROUP BY uid";
 
@@ -60,7 +58,7 @@ if (isset($_POST['recalculate'])) {
 			$ret = array();
 			while($row = $sql -> db_Fetch())
 			{
-				$list[$row['uid']] = $row['count'];	
+				$list[$row['uid']] = $row['count'];
 			}
 		}
 
@@ -76,8 +74,6 @@ if (isset($message)) {
 }
 
 $chatbox_posts = $pref['chatbox_posts'];
-$cb_linkreplace = $pref['cb_linkreplace'];
-$cb_linkc = $pref['cb_linkc'];
 
 $text = "<div style='text-align:center'>
 	<form method='post' action='".e_SELF."' id='cbform'>
@@ -127,7 +123,7 @@ $text .= "</select>
 	</tr>
 
 	<tr><td class='forumheader3' style='width:40%'>".CHBLAN_36."</td>
-	<td class='forumheader3' style='width:60%'>". 
+	<td class='forumheader3' style='width:60%'>".
 	($pref['cb_layer'] == 0 ? "<input type='radio' name='cb_layer' value='0' checked='checked' />" : "<input type='radio' name='cb_layer' value='0' />")."&nbsp;&nbsp;". CHBLAN_37."<br />".
 	($pref['cb_layer'] == 1 ? "<input type='radio' name='cb_layer' value='1' checked='checked' />" : "<input type='radio' name='cb_layer' value='1' />")."&nbsp;".CHBLAN_29."&nbsp;--&nbsp;". CHBLAN_30.": <input class='tbox' type='text' name='cb_layer_height' size='8' value='".$pref['cb_layer_height']."' maxlength='3' /><br />".
 	($pref['cb_layer'] == 2 ? "<input type='radio' name='cb_layer' value='2' checked='checked' />" : "<input type='radio' name='cb_layer' value='2' />")."&nbsp;&nbsp;". CHBLAN_38."
@@ -157,8 +153,8 @@ $text .= "</select>
 	<input class='button' type='submit' name='prune' value='".CHBLAN_21."' />
 	</td>
 	</tr>";
-	
-	
+
+
 	$text .= "<tr>
 	<td class='forumheader3' style='width:40%'>".CHBLAN_34.":</td>
 	<td class='forumheader3' style='width:60%'>

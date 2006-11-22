@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/update_routines.php,v $
-|     $Revision: 1.178 $
-|     $Date: 2006/04/09 00:51:16 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.192 $
+|     $Date: 2006/11/17 18:17:38 $
+|     $Author: sweetas $
 +----------------------------------------------------------------------------+
 */
 
@@ -71,6 +71,7 @@ if($sql->db_Select("plugin", "plugin_version", "plugin_path = 'pm' AND plugin_in
 }
 
 // $dbupdate["701_to_702"] = LAN_UPDATE_8." .7.1 ".LAN_UPDATE_9." .7.2";
+$dbupdate["70x_to_706"] = LAN_UPDATE_8." .70x ".LAN_UPDATE_9." .706";
 $dbupdate["617_to_700"] = LAN_UPDATE_8." .617 ".LAN_UPDATE_9." .7";
 $dbupdate["616_to_617"] = LAN_UPDATE_8." .616 ".LAN_UPDATE_9." .617";
 $dbupdate["615_to_616"] = LAN_UPDATE_8." .615 ".LAN_UPDATE_9." .616";
@@ -100,7 +101,7 @@ function update_check() {
 
 	if ($update_needed === TRUE) {
 		$txt = "<div style='text-align:center;'>".ADLAN_120;
-		$txt .= "<br /><form method='POST' action='".e_ADMIN."e107_update.php'>
+		$txt .= "<br /><form method='post' action='".e_ADMIN."e107_update.php'>
 		<input class='button' type='submit' value='".LAN_UPDATE."' />
 		</form></div>";
 		$ns->tablerender(LAN_UPDATE, $txt);
@@ -115,6 +116,110 @@ function update_701_to_702($type='') {
 
 }
 */
+
+function update_70x_to_706($type='') {
+	global $sql,$ns;
+
+	if ($type == "do")
+	{
+		//rename plugin_rss field
+		if($sql->db_Field("plugin",5) == "plugin_rss")
+		{
+			mysql_query("ALTER TABLE `".MPREFIX."plugin` CHANGE `plugin_rss` `plugin_addons` TEXT NOT NULL;");
+			catch_error();
+		}
+
+		if(!$sql->db_Field("plugin",5))  // not plugin_rss so just add the new one.
+		{
+        	mysql_query("ALTER TABLE `".MPREFIX."plugin` ADD `plugin_addons` TEXT NOT NULL ;");
+			catch_error();
+		}
+
+		if($sql->db_Field("dblog",5) == "dblog_query")
+		{
+			mysql_query("ALTER TABLE `".MPREFIX."dblog` CHANGE `dblog_query` `dblog_title` VARCHAR( 255 ) NOT NULL DEFAULT '';");
+			catch_error();
+			mysql_query("ALTER TABLE `".MPREFIX."dblog` CHANGE `dblog_remarks` `dblog_remarks` TEXT NOT NULL;");
+			catch_error();
+		}
+
+		if(!$sql->db_Field("plugin","plugin_path","UNIQUE"))
+		{
+            if(!mysql_query("ALTER TABLE `".MPREFIX."plugin` ADD UNIQUE (`plugin_path`);"))
+			{
+				$mes = "<div style='text-align:center'>".LAN_UPDATE_12." : <a href='".e_ADMIN."db.php?plugin'>".ADLAN_145."</a>.</div>";
+                $ns -> tablerender(LAN_ERROR,$mes);
+            	catch_error();
+			}
+
+		}
+
+		if ($sql -> db_Query("SHOW INDEX FROM ".MPREFIX."tmp")) 
+		{
+			$row = $sql -> db_Fetch();
+			if (!in_array('tmp_ip', $row)) {
+				mysql_query("ALTER TABLE `".MPREFIX."tmp` ADD INDEX `tmp_ip` (`tmp_ip`);");
+				mysql_query("ALTER TABLE `".MPREFIX."upload` ADD INDEX `upload_active` (`upload_active`);");
+				mysql_query("ALTER TABLE `".MPREFIX."generic` ADD INDEX `gen_type` (`gen_type`);");
+			}
+		}
+
+
+		// update new fields
+        require_once(e_HANDLER."plugin_class.php");
+		$ep = new e107plugin;
+		$ep->update_plugins_table();
+		$ep->save_addon_prefs();
+
+		if(!$sql->db_Field("online",6)) // online_active field
+		{
+			mysql_query("ALTER TABLE ".MPREFIX."online ADD online_active INT(10) UNSIGNED NOT NULL DEFAULT '0'");
+			catch_error();
+		}
+
+		return '';
+
+	}
+	else
+	{
+
+		if($sql->db_Field("plugin",5) == "plugin_rss")
+		{
+			return update_needed();
+		}
+
+		if($sql->db_Field("dblog",5) == "dblog_query")
+		{
+        	return update_needed();
+		}
+
+		if(!$sql->db_Field("plugin",5))
+		{
+			return update_needed();
+		}
+
+		if(!$sql->db_Field("plugin","plugin_path","UNIQUE"))
+		{
+            return update_needed();
+		}
+
+		if(!$sql->db_Field("online",6)) // online_active field
+		{
+			return update_needed();
+		}
+		
+		if ($sql -> db_Query("SHOW INDEX FROM ".MPREFIX."tmp")) 
+		{
+			$row = $sql -> db_Fetch();
+			if (!in_array('tmp_ip', $row)) {
+				return update_needed();
+			}
+		}
+
+		// No updates needed
+	 	return TRUE;
+	}
+}
 
 // ------------------------------- .6 to .7 ----------------------------------
 function update_617_to_700($type='') {
@@ -396,7 +501,6 @@ function update_617_to_700($type='') {
 				$sql->db_Insert("plugin", "0, 'Links Page', '1.0', 'links_page', 1");
 				$sql->db_Update("links", "link_url = '".$PLUGINS_DIRECTORY."links_page/links.php' WHERE link_url = 'links.php'");
 
-				$pref['plug_latest'] = $pref['plug_latest'].",links_page";
 				$s_prefs = TRUE;
 			}
 		// end links update -------------------------------------------------------------------------------------------
@@ -500,7 +604,7 @@ function update_617_to_700($type='') {
 					$parms = explode("|", $val);
 					$ext_name['ue_'.$key] = 'user_'.preg_replace("#\W#","",$parms[0]);
 					$new_field['name'] = preg_replace("#\W#","",$parms[0]);
-					$new_field['text'] = $parms[0];
+					$new_field['text'] = str_replace('_',' ',$parms[0]); // Spaces are ok now
 					$new_field['type'] = $new_types[$parms[1]];
 					$new_field['values'] = $parms[2];
 					$new_field['default'] = $parms[3];
@@ -641,8 +745,6 @@ function update_617_to_700($type='') {
 			if (!$sql->db_Select("plugin", "plugin_path", "plugin_path='chatbox_menu'")) {
 				$sql->db_Insert("plugin", "0, 'Chatbox', '1.0', 'chatbox_menu', 1");
 				catch_error();
-				$pref['plug_status'] = $pref['plug_status'].",chatbox_menu";
-				$s_prefs = TRUE;
 			}
 		// end chatbox update -------------------------------------------------------------------------------------------
 
@@ -688,12 +790,20 @@ function update_617_to_700($type='') {
 		}
 
 
+
+         // fix for the the moving of the stats.php file in 0.7.
+			if($sql -> db_Select("links", "*", "link_url = 'stats.php'")){
+				$sql -> db_Update("links", "link_url='{"."e_PLUGIN"."}log/stats.php' WHERE link_url='stats.php' ");
+				catch_error();
+			}
+
 		// Missing Forum upgrade stuff by Cam.
+
 			global $PLUGINS_DIRECTORY;
 			if($sql -> db_Select("links", "*", "link_url = 'forum.php'")){
 				$sql -> db_Insert("plugin", "0, 'Forum', '1.1', 'forum', '1' ");
 				catch_error();
-				$sql -> db_Update("links", "link_url='".$PLUGINS_DIRECTORY."forum/forum.php' WHERE link_url='forum.php' ");
+				$sql -> db_Update("links", "link_url='{"."e_PLUGIN"."}forum/forum.php' WHERE link_url='forum.php' ");
 				catch_error();
 			}
 
@@ -910,20 +1020,36 @@ function update_617_to_700($type='') {
 				$sql -> db_Select("links", "link_id,link_name", "link_name NOT LIKE 'submenu.%' ORDER BY link_name");
 				while($row = $sql-> db_Fetch()){
 					$name = $row['link_name'];
-					$parent[$name] = $row['link_id'];
-				}
-        			if(!is_object($sql2)){
-        				$sql2 = new db;
+					$parent[$name] = $row['link_id']; // Possible top level parents
 				}
 				$sql -> db_Select("links", "link_id,link_name", "link_name LIKE 'submenu.%' ORDER BY link_name");
 				while($row = $sql-> db_Fetch()){
 					$tmp = explode(".",$row['link_name']);
-            				$nm = $tmp[1];
+					if (count($tmp) == 3) {
+						$name = $tmp[2]; // submenu.topname.midname
+						$parent[$name] = $row['link_id']; // Possible mid-level parents
+					}
+				}
+        if(!is_object($sql2)){
+        	$sql2 = new db;
+				}
+				$sql -> db_Select("links", "link_id,link_name", "link_name LIKE 'submenu.%' ORDER BY link_name");
+				while($row = $sql-> db_Fetch()){
+					$tmp = explode(".",$row['link_name']);
+					$nm = $tmp[1];
 					$id = $row['link_id'];
-			   		$sql2 -> db_Update("links", "link_parent='".$parent[$nm]."' WHERE link_id ='$id' ");
+					$sql2 -> db_Update("links", "link_parent='".$parent[$nm]."' WHERE link_id ='$id' ");
 					catch_error();
 				}
-        		}
+				$sql -> db_Select("links", "link_id,link_name", "link_name LIKE '%.child.%' ORDER BY link_name");
+				while($row = $sql-> db_Fetch()){
+					$tmp = explode(".",$row['link_name']);
+					$nm = $tmp[2]; // submenu.topname.midname.child.finalname
+					$id = $row['link_id'];
+					$sql2 -> db_Update("links", "link_parent='".$parent[$nm]."' WHERE link_id ='$id' ");
+					catch_error();
+				}
+      }
 
 		//20050626 : update links_page_cat and links_page
 			$field1 = $sql->db_Field("links_page_cat",4);
@@ -1038,9 +1164,11 @@ function update_617_to_700($type='') {
 			}
 
 
-			if($sql->db_Field("plugin",5) != "plugin_rss"){
-				mysql_query("ALTER TABLE `".MPREFIX."plugin` ADD `plugin_rss` varchar(255) NOT NULL default ''");
-				catch_error();
+			if (!function_exists("update_70x_to_706")) {
+				if($sql->db_Field("plugin",5) != "plugin_rss"){
+					mysql_query("ALTER TABLE `".MPREFIX."plugin` ADD `plugin_rss` varchar(255) NOT NULL default ''");
+					catch_error();
+				}
 			}
 
 		//20050630: added comment_lock to comments
@@ -1178,7 +1306,7 @@ function update_617_to_700($type='') {
 			if($sql->db_Select("plugin", "plugin_version", "plugin_path = 'calendar_menu' AND plugin_installflag='1' ")) {
 				mysql_query("ALTER TABLE ".MPREFIX."event_cat ADD event_cat_class int(10) unsigned NOT NULL default '0';");
 				mysql_query("ALTER TABLE ".MPREFIX."event_cat ADD event_cat_subs tinyint(3) unsigned NOT NULL default '0';");
-				mysql_query("ALTER TABLE ".MPREFIX."event_cat ADD event_cat_force tinyint(3) unsigned NOT NULL default '0';");
+				// mysql_query("ALTER TABLE ".MPREFIX."event_cat ADD event_cat_force tinyint(3) unsigned NOT NULL default '0';");
 				mysql_query("ALTER TABLE ".MPREFIX."event_cat ADD event_cat_ahead tinyint(3) unsigned NOT NULL default '0';");
 				mysql_query("ALTER TABLE ".MPREFIX."event_cat ADD event_cat_msg1 text;");
 				mysql_query("ALTER TABLE ".MPREFIX."event_cat ADD event_cat_msg2 text;");
@@ -1187,6 +1315,9 @@ function update_617_to_700($type='') {
 				mysql_query("ALTER TABLE ".MPREFIX."event_cat ADD event_cat_today int(10) unsigned NOT NULL default '0';");
 				mysql_query("ALTER TABLE ".MPREFIX."event_cat ADD event_cat_lastupdate int(10) unsigned NOT NULL default '0';");
 				mysql_query("ALTER TABLE ".MPREFIX."event_cat ADD event_cat_addclass int(10) unsigned NOT NULL default '0';");
+// 2 lines added for V3.6 event calendar
+				mysql_query("ALTER TABLE ".MPREFIX."event_cat ADD event_cat_description text");
+				mysql_query("ALTER TABLE ".MPREFIX."event_cat ADD event_cat_force_class int(10) unsigned NOT NULL default '0';");
 
 				mysql_query("CREATE TABLE ".MPREFIX."event_subs (
 					event_subid int(10) unsigned NOT NULL auto_increment,
@@ -1309,8 +1440,10 @@ function update_617_to_700($type='') {
 			return update_needed();
 		}
 
-		if($sql->db_Field("plugin",5) != "plugin_rss"){
-		 	return update_needed();
+		if (!function_exists("update_70x_to_706")) {
+			if($sql->db_Field("plugin",5) != "plugin_rss"){
+				return update_needed();
+			}
 		}
 
 		if($sql->db_Field("links",7) != "link_parent"){
@@ -1525,7 +1658,7 @@ function update_extended_616() {
 function update_needed()
 {
 	global $ns;
-	if(E107_DEBUG_LEVEL > 0)
+	if(E107_DEBUG_LEVEL)
 	{
 		$tmp = debug_backtrace();
 		$ns->tablerender("", "<div style='text-align:center'>Update required in ".basename(__FILE__)." on line ".$tmp[0]['line']."</div>");
@@ -1541,7 +1674,7 @@ function mysql_table_exists($table){
 
 
 function catch_error(){
-	if (mysql_error()!='' && E107_DEBUG_LEVEL > 0) {
+	if (mysql_error()!='' && E107_DEBUG_LEVEL != 0) {
 		$tmp2 = debug_backtrace();
 		$tmp = mysql_error();
 		echo $tmp." [ ".basename(__FILE__)." on line ".$tmp2[0]['line']."] <br />";

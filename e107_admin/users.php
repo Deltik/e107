@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/users.php,v $
-|     $Revision: 1.78 $
-|     $Date: 2006/05/14 06:04:33 $
-|     $Author: e107coders $
+|     $Revision: 1.87 $
+|     $Date: 2006/11/12 04:03:44 $
+|     $Author: mrpete $
 +----------------------------------------------------------------------------+
 */
 require_once("../class2.php");
@@ -43,6 +43,7 @@ $user = new users;
 require_once("auth.php");
 
 require_once(e_HANDLER."form_handler.php");
+require_once(e_HANDLER."userclass_class.php");
 
 $rs = new form;
 
@@ -58,8 +59,12 @@ if (e_QUERY) {
 $from = (isset($from)) ? $from : 0;
 $amount = 30;
 
+
+// ------- Check for Bounces --------------
 if(isset($_POST['check_bounces'])){
 	$user->check_bounces();
+	require_once("footer.php");
+	exit;
 }
 
 
@@ -119,6 +124,8 @@ if (isset($_POST['update_options'])) {
 	$pref['profile_comments'] = $_POST['profile_comments'];
 	$pref['track_online'] = $_POST['track_online'];
 	$pref['force_userupdate'] = $_POST['force_userupdate'];
+	unset($pref['memberlist_access']);
+//	$pref['memberlist_access'] = $_POST['memberlist_access'];
 	save_prefs();
 	$user->show_message(USRLAN_1);
 }
@@ -184,13 +191,13 @@ if (isset($_POST['adduser'])) {
 
 		$username = strip_tags($_POST['name']);
 		$loginname = strip_tags($_POST['loginname']);
-		$ip = $e107->getip();
+
 //		extract($_POST);
 //		for($a = 0; $a <= (count($_POST['userclass'])-1); $a++) {
 //			$svar .= $userclass[$a].".";
 //		}
 		$svar = implode(",", $_POST['userclass']);
-		admin_update($sql -> db_Insert("user", "0, '$username', '$loginname',  '', '".md5($_POST['password1'])."', '$key', '".$_POST['email']."', '".$_POST['signature']."', '".$_POST['image']."', '".$_POST['timezone']."', '1', '".time()."', '".time()."', '".time()."', '0', '0', '0', '0', '".$ip."', '0', '0', '', '', '0', '0', '".$_POST['realname']."', '".$svar."', '', '', '".time()."', ''"), 'insert', USRLAN_70);
+		admin_update($sql -> db_Insert("user", "0, '$username', '$loginname',  '', '".md5($_POST['password1'])."', '$key', '".$_POST['email']."', '".$_POST['signature']."', '".$_POST['image']."', '".$_POST['timezone']."', '1', '".time()."', '".time()."', '".time()."', '0', '0', '0', '0', '0', '0', '0', '', '', '0', '0', '".$_POST['realname']."', '".$svar."', '', '', '".time()."', ''"), 'insert', USRLAN_70);
 	}
 }
 
@@ -311,7 +318,7 @@ if (isset($_POST['useraction']) && $_POST['useraction'] == 'deluser') {
 	}
 }
 // ------- Make Admin.. --------------
-if (isset($_POST['useraction']) && $_POST['useraction'] == "admin") {
+if (isset($_POST['useraction']) && $_POST['useraction'] == "admin" && getperms('3')) {
 	$sql->db_Select("user", "*", "user_id='".$_POST['userid']."'");
 	$row = $sql->db_Fetch();
 	 extract($row);
@@ -323,7 +330,7 @@ if (isset($_POST['useraction']) && $_POST['useraction'] == "admin") {
 }
 
 // ------- Remove Admin --------------
-if (isset($_POST['useraction']) && $_POST['useraction'] == "unadmin") {
+if (isset($_POST['useraction']) && $_POST['useraction'] == "unadmin" && getperms('3')) {
 	$sql->db_Select("user", "*", "user_id='".$_POST['userid']."'");
 	$row = $sql->db_Fetch();
 	 extract($row);
@@ -421,7 +428,7 @@ class users{
 	function show_existing_users($action, $sub_action, $id, $from, $amount) {
 		// ##### Display scrolling list of existing news items ---------------------------------------------------------------------------------------------------------
 
-		global $sql, $rs, $ns, $tp, $mySQLdefaultdb,$pref;
+		global $sql, $rs, $ns, $tp, $mySQLdefaultdb,$pref,$unverified;
 		// save the display choices.
 		if(isset($_POST['searchdisp'])){
 			$pref['admin_user_disp'] = implode("|",$_POST['searchdisp']);
@@ -437,7 +444,7 @@ class users{
 		if ($sql->db_Select("userclass_classes")) {
 			while ($row = $sql->db_Fetch())
 			{
-				$class[$row['userclass_id']] = $tp->toHTML($row['userclass_name'],"","defs");
+				$class[$row['userclass_id']] = $tp->toHTML($row['userclass_name'],"","defs,emotes_off, no_make_clickable");
 			}
 		}
 
@@ -635,10 +642,10 @@ class users{
 						$text .= "<option value='ban'>".USRLAN_30."</option>\n";
 					}
 
-					if (!$user_admin && !$user_ban && $user_ban != 2) {
+					if (!$user_admin && !$user_ban && $user_ban != 2 && getperms('3')) {
 						$text .= "<option value='admin'>".USRLAN_35."</option>\n";
 					}
-					else if ($user_admin && $user_perms != "0") {
+					else if ($user_admin && $user_perms != "0" && getperms('3')) {
 						$text .= "<option value='unadmin'>".USRLAN_34."</option>\n";
 					}
 
@@ -672,7 +679,8 @@ class users{
 
 		}
 
-		$users = $sql->db_Count("user");
+
+		$users = (e_QUERY != "unverified") ? $sql->db_Count("user"): $unverified;
 
 		if ($users > $amount && !$_POST['searchquery']) {
 			$parms = "{$users},{$amount},{$from},".e_SELF."?".(e_QUERY ? "$action.$sub_action.$id." : "main.user_id.desc.")."[FROM]";
@@ -719,7 +727,8 @@ class users{
 
 
 // ======================
-		$caption = USRLAN_77 ."&nbsp;&nbsp;   (total: $users)";
+		$total_cap = (isset($_POST['searchquery'])) ? $user_total : $users;
+		$caption = USRLAN_77 ."&nbsp;&nbsp;   (total: $total_cap)";
 		$ns->tablerender($caption, $text);
 
 	}
@@ -757,6 +766,7 @@ class users{
 
 	function show_prefs() {
 		global $ns, $pref;
+		$pref['memberlist_access'] = varset($pref['memberlist_access'], e_UC_MEMBER);
 		$text = "<div style='text-align:center'>
 			<form method='post' action='".e_SELF."?".e_QUERY."'>
 			<table style='".ADMIN_WIDTH."' class='fborder'>
@@ -814,6 +824,13 @@ class users{
 			<td style='width:50%' class='forumheader3'>".USRLAN_130."<br /><span class='smalltext'>".USRLAN_131."</span></td>
 			<td style='width:50%' class='forumheader3'>&nbsp;
 			<input type='checkbox' name='track_online' value='1'".($pref['track_online'] ? " checked='checked'" : "")." /> ".USRLAN_132."&nbsp;&nbsp;
+			</td>
+			</tr>
+
+
+			<tr>
+			<td style='width:50%' class='forumheader3'>".USRLAN_146.":</td>
+			<td style='width:50%' class='forumheader3'>".r_userclass("memberlist_access",$pref['memberlist_access'], "off", "public,member,guest,admin,main,classes,nobody")."
 			</td>
 			</tr>
 
@@ -987,7 +1004,7 @@ class users{
         	$sql3 = new db;
 		}
 
-        $sql3 -> db_Select_gen($query,TRUE);
+        $sql3 -> db_Select_gen($query);
 			while($row = $sql3-> db_Fetch()){
 				  	echo $row['user_id']." ".$row['user_sess']." ".$row['user_name']." ".$row['user_email']."<br />";
                     $this->resend($row['user_id'],$row['user_sess'],$row['user_name'],$row['user_email'],$row['user_language']);
@@ -1002,7 +1019,7 @@ class users{
 
 // ---------------------------------------------------------------------
 
-	function check_bounces(){
+    function check_bounces(){
 		global $sql,$pref;
         include(e_HANDLER."pop3_class.php");
 
@@ -1011,39 +1028,50 @@ class users{
 		$tot=$obj->getTotalMails();
         $found = FALSE;
 		$DEL = ($pref['mail_bounce_delete']) ? TRUE : FALSE;
-
+        $text = "<br /><div><table class='fborder' style='".ADMIN_WIDTH."'>
+		<tr><td class='fcaption' style='width:5%'>#</td><td class='fcaption'>e107-id</td><td class='fcaption'>email</td><td class='fcaption'>Subject</td><td class='fcaption'>Bounce</td></tr>\n";
 		for($i=1;$i<=$tot;$i++)	{
 			 $head=$obj->getHeaders($i);
+
             if($head['bounce']){
 		   		if (ereg('.*X-e107-id:(.*)MIME', $obj->getBody($i), $result)){
 					if($result[1]){
-						$id[] = intval($result[1]);
+						$id[$i] = intval($result[1]);
 						$found = TRUE;
 					}
 
         		}elseif(preg_match("/[\._a-zA-Z0-9-]+@[\._a-zA-Z0-9-]+/i", $obj->getBody($i), $result)){
                 	if($result[0] && $result[0] != $pref['mail_bounce_email']){
-						$emails[] = "'".$result[0]."'";
+						$emails[$i] = "'".$result[0]."'";
 						$found = TRUE;
 					}elseif($result[1] && $result[1] != $pref['mail_bounce_email']){
-                    	$emails[] = "'".$result[1]."'";
+                    	$emails[$i] = "'".$result[1]."'";
 						$found = TRUE;
 					}
 
 				}
-					if($DEL && $found){ $obj->deleteMails($i); }
+				 	if($DEL && $found){ $obj->deleteMails($i); }
+
 			}
 
+			$text .= "<tr><td class='forumheader3'>".$i."</td><td class='forumheader3'>".$id[$i]."</td><td class='forumheader3'>".$emails[$i]."</td><td class='forumheader3'>".$head['subject']."</td><td class='forumheader3'>".($head['bounce'] ? ADMIN_TRUE_ICON : ADMIN_FALSE_ICON)."</td></tr>";
+
 		}
+		$text .= "</table></div>";
+
+		array_unique($id);
+		array_unique($emails);
+
         $all_ids = implode(",",$id);
 		$all_emails = implode(",",$emails);
+
 		$obj->close_mailbox();
         $found = count($id) + count($emails);
 	  	if($ed = $sql -> db_Update("user", "user_ban=3 WHERE (user_id IN (".$all_ids.") OR user_email IN (".$all_emails.")) AND user_sess !='' ")){
-        	$this->show_message(LAN_UPDATED."<br >Found $tot, updated $ed / $found");
+        	$this->show_message(LAN_UPDATED."<br >Found $tot, updated $ed / $found".$text);
 	  	}else{
-        	$this->show_message(LAN_UPDATED_FAILED."<br >Found $tot, not updated $ed / $found");
-	  	}
+       		$this->show_message(LAN_UPDATED_FAILED."<br >Found $tot, not updated $ed / $found".$text);
+   	  	}
 
 	}
 

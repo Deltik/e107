@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/sitedown.php,v $
-|     $Revision: 1.6 $
-|     $Date: 2005/06/11 22:24:48 $
-|     $Author: streaky $
+|     $Revision: 1.9 $
+|     $Date: 2006/06/30 04:16:39 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
@@ -24,22 +24,24 @@ global $tp;
 e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_sitedown.php");
 e107_include_once(e_LANGUAGEDIR."English/lan_sitedown.php");
 
-if($pref['maintainance_text']) {
-	$SITEDOWN_TABLE_MAINTAINANCETEXT = $tp->toHTML($pref['maintainance_text'], TRUE, 'parse_sc', 'admin');
-} else {
-	$SITEDOWN_TABLE_MAINTAINANCETEXT = "<b>- ".SITENAME." ".LAN_00." -</b><br /><br />".LAN_01 ;
+if (!$pref['maintainance_flag'] )
+{
+	header("location: ".SITEURL);
 }
 
-$SITEDOWN_TABLE_PAGENAME = PAGE_NAME;
-	
+require_once(e_FILE."shortcode/batch/sitedown_shortcodes.php");
+
 if (!$SITEDOWN_TABLE) {
-	if (file_exists(THEME."sitedown_template.php")) {
+	if (file_exists(THEME."sitedown_template.php"))
+	{
 		require_once(THEME."sitedown_template.php");
-	} else {
+	}
+	else
+	{
 		require_once(e_THEME."templates/sitedown_template.php");
 	}
 }
 
-echo preg_replace("/\{(.*?)\}/e", '$\1', $SITEDOWN_TABLE);
-	
+	echo $tp->parseTemplate($SITEDOWN_TABLE, TRUE, $sitedown_shortcodes);
+
 ?>

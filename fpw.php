@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/fpw.php,v $
-|     $Revision: 1.17 $
-|     $Date: 2006/03/13 21:53:47 $
-|     $Author: e107coders $
+|     $Revision: 1.21 $
+|     $Date: 2006/11/07 21:19:17 $
+|     $Author: lisa_ $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
@@ -23,9 +23,14 @@ if(USER){
 	exit;
 }
 
+if($pref['fpwcode'] && extension_loaded("gd")){
+	define("USE_IMAGECODE",TRUE);
+}else{
+	define("USE_IMAGECODE",FALSE);
+}
 
-$use_imagecode = ($pref['fpwcode'] && extension_loaded("gd"));
-if ($use_imagecode) {
+
+if (USE_IMAGECODE) {
 	require_once(e_HANDLER."secure_img_handler.php");
 	$sec_img = new secure_image;
 }
@@ -53,14 +58,17 @@ function fpw_error($txt) {
 	exit;
 }
 
+//the seperator character used
+$fpw_sep = "#";
+
 if (e_QUERY) {
-	define("FPW_ACTIVE","TRUE");    
-	$tmp = explode(".", e_QUERY);
+	define("FPW_ACTIVE","TRUE");
+	$tmp = explode($fpw_sep, e_QUERY);
 	$tmpinfo = preg_replace("#[\W_]#", "", $tp -> toDB($tmp[0], true));
-	if ($sql->db_Select("tmp", "*", "tmp_info LIKE '%.{$tmpinfo}' ")) {
+	if ($sql->db_Select("tmp", "*", "tmp_info LIKE '%{$fpw_sep}{$tmpinfo}' ")) {
 		$row = $sql->db_Fetch();
 		extract($row);
-		$sql->db_Delete("tmp", "tmp_info LIKE '%.{$tmpinfo}' ");
+		$sql->db_Delete("tmp", "tmp_info LIKE '%{$fpw_sep}{$tmpinfo}' ");
 		$newpw = "";
 		$pwlen = rand(8, 12);
 		for($a = 0; $a <= $pwlen; $a++) {
@@ -68,7 +76,7 @@ if (e_QUERY) {
 		}
 		$mdnewpw = md5($newpw);
 
-		list($username, $md5) = explode(".", $tmp_info);
+		list($username, $md5) = explode($fpw_sep, $tmp_info);
 		$sql->db_Update("user", "user_password='$mdnewpw', user_viewed='' WHERE user_name='".$tp -> toDB($username, true)."' ");
 		cookie($pref['cookie_name'], "", (time()-2592000));
 		$_SESSION[$pref['cookie_name']] = "";
@@ -107,7 +115,7 @@ if (isset($_POST['pwsubmit'])) {
 			die();
 		}
 
-		if ($sql->db_Select("tmp", "*", "tmp_ip = 'pwreset' AND tmp_info LIKE '{$user_name}.%'")) {
+		if ($sql->db_Select("tmp", "*", "tmp_ip = 'pwreset' AND tmp_info LIKE '{$user_name}{$fpw_sep}%'")) {
 			fpw_error(LAN_FPW4);
 			exit;
 		}
@@ -124,7 +132,7 @@ if (isset($_POST['pwsubmit'])) {
 
 		$deltime = time()+86400 * 2;
 		//Set timestamp two days ahead so it doesn't get auto-deleted
-		$sql->db_Insert("tmp", "'pwreset',{$deltime},'{$user_name}.{$rcode}'");
+		$sql->db_Insert("tmp", "'pwreset',{$deltime},'{$user_name}{$fpw_sep}{$rcode}'");
 
 		if (sendemail($_POST['email'], "".LAN_09."".SITENAME, $message)) {
 			$text = "<div style='text-align:center'>".LAN_FPW6."</div>";
@@ -142,11 +150,12 @@ if (isset($_POST['pwsubmit'])) {
 }
 
 
-if ($use_imagecode) {
+if (USE_IMAGECODE) {
+
 	$FPW_TABLE_SECIMG_LAN = LAN_FPW2;
-	$FPW_TABLE_SECIMG_HIDDEN = "<input type='hidden' name='rand_num' value='".$sec_img->random_number."'>";
+	$FPW_TABLE_SECIMG_HIDDEN = "<input type='hidden' name='rand_num' value='".$sec_img->random_number."' />";
 	$FPW_TABLE_SECIMG_SECIMG = $sec_img->r_image();
-	$FPW_TABLE_SECIMG_TEXTBOC = "<input class='tbox' type='text' name='code_verify' size='15' maxlength='20'>";
+	$FPW_TABLE_SECIMG_TEXTBOC = "<input class='tbox' type='text' name='code_verify' size='15' maxlength='20' />";
 }
 
 if (!$FPW_TABLE) {

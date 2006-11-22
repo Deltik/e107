@@ -12,9 +12,9 @@
 | GNU General Public License (http://gnu.org).
 |
 | $Source: /cvsroot/e107/e107_0.7/e107_handlers/shortcode_handler.php,v $
-| $Revision: 1.29 $
-| $Date: 2006/02/17 16:20:42 $
-| $Author: lisa_ $
+| $Revision: 1.36 $
+| $Date: 2006/11/22 02:56:28 $
+| $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 
@@ -33,16 +33,21 @@ class e_shortcode {
 	function e_shortcode()
 	{
 		global $pref, $register_sc;
-		if($pref['plug_sc'] != '')
+
+		if($pref['shortcode_list'] != '')
 		{
-			$tmp = explode(',',$pref['plug_sc']);
-			foreach($tmp as $val)
+        	foreach($pref['shortcode_list'] as $path=>$namearray)
 			{
-				list($code, $path) = explode(':',$val);
-				$this->registered_codes[$code]['type'] = 'plugin';
-				$this->registered_codes[$code]['path'] = $path;
+				foreach($namearray as $code=>$uclass)
+				{
+					$code = strtoupper($code);
+					$this->registered_codes[$code]['type'] = 'plugin';
+                	$this->registered_codes[$code]['path'] = $path;
+                  //  $this->registered_codes[$code]['perms'] = $uclass;
+				}
 			}
 		}
+
 		if(isset($register_sc) && is_array($register_sc))
 		{
 			foreach($register_sc as $code)
@@ -63,7 +68,7 @@ class e_shortcode {
 		$tmp = explode("\n", $text);
 		foreach($tmp as $line) {
 			if (preg_match("/{.+?}/", $line, $match)) {
-				$ret .= preg_replace_callback("/\{(.*?)\}/", array($this, 'doCode'), $line);
+				$ret .= preg_replace_callback("#\{(\S[^\x02]*?\S)\}#", array($this, 'doCode'), $line);
 			} else {
 				$ret .= $line;
 			}
@@ -74,6 +79,12 @@ class e_shortcode {
 	function doCode($matches)
 	{
 		global $pref, $e107cache, $menu_pref, $sc_style, $parm;
+
+		if(strpos($matches[1], E_NL) !== false)
+		{
+			return $matches[0];
+		}
+		
 		if (strpos($matches[1], '='))
 		{
 			list($code, $parm) = explode("=", $matches[1], 2);
@@ -121,18 +132,17 @@ class e_shortcode {
 			}
 		}
 
-        if(E107_DEBUG_LEVEL == 5){
+        if(E107_DBG_SC){
 			echo " sc= ".str_replace(e_FILE."shortcode/","",$scFile)."<br />";
 		}
 
-		global $e107_debug;
-		if($e107_debug)
+		if(E107_DBG_BBSC)
 		{
 			trigger_error("starting shortcode {".$code."}", E_USER_ERROR);
 		}
 		$ret = (isset($shortcode) ? eval($shortcode) : "");
 
-		if($ret != '')
+		if($ret !== '' && !is_bool($ret))
 		{
 			if(isset($sc_style) && is_array($sc_style) && array_key_exists($code,$sc_style))
 			{

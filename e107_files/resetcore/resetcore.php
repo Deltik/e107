@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/resetcore/resetcore.php,v $
-|     $Revision: 1.13 $
-|     $Date: 2006/05/13 01:21:56 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.15 $
+|     $Date: 2006/10/24 13:38:05 $
+|     $Author: mrpete $
 +----------------------------------------------------------------------------+
 */
 
@@ -28,14 +28,14 @@ If you don't, the script will not be usable.
 When you have finished with resetcore you should swap true for false so it can't be used by
 people it shouldn't be used by.
 
+If your site uses a different charset than utf-8, change the CHARSET to reflect the correct encoding.
+
 */
 
 define("ACTIVE", false);
-
+define("CHARSET", 'utf-8');
 
 /* #################################################### */
-
-
 
 
 $register_globals = true;
@@ -64,14 +64,14 @@ define("e107_INIT", TRUE);
 require_once('../../'.$HANDLERS_DIRECTORY.'arraystorage_class.php');
 $eArrayStorage = new ArrayData();
 
-echo "<?xml version='1.0' encoding='iso-8859-1' ?>\n";
+echo "<?xml version='1.0' encoding='".CHARSET."' ?>\n";
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <title><e107 resetcore></title>
 <link rel="stylesheet" href="style.css" />
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta http-equiv="Content-Type" content="text/html; charset=<?php echo CHARSET; ?>" />
 <meta http-equiv="content-style-type" content="text/css" />
 </head>
 <body>
@@ -97,14 +97,14 @@ if (isset($_POST['usubmit'])) {
 
 		$admin_directory = "e107_admin";
 
-//			<input type='radio' name='mode' value='1'> <span class='headertext2'>Manually edit core values</span><br />
+//			<input type='radio' name='mode' value='1' /> <span class='headertext2'>Manually edit core values</span><br />
 
 		echo "<span class='headertext2'><b>Please select which method you want to use, then click the button to proceed ...</b></span><br /><br /><br /><br />
 			<table style='width: auto; margin-left:auto; margin-right: auto;'>
 			<tr>
 			<td>
 			<form method='post' action='".$_SERVER['PHP_SELF']."'>
-			<input type='radio' name='mode' value='2'> <span class='headertext2'>Reset core to default values</span><br />". ($bu_exist ? "<input type='radio' name='mode' value='3'> <span class='headertext2'>Restore core backup</span>" : "<br />( There is no backed-up core - unable to offer option to restore backup )")."<br /><br /><input class='button' type='submit' name='reset_core_sub' value='Select method then click here to continue' />
+			<input type='radio' name='mode' value='2' /> <span class='headertext2'>Reset core to default values</span><br />". ($bu_exist ? "<input type='radio' name='mode' value='3' /> <span class='headertext2'>Restore core backup</span>" : "<br />( There is no backed-up core - unable to offer option to restore backup )")."<br /><br /><input class='button' type='submit' name='reset_core_sub' value='Select method then click here to continue' />
 				 
 			<input type='hidden' name='a_name' value='".$_POST['a_name']."' />
 			<input type='hidden' name='a_password' value='".$_POST['a_password']."' />

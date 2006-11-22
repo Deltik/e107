@@ -18,7 +18,7 @@ $lan_file = e_PLUGIN."pdf/languages/".e_LANGUAGE.".php";
 include_once(file_exists($lan_file) ? $lan_file : e_PLUGIN."pdf/languages/English.php");
 
 // Plugin info -------------------------------------------------------------------------------------------------------
-$eplug_name = PDF_PLUGIN_LAN_1;
+$eplug_name = "PDF_PLUGIN_LAN_1";
 $eplug_version = "1.0";
 $eplug_author = "Eric Vanderfeesten (lisa)";
 $eplug_logo = "";
@@ -28,7 +28,6 @@ $eplug_description = PDF_PLUGIN_LAN_2;
 $eplug_compatible = "e107v0.7+";
 $eplug_readme = "";        // leave blank if no readme file
 
-$eplug_sc = array('PDF');
 
 // Name of the plugin's folder -------------------------------------------------------------------------------------
 $eplug_folder = "pdf";
@@ -46,9 +45,6 @@ $eplug_caption = PDF_PLUGIN_LAN_3;
 
 // List of preferences -----------------------------------------------------------------------------------------------
 $eplug_prefs = "";
-
-// List of bbcode -----------------------------------------------------------------------------------------------
-//$eplug_bb = array('pcontent');
 
 // List of table names -----------------------------------------------------------------------------------------------
 $eplug_table_names = "";

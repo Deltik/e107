@@ -11,8 +11,8 @@
 |       GNU General Public License (http://gnu.org).
 |
 |		$Source: /cvsroot/e107/e107_0.7/e107_plugins/list_new/list.php,v $
-|		$Revision: 1.10 $
-|		$Date: 2006/02/20 08:52:46 $
+|		$Revision: 1.12 $
+|		$Date: 2006/11/11 15:29:16 $
 |		$Author: lisa_ $
 +---------------------------------------------------------------+
 */
@@ -75,7 +75,7 @@ if(isset($qs[0]) && $qs[0] == "new"){
 		$selectjs	= "onchange=\"if(this.options[this.selectedIndex].value != 'none'){ return document.location=this.options[this.selectedIndex].value; }\"";
 
 		$LIST_TIMELAPSE = LIST_MENU_6;
-		$LIST_TIMELAPSE .= $rs -> form_select_open("timelapse", $selectjs).$rs -> form_option(LIST_MENU_5, 0);
+		$LIST_TIMELAPSE .= $rs -> form_select_open("timelapse", $selectjs).$rs -> form_option(LIST_MENU_5, 0, $url);
 		for($a=1; $a<=$days; $a++){
 			$LIST_TIMELAPSE .= $rs -> form_option($a, ($timelapse == $a ? "1" : "0"), $url.".".$a);
 		}

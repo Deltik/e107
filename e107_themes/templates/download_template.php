@@ -11,12 +11,14 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_themes/templates/download_template.php,v $
-|     $Revision: 1.11 $
-|     $Date: 2005/12/14 19:28:53 $
-|     $Author: sweetas $
+|     $Revision: 1.15 $
+|     $Date: 2006/07/16 19:56:47 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
+if (!defined("USER_WIDTH")){ define("USER_WIDTH","width:95%"); }
+
 
 /* set style of download image and thumbnail */
 define("DL_IMAGESTYLE","border:0px");
@@ -25,7 +27,7 @@ define("DL_IMAGESTYLE","border:0px");
 if(!$DOWNLOAD_CAT_TABLE_START){
                 $DOWNLOAD_CAT_TABLE_START = "
                 <div style='text-align:center'>
-                <table class='fborder' style='width:95%'>\n
+                <table class='fborder' style='".USER_WIDTH."'>\n
                 <tr>
                 <td style='width:3%; text-align:center' class='fcaption'>&nbsp;</td>
                 <td style='width:60%; text-align:center' class='fcaption'>".LAN_dl_19."</td>
@@ -128,7 +130,7 @@ if(!$DOWNLOAD_LIST_TABLE_START){
                 $DOWNLOAD_LIST_TABLE_START = "
                 <div style='text-align:center'>
                 <form method='post' action='".e_SELF."?".e_QUERY."'>
-                <table class='fborder' style='width:95%'>\n
+                <table class='fborder' style='".USER_WIDTH."'>\n
                 <tr>
         <td colspan='7' style='text-align:center' class='forumheader'>
                         <span class='defaulttext'>".LAN_dl_37."</span>
@@ -191,7 +193,7 @@ if(!$DOWNLOAD_LIST_TABLE){
 		{DOWNLOAD_LIST_RATING}
 		</td>
 		<td class='forumheader3' style='text-align:center;'>
-		{DOWNLOAD_LIST_LINK} {DOWNLOAD_LIST_ICON}
+		{DOWNLOAD_LIST_LINK} {DOWNLOAD_LIST_ICON}</a>
 		</td>
 		</tr>";
 }
@@ -207,35 +209,58 @@ if(!$DOWNLOAD_LIST_TABLE_END){
 
 
 // ##### VIEW TABLE -------------------------------------------------------------------------------
-if(!$DOWNLOAD_VIEW_TABLE_START){
-		$DOWNLOAD_VIEW_TABLE_START = "
+
+$DL_VIEW_PAGETITLE = PAGE_NAME." / {DOWNLOAD_CATEGORY} / {DOWNLOAD_VIEW_NAME}";
+$DL_VIEW_CAPTION = "{DOWNLOAD_VIEW_CAPTION}";
+
+		$DL_VIEW_NEXTPREV = "
 		<div style='text-align:center'>
-		<table class='fborder' style='width:95%'>\n";
-}
+			<table style='".USER_WIDTH."'>
+			<tr>
+			<td style='width:40%;'>{DOWNLOAD_VIEW_PREV}</td>
+			<td style='width:20%; text-align: center;'>{DOWNLOAD_BACK_TO_LIST}</td>
+			<td style='width:40%; text-align: right;'>{DOWNLOAD_VIEW_NEXT}</td>
+			</tr>
+			</table>
+		</div>\n";
+
+// Only renders the following rows when data is present.
+$sc_style['DOWNLOAD_VIEW_AUTHOR_LAN']['pre'] = "<tr><td style='width:20%' class='forumheader3'>";
+$sc_style['DOWNLOAD_VIEW_AUTHOR_LAN']['post'] = "</td>";
+
+$sc_style['DOWNLOAD_VIEW_AUTHOR']['pre'] = "<td style='width:80%' class='forumheader3'>";
+$sc_style['DOWNLOAD_VIEW_AUTHOR']['post'] = "</td></tr>";
+
+$sc_style['DOWNLOAD_VIEW_AUTHOREMAIL_LAN']['pre'] = "<tr><td style='width:20%' class='forumheader3'>";
+$sc_style['DOWNLOAD_VIEW_AUTHOREMAIL_LAN']['post'] = "</td>";
+
+$sc_style['DOWNLOAD_VIEW_AUTHOREMAIL']['pre'] = "<td style='width:80%' class='forumheader3'>";
+$sc_style['DOWNLOAD_VIEW_AUTHOREMAIL']['post'] = "</td></tr>";
+
+$sc_style['DOWNLOAD_VIEW_AUTHORWEBSITE_LAN']['pre'] = "<tr><td style='width:20%' class='forumheader3'>";
+$sc_style['DOWNLOAD_VIEW_AUTHORWEBSITE_LAN']['post'] = "</td>";
+
+$sc_style['DOWNLOAD_VIEW_AUTHORWEBSITE']['pre'] = "<td style='width:80%' class='forumheader3'>";
+$sc_style['DOWNLOAD_VIEW_AUTHORWEBSITE']['post'] = "</td></tr>";
 
 if(!$DOWNLOAD_VIEW_TABLE){
 		$DOWNLOAD_VIEW_TABLE .= "
+        <div style='text-align:center'>
+		<table class='fborder' style='".USER_WIDTH."'>\n
 		<tr>
 		<td colspan='2' class='fcaption' style='text-align:left;'>
-
 		{DOWNLOAD_VIEW_NAME}
 		</td>
 		</tr>
 
-		<tr>
-		<td style='width:20%' class='forumheader3'>{DOWNLOAD_VIEW_AUTHOR_LAN}</td>
-		<td style='width:80%' class='forumheader3'>{DOWNLOAD_VIEW_AUTHOR}</td>
-		</tr>
+		{DOWNLOAD_VIEW_AUTHOR_LAN}
+		{DOWNLOAD_VIEW_AUTHOR}
 
-		<tr>
-		<td style='width:20%' class='forumheader3'>{DOWNLOAD_VIEW_AUTHOREMAIL_LAN}</td>
-		<td style='width:80%' class='forumheader3'>{DOWNLOAD_VIEW_AUTHOREMAIL}</td>
-		</tr>
+		{DOWNLOAD_VIEW_AUTHOREMAIL_LAN}
+		{DOWNLOAD_VIEW_AUTHOREMAIL}
 
-		<tr>
-		<td style='width:20%' class='forumheader3'>{DOWNLOAD_VIEW_AUTHORWEBSITE_LAN}</td>
-		<td style='width:80%' class='forumheader3'>{DOWNLOAD_VIEW_AUTHORWEBSITE}</td>
-		</tr>
+		{DOWNLOAD_VIEW_AUTHORWEBSITE_LAN}
+		{DOWNLOAD_VIEW_AUTHORWEBSITE}
 
 		<tr>
 		<td style='width:20%' class='forumheader3'>{DOWNLOAD_VIEW_DESCRIPTION_LAN}</td>
@@ -254,7 +279,7 @@ if(!$DOWNLOAD_VIEW_TABLE){
 
 		<tr>
 		<td style='width:20%' class='forumheader3'>{DOWNLOAD_VIEW_DATE_LAN}</td>
-		<td style='width:80%' class='forumheader3'>{DOWNLOAD_VIEW_DATE_LONG}</td>
+		<td style='width:80%' class='forumheader3'>{DOWNLOAD_VIEW_DATE=long}</td>
 		</tr>
 
 		<tr>
@@ -271,18 +296,15 @@ if(!$DOWNLOAD_VIEW_TABLE){
 		<td style='width:20%' class='forumheader3'>{DOWNLOAD_VIEW_RATING_LAN}</td>
 		<td style='width:80%' class='forumheader3'>{DOWNLOAD_VIEW_RATING}</td>
 		</tr>
-		
+
 		<tr>
 		<td style='width:20%' class='forumheader3' colspan='2'>{DOWNLOAD_REPORT_LINK}</td>
-		</tr>";
-}
-
-if(!$DOWNLOAD_VIEW_TABLE_END){
-		$DOWNLOAD_VIEW_TABLE_END = "
+		</tr>
 		</table>
-		<div style='text-align:right; width: 95%; margin-left: auto; margin-right: auto'>{DOWNLOAD_ADMIN_EDIT}</div> 
+		<div style='text-align:right; ".USER_WIDTH."; margin-left: auto; margin-right: auto'>{DOWNLOAD_ADMIN_EDIT}</div>
 		</div>\n";
 }
+
 // ##### ------------------------------------------------------------------------------------------
 
 // ##### MIRROR LIST -------------------------------------------------------------------------------
@@ -291,7 +313,7 @@ if(!$DOWNLOAD_MIRROR_START)
 {
 	$DOWNLOAD_MIRROR_START = "
 	<div style='text-align:center'>
-	<table class='fborder' style='width:100%'>
+	<table class='fborder' style='".USER_WIDTH."'>
 	<tr>
 	<td class='fcaption' colspan='4'>{DOWNLOAD_MIRROR_REQUEST}</td>
 	</tr>

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /*
 + ----------------------------------------------------------------------------+
 |     e107 website system
@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/e107_class.php,v $
-|     $Revision: 1.51 $
-|     $Date: 2006/04/05 12:03:04 $
+|     $Revision: 1.54 $
+|     $Date: 2006/11/18 02:29:09 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
@@ -84,33 +84,36 @@ class e107{
 		$this->https_path = "https://{$_SERVER['HTTP_HOST']}{$this->server_path}";
 		$this->file_path = $path;
 
-		define("e_HTTP", $this->server_path);
-		define("e_BASE", $this->relative_base_path);
-		define("e_ADMIN", e_BASE.$ADMIN_DIRECTORY);
-		define("e_IMAGE", e_BASE.$IMAGES_DIRECTORY);
-		define("e_THEME", e_BASE.$THEMES_DIRECTORY);
-		define("e_PLUGIN", e_BASE.$PLUGINS_DIRECTORY);
-		define("e_FILE", e_BASE.$FILES_DIRECTORY);
-		define("e_HANDLER", e_BASE.$HANDLERS_DIRECTORY);
-		define("e_LANGUAGEDIR", e_BASE.$LANGUAGES_DIRECTORY);
+		if(!defined("e_HTTP") || !defined("e_ADMIN") )
+		{
+			define("e_HTTP", $this->server_path);
+			define("e_BASE", $this->relative_base_path);
+			define("e_ADMIN", e_BASE.$ADMIN_DIRECTORY);
+			define("e_IMAGE", e_BASE.$IMAGES_DIRECTORY);
+			define("e_THEME", e_BASE.$THEMES_DIRECTORY);
+			define("e_PLUGIN", e_BASE.$PLUGINS_DIRECTORY);
+			define("e_FILE", e_BASE.$FILES_DIRECTORY);
+			define("e_HANDLER", e_BASE.$HANDLERS_DIRECTORY);
+			define("e_LANGUAGEDIR", e_BASE.$LANGUAGES_DIRECTORY);
 
-		define("e_ADMIN_ABS", e_HTTP.$ADMIN_DIRECTORY);
-		define("e_IMAGE_ABS", e_HTTP.$IMAGES_DIRECTORY);
-		define("e_THEME_ABS", e_HTTP.$THEMES_DIRECTORY);
-		define("e_PLUGIN_ABS", e_HTTP.$PLUGINS_DIRECTORY);
-		define("e_FILE_ABS", e_HTTP.$FILES_DIRECTORY);
-		define("e_HANDLER_ABS", e_HTTP.$HANDLERS_DIRECTORY);
-		define("e_LANGUAGEDIR_ABS", e_HTTP.$LANGUAGES_DIRECTORY);
+			define("e_ADMIN_ABS", e_HTTP.$ADMIN_DIRECTORY);
+			define("e_IMAGE_ABS", e_HTTP.$IMAGES_DIRECTORY);
+			define("e_THEME_ABS", e_HTTP.$THEMES_DIRECTORY);
+			define("e_PLUGIN_ABS", e_HTTP.$PLUGINS_DIRECTORY);
+			define("e_FILE_ABS", e_HTTP.$FILES_DIRECTORY);
+			define("e_HANDLER_ABS", e_HTTP.$HANDLERS_DIRECTORY);
+			define("e_LANGUAGEDIR_ABS", e_HTTP.$LANGUAGES_DIRECTORY);
 
-		define("e_DOCS", e_BASE.$HELP_DIRECTORY);
-		define("e_DOCROOT", $_SERVER['DOCUMENT_ROOT']."/");
+			define("e_DOCS", e_BASE.$HELP_DIRECTORY);
+			define("e_DOCROOT", $_SERVER['DOCUMENT_ROOT']."/");
 
-		define("e_DOCS_ABS", e_HTTP.$HELP_DIRECTORY);
+			define("e_DOCS_ABS", e_HTTP.$HELP_DIRECTORY);
 
-		if ($DOWNLOADS_DIRECTORY{0} == "/") {
-			define("e_DOWNLOAD", $DOWNLOADS_DIRECTORY);
-		} else {
-			define("e_DOWNLOAD", e_BASE.$DOWNLOADS_DIRECTORY);
+			if ($DOWNLOADS_DIRECTORY{0} == "/") {
+				define("e_DOWNLOAD", $DOWNLOADS_DIRECTORY);
+			} else {
+				define("e_DOWNLOAD", e_BASE.$DOWNLOADS_DIRECTORY);
+			}
 		}
 	}
 
@@ -125,21 +128,30 @@ class e107{
 	 *
 	 */
 	function ban() {
-		global $sql, $e107, $tp;
+		global $sql, $e107, $tp, $pref;
 		$ban_count = $sql->db_Count("banlist");
-		if($ban_count){
+		if($ban_count)
+		{
 			$ip = $this->getip();
 			$tmp = explode(".",$ip);
 			$wildcard =  $tmp[0].".".$tmp[1].".".$tmp[2].".*";
 			$wildcard2 = $tmp[0].".".$tmp[1].".*.*";
 
-			$tmp = $e107->get_host_name(getenv('REMOTE_ADDR'));
+			if(varsettrue($pref['enable_rdns']))
+			{
+				$tmp = $e107->get_host_name(getenv('REMOTE_ADDR'));
+				preg_match("/[\w]+\.[\w]+$/si", $tmp, $match);
+				$bhost = (isset($match[0]) ? " OR banlist_ip='".$tp -> toDB($match[0], true)."'" : "");
+			}
+			else
+			{
+				$bhost = "";
+			}
 
-			preg_match("/[\w]+\.[\w]+$/si", $tmp, $match);
-			$bhost = (isset($match[0]) ? " OR banlist_ip='".$tp -> toDB($match[0], true)."'" : "");
-
-			if ($ip != '127.0.0.1') {
-				if ($sql->db_Select("banlist", "*", "banlist_ip='".$tp -> toDB($_SERVER['REMOTE_ADDR'], true)."' OR banlist_ip='".USEREMAIL."' OR banlist_ip='{$ip}' OR banlist_ip='{$wildcard}' OR banlist_ip='{$wildcard2}' {$bhost}")) {
+			if ($ip != '127.0.0.1')
+			{
+				if ($sql->db_Select("banlist", "*", "banlist_ip='".$tp -> toDB($_SERVER['REMOTE_ADDR'], true)."' OR banlist_ip='".USEREMAIL."' OR banlist_ip='{$ip}' OR banlist_ip='{$wildcard}' OR banlist_ip='{$wildcard2}' {$bhost}"))
+				{
 				  header("HTTP/1.1 403 Forbidden", true);
 					// enter a message here if you want some text displayed to banned users ...
 					exit();
@@ -196,15 +208,15 @@ class e107{
 		if(function_exists("memory_get_usage")){
 			$memusage = memory_get_usage();
 			$memunit = 'b';
-			if ($memusage > 1024){
+			if ($memusage > 1048576){
 				$memusage = $memusage / 1024;
 				$memunit = 'kb';
 			}
-			if ($memusage > 1024){
+			if ($memusage > 1048576){
 				$memusage = $memusage / 1024;
 				$memunit = 'mb';
 			}
-			if ($memusage > 1024){
+			if ($memusage > 1048576){
 				$memusage = $memusage / 1024;
 				$memunit = 'gb';
 			}

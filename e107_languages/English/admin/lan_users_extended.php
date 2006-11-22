@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/lan_users_extended.php,v $
-|     $Revision: 1.14 $
-|     $Date: 2006/01/15 01:08:04 $
-|     $Author: streaky $
+|     $Revision: 1.17 $
+|     $Date: 2006/11/07 23:46:20 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 define("EXTLAN_1", "Name");
@@ -80,9 +80,17 @@ define("EXTLAN_65", "No - Will not show on signup page");
 define("EXTLAN_66", "Yes - Will show on signup page");
 define("EXTLAN_67", "No - Show on signup page");
 
+define("EXTLAN_68", "Field:");
+define("EXTLAN_69", "has been activated");
+define("EXTLAN_70", "ERROR!! Field:");
+define("EXTLAN_71", "was not activated!");
+define("EXTLAN_72", "has been deactivated");
+define("EXTLAN_73", "was not deactivated!");
+define("EXTLAN_74", "is a reserved field name and can not be used.");
+
 
 //textbox
-define("EXTLAN_HELP_1", "<b><i>Parameters:</i></b><br />size - size of field<br />maxlength - max length of field<br /><br />class - css class of field<br />style - css style string<br /><br />regex - regex valiation code<br />regexfail - validation fail text");
+define("EXTLAN_HELP_1", "<b><i>Parameters:</i></b><br />size - size of field<br />maxlength - max length of field<br /><br />class - css class of field<br />style - css style string<br /><br />regex - regex validation code<br />regexfail - validation fail text");
 //radio buttons
 define("EXTLAN_HELP_2", "This will be the radio buttons help text");
 //dropdown

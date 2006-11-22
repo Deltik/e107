@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/plugin.php,v $
-|     $Revision: 1.59 $
-|     $Date: 2006/03/16 15:58:14 $
-|     $Author: lisa_ $
+|     $Revision: 1.68 $
+|     $Date: 2006/11/12 04:03:44 $
+|     $Author: mrpete $
 +----------------------------------------------------------------------------+
 */
 
@@ -132,12 +132,6 @@ if ($action == 'uninstall')
 			$text .= call_user_func($func);
 		}
 
-		if(is_array($eplug_rss)) {
-			foreach($eplug_rss as $key=>$values) {
-				$text .= ($sql -> db_Update("plugin", "plugin_rss = '' WHERE plugin_id='{$id}'")) ? EPL_ADLAN_47 .". ($key)<br />" : EPL_ADLAN_49 .". ($key)<br />";
-			}
-		}
-		
 		if($_POST['delete_tables'])
 		{
 			if (is_array($eplug_table_names))
@@ -179,6 +173,8 @@ if ($action == 'uninstall')
 		if ($eplug_latest) {
 			$plugin->manage_plugin_prefs('remove', 'plug_latest', $eplug_folder);
 		}
+
+
 
 		if (is_array($eplug_array_pref))
 		{
@@ -233,7 +229,7 @@ if ($action == 'uninstall')
 		$plugin -> manage_notify('remove', $eplug_folder);
 
 		$sql->db_Update('plugin', "plugin_installflag=0, plugin_version='{$eplug_version}' WHERE plugin_id='{$id}' ");
-		
+
 		if($_POST['delete_files'])
 		{
 			include_once(e_HANDLER."file_class.php");
@@ -245,13 +241,15 @@ if ($action == 'uninstall')
 		{
 			$text .= '<br />'.EPL_ADLAN_31.' <b>'.e_PLUGIN.$eplug_folder.'</b> '.EPL_ADLAN_32;
 		}
-		$ns->tablerender(EPL_ADLAN_1.' '.$eplug_name, $text);
+		$ns->tablerender(EPL_ADLAN_1.' '.$tp->toHtml($eplug_name,"","defs,emotes_off, no_make_clickable"), $text);
 		$text = "";
+		$plugin -> save_addon_prefs();
 	}
 }
 
 if ($action == 'install') {
 	$plugin->install_plugin(intval($id));
+	$plugin ->save_addon_prefs();
 }
 
 if ($action == 'upgrade') {
@@ -351,12 +349,15 @@ if ($action == 'upgrade') {
 	}
 
 	$plugin -> manage_search('upgrade', $eplug_folder);
-
 	$plugin -> manage_notify('upgrade', $eplug_folder);
 
-	$text .= '<br />'.$eplug_upgrade_done;
-	$sql->db_Update('plugin', "plugin_version ='{$eplug_version}' WHERE plugin_id='$id' ");
+    $eplug_addons = $plugin -> getAddons($eplug_folder);
+
+	$text .= (isset($eplug_upgrade_done)) ? '<br />'.$eplug_upgrade_done : "<br />".LAN_UPGRADE_SUCCESSFUL;
+	$sql->db_Update('plugin', "plugin_version ='{$eplug_version}', plugin_addons='{$eplug_addons}' WHERE plugin_id='$id' ");
 	$ns->tablerender(EPL_ADLAN_34, $text);
+
+	$plugin -> save_addon_prefs();
 }
 
 
@@ -429,7 +430,7 @@ function render_plugs($pluginList){
 
 		$plugin_icon = $eplug_icon ? "<img src='".e_PLUGIN.$eplug_icon."' alt='' style='border:0px;vertical-align: bottom; width: 32px; height: 32px' />" : E_32_CAT_PLUG;
 		if ($eplug_conffile && $plug['plugin_installflag'] == TRUE) {
-			$conf_title = EPL_CONFIGURE.' '.$eplug_name;
+			$conf_title = LAN_CONFIGURE.' '.$tp->toHtml($eplug_name,"","defs,emotes_off, no_make_clickable");
 			$plugin_icon = "<a title='{$conf_title}' href='".e_PLUGIN.$eplug_folder.'/'.$eplug_conffile."' >".$plugin_icon.'</a>';
 		}
 
@@ -439,7 +440,7 @@ function render_plugs($pluginList){
 		<table style='width:100%'><tr><td style='text-align:left;width:40px;vertical-align:top'>
 		".$plugin_icon."
 		</td><td>
-		$img <b>{$plug['plugin_name']}</b><br />".EPL_ADLAN_11." {$plug['plugin_version']}
+		$img <b>".$tp->toHTML($plug['plugin_name'],FALSE,"defs,emotes_off, no_make_clickable")."</b><br />".EPL_ADLAN_11." {$plug['plugin_version']}
 		<br />";
 
 		$text .="</td>
@@ -512,7 +513,7 @@ function show_uninstall_confirm()
 	global $plugin, $tp, $id, $ns;
 	$id = intval($id);
 	$plug = $plugin->getinfo($id);
-	
+
 	if ($plug['plugin_installflag'] == TRUE )
 	{
 		include(e_PLUGIN.$plug['plugin_path'].'/plugin.php');
@@ -522,8 +523,8 @@ function show_uninstall_confirm()
 	{
 		$del_text = "
 		<select class='tbox' name='delete_files'>
-		<option value='0'>".EPL_ADLAN_51."</option>
-		<option value='1'>".EPL_ADLAN_52."</option>
+		<option value='0'>".LAN_NO."</option>
+		<option value='1'>".LAN_YES."</option>
 		</select>
 		";
 	}
@@ -534,16 +535,16 @@ function show_uninstall_confirm()
 		<input type='hidden' name='delete_files' value='0' />
 		";
 	}
-	
+
 	$text = "
 	<form action='".e_SELF."?".e_QUERY."' method='post'>
 	<table style='".ADMIN_WIDTH."' class='fborder'>
 	<tr>
-		<td colspan='2' class='forumheader'>".EPL_ADLAN_54." $eplug_name </td>
+		<td colspan='2' class='forumheader'>".EPL_ADLAN_54." ".$tp->toHtml($eplug_name,"","defs,emotes_off, no_make_clickable")."</td>
 	</tr>
 	<tr>
 		<td class='forumheader3'>".EPL_ADLAN_55."</td>
-		<td class='forumheader3'>".EPL_ADLAN_52."</td>
+		<td class='forumheader3'>".LAN_YES."</td>
 	</tr>
 	<tr>
 		<td class='forumheader3' style='width:75%'>
@@ -551,8 +552,8 @@ function show_uninstall_confirm()
 		</td>
 		<td class='forumheader3'>
 			<select class='tbox' name='delete_tables'>
-			<option value='1'>".EPL_ADLAN_52."</option>
-			<option value='0'>".EPL_ADLAN_51."</option>
+			<option value='1'>".LAN_YES."</option>
+			<option value='0'>".LAN_NO."</option>
 			</select>
 		</td>
 	</tr>
@@ -561,12 +562,12 @@ function show_uninstall_confirm()
 		<td class='forumheader3'>{$del_text}</td>
 	</tr>
 	<tr>
-		<td colspan='2' class='forumheader' style='text-align:center'><input class='button' type='submit' name='uninstall_confirm' value='".EPL_ADLAN_61."' />&nbsp;&nbsp;<input class='button' type='submit' name='uninstall_cancel' value='".EPL_ADLAN_62."' onclick=\"location.href='".e_SELF."'; return false;\"/></td>
+		<td colspan='2' class='forumheader' style='text-align:center'><input class='button' type='submit' name='uninstall_confirm' value=\"".EPL_ADLAN_3."\" />&nbsp;&nbsp;<input class='button' type='submit' name='uninstall_cancel' value='".EPL_ADLAN_62."' onclick=\"location.href='".e_SELF."'; return false;\"/></td>
 	</tr>
 	</table>
 	</form>
 	";
-	$ns->tablerender(EPL_ADLAN_63." {$eplug_name}", $text);
+	$ns->tablerender(EPL_ADLAN_63." ".$tp->toHtml($eplug_name,"","defs,emotes_off, no_make_clickable"), $text);
 	require_once(e_ADMIN."footer.php");
 	exit;
 }

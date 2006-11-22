@@ -11,19 +11,19 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/login_menu/languages/English.php,v $
-|     $Revision: 1.4 $
-|     $Date: 2006/04/27 06:02:46 $
-|     $Author: sweetas $
+|     $Revision: 1.8 $
+|     $Date: 2006/11/04 19:09:24 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
-	
+
 define("LOGIN_MENU_L1", "Username: ");
 define("LOGIN_MENU_L2", "Password: ");
 define("LOGIN_MENU_L3", "Signup");
 define("LOGIN_MENU_L4", "Forgot password?");
 define("LOGIN_MENU_L5", "Welcome");
 define("LOGIN_MENU_L6", "Remember me");
-define("LOGIN_MENU_L7", "Unique user id not recognised (possible corrupted cookie).<br />Please <a href=\"".e_BASE."index.php?logout\">click here</a> to destroy cookie.");
+define("LOGIN_MENU_L7", "Unique user ID not recognised (possible corrupted cookie).<br />Please <a href=\"".e_BASE."index.php?logout\">click here</a> to destroy cookie.");
 define("LOGIN_MENU_L8", "Logout");
 define("LOGIN_MENU_L9", "Login Error");
 define("LOGIN_MENU_L10", "The maintenance flag is true - this means normal visitors are being redirected to sitedown.php. To reset the flag go to admin/maintenance.");
@@ -45,10 +45,10 @@ define("LOGIN_MENU_L25", "Since your last visit there have been");
 define("LOGIN_MENU_L26", "no");
 define("LOGIN_MENU_L27", "and");
 define("LOGIN_MENU_L28", "Login");
-	
+
 define("LOGIN_MENU_L29", "new article");
 define("LOGIN_MENU_L30", "new articles");
-	
+
 // New config options
 define('LOGIN_MENU_L31', 'Show New News Posts');
 define('LOGIN_MENU_L32', 'Show New Article Posts');
@@ -56,10 +56,10 @@ define('LOGIN_MENU_L33', 'Show New Chatbox Posts');
 define('LOGIN_MENU_L34', 'Show New Comment Posts');
 define('LOGIN_MENU_L35', 'Show New Forum Posts');
 define('LOGIN_MENU_L36', 'Show New Members');
-define('LOGIN_MENU_L37', 'Update Settings');
-define('LOGIN_MENU_L38', 'Settings Updated');
 
 
 define('LOGIN_MENU_L39', 'Leave Admin');
-	
+define("LOGIN_MENU_L40", "Resend Activation Email");
+define("LOGIN_MENU_L41", "Login Menu Settings");
+
 ?>

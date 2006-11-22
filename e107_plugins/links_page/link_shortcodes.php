@@ -57,7 +57,7 @@ if(isset($linkspage_pref['link_navigator_allcat']) && $linkspage_pref['link_navi
 	$sqlc = new db;
 	if ($sqlc->db_Select("links_page_cat", "link_category_id, link_category_name", "link_category_class REGEXP '".e_CLASS_REGEXP."' ORDER BY link_category_name")){
 		$mains .= $rs -> form_option("&nbsp;", "0", "", "");
-		$mains .= $rs -> form_option("-- view category --", "0", "", "");
+		$mains .= $rs -> form_option(LAN_LINKS_48, "0", "", "");
 		while ($rowc = $sqlc->db_Fetch()){
 			$mains .= $rs -> form_option($rowc['link_category_name'], "0", $baseurl."?cat.".$rowc['link_category_id'], "");
 		}
@@ -67,7 +67,7 @@ if(isset($linkspage_pref['link_navigator_allcat']) && $linkspage_pref['link_navi
 if($mains){
 	$main = "";
 
-	$selectjs = " onchange=\"if(this.options[this.selectedIndex].value.indexOf('-') && this.options[this.selectedIndex].value != '' && this.options[this.selectedIndex].value != '&nbsp;'){ return document.location=this.options[this.selectedIndex].value; }\" ";
+	$selectjs = " onchange=\"if(this.options[this.selectedIndex].value.indexOf('-') &amp;&amp; this.options[this.selectedIndex].value != '' &amp;&amp; this.options[this.selectedIndex].value != '&nbsp;'){ return document.location=this.options[this.selectedIndex].value; }\" ";
 
 //	$selectjs = " onchange=\"if(this.options[this.selectedIndex].value != '-- view category --' || this.options[this.selectedIndex].value != '&nbsp;'){ return document.location=this.options[this.selectedIndex].value; }\" ";
 	$main .= $rs -> form_select_open("navigator", $selectjs);
@@ -82,8 +82,6 @@ SC_BEGIN LINK_SORTORDER
 global $LINK_SORTORDER;
 return $LINK_SORTORDER;
 SC_END
-
-
 
 SC_BEGIN LINK_NAVIGATOR_TABLE_PRE
 global $LINK_NAVIGATOR_TABLE_PRE;
@@ -102,6 +100,10 @@ SC_END
 
 
 
+SC_BEGIN LINK_NEXTPREV
+global $LINK_NEXTPREV;
+return $LINK_NEXTPREV;
+SC_END
 
 
 
@@ -229,41 +231,50 @@ SC_END
 // LINK_TABLE ------------------------------------------------
 SC_BEGIN LINK_BUTTON
 global $LINK_BUTTON, $linkspage_pref, $rowl, $LINK_NAME, $LINK_APPEND;
-$LINK_BUTTON = "";
+
+if(!$linkspage_pref['link_icon']){
+	return "";
+}
+$LINK_BUTTON = "&nbsp;";
 if(isset($linkspage_pref['link_icon']) && $linkspage_pref['link_icon']){
 	if ($rowl['link_button']) {
 		if (strpos($rowl['link_button'], "http://") !== FALSE) {
-			$LINK_BUTTON = $LINK_APPEND."\n<img style='border:1px solid #000;' src='".$rowl['link_button']."' alt='' /></a>";
+			$LINK_BUTTON = $LINK_APPEND."\n<img class='linkspage_button' src='".$rowl['link_button']."' alt='' /></a>";
 		} else {
 			if(strstr($rowl['link_button'], "/")){
 				if(file_exists(e_BASE.$rowl['link_button'])){
-					$LINK_BUTTON = $LINK_APPEND."\n<img style='border:1px solid #000;' src='".e_BASE.$rowl['link_button']."' alt='' /></a>";
+					$LINK_BUTTON = $LINK_APPEND."\n<img class='linkspage_button' src='".e_BASE.$rowl['link_button']."' alt='' /></a>";
 				} else {
 					if(isset($linkspage_pref['link_icon_empty']) && $linkspage_pref['link_icon_empty']){
-						$LINK_BUTTON = $LINK_APPEND."\n<img style='border:1px solid #000; width: 88px; height: 31px;' src='".e_PLUGIN."links_page/images/generic.png' alt='' /></a>";
+						$LINK_BUTTON = $LINK_APPEND."\n<img class='linkspage_button' style='width: 88px; height: 31px;' src='".e_PLUGIN."links_page/images/generic.png' alt='' /></a>";
 					}
 				}
 			}else{
 				if(file_exists(e_PLUGIN."links_page/link_images/".$rowl['link_button'])){
-				$LINK_BUTTON = $LINK_APPEND."\n<img style='border:1px solid #000' src='".e_PLUGIN."links_page/link_images/".$rowl['link_button']."' alt='' /></a>";
+					$LINK_BUTTON = $LINK_APPEND."\n<img class='linkspage_button' src='".e_PLUGIN."links_page/link_images/".$rowl['link_button']."' alt='' /></a>";
 				}else{
 					if(isset($linkspage_pref['link_icon_empty']) && $linkspage_pref['link_icon_empty']){
-					$LINK_BUTTON = $LINK_APPEND."\n<img style='border:1px solid #000; width: 88px; height: 31px;' src='".e_PLUGIN."links_page/images/generic.png' alt='' /></a>";
+					$LINK_BUTTON = $LINK_APPEND."\n<img class='linkspage_button' style='width: 88px; height: 31px;' src='".e_PLUGIN."links_page/images/generic.png' alt='' /></a>";
 					}
 				}
 			}
 		}
 	} else {
 		if(isset($linkspage_pref['link_icon_empty']) && $linkspage_pref['link_icon_empty']){
-			$LINK_BUTTON = $LINK_APPEND."\n<img style='border:1px solid #000; width: 88px; height: 31px;' src='".e_PLUGIN."links_page/images/generic.png' alt='' /></a>";
+			$LINK_BUTTON = $LINK_APPEND."\n<img class='linkspage_button' style='width: 88px; height: 31px;' src='".e_PLUGIN."links_page/images/generic.png' alt='' /></a>";
 		}
 	}
 }else{
 	if(isset($linkspage_pref['link_icon_empty']) && $linkspage_pref['link_icon_empty']){
-		$LINK_BUTTON = $LINK_APPEND."\n<img style='border:1px solid #000; width: 88px; height: 31px;' src='".e_PLUGIN."links_page/images/generic.png' alt='' /></a>";
+		$LINK_BUTTON = $LINK_APPEND."\n<img class='linkspage_button' style='width: 88px; height: 31px;' src='".e_PLUGIN."links_page/images/generic.png' alt='' /></a>";
 	}
 }
 return $LINK_BUTTON;
+SC_END
+
+SC_BEGIN BUTTON_COLUMN
+global $linkbutton_count,$linkspage_pref;
+return ($linkbutton_count >0 && $linkspage_pref['link_icon']) ? 2 : 1;
 SC_END
 
 SC_BEGIN LINK_APPEND
@@ -278,17 +289,21 @@ SC_END
 
 SC_BEGIN LINK_URL
 global $LINK_URL, $linkspage_pref, $rowl;
-return (isset($linkspage_pref['link_url']) && $linkspage_pref['link_url'] ? $rowl['link_url'] : "");
+if(!$linkspage_pref['link_url'])
+{
+	return "";
+}
+return ($parm == "link") ? "<a class='linkspage_url' href=\"".$rowl['link_url']."\" rel='external' title=\"".$rowl['link_description']."\">".$rowl['link_url']."</a>" : $rowl['link_url'];
 SC_END
 
 SC_BEGIN LINK_REFER
 global $LINK_REFER, $linkspage_pref, $rowl;
-return (isset($linkspage_pref['link_referal']) && $linkspage_pref['link_referal'] ? LAN_LINKS_26." ".$rowl['link_refer'] : "");
+return (isset($linkspage_pref['link_referal']) && $linkspage_pref['link_referal'] ? $rowl['link_refer'] : "");
 SC_END
 
 SC_BEGIN LINK_COMMENT
 global $LINK_COMMENT, $linkspage_pref, $rowl;
-return (isset($linkspage_pref['link_comment']) && $linkspage_pref['link_comment'] ? "<a href='".e_SELF."?comment.".$rowl['link_id']."'>".LAN_LINKS_37." ".($rowl['link_comment'] ? $rowl['link_comment'] : "0")."</a>" : "");
+return (isset($linkspage_pref['link_comment']) && $linkspage_pref['link_comment'] ? "<a href='".e_SELF."?comment.".$rowl['link_id']."'>".($rowl['link_comment'] ? $rowl['link_comment'] : "0")."</a>" : "");
 SC_END
 
 SC_BEGIN LINK_DESC
@@ -309,9 +324,46 @@ SC_BEGIN LINK_NEW
 global $LINK_NEW, $linkspage_pref, $qs, $rowl;
 $LINK_NEW = "";
 if(USER && $rowl['link_datestamp'] > USERLV){
-$LINK_NEW = "<img src='".IMAGE_NEW."' alt='' style='vertical-align:middle' />";
+$LINK_NEW = "<img class='linkspage_new' src='".IMAGE_NEW."' alt='' style='vertical-align:middle' />";
 }
 return $LINK_NEW;
+SC_END
+
+SC_BEGIN LINK_CAT_NAME
+global $rowl;
+return $rowl['link_category_name'];
+SC_END
+
+SC_BEGIN LINK_CAT_DESC
+global $rowl;
+return $rowl['link_category_description'];
+SC_END
+
+SC_BEGIN LINK_CAT_TOTAL
+global $link_category_total;
+return " (<span title='".(ADMIN ? LAN_LINKS_2 : LAN_LINKS_1)."' >".$link_category_total."</span>".(ADMIN ? "/<span title='".(ADMIN ? LAN_LINKS_1 : "" )."' >".$link_category_total."</span>" : "").") ";
+SC_END
+
+SC_BEGIN LINK_REFER_LAN
+global $linkspage_pref;
+return (isset($linkspage_pref['link_referal']) && $linkspage_pref['link_referal'] ? LAN_LINKS_26 : "");
+SC_END
+
+SC_BEGIN LINK_COMMENT_LAN
+global $linkspage_pref;
+return (isset($linkspage_pref['link_comment']) && $linkspage_pref['link_comment'] ? LAN_LINKS_37 : "");
+SC_END
+
+SC_BEGIN LINK_RATING_LAN
+global $linkspage_pref;
+if(isset($linkspage_pref['link_rating']) && $linkspage_pref['link_rating']){
+    return LCLAN_ITEM_39;
+}
+return "";
+SC_END
+
+SC_BEGIN NAVIGATOR
+return displayNavigator('');
 SC_END
 
 
@@ -363,7 +415,7 @@ if(isset($linkspage_pref['link_icon']) && $linkspage_pref['link_icon']){
 		$LINK_RATED_BUTTON = $LINK_RATED_APPEND."\n<img style='border:0; width: 88px; height: 31px;' src='".e_PLUGIN."links_page/images/generic.png' alt='".$LINK_RATED_NAME."' /></a>";
 	}else{
 		$LINK_RATED_BUTTON = "";
-	}	
+	}
 }
 return $LINK_RATED_BUTTON;
 SC_END

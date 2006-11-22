@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/plugin_class.php,v $
-|     $Revision: 1.41 $
-|     $Date: 2006/03/19 23:43:28 $
-|     $Author: whoisrich $
+|     $Revision: 1.54 $
+|     $Date: 2006/11/08 03:18:34 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -21,6 +21,7 @@ if (!defined('e107_INIT')) { exit; }
 
 class e107plugin
 {
+    var	$plugin_addons = array("e_rss", "e_notify", "e_linkgen", "e_list", "e_bb", "e_meta", "e_emailprint", "e_frontpage", "e_latest", "e_status", "e_search", "e_sc", "e_module", "e_comment", "e_sql");
 
 	/**
 	 * Returns an array containing details of all plugins in the plugin table - should noramlly use e107plugin::update_plugins_table() first to make sure the table is up to date.
@@ -30,10 +31,13 @@ class e107plugin
 	function getall($flag)
 	{
 		global $sql;
-		if ($sql->db_Select("plugin","*","plugin_installflag = '".intval($flag)."' ORDER BY plugin_name ASC"))
+		if ($sql->db_Select("plugin","*","plugin_installflag = '".intval($flag)."' ORDER BY plugin_path ASC"))
 		{
 			$ret = $sql->db_getList();
  		}
+
+
+
 		return ($ret) ? $ret : FALSE;
 	}
 
@@ -59,21 +63,24 @@ class e107plugin
 
 		 	include_once("{$p['path']}{$p['fname']}");
 			$plugin_path = substr(str_replace(e_PLUGIN,"",$p['path']),0,-1);
-			if ((!$sql->db_Select("plugin", "plugin_id", "plugin_path = '".$tp -> toDB($plugin_path, true)."'")) && $eplug_name){
+
+			// scan for addons.
+			$eplug_addons = $this->getAddons($plugin_path);
+
+			if($sql->db_Select("plugin", "plugin_id", "plugin_path = '$plugin_path'"))
+			{
+				$sql->db_Update("plugin", "plugin_addons = '{$eplug_addons}' WHERE plugin_path = '$plugin_path'");
+			}
+
+			if ((!$sql->db_Select("plugin", "plugin_id", "plugin_path = '".$tp -> toDB($eplug_folder, true)."'")) && $eplug_name){
 				if (!$eplug_link_url && !$eplug_link && !$eplug_prefs && !$eplug_table_names && !$eplug_user_prefs && !$eplug_sc && !$eplug_userclass && !$eplug_module && !$eplug_bb && !$eplug_latest && !$eplug_status){
-					if(is_array($eplug_rss)){
-                    	foreach($eplug_rss as $key=>$val){
-                        	$feeds[] = $key;
-						}
-						$plugin_rss = implode(",",$feeds);
-					}
 					// new plugin, assign entry in plugin table, install is not necessary so mark it as intalled
-					$sql->db_Insert("plugin", "0, '".$tp -> toDB($eplug_name, true)."', '".$tp -> toDB($eplug_version, true)."', '".$tp -> toDB($eplug_folder, true)."', 1, '".$tp -> toDB($plugin_rss, true)."' ");
+					$sql->db_Insert("plugin", "0, '".$tp -> toDB($eplug_name, true)."', '".$tp -> toDB($eplug_version, true)."', '".$tp -> toDB($eplug_folder, true)."', 1, '$eplug_addons' ");
 				}
 				else
 				{
 					// new plugin, assign entry in plugin table, install is necessary
-					$sql->db_Insert("plugin", "0, '".$tp -> toDB($eplug_name, true)."', '".$tp -> toDB($eplug_version, true)."', '".$tp -> toDB($eplug_folder, true)."', 0, '' ");
+					$sql->db_Insert("plugin", "0, '".$tp -> toDB($eplug_name, true)."', '".$tp -> toDB($eplug_version, true)."', '".$tp -> toDB($eplug_folder, true)."', 0, '$eplug_addons' ");
 				}
 			}
 		}
@@ -379,20 +386,10 @@ class e107plugin
 
 			if (is_array($eplug_prefs)) {
 				$this->manage_prefs('add', $eplug_prefs);
-				$text .= EPL_ADLAN_20.'<br />';
+				$text .= EPL_ADLAN_8.'<br />';
 			}
 
-			if ($eplug_module === TRUE) {
-				$this->manage_plugin_prefs('add', 'modules', $eplug_folder);
-			}
 
-			if ($eplug_status === TRUE) {
-				$this->manage_plugin_prefs('add', 'plug_status', $eplug_folder);
-			}
-
-			if ($eplug_latest === TRUE) {
-				$this->manage_plugin_prefs('add', 'plug_latest', $eplug_folder);
-			}
 
 			if (is_array($eplug_array_pref)){
 				foreach($eplug_array_pref as $key => $val){
@@ -423,7 +420,7 @@ class e107plugin
 				} else {
 					$sql->db_Insert("core", "'user_entended', '{$tmp}' ");
 				}
-				$text .= EPL_ADLAN_20."<br />";
+				$text .= EPL_ADLAN_8."<br />";
 			}
 
 			if ($eplug_link === TRUE && $eplug_link_url != '' && $eplug_link_name != '') {
@@ -445,24 +442,160 @@ class e107plugin
 
 			$this -> manage_notify('add', $eplug_folder);
 
-			if(is_array($eplug_rss)){
-				foreach($eplug_rss as $key=>$values){
-					$rssfeeds[] = $tp -> toDB($key);
-                	$tmp = serialize($values);
-					$rssmess .= EPL_ADLAN_46 . ". ($key)<br />";
-                }
-				$feeds = implode(",",$rssfeeds);
-			}
-            $plugin_rss = ($feeds) ? $feeds : "";
-			$sql->db_Update('plugin', "plugin_installflag = 1, plugin_rss = '$plugin_rss' WHERE plugin_id = '".intval($id)."'");
+			$eplug_addons = $this->getAddons($eplug_folder);
+
+			$sql->db_Update('plugin', "plugin_installflag = 1, plugin_addons = '{$eplug_addons}' WHERE plugin_id = '".intval($id)."'");
             if($rssmess){ $text .= $rssmess; }
-			$text .= ($eplug_done ? "<br />{$eplug_done}" : "");
+			$text .= (isset($eplug_done) ? "<br />{$eplug_done}" : "<br />".LAN_INSTALL_SUCCESSFUL);
 		} else {
 			$text = EPL_ADLAN_21;
 		}
-		if($eplug_conffile){ $text .= "&nbsp;<a href='".e_PLUGIN."$eplug_folder/$eplug_conffile'>[".EPL_CONFIGURE."]</a>"; }
+		if($eplug_conffile){ $text .= "&nbsp;<a href='".e_PLUGIN."$eplug_folder/$eplug_conffile'>[".LAN_CONFIGURE."]</a>"; }
 		$ns->tablerender(EPL_ADLAN_33, $text);
 	}
+
+
+
+	function save_addon_prefs(){  // scan the plugin table and create path-array-prefs for each addon.
+		global $sql,$pref;
+        $query = "SELECT * FROM #plugin WHERE plugin_installflag = 1 AND plugin_addons !='' ORDER BY plugin_path ASC";
+
+		// clear all addon prefs before re-creation. 
+		unset($pref['shortcode_list'],$pref['bbcode_list'],$pref['e_sql_list']);
+        foreach($this->plugin_addons as $plg)
+		{
+        	unset($pref[$plg."_list"]);
+		}
+
+		if ($sql -> db_Select_gen($query))
+		{
+			while($row = $sql-> db_Fetch())
+			{
+                $tmp = explode(",",$row['plugin_addons']);
+				$path = $row['plugin_path'];
+
+        		foreach($this->plugin_addons as $val)
+				{
+                	if(in_array($val,$tmp))
+					{
+ 						$pref[$val."_list"][$path] = $path;
+					}
+				}
+                // search for .bb and .sc files.
+				$sc_array = array();
+				$bb_array = array();
+				$sql_array = array();
+
+                foreach($tmp as $adds)
+				{
+                	if(substr($adds,-3) == ".sc")
+					{
+						$sc_name = substr($adds, 0,-3);  // remove the .sc
+                    	$sc_array[$sc_name] = "0"; // default userclass.
+					}
+
+					if(substr($adds,-3) == ".bb")
+					{
+						$bb_name = substr($adds, 0,-3); // remove the .bb
+                    	$bb_array[$bb_name] = "0"; // default userclass.
+					}
+
+					if(substr($adds,-4) == "_sql")
+					{
+						$pref['e_sql_list'][$path] = $adds;
+					}
+				}
+
+                // Build Bbcode list
+                if(count($bb_array) > 0)
+				{
+					ksort($bb_array);
+                	$pref['bbcode_list'][$path] = $bb_array;
+
+				}
+				else
+				{
+                    unset($pref['bbcode_list'][$path]);
+				}
+
+                // Build shortcode list
+				if(count($sc_array) > 0){
+					ksort($sc_array);
+					$pref['shortcode_list'][$path] = $sc_array;
+                }
+				else
+				{
+                    unset($pref['shortcode_list'][$path]);
+				}
+
+			}
+		}
+
+	  	save_prefs();
+		return;
+
+	}
+
+    // return a list of available plugin addons for the specified plugin. e_xxx etc.
+	function getAddons($plugin_path,$debug=FALSE){
+        global $fl;
+
+		$p_addons = "";
+		foreach($this->plugin_addons as $e_xxx)
+		{
+			if(is_readable(e_PLUGIN.$plugin_path."/".$e_xxx.".php"))
+			{
+				$p_addons[] = $e_xxx;
+			}
+		}
+
+		if(!is_object($fl)){
+			require_once(e_HANDLER.'file_class.php');
+ 			$fl = new e_file;
+		}
+
+		// Grab List of Shortcodes & BBcodes
+		$shortcodeList	= $fl->get_files(e_PLUGIN.$plugin_path, ".sc$", "standard", 1);
+		$bbcodeList		= $fl->get_files(e_PLUGIN.$plugin_path, ".bb$", "standard", 1);
+        $sqlList		= $fl->get_files(e_PLUGIN.$plugin_path, "_sql.php$", "standard", 1);
+
+		// Search Shortcodes
+		foreach($shortcodeList as $sc)
+		{
+			if(is_readable(e_PLUGIN.$plugin_path."/".$sc['fname']))
+			{
+				$p_addons[] = $sc['fname'];
+			}
+		}
+
+        // Search Bbcodes.
+        foreach($bbcodeList as $bb)
+		{
+			if(is_readable(e_PLUGIN.$plugin_path."/".$bb['fname']))
+			{
+				$p_addons[] = $bb['fname'];
+			}
+		}
+
+        // Search _sql files.
+        foreach($sqlList as $esql)
+		{
+			if(is_readable(e_PLUGIN.$plugin_path."/".$esql['fname']))
+			{
+				$p_addons[] = str_replace(".php","",$esql['fname']);
+			}
+		}
+
+
+		if($debug)
+		{
+			echo $plugin_path." = ".implode(",",$p_addons)."<br />";
+		}
+
+		return implode(",",$p_addons);
+	}
+
+
 }
 
 ?>

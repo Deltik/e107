@@ -11,111 +11,158 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/signup.php,v $
-|     $Revision: 1.89 $
-|     $Date: 2006/05/16 01:31:12 $
+|     $Revision: 1.102 $
+|     $Date: 2006/11/14 14:55:56 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 
 require_once("class2.php");
-include_lan(e_LANGUAGEDIR.e_LANGUAGE."/lan_usersettings.php");
+$qs = explode(".", e_QUERY);
+if($qs[0] != "activate"){   // multi-language fix.
+	e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_signup.php");
+	e107_include_once(e_LANGUAGEDIR."English/lan_signup.php");
+	e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_usersettings.php");
+}
+
 include_once(e_HANDLER."user_extended_class.php");
 $usere = new e107_user_extended;
 require_once(e_HANDLER."calendar/calendar_class.php");
 $cal = new DHTML_Calendar(true);
 
-$fname = "signup_template.php";
-if(is_readable(THEME."templates/".$fname))
-{
-	include_once(THEME."templates/".$fname);
+if (is_readable(THEME."signup_template.php")) {
+	require_once(THEME."signup_template.php");
+} else {
+	require_once(e_THEME."templates/signup_template.php");
 }
-elseif(is_readable(THEME.$fname))
-{
-	include_once(THEME.$fname);
-}
-if(is_readable(e_THEME."templates/{$fname}"))
-{
-	include_once(e_THEME."templates/{$fname}");
-}
-
-
 
 include_once(e_FILE."shortcode/batch/signup_shortcodes.php");
 
 $signup_imagecode = ($pref['signcode'] && extension_loaded("gd"));
 
 // Resend Activation Email ------------------------------------------->
-if(e_QUERY == "resend" && !USER)
+if(e_QUERY == "resend" && !USER && ($pref['user_reg_veri'] == 1))
 {
+	e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_".e_PAGE);
+	e107_include_once(e_LANGUAGEDIR."English/lan_".e_PAGE);
 	require_once(HEADERF);
-	$clean_email = check_email($tp -> toDB($_POST['resend_email']));
+
+    if(!$clean_email = check_email($tp -> toDB($_POST['resend_email'])))
+	{
+		$clean_email = "xxx";
+	}
+
+    if(!$new_email = check_email($tp -> toDB($_POST['resend_newemail'])))
+	{
+    	$new_email = FALSE;
+	}
+
 
 	if($_POST['submit_resend'])
 	{
-		if($sql->db_Select("user", "*", "user_email = \"".$tp->toDB($clean_email)."\" AND user_ban=0"))
+		if($_POST['resend_email'] && !$new_email && $sql->db_Select_gen("SELECT * FROM #user WHERE user_ban=0 AND user_sess='' AND (user_loginname= \"".$tp->toDB($_POST['resend_email'])."\" OR user_name = \"".$tp->toDB($_POST['resend_email'])."\" OR user_email = \"".$clean_email."\" ) "))
 		{
-			$ns -> tablerender("Activation not necessary","Your account is already activated.<br />");
+			$ns -> tablerender(LAN_SIGNUP_40,LAN_SIGNUP_41."<br />");
 			require_once(FOOTERF);
 			exit;
 		}
 
-		if($sql->db_Select("user", "*", "user_email = \"".$tp->toDB($clean_email)."\" AND user_ban=2 AND user_sess !='' LIMIT 1"))
-		$row = $sql -> db_Fetch();
-
-		$_POST['password1'] = "xxxxxxxx";
-		$_POST['loginname'] = $row['user_loginname'];
-		$_POST['name'] = $row['user_name'];
-		$nid = $row['user_id'];
-		$u_key = $row['user_sess'];
-
-		$eml = render_email();
-        $mailheader_e107id = $nid;
-		require_once(e_HANDLER."mail.php");
-		if(!sendemail($row['user_email'], $eml['subject'], $eml['message'], $row['user_name'], "", "", $eml['attachments'], $eml['cc'], $eml['bcc'], $returnpath, $returnreceipt,$eml['inline-images']))
+		if(trim($_POST['resend_password']) !="" && $new_email)
 		{
-			$ns -> tablerender("Error","There was a problem, the registration mail was not sent, please contact the website administrator.");
-			require_once(FOOTERF);
-			exit;
-		}
-		else
-		{
-			$ns -> tablerender("Email Sent","Activation email sent to: ".$row['user_email']." - Please check your inbox.<br /><br />");
-			require_once(FOOTERF);
-			exit;
+        	if($sql->db_Select("user", "user_id", "user_password = \"".md5($_POST['resend_password'])."\" AND user_ban=2 AND user_sess !='' LIMIT 1"))
+			{
+				$row = $sql -> db_Fetch();
+            	if($sql->db_Update("user", "user_email='".$new_email."' WHERE user_id = '".$row['user_id']."' LIMIT 1 "))
+				{
+                	$clean_email = $new_email;
+				}
+			}
+			else
+			{
+			   	require_once(e_HANDLER."message_handler.php");
+			   	message_handler("ALERT",LAN_SIGNUP_52); // Incorrect Password.
+			}
 		}
 
+		if($sql->db_Select("user", "*", "(user_loginname = \"".$tp->toDB($_POST['resend_email'])."\" OR user_name = \"".$tp->toDB($_POST['resend_email'])."\" OR user_email = \"".$clean_email."\" ) AND user_ban=2 AND user_sess !='' LIMIT 1"))
+		{
+			$row = $sql -> db_Fetch();
+
+			$_POST['password1'] = "xxxxxxxxx";
+			$_POST['loginname'] = $row['user_loginname'];
+			$_POST['name'] = $row['user_name'];
+			$nid = $row['user_id'];
+			$u_key = $row['user_sess'];
+
+			$eml = render_email();
+        	$mailheader_e107id = $nid;
+			require_once(e_HANDLER."mail.php");
+
+
+/*            echo "Sending to: ".$row['user_email'];
+            require_once(FOOTERF);
+            exit;
+*/
+
+            if(!sendemail($row['user_email'], $eml['subject'], $eml['message'], $row['user_name'], "", "", $eml['attachments'], $eml['cc'], $eml['bcc'], $returnpath, $returnreceipt,$eml['inline-images']))
+            {
+                $ns -> tablerender(LAN_ERROR,LAN_SIGNUP_42);
+                require_once(FOOTERF);
+                exit;
+            }
+            else
+            {
+                $ns -> tablerender(LAN_SIGNUP_43,LAN_SIGNUP_44." ".$row['user_email']." - ".LAN_SIGNUP_45."<br /><br />");
+                require_once(FOOTERF);
+                exit;
+            }
+         }
+		exit;
 	}
-	else
+	elseif(!$_POST['submit_resend'])
 	{
-		$text = "<div style='text-align:center'>
+
+		$text .= "<div style='text-align:center'>
 		<form method='post' action='".e_SELF."?resend' name='resend_form'>
-		<table style='width:99%' class='fborder'>
+		<table style='".USER_WIDTH."' class='fborder'>
 		<tr>
-		<td class='forumheader3'>
-		If you have already registered but did not receive an email to activate your account, please enter the email address you used during registration below. A new activation email will be resent to you at that address.
+			<td class='forumheader3' style='text-align:right'>".LAN_SIGNUP_48."</td>
+        <td class='forumheader3'>
+		<input type='text' name='resend_email' class='tbox' size='50' style='max-width:80%' value='' maxlength='80' />
 		</td>
 		</tr>
-		<tr><td class='forumheader3'>".LAN_112."
-		<input type='text' name='resend_email' class='tbox' style='width:80%' value='' />
+
+		<tr>
+			<td class='forumheader3' colspan='2'>".LAN_SIGNUP_49."</td>
+		</tr>
+		<tr>
+			<td class='forumheader3' style='text-align:right;width:30%'>".LAN_SIGNUP_50."</td>
+			<td class='forumheader3'><input type='text' name='resend_newemail' class='tbox' size='50' style='max-width:80%' value='' maxlength='80' />
+		</tr>
+		<tr>
+			<td class='forumheader3' style='text-align:right'>".LAN_SIGNUP_51."</td>
+			<td class='forumheader3'><input type='text' name='resend_password' class='tbox' size='50' style='max-width:80%' value='' maxlength='80' />
+
 		</td>
 		</tr>
+
 		";
 
 		$text .="<tr style='vertical-align:top'>
 		<td colspan='2' style='text-align:center' class='forumheader'>";
-		$text .= "<input class='button' type='submit' name='submit_resend' value='Send Activation Email' />";
+		$text .= "<input class='button' type='submit' name='submit_resend' value=\"".LAN_SIGNUP_47."\" />";  // resend activation email.
 		$text .= "</td>
 		</tr>
 		</table>
 		</form>
 		</div>";
 
-		$ns -> tablerender("Resend Activation Email", $text);
+		$ns -> tablerender(LAN_SIGNUP_47, $text);
 		require_once(FOOTERF);
 		exit;
 	}
 
-
+    exit;
 }
 
 // ------------------------------------------------------------------
@@ -128,7 +175,6 @@ if(!$_POST)   // Notice Removal.
 	$password1 = "";
 	$password2 = "";
 	$email = "";
-	$name = "";
 	$loginname = "";
 	$realname = "";
 	$user_timezone = "";
@@ -141,6 +187,8 @@ if(!$_POST)   // Notice Removal.
 
 if(ADMIN && (e_QUERY == "preview" || e_QUERY == "test"  || e_QUERY == "preview.aftersignup"))
 {
+	e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_".e_PAGE);
+	e107_include_once(e_LANGUAGEDIR."English/lan_".e_PAGE);
 	if(e_QUERY == "preview.aftersignup")
 	{
 		require_once(HEADERF);
@@ -179,12 +227,11 @@ if(ADMIN && (e_QUERY == "preview" || e_QUERY == "test"  || e_QUERY == "preview.a
 
 		if(!sendemail(USEREMAIL, $subj, $message, USERNAME, "", "", $attachments, $Cc, $Bcc, $returnpath, $returnreceipt,$inline))
 		{
-			//	if(!sendemail(USEREMAIL, $subj, $message, USERNAME)) {
-			echo "<br /><br /><br /><br >&nbsp;&nbsp;>> There was a problem, the registration mail was not sent, please contact the website administrator.";
+			echo "<br /><br /><br /><br >&nbsp;&nbsp;>> ".LAN_SIGNUP_42; // there was a problem.
 		}
 		else
 		{
-			echo "<br /><br />&nbsp;&nbsp;>> Email Sent to: ".USEREMAIL." - Check your inbox!";
+			echo "<br /><br />&nbsp;&nbsp;>> ".LAN_SIGNUP_43." [ ".USEREMAIL." ] - ".LAN_SIGNUP_45;
 		}
 	}
 	exit;
@@ -223,11 +270,33 @@ if(USER)
 	exit;
 }
 
+// After clicking the activation link -------------------------
 if (e_QUERY)
 {
 	$qs = explode(".", e_QUERY);
-	if ($qs[0] == "activate" && count($qs) == 3 && $qs[2])
+	if ($qs[0] == "activate" && (count($qs) == 3 || count($qs) == 4) && $qs[2])
 	{
+        // return the message in the correct language.
+		if($qs[3] && strlen($qs[3]) == 2 )
+		{
+			require_once(e_HANDLER."language_class.php");
+			$lng = new language;
+			$the_language = $lng->convert($qs[3]);
+			if(is_readable(e_LANGUAGEDIR.$the_language."/lan_signup.php"))
+			{
+				include(e_LANGUAGEDIR.$the_language."/lan_signup.php");
+			}
+			else
+			{
+				require_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_signup.php");
+ 			}
+		}
+		else
+		{
+            include_lan(e_LANGUAGEDIR.e_LANGUAGE."/lan_signup.php");
+		}
+
+
 		$e107cache->clear("online_menu_totals");
 		if ($sql->db_Select("user", "*", "user_sess='".$tp -> toDB($qs[2], true)."' "))
 		{
@@ -249,6 +318,7 @@ if (e_QUERY)
 		}
 	}
 }
+
 
 if (isset($_POST['register']))
 {
@@ -313,7 +383,12 @@ if (isset($_POST['register']))
 	{
 		$error_message .= LAN_103."\\n";
 		$error = TRUE;
-		$name = "";
+	}
+
+	// Use LoginName for DisplayName if restricted   **** MOVED FORWARD ****
+	if (!check_class($pref['displayname_class']))
+	{
+		$_POST['name'] = $_POST['loginname'];
 	}
 
 	// Check for disallowed names.
@@ -325,7 +400,6 @@ if (isset($_POST['register']))
 			if( strstr($_POST['name'], $disallow) || strstr($_POST['loginname'], $disallow) ){
 				$error_message .= LAN_103."\\n";
 				$error = TRUE;
-				$name = "";
 			}
 		}
 	}
@@ -339,16 +413,14 @@ if (isset($_POST['register']))
 	// Display Name exists.
 	if ($sql->db_Select("user", "*", "user_name='".$tp -> toDB($_POST['name'])."'"))
 	{
-		$error_message .= LAN_411."\\n";
+		$error_message .= LAN_411.": ".$tp -> toDB($_POST['name'])."\\n";
 		$error = TRUE;
-		$name = "";
 	}
 	// Login Name exists
 	if ($sql->db_Select("user", "*", "user_loginname='".$tp -> toDB($_POST['loginname'])."' "))
 	{
-		$error_message .= LAN_104."\\n";
+		$error_message .= LAN_104.": ".$tp -> toDB($_POST['loginname'])."\\n";
 		$error = TRUE;
-		$name = "";
 	}
 
 	// check for multiple signups from the same IP address.
@@ -380,7 +452,7 @@ if (isset($_POST['register']))
 	}
 
 	// Password length check.
-	if (strlen($_POST['password1']) < $pref['signup_pass_len'])
+	if (trim(strlen($_POST['password1'])) < $pref['signup_pass_len'])
 	{
 		$error_message .= LAN_SIGNUP_4.$pref['signup_pass_len'].LAN_SIGNUP_5."\\n";
 		$error = TRUE;
@@ -388,14 +460,8 @@ if (isset($_POST['register']))
 		$password2 = "";
 	}
 
-	// Use LoginName for DisplayName if restricted
-	if (!check_class($pref['displayname_class']))
-	{
-		$_POST['name'] = $_POST['loginname'];
-	}
-
 	// Check for emtpy fields
-	if ($_POST['name'] == "" || $_POST['loginname'] == "" || $_POST['password1'] == "" || $_POST['password2'] = "")
+	if (trim($_POST['name']) == "" || trim($_POST['loginname']) == "" || trim($_POST['password1']) == "" || trim($_POST['password2']) == "")
 	{
 		$error_message .= LAN_185."\\n";
 		$error = TRUE;
@@ -437,12 +503,32 @@ if (isset($_POST['register']))
 	{
 		if(isset($_POST['ue']['user_'.$ext['user_extended_struct_name']]))
 		{
-			$newval = $_POST['ue']['user_'.$ext['user_extended_struct_name']];
-			if($ext['user_extended_struct_required'] == 1 && trim($newval) == "" )
+
+			$newval = trim($_POST['ue']['user_'.$ext['user_extended_struct_name']]);
+			if($ext['user_extended_struct_required'] == 1 && $newval == "" )
 			{
 				$_ftext = (defined($ext['user_extended_struct_text']) ? constant($ext['user_extended_struct_text']) : $ext['user_extended_struct_text']);
 				$error_message .= LAN_SIGNUP_6.$_ftext.LAN_SIGNUP_7."\\n";
 				$error = TRUE;
+			}
+			$parms = explode("^,^", $ext['user_extended_struct_parms']);
+			$regex = (isset($parms[1]) ? $tp->toText($parms[1]) : "");
+			$regexfail = (isset($parms[2]) ? trim($tp->toText($parms[2])) : "");
+
+			if($regexfail == "")
+			{
+				$regexfail = $ext['user_extended_struct_name']." ".LAN_SIGNUP_53;
+			}
+	
+			if(defined($regexfail)) {$regexfail = constant($regexfail);}
+
+			if($regex != "" && $newval != "")
+			{
+				if(!preg_match($regex, $newval))
+				{
+					$error_message .= $regexfail."\\n";
+					$error = TRUE;
+				}
 			}
 		}
 	}
@@ -474,7 +560,7 @@ if (isset($_POST['register']))
 	}
 
 	// Check email address on remote server (if enabled).
-	if ($pref['signup_remote_emailcheck'] && $error != TRUE)
+	if (varsettrue($pref['signup_remote_emailcheck']) && $error != TRUE)
 	{
 		require_once(e_HANDLER."mail_validation_class.php");
 		list($adminuser,$adminhost) = split ("@", SITEADMINEMAIL);
@@ -484,7 +570,7 @@ if (isset($_POST['register']))
 		$validator->timeout=3;
 		//	$validator->debug=1;
 		//	$validator->html_debug=1;
-		if($validator->ValidateEmailBox($_POST['email']) != 1)
+		if($validator->ValidateEmailBox(trim($_POST['email'])) != 1)
 		{
 			$error_message .= LAN_106."\\n";
 			$error = TRUE;
@@ -568,12 +654,12 @@ if (isset($_POST['register']))
 
 				if(!sendemail($_POST['email'], $eml['subject'], $eml['message'], "", "", "", $eml['attachments'], $eml['cc'], $eml['bcc'], "", "", $eml['inline-images']))
 				{
-					$error_message = "There was a problem, the registration mail was not sent, please contact the website administrator.";
+					$error_message = LAN_SIGNUP_42; // There was a problem, the registration mail was not sent, please contact the website administrator.
 				}
 			}
 
-			$edata_su = array("username" => $username, "email" => $_POST['email'], "signature" => $_POST['signature'], "image" => $_POST['image'], "timezone" => $_POST['timezone'], "hideemail" => $_POST['hideemail'], "ip" => $ip, "realname" => $_POST['realname'], "xup" => $_POST['xupexist']);
-			$e_event->trigger("usersup", $edata_su);
+            $_POST['ip'] = $ip;
+			$e_event->trigger("usersup", $_POST);  // send everything in the template, including extended fields.
 
 			require_once(HEADERF);
 			if($pref['signup_text_after'])
@@ -628,9 +714,8 @@ if (isset($_POST['register']))
 			}
 
 			// ==========================================================
-
-			$edata_su = array("username" => $username, "email" => $_POST['email'], "signature" => $_POST['signature'], "image" => $_POST['image'], "timezone" => $_POST['timezone'], "hideemail" => $_POST['hideemail'], "ip" => $ip, "realname" => $_POST['realname'], "xup" => $_POST['xupexist']);
-			$e_event->trigger("usersup", $edata_su);
+            $_POST['ip'] = $ip;
+			$e_event->trigger("usersup", $_POST);  // send everything in the template, including extended fields.
 
 			if($pref['signup_text_after'])
 			{
@@ -739,7 +824,7 @@ function render_email($preview = FALSE)
 		$u_key = "1234567890ABCDEFGHIJKLMNOP";
 	}
 
-	define("RETURNADDRESS", (substr(SITEURL, -1) == "/" ? SITEURL."signup.php?activate.".$nid.".".$u_key : SITEURL."/signup.php?activate.".$nid.".".$u_key));
+	define("RETURNADDRESS", (substr(SITEURL, -1) == "/" ? SITEURL."signup.php?activate.".$nid.".".$u_key : SITEURL."/signup.php?activate.".$nid.".".$u_key.".".e_LAN));
 	$pass_show = ($pref['user_reg_secureveri'])? "*******" : $_POST['password1'];
 
 	if (file_exists(THEME."email_template.php"))

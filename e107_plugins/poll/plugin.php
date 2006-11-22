@@ -11,16 +11,15 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/poll/plugin.php,v $
-|     $Revision: 1.5 $
-|     $Date: 2005/12/14 19:28:52 $
-|     $Author: sweetas $
+|     $Revision: 1.7 $
+|     $Date: 2006/11/04 18:33:58 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
 
-@include_once(e_PLUGIN."poll/languages/".e_LANGUAGE.".php");
-@include_once(e_PLUGIN."poll/languages/English.php");
+include_lan(e_PLUGIN."poll/languages/".e_LANGUAGE.".php");
 
 // Plugin info -------------------------------------------------------------------------------------------------------
 $eplug_name = POLL_ADLAN01;
@@ -41,7 +40,6 @@ $eplug_menu_name = "poll_menu";
 // Name of the admin configuration file --------------------------------------------------------------------------
 $eplug_conffile = "admin_config.php";
 
-$eplug_sc = array("");
 
 // Icon image and caption text ------------------------------------------------------------------------------------
 $eplug_icon = $eplug_folder."/images/polls_32.png";

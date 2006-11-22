@@ -4,13 +4,13 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/forum/languages/English/lan_forum_post.php,v $
-|     $Revision: 1.9 $
-|     $Date: 2005/05/22 16:05:56 $
-|     $Author: stevedunstan $
+|     $Revision: 1.11 $
+|     $Date: 2006/08/27 02:24:45 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 define("PAGE_NAME", "Forum");
-	
+
 define("LAN_01", "Forums");
 define("LAN_02", "Replying to: ");
 define("LAN_03", "New Thread");
@@ -48,7 +48,7 @@ define("LAN_100", "Thread Topic");
 define("LAN_101", "Latest ");
 define("LAN_102", " replies");
 define("LAN_103", "Review complete thread. (Will open a new window.)");
-define("LAN_133", "Thankyou");
+define("LAN_133", "Thank you");
 define("LAN_174", "Signup");
 define("LAN_175", "Login");
 define("LAN_212", "Forgot password?");
@@ -73,8 +73,8 @@ define("LAN_389", "Duplicate post, redirecting ...");
 define("LAN_390", "Attach file / image");
 define("LAN_391", "Options");
 define("LAN_392", "File to attach");
-define("LAN_393", "<b>Please note</b><br />Allowed filetypes:");
-define("LAN_394", "Any other filetypes uploaded will be instantly deleted.");
+define("LAN_393", "<b>Please note</b><br />Allowed file types:");
+define("LAN_394", "Any other file types uploaded will be instantly deleted.");
 define("LAN_395", "Maximum file size");
 define("LAN_396", "bytes");
 define("LAN_397", "This thread is locked.");
@@ -82,13 +82,13 @@ define("LAN_398", "This forum is read only");
 define("LAN_399", "You are not authorized to post to this forum.");
 define("LAN_400", "post thread as");
 define("LAN_401", "Jump");
-	
+
 define("LAN_402", "poll");
 define("LAN_403", "announcement");
 define("LAN_404", "sticky");
 define("LAN_405", "Forums");
 define("LAN_406", "Re:");
-	
+
 //v.616
 define("LAN_407", "Redirect");
 define("LAN_408", "If your browser does not support meta redirection please click");
@@ -96,7 +96,7 @@ define("LAN_409", "HERE");
 define("LAN_410", "to be redirected");
 define("LAN_411", "here");
 define("LAN_412", "to go to the registration page.");
-	
+
 define("LAN_413", "Your poll has been successfully posted.");
 define("LAN_414", "Click Here to view your poll");
 define("LAN_415", "Your reply has been successfully posted.");

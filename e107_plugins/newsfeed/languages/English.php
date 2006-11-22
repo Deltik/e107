@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/newsfeed/languages/English.php,v $
-|     $Revision: 1.6 $
-|     $Date: 2006/04/14 14:09:53 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.9 $
+|     $Date: 2006/11/04 18:26:47 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -61,7 +61,7 @@ define("NFLAN_40", "Newsfeed deleted");
 define("NFLAN_41", "No newsfeeds defined yet");
 
 define("NFLAN_42", "<b>&raquo;</b> <u>Feed Name:</u>
-	The identifying name of the feed, can be anything you like.
+	The identifying name of the feed can be anything you like.
 	<br /><br />
 	<b>&raquo;</b> <u>URL to rss feed:</u>
 	The address of the rss feed
@@ -76,7 +76,7 @@ define("NFLAN_42", "<b>&raquo;</b> <u>Feed Name:</u>
 	The amount of seconds that elapse before the feed is updated, for example, 1800: 30 minutes, 3600: an hour.
 	<br /><br />
 	<b>&raquo;</b> <u>Activation:</u>
-	where you want the feed results to be displayed, to see menu feeds you will need to activate the newsfeeds menu on the <a href='".e_ADMIN."menus.php'>menus page</a>.
+	Where you want the feed results to be displayed, to see menu feeds you will need to activate the newsfeeds menu on the <a href='".e_ADMIN."menus.php'>menus page</a>.
 	<br /><br />For a good list of available feeds, see <a href='http://www.syndic8.com/' rel='external'>syndic8.com</a> or <a href='http://feedfinder.feedster.com/index.php' rel='external'>feedster.com</a>");
 define("NFLAN_43", "Newsfeed help");
 define("NFLAN_44", "click to view");
@@ -84,5 +84,8 @@ define("NFLAN_44", "click to view");
 define("NFLAN_45", "Number of items to show in menu");
 define("NFLAN_46", "Number of items to show on main page");
 define("NFLAN_47", "0 or blank to show all");
+
+define("NFLAN_48", "Unable to save raw data in database.");
+define("NFLAN_49", "Unable to unserialize rss data - uses non-standard syntax");
 
 ?>

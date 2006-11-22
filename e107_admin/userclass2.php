@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/userclass2.php,v $
-|     $Revision: 1.18 $
-|     $Date: 2006/02/13 03:04:25 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.21 $
+|     $Date: 2006/10/24 13:34:38 $
+|     $Author: mrpete $
 +----------------------------------------------------------------------------+
 */
 require_once("../class2.php");
@@ -165,7 +165,7 @@ if (isset($message))
 	$ns->tablerender("", "<div style='text-align:center'><b>".$message."</b></div>");
 }
 
-$class_total = $sql->db_Select("userclass_classes");
+$class_total = $sql->db_Select("userclass_classes", "*", "ORDER BY userclass_name", "nowhere");
 
 $text = "<div style='text-align:center'>
 	<form method='post' action='".e_SELF."' id='classForm'>
@@ -216,7 +216,7 @@ $text .= "
 $text .= "
 	<tr>
 	<td class='forumheader3'>".UCSLAN_24."</td>
-	<td class='forumheader3'>".r_userclass("userclass_editclass", $userclass_editclass, "off", "admin,classes,matchclass,public,nobody")."</td>
+	<td class='forumheader3'>".r_userclass("userclass_editclass", $userclass_editclass, "off", "main,admin,classes,matchclass,public,nobody")."</td>
 	</tr>
 	";
 
@@ -288,7 +288,7 @@ if(isset($_POST['edit']))
 	$text .= "</select><br /><br />
 		<input class='button' type='button' value='".UCSLAN_17."' onclick='removeMe();' />
 		<input class='button' type='button' value='".UCSLAN_18."' onclick='clearMe($userclass_id);' />
-		<input type='hidden' name='class_id' value='$userclass_id'>
+		<input type='hidden' name='class_id' value='$userclass_id' />
 
 		</td></tr></table>
 		</td></tr>

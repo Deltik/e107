@@ -11,13 +11,13 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/list_new/languages/English.php,v $
-|     $Revision: 1.13 $
-|     $Date: 2005/12/30 15:26:25 $
+|     $Revision: 1.16 $
+|     $Date: 2006/10/28 09:02:43 $
 |     $Author: lisa_ $
 +----------------------------------------------------------------------------+
 */
 
-define("PAGE_NAME", "List New Items");
+if (!defined("PAGE_NAME")) { define("PAGE_NAME", "List New Items"); }
 
 define("LIST_PLUGIN_1", "List");
 define("LIST_PLUGIN_2", "This plugin allows you to view a list of recent additions in all e107 categories. You can either view the list with data since your last visit, or view a general latest additions list. Besides the page a menu is also present. Every section is configurable in the admin area.");
@@ -116,7 +116,7 @@ define("LIST_ADMIN_LAN_19", "For more information on date formats see the <a hre
 
 define("LIST_ADMIN_LAN_20", "columns");
 define("LIST_ADMIN_LAN_21", "choose an amount of columns");
-define("LIST_ADMIN_LAN_22", "define how many columns you want to use. the number you specify will seperate the page into an equal amount of columns");
+define("LIST_ADMIN_LAN_22", "define how many columns you want to use. the number you specify will separate the page into an equal amount of columns");
 
 define("LIST_ADMIN_LAN_23", "welcome text");
 define("LIST_ADMIN_LAN_24", "define a welcome text that will be rendered at the top of the page");
@@ -138,6 +138,10 @@ define("LIST_ADMIN_LAN_35", "days");
 define("LIST_ADMIN_LAN_36", "timelapse");
 define("LIST_ADMIN_LAN_37", "display a select box with number of days to look back?");
 define("LIST_ADMIN_LAN_38", "");
+
+define("LIST_ADMIN_LAN_39", "open if records exist");
+define("LIST_ADMIN_LAN_40", "should sections that contain records be opened by default?");
+define("LIST_ADMIN_LAN_41", "");
 
 define("LIST_MENU_1", "recent additions");
 define("LIST_MENU_2", "by");

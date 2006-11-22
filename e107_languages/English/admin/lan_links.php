@@ -4,8 +4,8 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/lan_links.php,v $
-|     $Revision: 1.13 $
-|     $Date: 2005/11/23 18:08:28 $
+|     $Revision: 1.15 $
+|     $Date: 2006/08/27 02:24:44 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
@@ -23,7 +23,7 @@ define("LCLAN_18", "Link Button / Icon");
 define("LCLAN_19", "Link Open Type");
 define("LCLAN_20", "Opens in same window");
 define("LCLAN_23", "Opens in new window");
-define("LCLAN_24", "Opens in 600x400 miniwindow");
+define("LCLAN_24", "Opens in 600x400 mini-window");
 define("LCLAN_25", "Link Class");
 define("LCLAN_26", "Ticking will make the link visible to only users in that class");
 define("LCLAN_27", "Update Link");
@@ -46,7 +46,7 @@ define("LCLAN_81", "Sub-menus will display only after clicking their parent. (Li
 define("LCLAN_83", "Submenus Generator");
 define("LCLAN_88", "Site Links Options");
 define("LCLAN_89", "Image");
-define("LCLAN_90", "Link Name");
+
 define("LCLAN_91", "Move");
 define("LCLAN_95", "Class");
 

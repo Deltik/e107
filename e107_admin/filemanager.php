@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/filemanager.php,v $
-|     $Revision: 1.19 $
-|     $Date: 2006/02/15 03:06:43 $
-|     $Author: e107coders $
+|     $Revision: 1.21 $
+|     $Date: 2006/11/15 15:55:40 $
+|     $Author: lisa_ $
 +----------------------------------------------------------------------------+
 */
 require_once("../class2.php");
@@ -108,7 +108,7 @@ if (isset($message)) {
 	$ns->tablerender("", "<div style=\"text-align:center\"><b>".$message."</b></div>");
 }
 
-if (strpos(e_QUERY, ".")) {
+if (strpos(e_QUERY, ".") && !is_dir(realpath(e_BASE.$path))){
 	echo "<iframe style=\"width:100%\" src=\"".e_BASE.e_QUERY."\" height=\"300\" scrolling=\"yes\"></iframe><br /><br />";
 	if (!strpos(e_QUERY, "/")) {
 		$path = "";
@@ -219,7 +219,7 @@ if ($path != e_FILE) {
 	} else {
 		$pathup = e_SELF."?".substr($path, 0, strrpos(substr($path, 0, -1), "/"))."/";
 	}
-	$text .= "<tr><td colspan=\"5\" class=\"forumheader3\"><a href=\"".$pathup."\"><img src=\"".$imagedir."updir.png\" alt=\"".FMLAN_30."\" style=\"border:0\" /> </a>
+	$text .= "<tr><td colspan=\"5\" class=\"forumheader3\"><a href=\"".$pathup."\"><img src=\"".$imagedir."updir.png\" alt=\"".FMLAN_30."\" style=\"border:0\" /></a> 
 		<a href=\"filemanager.php\"><img src=\"".$imagedir."home.png\" alt=\"".FMLAN_16."\" style=\"border:0\" /></a>
 		</td>
 		</tr>";

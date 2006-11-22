@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/user_extended_class.php,v $
-|     $Revision: 1.37 $
-|     $Date: 2006/03/11 21:08:26 $
-|     $Author: e107coders $
+|     $Revision: 1.39 $
+|     $Date: 2006/11/07 23:46:20 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 
@@ -41,6 +41,7 @@ class e107_user_extended
 	var $user_extended_types;
 	var $extended_xml;
 	var $typeArray;
+	var $reserved_names;
 
 	function e107_user_extended()
 	{
@@ -73,8 +74,24 @@ class e107_user_extended
 		7 => UE_LAN_7,
 		8 => UE_LAN_8
 		);
+
+		//load array with field names from main user table, so we can disallow these
+		$this->reserved_names = array (
+		'id', 'name', 'loginname', 'customtitle', 'password',
+		'sess', 'email', 'signature', 'image', 'timezone', 'hideemail',
+		'join', 'lastvisit', 'currentvisit', 'lastpost', 'chats',
+		'comments', 'forums', 'ip', 'ban', 'prefs', 'new', 'viewed',
+		'visits', 'admin', 'login', 'class', 'perms', 'realm', 'pwchange',
+		'xup'
+		);
+	
 	}
 
+	function user_extended_reserved($name)
+	{
+		return (in_array($name, $this->reserved_names));
+	}
+	
 	function user_extended_get_categories($byID = TRUE)
 	{
 		global $sql;
@@ -182,7 +199,8 @@ class e107_user_extended
 		{
 			$type = $this->typeArray[$type];
 		}
-		if (!($this->user_extended_field_exist($name)))
+		
+		if (!$this->user_extended_field_exist($name) && !$this->user_extended_reserved($name))
 		{
 			$field_info = $this->user_extended_type_text($type, $default);
 			if($order === '')
@@ -312,7 +330,7 @@ class e107_user_extended
 				$order = ($choices[3]) ? "ORDER BY ".$tp -> toDB($choices[3], true) : "";
 
 				if($sql->db_Select($tp -> toDB($choices[0], true), $tp -> toDB($choices[1], true).",".$tp -> toDB($choices[2], true), "1 $order")){
-					$choiceList = $sql->db_getList('ALL',FALSE,300);
+					$choiceList = $sql->db_getList('ALL',FALSE);
 					$ret = "<select {$include} name='{$fname}'  >\n";
 					$ret .= "<option value=''>&nbsp;</option>\n";  // ensures that the user chose it.
 					foreach($choiceList as $cArray)

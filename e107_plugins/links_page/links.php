@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/links_page/links.php,v $
-|     $Revision: 1.33 $
-|     $Date: 2006/01/05 09:06:46 $
-|     $Author: sweetas $
+|     $Revision: 1.42 $
+|     $Date: 2006/10/28 09:29:29 $
+|     $Author: lisa_ $
 +----------------------------------------------------------------------------+
 */
 require_once('../../class2.php');
@@ -106,7 +106,11 @@ if (isset($_POST['add_link'])) {
 	}
 	if($qs[0] == "manage"){
 		if(check_class($linkspage_pref['link_manager_class'])){
-			$lc -> dbLinkCreate();
+			if(isset($linkspage_pref['link_directpost']) && $linkspage_pref['link_directpost']){
+				$lc -> dbLinkCreate();
+			}else{
+				$lc -> dbLinkCreate("submit");
+			}
 		}else{
 			js_location(e_SELF);
 		}
@@ -122,47 +126,47 @@ if(isset($qs[0]) && substr($qs[0],0,5) == "order"){
 }
 //show all categories
 if((!isset($qs[0]) || $qsorder) && $linkspage_pref['link_page_categories']){
-	displayNavigator('cat');
+  	echo displayNavigator('cat');
 	displayCategory();
 }
 //show all categories
 if(isset($qs[0]) && $qs[0] == "cat" && !isset($qs[1]) ){
-	displayNavigator('cat');
+   echo displayNavigator('cat');
 	displayCategory();
 }
 //show all links in all categories
 if( ((!isset($qs[0]) || $qsorder) && !$linkspage_pref['link_page_categories']) || (isset($qs[0]) && $qs[0] == "all") ){
-	displayNavigator('');
+  //	displayNavigator('');
 	displayCategoryLinks();
 }
 //show all links in one categories
 if(isset($qs[0]) && $qs[0] == "cat" && isset($qs[1]) && is_numeric($qs[1])){
-	displayNavigator('');
+	echo displayNavigator('');
 	displayCategoryLinks($qs[1]);
 }
 //view top rated
 if(isset($qs[0]) && $qs[0] == "rated"){
-	displayNavigator('');
+	echo displayNavigator('');
 	displayTopRated();
 }
 //view top refer
 if(isset($qs[0]) && $qs[0] == "top"){
-	displayNavigator('');
+	echo displayNavigator('');
 	displayTopRefer();
 }
 //personal link managers
 if (isset($qs[0]) && $qs[0] == "manage"){
-	displayNavigator('');
+	echo displayNavigator('');
 	displayPersonalManager();
 }
 //comments on links
 if (isset($qs[0]) && $qs[0] == "comment" && isset($qs[1]) && is_numeric($qs[1]) ){
-	displayNavigator('');
+	echo displayNavigator('');
 	displayLinkComment();
 }
 //submit link
 if (isset($qs[0]) && $qs[0] == "submit" && check_class($linkspage_pref['link_submit_class'])) {
-	displayNavigator('');
+	echo displayNavigator('');
 	displayLinkSubmit();
 }
 
@@ -170,7 +174,7 @@ if (isset($qs[0]) && $qs[0] == "submit" && check_class($linkspage_pref['link_sub
 function displayTopRated(){
 	global $qs, $sql, $lc, $tp, $rowl, $link_shortcodes, $from, $ns, $linkspage_pref;
 	global $LINK_RATED_TABLE_START, $LINK_RATED_TABLE, $LINK_RATED_TABLE_END, $LINK_RATED_RATING, $LINK_RATED_APPEND;
-	
+
 	$number		= (isset($linkspage_pref["link_nextprev_number"]) && $linkspage_pref["link_nextprev_number"] ? $linkspage_pref["link_nextprev_number"] : "20");
 	$np			= ($linkspage_pref["link_nextprev"] ? "LIMIT ".intval($from).",".intval($number) : "");
 	$catrate	= (isset($qs[1]) && is_numeric($qs[1]) ? " AND l.link_category='".$qs[1]."' " : "");
@@ -195,7 +199,7 @@ function displayTopRated(){
   	    foreach($list as $rowl) {
 			if( ($rowl['rate_avg'] > $ratemin) ){
 			$cat = $rowl['link_category_name'];
-			$LINK_RATED_APPEND			= $lc -> parse_link_append($rowl['link_open'], $rowl['link_id']);
+			$LINK_RATED_APPEND			= $lc -> parse_link_append($rowl);
 			$LINK_RATED_RATING			= $tp -> parseTemplate('{LINK_RATED_RATING}', FALSE, $link_shortcodes);
 			$link_rated_table_string	.= $tp -> parseTemplate($LINK_RATED_TABLE, FALSE, $link_shortcodes);
 			}
@@ -208,14 +212,9 @@ function displayTopRated(){
 		}
 		$caption = LAN_LINKS_11." ".(isset($captioncat) ? $captioncat : "");
 		$text = $link_rated_table_start.$link_rated_table_string.$link_rated_table_end;
-		
-		$ns->tablerender($caption, $text);
 
-		if(isset($linkspage_pref["link_nextprev"]) && $linkspage_pref["link_nextprev"]){
-			require_once(e_HANDLER."np_class.php");
-			$np_querystring = (isset($qs[0]) ? $qs[0] : "").(isset($qs[1]) ? ".".$qs[1] : "").(isset($qs[2]) ? ".".$qs[2] : "").(isset($qs[3]) ? ".".$qs[3] : "").(isset($qs[4]) ? ".".$qs[4] : "");
-			$ix = new nextprev(e_SELF, $from, $number, $linktotalrated, NP_3, ($np_querystring ? $np_querystring : ""));
-		}
+		$ns->tablerender($caption, $text);
+		$lc->ShowNextPrev($from, $number, $linktotalrated);
 	}
 }
 
@@ -247,7 +246,7 @@ function displayTopRefer(){
 		$list = $sql2 -> db_getList();
   	    foreach($list as $rowl) {
 			$category				= $rowl['link_category_id'];
-			$LINK_APPEND			= $lc -> parse_link_append($rowl['link_open'], $rowl['link_id']);
+			$LINK_APPEND			= $lc -> parse_link_append($rowl);
 			$link_top_table_string .= $tp -> parseTemplate($LINK_TABLE, FALSE, $link_shortcodes);
 		}
 		$link_top_table_start		= $tp -> parseTemplate($LINK_TABLE_START, FALSE, $link_shortcodes);
@@ -256,12 +255,7 @@ function displayTopRefer(){
 		$text = $link_top_table_start.$link_top_table_string.$link_top_table_end;
 		$caption = LAN_LINKS_10;
 		$ns->tablerender($caption, $text);
-
-		if(isset($linkspage_pref["link_nextprev"]) && $linkspage_pref["link_nextprev"]){
-			require_once(e_HANDLER."np_class.php");
-			$np_querystring = (isset($qs[0]) ? $qs[0] : "").(isset($qs[1]) ? ".".$qs[1] : "").(isset($qs[2]) ? ".".$qs[2] : "").(isset($qs[3]) ? ".".$qs[3] : "").(isset($qs[4]) ? ".".$qs[4] : "");
-			$ix = new nextprev(e_SELF, $from, $number, $link_total, NP_3, ($np_querystring ? $np_querystring : ""));
-		}
+		$lc->ShowNextPrev($from, $number, $link_total);
 	}
 }
 
@@ -293,7 +287,7 @@ function displayPersonalManager(){
 	}
 	//upload link icon
 	if(isset($_POST['uploadlinkicon'])){
-		$lc -> uploadLinkIcon($_POST);
+		$lc -> uploadLinkIcon();
 	}
 
 	//show existing links
@@ -328,7 +322,7 @@ function displayPersonalManager(){
 
 //comments on links
 function displayLinkComment(){
-	global $qs, $cobj, $tp, $sql, $lc, $rowl, $link_shortcodes, $ns, $linkspage_pref, $LINK_TABLE_START, $LINK_TABLE, $LINK_TABLE_END, $LINK_APPEND;
+	global $qs, $cobj, $tp, $sql, $linkbutton_count, $lc, $rowl, $link_shortcodes, $ns, $linkspage_pref, $LINK_TABLE_START, $LINK_TABLE, $LINK_TABLE_END, $LINK_APPEND;
 	if(!(isset($linkspage_pref["link_comment"]) && $linkspage_pref["link_comment"])){
 		js_location(e_SELF);
 	}else{
@@ -336,16 +330,19 @@ function displayLinkComment(){
 		SELECT l.*, lc.*
 		FROM #links_page AS l
 		LEFT JOIN #links_page_cat AS lc ON lc.link_category_id = l.link_category
-		WHERE l.link_id = '".intval($qs[1])."' AND lc.link_category_class REGEXP '".e_CLASS_REGEXP."' AND l.link_class REGEXP '".e_CLASS_REGEXP."' 
+		WHERE l.link_id = '".intval($qs[1])."' AND lc.link_category_class REGEXP '".e_CLASS_REGEXP."' AND l.link_class REGEXP '".e_CLASS_REGEXP."'
 		";
 		$link_comment_table_string = "";
 		if(!$linkcomment = $sql -> db_Select_gen($qry)){
 			js_location(e_SELF);
 		}else{
 			$rowl = $sql->db_Fetch();
-			$LINK_APPEND	= $lc -> parse_link_append($rowl['link_open'], $rowl['link_id']);
+			$linkbutton_count   = ($rowl['link_button']) ?  $linkbutton_count + 1 : $linkbutton_count;
+			$LINK_APPEND	= $lc -> parse_link_append($rowl);
 			$subject		= $rowl['link_name'];
-			$text = $tp -> parseTemplate($LINK_TABLE, FALSE, $link_shortcodes);
+			$text = $tp -> parseTemplate($LINK_TABLE_START, FALSE, $link_shortcodes);
+			$text .= $tp -> parseTemplate($LINK_TABLE, FALSE, $link_shortcodes);
+			$text .= $tp -> parseTemplate($LINK_TABLE_END, FALSE, $link_shortcodes);
 			$ns->tablerender(LAN_LINKS_36, $text);
 
 			$cobj->compose_comment("links_page", "comment", $qs[1], $width, $subject, $showrate=FALSE);
@@ -378,7 +375,7 @@ function displayCategory(){
 	$qry = "
 	SELECT lc.*
 	FROM #links_page_cat AS lc
-	WHERE lc.link_category_class REGEXP '".e_CLASS_REGEXP."' 
+	WHERE lc.link_category_class REGEXP '".e_CLASS_REGEXP."'
 	".$order."
 	";
 
@@ -413,7 +410,7 @@ function displayNavigator($mode=''){
 	if($mode == "cat"){
 		if(isset($linkspage_pref['link_cat_sortorder']) && $linkspage_pref['link_cat_sortorder']){
 			$LINK_SORTORDER = $lc->showLinkSort('cat');
-		}	
+		}
 	}else{
 		if(isset($linkspage_pref['link_sortorder']) && $linkspage_pref['link_sortorder']){
 			$LINK_SORTORDER = $lc->showLinkSort();
@@ -428,12 +425,12 @@ function displayNavigator($mode=''){
 		$LINK_NAVIGATOR_TABLE_POST = TRUE;
 	}
 	$text = $tp -> parseTemplate($LINK_NAVIGATOR_TABLE, FALSE, $link_shortcodes);
-	echo $text;
+	return $text;
 }
 
 function displayCategoryLinks($mode=''){
-	global $sql2, $ns, $lc, $tp, $cobj, $rowl, $qs, $linkspage_pref, $from, $link_shortcodes;
-	global $LINK_TABLE_START, $LINK_TABLE, $LINK_TABLE_END, $LINK_APPEND;
+	global $sql2, $ns, $lc, $tp, $cobj, $rowl, $qs, $linkspage_pref, $from, $link_shortcodes, $link_category_total;
+	global $LINK_TABLE_START,$linkbutton_count, $LINK_TABLE,$link_category_total, $LINK_TABLE_CAPTION, $LINK_TABLE_END, $LINK_APPEND;
 
 	$order			= $lc -> getOrder();
 	$number			= ($linkspage_pref["link_nextprev_number"] ? $linkspage_pref["link_nextprev_number"] : "20");
@@ -444,7 +441,7 @@ function displayCategoryLinks($mode=''){
 	FROM #links_page AS l
 	LEFT JOIN #links_page_cat AS lc ON lc.link_category_id = l.link_category
 	LEFT JOIN #comments as c ON c.comment_item_id=l.link_id AND comment_type='links_page'
-	WHERE l.link_class REGEXP '".e_CLASS_REGEXP."' AND lc.link_category_class REGEXP '".e_CLASS_REGEXP."' ".$cat." 
+	WHERE l.link_class REGEXP '".e_CLASS_REGEXP."' AND lc.link_category_class REGEXP '".e_CLASS_REGEXP."' ".$cat."
 	GROUP BY l.link_id
 	".$order."
 	".$nextprevquery."
@@ -456,18 +453,21 @@ function displayCategoryLinks($mode=''){
 	if (!$sql2->db_Select_gen($qry)){
 		$lc -> show_message(LAN_LINKS_34, LAN_LINKS_39);
 	}else{
+		$linkbutton_count = 0;
 		$list = $sql2 -> db_getList();
   	    foreach($list as $rowl) {
+			$linkbutton_count   = ($rowl['link_button']) ?  $linkbutton_count + 1 : $linkbutton_count;
 			if($mode){
 				$cat_name			= $rowl['link_category_name'];
 				$cat_desc			= $rowl['link_category_description'];
-				$LINK_APPEND		= $lc -> parse_link_append($rowl['link_open'], $rowl['link_id']);
-				$link_table_string .= $tp -> parseTemplate($LINK_TABLE, FALSE, $link_shortcodes);			
+				$LINK_APPEND		= $lc -> parse_link_append($rowl);
+				$link_table_string .= $tp -> parseTemplate($LINK_TABLE, FALSE, $link_shortcodes);
 			}else{
 				$arr[$rowl['link_category_id']][] = $rowl;
 			}
 		}
 		if($mode){
+			$link_category_total	= $link_total;
 			$link_table_start		= $tp -> parseTemplate($LINK_TABLE_START, FALSE, $link_shortcodes);
 			$link_table_end			= $tp -> parseTemplate($LINK_TABLE_END, FALSE, $link_shortcodes);
 			$text = $link_table_start.$link_table_string.$link_table_end;
@@ -476,31 +476,33 @@ function displayCategoryLinks($mode=''){
 			$caption .= " (<b title='".(ADMIN ? LAN_LINKS_2 : LAN_LINKS_1)."' >".$link_total."</b>".(ADMIN ? "/<b title='".(ADMIN ? LAN_LINKS_1 : "" )."' >".$link_total."</b>" : "").") ";
 			$ns->tablerender($caption, $text);
 
-			if(is_numeric($mode) && isset($linkspage_pref["link_nextprev"]) && $linkspage_pref["link_nextprev"]){
-				require_once(e_HANDLER."np_class.php");
-				$np_querystring = (isset($qs[0]) ? $qs[0] : "").(isset($qs[1]) ? ".".$qs[1] : "").(isset($qs[2]) ? ".".$qs[2] : "").(isset($qs[3]) ? ".".$qs[3] : "").(isset($qs[4]) ? ".".$qs[4] : "");
-				$ix = new nextprev(e_SELF, $from, $number, $link_total, NP_3, ($np_querystring ? $np_querystring : ""));
+			if(is_numeric($mode)){
+				$lc->ShowNextPrev($from, $number, $link_total);
 			}
 		}else{
 			foreach($arr as $key => $value){
 				$link_table_string = "";
+				$linkbutton_count = 0;
 				$i=0;
 				for($i=0;$i<count($value);$i++){
 					$rowl				= $value[$i];
+
+					$linkbutton_count   = ($rowl['link_button']) ?  $linkbutton_count + 1 : $linkbutton_count;
 					$cat_name			= $rowl['link_category_name'];
 					$cat_desc			= $rowl['link_category_description'];
-					$LINK_APPEND		= $lc -> parse_link_append($rowl['link_open'], $rowl['link_id']);
+				 	$LINK_APPEND		= $lc -> parse_link_append($rowl);
 					$link_table_string .= $tp -> parseTemplate($LINK_TABLE, FALSE, $link_shortcodes);
 				}
-				$caption = LAN_LINKS_32." ".$cat_name." ".($cat_desc ? " <i>[".$cat_desc."]</i>" : "");
-				//number of links
-				$caption .= " (<b title='".(ADMIN ? LAN_LINKS_2 : LAN_LINKS_1)."' >".count($value)."</b>".(ADMIN ? "/<b title='".(ADMIN ? LAN_LINKS_1 : "" )."' >".count($value)."</b>" : "").") ";
 
+				$link_category_total = count($value);
+				$link_table_caption 	= $tp -> parseTemplate($LINK_TABLE_CAPTION, FALSE, $link_shortcodes);
 				$link_table_start		= $tp -> parseTemplate($LINK_TABLE_START, FALSE, $link_shortcodes);
 				$link_table_end			= $tp -> parseTemplate($LINK_TABLE_END, FALSE, $link_shortcodes);
-				$text = $link_table_start.$link_table_string.$link_table_end;
-				$ns->tablerender($caption, $text);
+				$text .= $link_table_start.$link_table_string.$link_table_end;
+
 			}
+
+				$ns->tablerender($link_table_caption, $text);
 		}
 	}
 	return;

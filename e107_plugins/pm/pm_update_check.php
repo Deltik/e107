@@ -11,14 +11,15 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/pm/pm_update_check.php,v $
-|     $Revision: 1.1 $
-|     $Date: 2006/01/09 17:02:16 $
-|     $Author: sweetas $
+|     $Revision: 1.3 $
+|     $Date: 2006/11/19 22:52:16 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
 
-$dbupdatep['pm_07'] =  LAN_UPDATE_8." .617 private messenger ".LAN_UPDATE_9." .7 private messenger";
+include_lan(e_PLUGIN."pm/languages/admin/".e_LANGUAGE.".php");
+$dbupdatep['pm_07'] =  LAN_UPDATE_8." .617 ".ADLAN_PM_58." ".LAN_UPDATE_9." .7 ".ADLAN_PM_58;
 function update_pm_07($type) {
 	global $sql, $mySQLdefaultdb;
 	if ($type == 'do') {

@@ -12,9 +12,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/comment_class.php,v $
-|     $Revision: 1.58 $
-|     $Date: 2006/05/13 15:05:38 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.67 $
+|     $Date: 2006/11/12 04:04:27 $
+|     $Author: mrpete $
 +----------------------------------------------------------------------------+
 */
 
@@ -57,14 +57,14 @@ class comment {
 			$ns = new e107table;
 			if ($action == "reply" && substr($subject, 0, 4) != "Re: ")
 			{
-				$subject = COMLAN_5.' '.$subject;
+				$subject = COMLAN_325.' '.$subject;
 			}
 
 			$text = "\n<div style='text-align:center'><form method='post' action='".e_SELF."?".e_QUERY."' id='dataform' >\n<table style='width:100%'>";
 
 			if ($pref['nested_comments'])
 			{
-				$text .= "<tr>\n<td style='width:20%'>".COMLAN_4."</td>\n<td style='width:80%'>\n<input class='tbox' type='text' name='subject' size='61' value='".$tp -> toForm($subject)."' maxlength='100' />\n</td>\n</tr>";
+				$text .= "<tr>\n<td style='width:20%'>".COMLAN_324."</td>\n<td style='width:80%'>\n<input class='tbox comment subject' type='text' name='subject' size='61' value='".$tp -> toForm($subject)."' maxlength='100' />\n</td>\n</tr>";
 				$text2 = "";
 			}
 			else
@@ -72,7 +72,12 @@ class comment {
 				$text2 = "<input type='hidden' name='subject' value='".$tp -> toForm($subject)."'  />\n";
 			}
 
-			if(strstr(e_QUERY, "edit"))
+			if (isset($_GET['comment']) && $_GET['comment'] == 'edit')
+			{
+				$eaction = 'edit';
+				$id = $_GET['comment_id'];
+			}
+			else if (strstr(e_QUERY, "edit"))
 			{
 				$eaction = "edit";
 				$tmp = explode(".", e_QUERY);
@@ -98,18 +103,18 @@ class comment {
 
 				if($prid != USERID || !USER)
 				{
-					echo "<div style='text-align: center;'>Unauthorized</div>";
+					echo "<div style='text-align: center;'>".COMLAN_329."</div>";
 					require_once(FOOTERF);
 					exit;
 				}
 
-				$caption = LAN_318;
+				$caption = COMLAN_318;
 				$comval = $tp -> toFORM($ecom['comment_comment']);
-				$comval = preg_replace("#\[ ".LAN_319.".*\]#si", "", $comval);
+				$comval = preg_replace("#\[ ".COMLAN_319.".*\]#si", "", $comval);
 			}
 			else
 			{
-				$caption = LAN_9;
+				$caption = COMLAN_9;
 				$comval = "";
 			}
 
@@ -121,17 +126,17 @@ class comment {
 				require_once(e_HANDLER."rate_class.php");
 				if(!is_object($rater)){ $rater = new rater; }
 				$rate = $rater -> composerating($table, $itemid, $enter=TRUE, USERID, TRUE);
-				$rate = "<tr><td style='width:20%; vertical-align:top;'>".COMLAN_7.":</td>\n<td style='width:80%;'>".$rate."</td></tr>\n";
+				$rate = "<tr><td style='width:20%; vertical-align:top;'>".COMLAN_327.":</td>\n<td style='width:80%;'>".$rate."</td></tr>\n";
 			}
 			//end rating area
 
 			if (ANON == TRUE && USER == FALSE)
 			{
-				$text .= "<tr>\n<td style='width:20%; vertical-align:top;'>".LAN_16."</td>\n<td style='width:80%'>\n<input class='tbox' type='text' name='author_name' size='61' value='$author_name' maxlength='100' />\n</td>\n</tr>";
+				$text .= "<tr>\n<td style='width:20%; vertical-align:top;'>".COMLAN_16."</td>\n<td style='width:80%'>\n<input class='tbox comment author' type='text' name='author_name' size='61' value='$author_name' maxlength='100' />\n</td>\n</tr>";
 			}
 			$text .= $rate."<tr> \n
-			<td style='width:20%; vertical-align:top;'>".LAN_8.":</td>\n<td id='commentform' style='width:80%;'>\n<textarea class='tbox' name='comment' cols='62' rows='7' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'>$comval</textarea>\n<br />
-			<input class='helpbox' type='text' name='helpb' style='width:80%' /><br />".ren_help(1, 'addtext', 'help')."</td></tr>\n<tr style='vertical-align:top'> \n<td style='width:20%'>".$text2."</td>\n<td id='commentformbutton' style='width:80%;'>\n". (isset($action) && $action == "reply" ? "<input type='hidden' name='pid' value='$id' />" : '').(isset($eaction) && $eaction == "edit" ? "<input type='hidden' name='editpid' value='$id' />" : "").(isset($content_type) && $content_type ? "<input type='hidden' name='content_type' value='$content_type' />" : ''). "<input class='button' type='submit' name='".$action."submit' value='".(isset($eaction) && $eaction == "edit" ? LAN_320 : LAN_9)."' />\n</td>\n</tr>\n</table>\n</form></div>";
+			<td style='width:20%; vertical-align:top;'>".COMLAN_8.":</td>\n<td id='commentform' style='width:80%;'>\n<textarea class='tbox comment' id='comment' name='comment' cols='62' rows='7' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'>$comval</textarea>\n<br />
+			".display_help('helpb',"comment")."</td></tr>\n<tr style='vertical-align:top'> \n<td style='width:20%'>".$text2."</td>\n<td id='commentformbutton' style='width:80%;'>\n". (isset($action) && $action == "reply" ? "<input type='hidden' name='pid' value='$id' />" : '').(isset($eaction) && $eaction == "edit" ? "<input type='hidden' name='editpid' value='$id' />" : "").(isset($content_type) && $content_type ? "<input type='hidden' name='content_type' value='$content_type' />" : ''). "<input class='button' type='submit' name='".$action."submit' value='".(isset($eaction) && $eaction == "edit" ? COMLAN_320 : COMLAN_9)."' />\n</td>\n</tr>\n</table>\n</form></div>";
 
 			if($tablerender)
 			{
@@ -149,7 +154,7 @@ class comment {
 		}
 		else
 		{
-			echo "<br /><div style='text-align:center'><b>".LAN_6." <a href='".e_SIGNUP."'>".COMLAN_1."</a> ".COMLAN_2."</b></div>";
+			echo "<br /><div style='text-align:center'><b>".COMLAN_6." <a href='".e_SIGNUP."'>".COMLAN_321."</a> ".COMLAN_322."</b></div>";
 		}
 	}
 
@@ -191,18 +196,18 @@ class comment {
 			$width = 0;
 		}
 		if(!defined("IMAGE_nonew_comments")){
-			define("IMAGE_nonew_comments", (file_exists(THEME."generic/nonew_comments.png") ? "<img src='".THEME_ABS."generic/nonew_comments.png' alt=''  /> " : "<img src='".e_IMAGE_ABS."generic/".IMODE."/nonew_comments.png' alt=''  />"));
+			define("IMAGE_nonew_comments", (file_exists(THEME."images/nonew_comments.png") ? "<img src='".THEME_ABS."images/nonew_comments.png' alt=''  /> " : "<img src='".e_IMAGE_ABS."generic/".IMODE."/nonew_comments.png' alt=''  />"));
 		}
 		if(!defined("IMAGE_new_comments")){
-			define("IMAGE_new_comments", (file_exists(THEME."generic/new_comments.png") ? "<img src='".THEME_ABS."generic/new_comments.png' alt=''  /> " : "<img src='".e_IMAGE_ABS."generic/".IMODE."/new_comments.png' alt=''  /> "));
+			define("IMAGE_new_comments", (file_exists(THEME."images/new_comments.png") ? "<img src='".THEME_ABS."images/new_comments.png' alt=''  /> " : "<img src='".e_IMAGE_ABS."generic/".IMODE."/new_comments.png' alt=''  /> "));
 		}
 		$ns			= new e107table;
 		if(!$gen || !is_object($gen)){ $gen = new convert; }
 		$url		= e_PAGE."?".e_QUERY;
-		$unblock	= "[<a href='".e_ADMIN_ABS."comment.php?unblock-".$comrow['comment_id']."-$url-".$comrow['comment_item_id']."'>".LAN_1."</a>] ";
-		$block		= "[<a href='".e_ADMIN_ABS."comment.php?block-".$comrow['comment_id']."-$url-".$comrow['comment_item_id']."'>".LAN_2."</a>] ";
-		$delete		= "[<a href='".e_ADMIN_ABS."comment.php?delete-".$comrow['comment_id']."-$url-".$comrow['comment_item_id']."'>".LAN_3."</a>] ";
-		$userinfo	= "[<a href='".e_ADMIN_ABS."userinfo.php?".$comrow['comment_ip']."'>".LAN_4."</a>]";
+		$unblock	= "[<a href='".e_ADMIN_ABS."comment.php?unblock-".$comrow['comment_id']."-$url-".$comrow['comment_item_id']."'>".COMLAN_1."</a>] ";
+		$block		= "[<a href='".e_ADMIN_ABS."comment.php?block-".$comrow['comment_id']."-$url-".$comrow['comment_item_id']."'>".COMLAN_2."</a>] ";
+		$delete		= "[<a href='".e_ADMIN_ABS."comment.php?delete-".$comrow['comment_id']."-$url-".$comrow['comment_item_id']."'>".COMLAN_3."</a>] ";
+		$userinfo	= "[<a href='".e_ADMIN_ABS."userinfo.php?".$comrow['comment_ip']."'>".COMLAN_4."</a>]";
 
 		if (!$COMMENTSTYLE) {
 			global $THEMES_DIRECTORY;
@@ -309,7 +314,12 @@ class comment {
         	return;
 		}
 
-		if(strstr(e_QUERY, "edit"))
+		if (isset($_GET['comment']) && $_GET['comment'] == 'edit')
+		{
+			$eaction = 'edit';
+			$editpid = $_GET['comment_id'];
+		}
+		else if (strstr(e_QUERY, "edit"))
 		{
 			$eaction = "edit";
 			$tmp = explode(".", e_QUERY);
@@ -341,7 +351,7 @@ class comment {
 							list($cuser_id, $cuser_name) = $sql2->db_Fetch();
 							$nick = $cuser_id.".".$cuser_name;
 						} else {
-							define("emessage", LAN_310);
+							define("emessage", COMLAN_310);
 						}
 					} else {
 						$nick = "0.".$tp->toDB($author_name);
@@ -357,7 +367,7 @@ class comment {
 
 					if($editpid)
 					{
-						$comment .= "\n[ ".LAN_319." [time=short]".time()."[/time] ]";
+						$comment .= "\n[ ".COMLAN_319." [time=short]".time()."[/time] ]";
 						$sql -> db_Update("comments", "comment_comment='$comment' WHERE comment_id='".intval($editpid)."' ");
 						$e107cache->clear("comment");
 						return;
@@ -365,7 +375,7 @@ class comment {
 
 					if (!$sql->db_Insert("comments", "0, '".intval($pid)."', '".intval($id)."', '$subject', '$nick', '', '".$_t."', '$comment', '0', '$ip', '".$tp -> toDB($type, true)."', '0' "))
 					{
-						echo "<b>".COMLAN_3."</b> ".LAN_11;
+						echo "<b>".COMLAN_323."</b> ".COMLAN_11;
 					}
 					else
 					{
@@ -385,7 +395,7 @@ class comment {
 		}
 		else
 		{
-			define("emessage", LAN_312);
+			define("emessage", COMLAN_312);
 		}
 		//if rateindex is posted, enter the rating from this user
 		if($rateindex){
@@ -404,22 +414,24 @@ class comment {
 	 * @param unknown_type $table
 	 * @return unknown
 	 */
-	function getCommentType($table){
-			switch($table) {
-				case "news"		: $type = 0; break;
+	function getCommentType($table)
+	{
+			if(is_numeric($table)) { return $table;	}
+
+			switch($table)
+			{
+				case "news"			: $type = 0; break;
 				case "content"	: $type = 1; break;
 				case "download"	: $type = 2; break;
-				case "faq"		: $type = 3; break;
-				case "poll"		: $type = 4; break;
-				case "docs"		: $type = 5; break;
+				case "faq"			: $type = 3; break;
+				case "poll"			: $type = 4; break;
+				case "docs"			: $type = 5; break;
 				case "bugtrack"	: $type = 6; break;
+				default					: $type = $table; break;
 				/****************************************
 				Add your comment type here in same format as above, ie ...
 				case "your_comment_type"; $type = your_type_id; break;
 				****************************************/
-			}
-			if (!isset($type)) {
-				$type = $table;
 			}
 			return $type;
 	}
@@ -431,14 +443,10 @@ class comment {
 	 * @param unknown_type $id
 	 * @return unknown
 	 */
-	function count_comments($table, $id){
+	function count_comments($table, $id)
+	{
 		global $sql, $tp;
-
-		if(is_numeric($table)){
-			$type = $table;
-		}else{
-			$type = $this -> getCommentType($table);
-		}
+		$type = $this -> getCommentType($table);
 		$count_comments = $sql -> db_Count("comments", "(*)", "WHERE comment_item_id='".intval($id)."' AND comment_type='".$tp -> toDB($type, true)."' ORDER BY comment_item_id");
 		return $count_comments;
 	}
@@ -499,7 +507,7 @@ class comment {
 
 			if ($tablerender)
 			{
-				$text = $ns->tablerender(LAN_99, $text, '', TRUE);
+				$text = $ns->tablerender(COMLAN_99, $text, '', TRUE);
 			}
 
 			if (!$return)
@@ -513,7 +521,7 @@ class comment {
 
 			if (ADMIN && getperms("B"))
 			{
-				$modcomment =  "<div style='text-align:right'><a href='".e_ADMIN_ABS."modcomment.php?$table.$id'>".LAN_314."</a></div><br />";
+				$modcomment =  "<div style='text-align:right'><a href='".e_ADMIN_ABS."modcomment.php?$table.$id'>".COMLAN_314."</a></div><br />";
 			}
 		}
 
@@ -523,7 +531,7 @@ class comment {
 		}
 		else
 		{
-			$comment = "<br /><div style='text-align:center'><b>".COMLAN_8."</b></div>";
+			$comment = "<br /><div style='text-align:center'><b>".COMLAN_328."</b></div>";
 		}
 
 		if (!$return)
@@ -533,29 +541,312 @@ class comment {
 
 		$ret['comment'] .= $modcomment;
 		$ret['comment_form'] = $comment;
-		$ret['caption'] = LAN_99;
+		$ret['caption'] = COMLAN_99;
 
 		return (!$return) ? "" : $ret;
 	}
+
+	function recalc_user_comments($id)
+	{
+		global $sql;
 	
+		if(is_array($id))
+		{
+			foreach($id as $_id)
+			{
+				$this->recalc_user_comments($_id);
+			}
+		}
+		$qry = "
+		SELECT COUNT(*) AS count
+		FROM #comments
+		WHERE SUBSTRING_INDEX(comment_author,'.',1) = '{$id}'
+		";
+		if($sql->db_Select_gen($qry))
+		{
+			$row = $sql->db_Fetch();
+			$sql->db_Update("user","user_comments = '{$row['count']}' WHERE user_id = '{$id}'");
+		}
+	}
+	
+	function get_author_list($id, $comment_type)
+	{
+		global $sql;
+		$authors = array();
+		$qry = "
+		SELECT DISTINCT(SUBSTRING_INDEX(comment_author,'.',1)) AS author 
+		FROM #comments
+		WHERE comment_item_id='{$id}' AND comment_type='{$comment_type}' 
+		GROUP BY author
+		";
+		if($sql->db_Select_gen($qry))
+		{
+			while($row = $sql->db_Fetch())
+			{
+				$authors[] = $row['author'];
+			}
+		}
+		return $authors;
+	}
+
 	function delete_comments($table, $id)
 	{
 		global $sql, $tp;
 
-		if(is_numeric($table))
-		{
-			$type = $table;
-		}
-		else
-		{
-			$type = $this -> getCommentType($table);
-		}
+		$type = $this -> getCommentType($table);
 		$type = $tp -> toDB($type, true);
 		$id = intval($id);
+		$author_list = $this->get_author_list($id, $type);
 		$num_deleted = $sql -> db_Delete("comments", "comment_item_id='{$id}' AND comment_type='{$type}'");
+		$this->recalc_user_comments($author_list);
 		return $num_deleted;
 	}
-	
-}
+
+
+	//1) call function getCommentData(); from file
+	//2) function-> get number of records from comments db
+	//3) get all e_comment.php files and collect the variables
+	//4) interchange the db rows and the e_ vars
+	//5) return the interchanged data in array
+	//6) from file: render the returned data
+
+	//get all e_comment.php files and collect the variables
+	function get_e_comment(){
+
+		$data = getcachedvars('e_comment');
+		if($data!==FALSE){
+			return $data;
+		}
+
+		require_once(e_HANDLER."file_class.php");
+		$fl = new e_file;
+
+		$omit = array('^\.$','^\.\.$','^\/$','^CVS$','thumbs\.db','.*\._$','.bak$');
+		$files = $fl->get_files(e_PLUGIN, $fmask = 'e_comment.php', $omit, $recurse_level = 1, $current_level = 0);
+
+		foreach($files as $file){
+			unset($e_comment, $key);
+			include($file['path'].$file['fname']);
+			if($e_comment && is_array($e_comment)){
+				$key = $e_comment['eplug_comment_ids'];
+				if(isset($key) && $key!=''){
+					$data[$key] = $e_comment;
+				}
+			}else{
+				//convert old method variables into the same array method
+				$key = $e_plug_table;
+				if(isset($key) && $key!=''){
+					$e_comment['eplug_comment_ids']	= $e_plug_table;
+					$e_comment['plugin_name']		= $plugin_name;
+					$e_comment['plugin_path']		= $plugin_path;
+					$e_comment['reply_location']	= $reply_location;
+					$e_comment['db_title']			= $link_name;
+					$e_comment['db_id']				= $db_id;
+					$e_comment['db_table']			= $db_table;
+					$e_comment['qry']				= '';
+					$data[$key] = $e_comment;
+				}
+			}
+		}
+		cachevars('e_comment', $data);
+		return $data;
+	}
+
+
+	/*
+	* get number of records from comments db
+	* interchange the db rows and the e_comment vars
+	* return the interchanged data in array
+	*
+	* @param int $amount : holds numeric value for number of comments to ge
+	* @param int $from : holds numeric value from where to start retrieving
+	* @param string $qry : holds custom query to add in the comment retrieval
+	* next two parms are only used in iterating loop if less valid records are found
+	* @param int $cdvalid : number of valid records found
+	* @param array $cdreta : current data set
+	*/
+
+	function getCommentData($amount='', $from='', $qry='', $cdvalid=FALSE, $cdreta=FALSE){
+		global $pref, $menu_pref, $sql, $sql2, $tp;
+
+		$from1 = ($from ? $from : '0');
+		$amount1 = ($amount ? $amount : '10');
+		$valid = ($cdvalid ? $cdvalid : '0');
+		$reta = ($cdreta ? $cdreta : array());
+
+		//get all e_comment data
+		$e_comment = $this->get_e_comment();
+
+		$qry1 = ($qry ? " AND ".$qry : "");
+
+		//get 'amount' of records from comment db
+		/*
+		$query = $pref['nested_comments'] ?
+		"SELECT c.*, u.*, ue.* FROM #comments AS c
+		LEFT JOIN #user AS u ON c.comment_author = u.user_id
+		LEFT JOIN #user_extended AS ue ON c.comment_author = ue.user_extended_id
+		WHERE c.comment_pid='0' ".$qry1." ORDER BY c.comment_datestamp DESC LIMIT ".intval($from1).",".intval($amount1)." "
+		:
+		"SELECT c.*, u.*, ue.* FROM #comments AS c
+		LEFT JOIN #user AS u ON c.comment_author = u.user_id
+		LEFT JOIN #user_extended AS ue ON c.comment_author = ue.user_extended_id
+		WHERE c.comment_id!='' ".$qry1." ORDER BY c.comment_datestamp DESC LIMIT ".intval($from1).",".intval($amount1)." ";
+		*/
+
+		$query = "
+		SELECT c.*, u.*, ue.* FROM #comments AS c
+		LEFT JOIN #user AS u ON c.comment_author = u.user_id
+		LEFT JOIN #user_extended AS ue ON c.comment_author = ue.user_extended_id
+		WHERE c.comment_id!='' ".$qry1." ORDER BY c.comment_datestamp DESC LIMIT ".intval($from1).",".intval($amount1)." ";
+
+		if ($comment_total = $sql->db_Select_gen($query))
+		{
+			$width = 0;
+			while ($row = $sql->db_Fetch()){
+
+				$ret = array();
+
+				//date
+				$ret['comment_datestamp'] = $row['comment_datestamp'];
+
+				//author
+				$comment_author_id = substr($row['comment_author'] , 0, strpos($row['comment_author'] , "."));
+				$comment_author_name = substr($row['comment_author'] , (strpos($row['comment_author'] , ".")+1));
+				$ret['comment_author_id'] = $comment_author_id;
+				$ret['comment_author_name'] = $comment_author_name;
+				$ret['comment_author'] = (USERID ? "<a href='".e_BASE."user.php?id.".$comment_author_id."'>".$comment_author_name."</a>" : $comment_author_name);
+
+				//comment text
+				$comment = strip_tags(preg_replace("/\[.*\]/", "", $row['comment_comment'])); // remove bbcode
+				$ret['comment_comment'] = $tp->toHTML($comment, FALSE, "", "", $pref['menu_wordwrap']);
+
+				//subject
+				$ret['comment_subject'] = $tp->toHTML($row['comment_subject'], TRUE);
+
+				// news
+				if($row['comment_type'] == "0"){
+					if($sql2 -> db_Select("news", "*", "news_id='".$row['comment_item_id']."' AND news_class REGEXP '".e_CLASS_REGEXP."' ")){
+						$row2 = $sql2 -> db_Fetch();
+
+						$ret['comment_type']				= COMLAN_TYPE_1;
+						$ret['comment_title']				= $tp -> toHTML($row2['news_title'], TRUE,'emotes_off, no_make_clickable');
+						$ret['comment_url']					= e_BASE."comment.php?comment.news.".$row['comment_item_id'];
+						$ret['comment_category_heading']	= COMLAN_TYPE_1;
+						$ret['comment_category_url']		= e_BASE."news.php";
+					}
+				//	article, review or content page
+				}elseif($row['comment_type'] == "1"){
+
+				//	downloads
+				}elseif($row['comment_type'] == "2"){
+					$mp = MPREFIX;
+					$qryd = "SELECT download_name, {$mp}download_category.download_category_class, {$mp}download_category.download_category_id, {$mp}download_category.download_category_name FROM {$mp}download LEFT JOIN {$mp}download_category ON {$mp}download.download_category={$mp}download_category.download_category_id WHERE {$mp}download.download_id={$row['comment_item_id']} AND {$mp}download_category.download_category_class REGEXP '".e_CLASS_REGEXP."' ";
+					if($sql2->db_Select_gen($qryd)){
+						$row2 = $sql2->db_Fetch();
+
+						$ret['comment_type']				= COMLAN_TYPE_2;
+						$ret['comment_title']				= $tp -> toHTML($row2['download_name'], TRUE,'emotes_off, no_make_clickable');
+						$ret['comment_url']					= e_BASE."download.php?view.".$row['comment_item_id'];
+						$ret['comment_category_heading']	= $row2['download_category_name'];
+						$ret['comment_category_url']		= e_BASE."download.php?list.".$row2['download_category_id'];
+					}
+				/*
+				//	faq (should use an e_comment.php file)
+				}elseif($row['comment_type'] == "3"){
+					if($sql2 -> db_Select("faq", "faq_question", "faq_id='".$row['comment_item_id']."' ")){
+						$row2 = $sql2 -> db_Fetch();
+
+						$ret['comment_type']				= COMLAN_TYPE_3;
+						$ret['comment_title']				= $tp -> toHTML($row2['faq_question'], TRUE,'emotes_off, no_make_clickable');
+						$ret['comment_url']					= e_PLUGIN."faq/faq.php?view.".$row2['comment_item_id'];
+					}
+				*/
+				//	poll
+				}elseif($row['comment_type'] == "4"){
+					if($sql2 -> db_Select("polls", "*", "poll_id='".$row['comment_item_id']."' ")){
+						$row2 = $sql2 -> db_Fetch();
+
+						$ret['comment_type']				= COMLAN_TYPE_4;
+						$ret['comment_title']				= $tp -> toHTML($row2['poll_title'], TRUE,'emotes_off, no_make_clickable');
+						$ret['comment_url']					= e_BASE."comment.php?comment.poll.".$row['comment_item_id'];
+					}
+				/*
+				//	docs (should use an e_comment.php file)
+				}elseif($row['comment_type'] == "5"){
+					//$str .= $bullet." <b><a href='http://e107.org/docs/main.php?$comment_item_id'>Doc $comment_item_id</a></b><br />";
+					//$str .= ($recent_pref['comments_cat'] ? $style_pre."".LIST_31."<br />" : "").($recent_pref['comments_author'] ? $style_pre."".($comment_author_id == 0 ? $comment_author_name : "<a href='".e_BASE."user.php?id.".$comment_author_name."'>".$comment_author_name."</a>" )."<br />" : "").($recent_pref['comments_date'] ? $style_pre."".$datestamp."<br />" : "");
+
+				//	bugtracker (should use an e_comment.php file)
+				}elseif($row['comment_type'] == "6"){
+					if($sql2 -> db_Select("bugtrack2_bugs", "bugtrack2_bugs_summary", "bugtrack2_bugs_id='".$row['comment_item_id']."' ")){
+						$row2 = $sql2 -> db_Fetch();
+
+						$ret['comment_type']				= COMLAN_TYPE_6;
+						$ret['comment_title']				= $tp -> toHTML($row2['bugtrack2_bugs_summary'], TRUE,'emotes_off, no_make_clickable');
+						$ret['comment_url']					= e_PLUGIN."bugtracker2/bugtracker2.php?0.bug.".$row['comment_item_id'];
+					}
+				//	ideas (should use an e_comment.php file)
+				}elseif($row['comment_type'] == "ideas"){
+					if($sql2 -> db_Select("ideas", "ideas_summary", "ideas_id='".$row['comment_item_id']."' ")){
+						$row2 = $sql2 -> db_Fetch();
+
+						$ret['comment_type']				= COMLAN_TYPE_7;
+						$ret['comment_title']				= $tp -> toHTML($row2['ideas_summary'], TRUE,'emotes_off, no_make_clickable');
+						$ret['comment_url']					= e_PLUGIN."ideas/ideas.php?show.".$row['comment_item_id'];
+					}
+				*/
+				//	userprofile
+				}elseif($row['comment_type'] == "profile"){
+					if(USER)
+					{
+						$ret['comment_type']				= COMLAN_TYPE_8;
+						$ret['comment_title']				= $comment_author_name;
+						$ret['comment_url']					= e_BASE."user.php?id.".$row['comment_item_id'];
+					}
+				}elseif(isset($e_comment[$row['comment_type']]) && is_array($e_comment[$row['comment_type']])){
+					$var = $e_comment[$row['comment_type']];
+					$qryp='';
+					//new method must use the 'qry' variable
+					if(isset($var) && $var['qry']!=''){
+						if($installed = $sql2 -> db_Select("plugin", "*", "plugin_path = '".$var['plugin_path']."' AND plugin_installflag = '1' ")){
+							$qryp = str_replace("{NID}", $row['comment_item_id'], $var['qry']);
+							if($sql2 -> db_Select_gen($qryp)){
+								$row2 = $sql2 -> db_Fetch();
+								$ret['comment_type']				= $var['plugin_name'];
+								$ret['comment_title']				= $tp -> toHTML($row2[$var['db_title']], TRUE,'emotes_off, no_make_clickable');
+								$ret['comment_url']					= str_replace("{NID}", $row['comment_item_id'], $var['reply_location']);
+								$ret['comment_category_heading']	= $var['plugin_name'];
+								$ret['comment_category_url']		= $var['plugin_name'];
+							}
+						}
+					//old method
+					}else{
+						if($sql2 -> db_Select($var['db_table'], $var['db_title'], $var['db_id']." = '".$row['comment_item_id']."' ")){
+							$row2 = $sql2 -> db_Fetch();
+							$ret['comment_type']				= $var['plugin_name'];
+							$ret['comment_title']				= $tp -> toHTML($row2[$var['db_title']], TRUE,'emotes_off, no_make_clickable');
+							$ret['comment_url']					= str_replace("{NID}", $row['comment_item_id'], $var['reply_location']);
+							$ret['comment_category_heading']	= $var['plugin_name'];
+							$ret['comment_category_url']		= $var['plugin_name'];
+						}
+					}
+				}
+				if($ret['comment_title']){
+					$reta[] = $ret;
+					$valid++;
+				}
+				if($amount && $valid>=$amount){
+					return $reta;
+				}
+			}
+			//loop if less records found than given $amount
+			if($amount && $valid<$amount){
+				$reta = $this->getCommentData($amount, $from+$amount, $qry, $valid, $reta);
+			}
+		}
+		return $reta;
+	}
+
+} //end class
 
 ?>

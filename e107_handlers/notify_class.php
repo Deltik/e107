@@ -11,18 +11,18 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/notify_class.php,v $
-|     $Revision: 1.9 $
-|     $Date: 2006/04/11 01:43:42 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.14 $
+|     $Date: 2006/11/17 20:23:13 $
+|     $Author: lisa_ $
 +----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
 
 class notify {
-	
+
 	var $notify_prefs;
-	
+
 	function notify() {
 		global $sysprefs, $e_event, $eArrayStorage;
 		$this -> notify_prefs = $sysprefs -> get('notify_prefs');
@@ -32,20 +32,20 @@ class notify {
 				$e_event -> register($id, 'notify_'.$id);
 			}
 		}
-		
+
 		if(defined("e_LANGUAGE") && is_readable(e_LANGUAGEDIR.e_LANGUAGE.'/lan_notify.php')) {
 			include_once(e_LANGUAGEDIR.e_LANGUAGE.'/lan_notify.php');
 		} else {
 			include_once(e_LANGUAGEDIR.'English/lan_notify.php');
 		}
 	}
-	
+
 	function send($id, $subject, $message) {
-		global $sql;
+		global $sql,$tp;
 		e107_require_once(e_HANDLER.'mail.php');
 		$subject = SITENAME.': '.$subject;
 		if ($this -> notify_prefs['event'][$id]['type'] == 'main') {
-			sendemail(SITEADMINEMAIL, $subject, $message);
+			sendemail(SITEADMINEMAIL, $tp->toEmail($subject), $tp->toEmail($message));
 		} else if ($this -> notify_prefs['event'][$id]['type'] == 'class') {
 			if ($this -> notify_prefs['event'][$id]['class'] == '254') {
 				$sql -> db_Select('user', 'user_email', "user_admin = 1");
@@ -55,10 +55,10 @@ class notify {
 				$sql -> db_Select('user', 'user_email', "user_class REGEXP '(^|,)(".$this -> notify_prefs['event'][$id]['class'].")(,|$)'");
 			}
 			while ($email = $sql -> db_Fetch()) {
-				sendemail($email['user_email'], $subject, $message);
+				sendemail($email['user_email'], $tp->toEmail($subject), $tp->toEmail($message));
 			}
 		} else if ($this -> notify_prefs['event'][$id]['type'] == 'email') {
-			sendemail($this -> notify_prefs['event'][$id]['email'], $subject, $message);
+			sendemail($this -> notify_prefs['event'][$id]['email'], $tp->toEmail($subject), $tp->toEmail($message));
 		}
 	}
 }
@@ -68,8 +68,22 @@ $nt = new notify;
 
 function notify_usersup($data) {
 	global $nt;
-	foreach ($data as $key => $value) {
-		$message .= $key.': '.$value.'<br />';
+	foreach ($data as $key => $value)
+	{
+		if($key != "password1" && $key != "password2" && $key != "email_confirm" && $key != "register")
+		{
+			if(is_array($value))  // show user-extended values.
+			{
+            	foreach($value as $k => $v)
+				{
+                	$message .= str_replace("user_","",$k).': '.$v.'<br />';
+				}
+			}
+			else
+			{
+				$message .=  $key.': '.$value.'<br />';
+			}
+		}
 	}
 	$nt -> send('usersup', NT_LAN_US_1, $message);
 }
@@ -101,7 +115,7 @@ function notify_flood($data) {
 }
 
 function notify_subnews($data) {
-	global $nt;
+	global $nt,$tp;
 	foreach ($data as $key => $value) {
 		$message .= $key.': '.$value.'<br />';
 	}
@@ -125,9 +139,19 @@ function notify_newsdel($data) {
 	$nt -> send('newsdel', NT_LAN_ND_1, NT_LAN_ND_2.': '.$data);
 }
 
+
+function notify_fileupload($data) {
+	global $nt;
+	$message = '<b>'.$data['upload_name'].'</b><br /><br />'.$data['upload_description'].'<br /><br />'.$data['upload_size'].'<br /><br />'.$data['upload_user'];
+	$nt -> send('fileupload', $data['upload_name'], $message);
+}
+
 if (isset($nt -> notify_prefs['plugins'])) {
 	foreach ($nt -> notify_prefs['plugins'] as $plugin_id => $plugin_settings) {
-		require_once(e_PLUGIN.$plugin_id.'/e_notify.php');
+		if(is_readable(e_PLUGIN.$plugin_id.'/e_notify.php'))
+		{
+			require_once(e_PLUGIN.$plugin_id.'/e_notify.php');
+		}
 	}
 }
 

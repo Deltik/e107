@@ -3,7 +3,7 @@
 +----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     Â©Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/install_.php,v $
-|     $Revision: 1.49 $
-|     $Date: 2006/05/16 12:36:22 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.58 $
+|     $Date: 2006/11/15 07:00:34 $
+|     $Author: streaky $
 +----------------------------------------------------------------------------+
 */
 
@@ -40,12 +40,18 @@ if(isset($_GET['object'])) {
 define("e107_INIT", TRUE);
 error_reporting(E_ALL);
 
+function e107_ini_set($var, $value){
+	if (function_exists('ini_set')){
+		ini_set($var, $value);
+	}
+}
+
 // setup some php options
-ini_set('magic_quotes_runtime',     0);
-ini_set('magic_quotes_sybase',      0);
-ini_set('arg_separator.output',     '&amp;');
-ini_set('session.use_only_cookies', 1);
-ini_set('session.use_trans_sid',    0);
+e107_ini_set('magic_quotes_runtime',     0);
+e107_ini_set('magic_quotes_sybase',      0);
+e107_ini_set('arg_separator.output',     '&amp;');
+e107_ini_set('session.use_only_cookies', 1);
+e107_ini_set('session.use_trans_sid',    0);
 
 
 if(!function_exists("file_get_contents")) {
@@ -57,12 +63,33 @@ $inc_path = explode(PATH_SEPARATOR, ini_get('include_path'));
 if($inc_path[0] != ".") {
 	array_unshift($inc_path, ".");
 	$inc_path = implode(PATH_SEPARATOR, $inc_path);
-	ini_set("include_path", $inc_path);
+	e107_ini_set("include_path", $inc_path);
 }
 unset($inc_path);
 
 if(!function_exists("mysql_connect")) {
 	die("e107 requires PHP to be installed or compiled with the MySQL extension to work correctly, please see the MySQL manual for more information.");
+}
+
+# Check for the realpath(). Some hosts (I'm looking at you, Awardspace) are totally dumb and
+# they think that disabling realpath() will somehow (I'm assuming) help improve their pathetic
+# local security. Fact is, it just prevents apps from doing their proper local inclusion security
+# checks. So, we refuse to work with these people.
+$functions_ok = true;
+$disabled_functions = ini_get('disable_functions');
+if (trim($disabled_functions) != '') {
+	$disabled_functions = explode( ',', $disabled_functions );
+	foreach ($disabled_functions as $function) {
+		if(trim($function) == "realpath") {
+			$functions_ok = false;
+		}
+	}
+}
+if($functions_ok == true && function_exists("realpath") == false) {
+	$functions_ok = false;
+}
+if($functions_ok == false) {
+	die("e107 requires the realpath() function to be enabled and your host appears to have disabled it. This function is required for some <b>important</b> security checks and <b>There is NO workaround</b>. Please contact your host for more information.");
 }
 
 if(!function_exists("print_a")) {
@@ -78,7 +105,7 @@ $installer_folder_name = 'e107_install';
 include_once("./{$HANDLERS_DIRECTORY}e107_class.php");
 
 $e107_paths = compact('ADMIN_DIRECTORY', 'FILES_DIRECTORY', 'IMAGES_DIRECTORY', 'THEMES_DIRECTORY', 'PLUGINS_DIRECTORY', 'HANDLERS_DIRECTORY', 'LANGUAGES_DIRECTORY', 'HELP_DIRECTORY', 'DOWNLOADS_DIRECTORY');
-$e107 = new e107($e107_paths, __FILE__);
+$e107 = new e107($e107_paths, realpath(dirname(__FILE__)));
 unset($e107_paths);
 
 $e107->e107_dirs['INSTALLER'] = "{$installer_folder_name}/";
@@ -184,6 +211,7 @@ class e_install {
 	function stage_2(){
 		global $e_forms;
 		$this->stage = 2;
+		$this->previous_steps['language'] = $_POST['language'];
 		$this->get_lan_file();
 		$this->template->SetTag("installation_heading", LANINS_001);
 		$this->template->SetTag("stage_pre", LANINS_002);
@@ -241,7 +269,7 @@ class e_install {
 		$this->previous_steps['mysql']['user'] = $_POST['name'];
 		$this->previous_steps['mysql']['password'] = $_POST['password'];
 		$this->previous_steps['mysql']['db'] = $_POST['db'];
-		$this->previous_steps['mysql']['createdb'] = $_POST['createdb'];
+		$this->previous_steps['mysql']['createdb'] = (isset($_POST['createdb']) && $_POST['createdb'] == true ? true : false);
 		$this->previous_steps['mysql']['prefix'] = $_POST['prefix'];
 		if($this->previous_steps['mysql']['server'] == "" || $this->previous_steps['mysql']['user'] == "" | $this->previous_steps['mysql']['db'] == "") {
 			$this->stage = 3;
@@ -270,7 +298,7 @@ class e_install {
 			    <tr>
 			      <td class='row-border'><label for='db'>".LANINS_027."</label></td>
 			      <td class='row-border'><input type='text' name='db' id='db' size='20' value='{$this->previous_steps['mysql']['db']}' maxlength='100' />
-			        <label class='defaulttext'><input type='checkbox' name='createdb'".($this->previous_steps['mysql']['createdb'] == 1 ? " checked='checked'" : "")." value='1'>".LANINS_028."</lebel></td>
+			        <label class='defaulttext'><input type='checkbox' name='createdb'".($this->previous_steps['mysql']['createdb'] == 1 ? " checked='checked'" : "")." value='1' />".LANINS_028."</label></td>
 				  <td class='row-border'>".LANINS_033."</td>
 			    </tr>
 			    <tr>
@@ -456,7 +484,17 @@ class e_install {
 		$this->previous_steps['admin']['email'] = $_POST['email'];
 		$this->previous_steps['admin']['password'] = $_POST['pass1'];
 
-		if($_POST['pass1'] != $_POST['pass2']) {
+		if(trim($_POST['u_name']) == "" || trim($_POST['email']) == "" || trim($_POST['pass1']) == "") {
+			$this->template->SetTag("installation_heading", LANINS_001);
+			$this->template->SetTag("stage_num", LANINS_046);
+			$this->template->SetTag("stage_pre", LANINS_002);
+			$this->template->SetTag("stage_title", LANINS_047);
+			$e_forms->start_form("admin_info", $_SERVER['PHP_SELF'].($_SERVER['QUERY_STRING'] == "debug" ? "?debug" : ""));
+			$page = LANINS_086."<br />".($_SERVER['QUERY_STRING'] == "debug" ? print_a($_POST, true) : "")."<br />";
+
+			$this->finish_form(5);
+			$e_forms->add_button("submit", LANINS_048);
+		} elseif($_POST['pass1'] != $_POST['pass2']) {
 			$this->template->SetTag("installation_heading", LANINS_001);
 			$this->template->SetTag("stage_num", LANINS_046);
 			$this->template->SetTag("stage_pre", LANINS_002);
@@ -500,7 +538,7 @@ class e_install {
 |   e107 website system
 |   e107_config.php
 |
-|   ©Steve Dunstan 2001-2002
+|   Â©Steve Dunstan 2001-2002
 |   http://e107.org
 |   jalist@e107.org
 |
@@ -638,13 +676,13 @@ This file has been generated by the installation script.
 		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}links VALUES (0, 'Downloads', 'download.php', '', '', 1, 2, 0, 0, 0) ");
 		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}links VALUES (0, 'Members', 'user.php', '', '', 1, 3, 0, 0, 0) ");
 		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}links VALUES (0, 'Submit News', 'submitnews.php', '', '', 1, 4, 0, 0, 0) ");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}links VALUES (0, 'Contact Us', 'contact.php', '', '', 1, 5, 0, 0, 0) ");  
+		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}links VALUES (0, 'Contact Us', 'contact.php', '', '', 1, 5, 0, 0, 0) ");
 
 		$udirs = "admin/|plugins/|temp";
-		$e_SELF = "http://".$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF'];
+		$e_SELF = $_SERVER['PHP_SELF'];
 		$e_HTTP = preg_replace("#".$udirs."#i", "", substr($e_SELF, 0, strrpos($e_SELF, "/"))."/");
 
-		$pref_language = isset($_POST['installlanguage']) ? $_POST['installlanguage'] : "English";
+		$pref_language = isset($this->previous_steps['language']) ? $this->previous_steps['language'] : "English";
 
 		if (file_exists($this->e107->e107_dirs['LANGUAGES_DIRECTORY'].$pref_language."/lan_prefs.php")) {
 			include_once($this->e107->e107_dirs['LANGUAGES_DIRECTORY'].$pref_language."/lan_prefs.php");
@@ -727,10 +765,10 @@ This file has been generated by the installation script.
 	function write_config($data) {
 		$fp = @fopen("e107_config.php", "w");
 		if (!@fwrite($fp, $data)) {
-			@fclose ($fd);
+			@fclose ($fp);
 			return nl2br(LANINS_070);
 		}
-		@fclose ($fd);
+		@fclose ($fp);
 		return false;
 	}
 }

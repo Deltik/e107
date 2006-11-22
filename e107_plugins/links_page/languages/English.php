@@ -4,8 +4,8 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/links_page/languages/English.php,v $
-|     $Revision: 1.24 $
-|     $Date: 2006/02/13 08:35:00 $
+|     $Revision: 1.28 $
+|     $Date: 2006/10/28 20:22:18 $
 |     $Author: lisa_ $
 +----------------------------------------------------------------------------+
 */
@@ -57,7 +57,7 @@ define("LCLAN_OPT_13", "display which sections");
 define("LCLAN_OPT_14", "icon");
 define("LCLAN_OPT_15", "description");
 define("LCLAN_OPT_16", "amount");
-define("LCLAN_OPT_17", "referal");
+define("LCLAN_OPT_17", "referral");
 define("LCLAN_OPT_18", "url");
 define("LCLAN_OPT_19", "total category info line");
 define("LCLAN_OPT_20", "link to top refer");
@@ -85,7 +85,7 @@ define("LCLAN_OPT_41", "id");
 define("LCLAN_OPT_42", "use individual link setting");
 define("LCLAN_OPT_43", "Opens in same window");
 define("LCLAN_OPT_44", "Opens in new window");
-define("LCLAN_OPT_45", "Opens in 600x400 miniwindow");
+define("LCLAN_OPT_45", "Opens in 600x400 mini-window");
 define("LCLAN_OPT_46", "who can manage links");
 define("LCLAN_OPT_47", "these users can add/edit their own personal links");
 define("LCLAN_OPT_48", "allow direct posting");
@@ -130,20 +130,21 @@ define("LCLAN_OPT_85", "caption menu");
 define("LCLAN_OPT_86", "link menu");
 define("LCLAN_OPT_87", "show amount of links");
 
-define("LCLAN_ADMIN_1", "update");
+define("LCLAN_ADMIN_1", "update");  // deprecated
 define("LCLAN_ADMIN_2", "Link saved to database.");
 define("LCLAN_ADMIN_3", "Link updated in database.");
 define("LCLAN_ADMIN_4", "Link Category Saved");
 define("LCLAN_ADMIN_5", "Link Category Updated");
 define("LCLAN_ADMIN_6", "Options Saved");
-define("LCLAN_ADMIN_7", "link icon was uploaded succefully !");
+define("LCLAN_ADMIN_7", "link icon was uploaded successfully !");
 define("LCLAN_ADMIN_8", "link icon was not uploaded !");
 define("LCLAN_ADMIN_9", "Order updated");
 define("LCLAN_ADMIN_10", "Link");
-define("LCLAN_ADMIN_11", "deleted");
+define("LCLAN_ADMIN_11", "deleted"); // deprecated
 define("LCLAN_ADMIN_12", "Link Category");
 define("LCLAN_ADMIN_13", "Submitted link deleted");
 define("LCLAN_ADMIN_14", "Links");
+define("LCLAN_ADMIN_15", "This category still contains links, please (re)move them first");
 
 define("LCLAN_SL_1", "Submitted Links");
 define("LCLAN_SL_2", "No submitted links");
@@ -212,7 +213,7 @@ define("LCLAN_ITEM_15", "View Images");
 define("LCLAN_ITEM_16", "Open Type:");
 define("LCLAN_ITEM_17", "Opens in same window");
 define("LCLAN_ITEM_18", "Opens in new window");
-define("LCLAN_ITEM_19", "Opens in 600x400 miniwindow");
+define("LCLAN_ITEM_19", "Opens in 600x400 mini-window");
 define("LCLAN_ITEM_20", "Visible for:");
 define("LCLAN_ITEM_21", "tick to update timestamp to current time");
 define("LCLAN_ITEM_22", "Update Link");
@@ -232,7 +233,7 @@ define("LCLAN_ITEM_35", "manage personal links");
 define("LCLAN_ITEM_36", "go");
 define("LCLAN_ITEM_37", "view all links");
 define("LCLAN_ITEM_38", "All Links");
-define("LCLAN_ITEM_39", "");
+define("LCLAN_ITEM_39", "Rating");
 
 define("LCLAN_ADMINMENU_1", "Link Options");
 define("LCLAN_ADMINMENU_2", "Manage Link Categories");
@@ -286,9 +287,9 @@ define("LAN_LINKS_22", "is");
 define("LAN_LINKS_23", "are");
 define("LAN_LINKS_24", "total in");
 define("LAN_LINKS_25", "show all links");
-define("LAN_LINKS_26", "Referrals:");
+define("LAN_LINKS_26", "Referrals");
 define("LAN_LINKS_27", "submit a link");
-define("LAN_LINKS_28", "Thankyou");
+define("LAN_LINKS_28", "Thank you");
 define("LAN_LINKS_29", "Your link has been saved and will be reviewed by a site administrator.");
 define("LAN_LINKS_30", "Link Categories");
 define("LAN_LINKS_31", "submit a link");
@@ -297,7 +298,7 @@ define("LAN_LINKS_33", "No Links are rated yet.");
 define("LAN_LINKS_34", "There are currently no links");
 define("LAN_LINKS_35", "personal links manager");
 define("LAN_LINKS_36", "link comments");
-define("LAN_LINKS_37", "comments:");
+define("LAN_LINKS_37", "Comments");
 define("LAN_LINKS_38", "date");
 define("LAN_LINKS_39", "Links");
 define("LAN_LINKS_40", "Category");
@@ -308,7 +309,7 @@ define("LAN_LINKS_44", "id");
 define("LAN_LINKS_45", "Link Category");
 define("LAN_LINKS_46", "Link Subcategories");
 define("LAN_LINKS_47", "link navigator...");
-define("LAN_LINKS_48", "");
+define("LAN_LINKS_48", "-- view category --");
 define("LAN_LINKS_49", "");
 
 define("LAN_ADMIN_HELP_0", "linkspage help area");
@@ -331,9 +332,9 @@ define("LAN_ADMIN_HELP_5", "<i>the submitted links page shows all links that are
 ");
 define("LAN_ADMIN_HELP_6", "<i>the options page allows you to change the behaviour of the links_page plugin</i><br /><br />
 general options<br />
-these options are generally used thoughout the link pages.<br /><br />
+these options are generally used throughout the link pages.<br /><br />
 personal link managers<br />
-the personal link managers are priviliged users who can manage their own personally added links.<br /><br />
+the personal link managers are privileged users who can manage their own personally added links.<br /><br />
 category page<br />
 here you can change options for the category page.<br /><br />
 links page<br />

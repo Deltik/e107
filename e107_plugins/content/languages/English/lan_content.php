@@ -4,14 +4,27 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/content/languages/English/lan_content.php,v $
-|     $Revision: 1.66 $
-|     $Date: 2005/06/29 16:38:23 $
+|     $Revision: 1.74 $
+|     $Date: 2006/11/09 18:58:19 $
 |     $Author: lisa_ $
 +----------------------------------------------------------------------------+
 */
 
 
 define("CONTENT_EMAILPRINT_LAN_1", "this content item is from");
+
+define("POPUP_LAN_1", "click to enlarge image");
+
+define("CONTENT_NOTIFY_LAN_1", "Content Events");
+define("CONTENT_NOTIFY_LAN_2", "Content item submitted by user");
+define("CONTENT_NOTIFY_LAN_3", "Content Submitted");
+
+define("CONTENT_TYPE_LAN_0", "categories");
+define("CONTENT_TYPE_LAN_1", "authors");
+define("CONTENT_TYPE_LAN_2", "archive");
+define("CONTENT_TYPE_LAN_3", "top rated");
+define("CONTENT_TYPE_LAN_4", "top score");
+define("CONTENT_TYPE_LAN_5", "recent");
 
 define("CONTENT_ICON_LAN_0", "edit");
 define("CONTENT_ICON_LAN_1", "delete");
@@ -27,7 +40,7 @@ define("CONTENT_ICON_LAN_10", "error");
 define("CONTENT_ICON_LAN_11", "order items in category");
 define("CONTENT_ICON_LAN_12", "order items in main parent");
 define("CONTENT_ICON_LAN_13", "personal admin");
-define("CONTENT_ICON_LAN_14", "personal contentmanager");
+define("CONTENT_ICON_LAN_14", "personal content manager");
 define("CONTENT_ICON_LAN_15", "view");
 
 define("CONTENT_ADMIN_DATE_LAN_0", "January");
@@ -96,9 +109,9 @@ define("CONTENT_LAN_9", "in");
 define("CONTENT_LAN_10", "on");
 define("CONTENT_LAN_11", "by");
 define("CONTENT_LAN_12", "top score items");
-define("CONTENT_LAN_13", "");
-define("CONTENT_LAN_14", "");
-define("CONTENT_LAN_15", "");
+define("CONTENT_LAN_13", "list");
+define("CONTENT_LAN_14", "-- categories --");
+define("CONTENT_LAN_15", "no authors yet");
 define("CONTENT_LAN_16", "");
 define("CONTENT_LAN_17", "");
 define("CONTENT_LAN_18", "search by keyword");
@@ -173,6 +186,9 @@ define("CONTENT_LAN_86", "view top score items");
 define("CONTENT_LAN_87", "Top Score Content");
 define("CONTENT_LAN_88", "no content items have a score yet");
 define("CONTENT_LAN_89", "select page");
+define("CONTENT_LAN_90", "previous page");
+define("CONTENT_LAN_91", "next page");
+define("CONTENT_LAN_92", " - current");
 
 define("CONTENT_MENU_LAN_0", "content Menu :");
 define("CONTENT_MENU_LAN_1", "no content items yet");

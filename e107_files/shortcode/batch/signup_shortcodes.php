@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/signup_shortcodes.php,v $
-|     $Revision: 1.3 $
-|     $Date: 2006/05/05 06:40:20 $
+|     $Revision: 1.6 $
+|     $Date: 2006/08/25 15:14:58 $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -34,7 +34,7 @@ else
 <input type='radio' name='coppa' value='0' checked='checked' /> ".LAN_200."
 <input type='radio' name='coppa' value='1' /> ".LAN_201."<br />
 <br />
-<input class='button' type='submit' name='newver' value='".LAN_399."' />
+<input class='button' type='submit' name='newver' value=\"".LAN_399."\" />
 </div></form>
 ";
 }
@@ -121,7 +121,7 @@ SC_END
 
 SC_BEGIN SIGNUP_HIDE_EMAIL
 global $rs;
-return $rs->form_radio("hideemail", 1)." ".LAN_SIGNUP_10."&nbsp;&nbsp;".$rs->form_radio("hideemail", 0, 1)." ".LAN_200;
+return $rs->form_radio("hideemail", 0, 1)." ".LAN_SIGNUP_10."&nbsp;&nbsp;".$rs->form_radio("hideemail", 0)." ".LAN_200;
 SC_END
 
 
@@ -177,8 +177,8 @@ global $pref, $SIGNUP_SIGNATURE_START, $SIGNUP_SIGNATURE_END;
 if($pref['signup_option_signature'])
 {
 	require_once(e_HANDLER."ren_help.php");
-	$SIGNUP_SIGNATURE_START = str_replace("{REN_HELP}", ren_help(2), $SIGNUP_SIGNATURE_START);
-	$SIGNUP_SIGNATURE_END = str_replace("{REN_HELP}", ren_help(2), $SIGNUP_SIGNATURE_END);
+	$SIGNUP_SIGNATURE_START = str_replace("{REN_HELP}", display_help('helpb', 2), $SIGNUP_SIGNATURE_START);
+	$SIGNUP_SIGNATURE_END = str_replace("{REN_HELP}", display_help('helpb', 2), $SIGNUP_SIGNATURE_END);
 	$sig = ($_POST['signature'] ? $_POST['signature'] : $signature);
 	return $SIGNUP_SIGNATURE_START.$sig.$SIGNUP_SIGNATURE_END;
 }

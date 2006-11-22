@@ -11,26 +11,26 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/forum/forum_viewtopic.php,v $
-|     $Revision: 1.63 $
-|     $Date: 2006/05/16 17:29:51 $
+|     $Revision: 1.72 $
+|     $Date: 2006/11/19 22:41:55 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 
 require_once('../../class2.php');
 
-@include_once e_PLUGIN.'forum/languages/'.e_LANGUAGE.'/lan_forum_viewtopic.php';
-@include_once e_PLUGIN.'forum/languages/English/lan_forum_viewtopic.php';
-@require_once(e_PLUGIN.'forum/forum_class.php');
-global $FORUM_CRUMB;
+include_once e_PLUGIN.'forum/languages/'.e_LANGUAGE.'/lan_forum_viewtopic.php';
+include_once e_PLUGIN.'forum/languages/English/lan_forum_viewtopic.php';
+include_once(e_PLUGIN.'forum/forum_class.php');
+
 
 if (file_exists(THEME.'forum_design.php'))
 {
-	@include_once(THEME.'forum_design.php');
+	include_once(THEME.'forum_design.php');
 }
 
 $forum = new e107forum;
-if (IsSet($_POST['fjsubmit']))
+if (isset($_POST['fjsubmit']))
 {
 	header("location:".e_PLUGIN."forum/forum_viewforum.php?".$_POST['forumjump']);
 	exit;
@@ -50,13 +50,9 @@ if (!e_QUERY)
 else
 {
 	$tmp = explode(".", e_QUERY);
-	$thread_id = $tmp[0];
-	$from = $tmp[1];
-	$action = $tmp[2];
-	if (!$from)
-	{
-		$from = 0;
-	}
+	$thread_id = varset($tmp[0]);
+	$topic_from = varset($tmp[1], 0);
+	$action = varset($tmp[2]);
 	if (!$thread_id || !is_numeric($thread_id))
 	{
 		header("Location:".e_PLUGIN."forum/forum.php");
@@ -64,16 +60,16 @@ else
 	}
 }
 
-if($from === 'post')
+if($topic_from === 'post')
 {
 	if($thread_id)
 	{
 		$post_num = $forum->thread_postnum($thread_id);
 		$pages = ceil(($post_num['post_num']+1)/$pref['forum_postspage']);
-		$from = ($pages-1) * $pref['forum_postspage'];
+		$topic_from = ($pages-1) * $pref['forum_postspage'];
 		if($post_num['parent'] != $thread_id)
 		{
-			header("location: ".e_SELF."?{$post_num['parent']}.{$from}#post_{$thread_id}");
+			header("location: ".e_SELF."?{$post_num['parent']}.{$topic_from}#post_{$thread_id}");
 			exit;
 		}
 	}
@@ -86,24 +82,23 @@ if($from === 'post')
 
 require_once(e_PLUGIN.'forum/forum_shortcodes.php');
 
-
 if ($action == "track" && USER)
 {
 	$forum->track($thread_id);
-	header("location:".e_SELF."?{$thread_id}.{$from}");
+	header("location:".e_SELF."?{$thread_id}.{$topic_from}");
 	exit;
 }
 
 if ($action == "untrack" && USER)
 {
 	$forum->untrack($thread_id);
-	header("location:".e_SELF."?{$thread_id}.{$from}");
+	header("location:".e_SELF."?{$thread_id}.{$topic_from}");
 	exit;
 }
 
 if ($action == "next")
 {
-	$next = $forum->thread_getnext($thread_id, $from);
+	$next = $forum->thread_getnext($thread_id, $topic_from);
 	if ($next)
 	{
 		header("location:".e_SELF."?{$next}");
@@ -119,7 +114,7 @@ if ($action == "next")
 }
 
 if ($action == "prev") {
-	$prev = $forum->thread_getprev($thread_id, $from);
+	$prev = $forum->thread_getprev($thread_id, $topic_from);
 	if ($prev) {
 		header("location:".e_SELF."?{$prev}");
 		exit;
@@ -149,7 +144,7 @@ if ($action == "report") {
 		$text = LAN_424."<br /><br /><a href='forum_viewtopic.php?".$thread_id.".post'>".LAN_429."</a";
 		$ns->tablerender(LAN_414, $text, array('forum_viewtopic', 'report'));
 	} else {
-		$thread_name = $tp -> toHTML($thread_info['head']['thread_name'], TRUE);
+		$thread_name = $tp -> toHTML($thread_info['head']['thread_name'], TRUE, 'no_hook, emotes_off');
 		define("e_PAGETITLE", LAN_01." / ".LAN_426." ".$thread_name);
 		require_once(HEADERF);
 		$text = "<form action='".e_PLUGIN."forum/forum_viewtopic.php?".e_QUERY."' method='post'> <table style='width:100%'>
@@ -182,14 +177,15 @@ if ($action == "report") {
 $pm_installed = ($pref['pm_title'] ? TRUE : FALSE);
 
 $replies = $forum->thread_count($thread_id)-1;
-if ($from === 'last') {
+if ($topic_from === 'last') {
 	$pref['forum_postspage'] = ($pref['forum_postspage'] ? $pref['forum_postspage'] : 10);
 	$pages = ceil(($replies+1)/$pref['forum_postspage']);
-	$from = ($pages-1) * $pref['forum_postspage'];
+	$topic_from = ($pages-1) * $pref['forum_postspage'];
 }
 $gen = new convert;
-$thread_info = $forum->thread_get($thread_id, $from-1, $pref['forum_postspage']);
-if($thread_info['head']['thread_forum_id'] == "")
+$thread_info = $forum->thread_get($thread_id, $topic_from-1, $pref['forum_postspage']);
+
+if(intval($thread_info['head']['thread_forum_id']) == 0)
 {
 	require_once(HEADERF);
 	$ns->tablerender(LAN_01, FORLAN_104, array('forum_viewtopic', '104'));
@@ -206,7 +202,7 @@ if (!check_class($forum_info['forum_class']) || !check_class($forum_info['parent
 
 $forum->thread_incview($thread_id);
 
-define("e_PAGETITLE", LAN_01." / ".$tp->toHTML($forum_info['forum_name'], TRUE, 'no_hook')." / ".$tp->toHTML($thread_info['head']['thread_name'], TRUE));
+define("e_PAGETITLE", LAN_01." / ".$tp->toHTML($forum_info['forum_name'], TRUE, 'no_hook, emotes_off')." / ".$tp->toHTML($thread_info['head']['thread_name'], TRUE, 'no_hook, emotes_off'));
 //define("MODERATOR", (preg_match("/".preg_quote(ADMINNAME)."/", $forum_info['forum_moderators']) && getperms('A') ? TRUE : FALSE));
 define("MODERATOR", $forum_info['forum_moderators'] != "" && check_class($forum_info['forum_moderators']));
 $modArray = $forum->forum_getmods($forum_info['forum_moderators']);
@@ -218,7 +214,7 @@ if (MODERATOR)
 	{
 		require_once(e_PLUGIN.'forum/forum_mod.php');
 		$message = forum_thread_moderate($_POST);
-		$thread_info = $forum->thread_get($thread_id, $from-1, $pref['forum_postspage']);
+		$thread_info = $forum->thread_get($thread_id, $topic_from-1, $pref['forum_postspage']);
 	}
 }
 
@@ -228,41 +224,6 @@ if ($message)
 {
 	$ns->tablerender("", $message, array('forum_viewtopic', 'msg'));
 }
-
-if (isset($_POST['pollvote']))
-{
-	if ($_POST['votea'])
-	{
-		if($sql -> db_Select("polls", "*", "poll_datestamp=$thread_id"))
-		{
-			$row = $sql -> db_Fetch();
-			extract($row);
-			$votes = explode(chr(1), $poll_votes);
-			if(is_array($_POST['votea']))
-			{
-				/* multiple choice vote */
-				foreach($_POST['votea'] as $vote)
-				{
-					$vote = intval($vote);
-					$votes[($vote-1)] ++;
-				}
-			}
-			else
-			{
-				$_POST['votea'] = intval($_POST['votea']);
-				$votes[($_POST['votea']-1)] ++;
-			}
-
-			$votep = implode(chr(1), $votes);
-
-			$sql->db_Update("polls", "poll_votes = '$votep' WHERE poll_id=".intval($poll_id));
-			$POLLMODE = "voted";
-			js_location(e_SELF.(e_QUERY ? "?".e_QUERY : ''));
-
-		}
-	}
-}
-
 
 if (stristr($thread_info['head']['thread_name'], "[".LAN_430."]"))
 {
@@ -291,55 +252,12 @@ if (!$FORUMSTART) {
 	}
 }
 
-$forum_info['forum_name'] = $tp -> toHTML($forum_info['forum_name'], TRUE);
+$forum_info['forum_name'] = $tp -> toHTML($forum_info['forum_name'], TRUE,'no_hook,emotes_off');
 
 // get info for main thread -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-if(is_array($FORUM_CRUMB))
-{
-	$search 	= array("{SITENAME}", "{SITENAME_HREF}");
-	$replace 	= array(SITENAME, "href='".e_BASE."index.php'");
-	$FORUM_CRUMB['sitename']['value'] = str_replace($search, $replace, $FORUM_CRUMB['sitename']['value']);
-
-	$search 	= array("{FORUMS_TITLE}", "{FORUMS_HREF}");
-	$replace 	= array(LAN_01, "href='".e_PLUGIN."forum/forum.php'");
-	$FORUM_CRUMB['forums']['value'] = str_replace($search, $replace, $FORUM_CRUMB['forums']['value']);
-	
-	$search 	= array("{PARENT_TITLE}");
-	$replace 	= array($tp->toHTML($forum_info['parent_name']));
-	$FORUM_CRUMB['parent']['value'] = str_replace($search, $replace, $FORUM_CRUMB['parent']['value']);
-
-	if($forum_info['sub_parent'])
-	{
-		$search 	= array("{SUBPARENT_TITLE}", "{SUBPARENT_HREF}");
-		$replace 	= array($forum_info['sub_parent'], "href='".e_PLUGIN."forum/forum_viewforum.php?{$forum_info['forum_sub']}'");
-		$FORUM_CRUMB['subparent']['value'] = str_replace($search, $replace, $FORUM_CRUMB['subparent']['value']);
-	}
-	else
-	{
-		$FORUM_CRUMB['subparent']['value'] = "";
-	}
-
-	$search 	= array("{FORUM_TITLE}", "{FORUM_HREF}");
-	$replace 	= array($forum_info['forum_name'],"href='".e_PLUGIN."forum/forum_viewforum.php?{$forum_info['forum_id']}'");
-	$FORUM_CRUMB['forum']['value'] = str_replace($search, $replace, $FORUM_CRUMB['forum']['value']);
-	$FORUM_CRUMB['fieldlist'] = "sitename,forums,parent,subparent,forum";
-
-	$BREADCRUMB = $tp->parseTemplate("{BREADCRUMB=FORUM_CRUMB}", true);
-
-}
-else
-{
-	$BREADCRUMB = "<a class='forumlink' href='".e_BASE."index.php'>".SITENAME."</a> -> <a class='forumlink' href='".e_PLUGIN."forum/forum.php'>".LAN_01."</a> -> ";
-	if($forum_info['sub_parent'])
-	{
-		$BREADCRUMB .= "<a class='forumlink' href='".e_PLUGIN."forum/forum_viewforum.php?{$forum_info['forum_sub']}'>{$forum_info['sub_parent']}</a> -> ";
-	}
-	$BREADCRUMB .= "<a class='forumlink' href='".e_PLUGIN."forum/forum_viewforum.php?{$forum_info['forum_id']}'>".$tp->toHTML($forum_info['forum_name'], TRUE, 'no_hook')."</a></b>";
-}
-
-$BACKLINK = $BREADCRUMB;
-$THREADNAME = $tp->toHTML($thread_info['head']['thread_name'], TRUE);
+$forum->set_crumb(TRUE); // Set $BREADCRUMB (and BACKLINK)
+$THREADNAME = $tp->toHTML($thread_info['head']['thread_name'], TRUE, 'no_hook, emotes_off');
 $NEXTPREV = "&lt;&lt; <a href='".e_SELF."?{$thread_id}.{$forum_info['forum_id']}.prev'>".LAN_389."</a>";
 $NEXTPREV .= " | ";
 $NEXTPREV .= "<a href='".e_SELF."?{$thread_id}.{$forum_info['forum_id']}.next'>".LAN_390."</a> &gt;&gt;";
@@ -357,7 +275,7 @@ $pref['forum_postspage'] = ($pref['forum_postspage'] ? $pref['forum_postspage'] 
 $pages = ceil(($replies+1)/$pref['forum_postspage']);
 if ($pages > 1)
 {
-	$parms = ($replies+1).",{$pref['forum_postspage']},{$from},".e_SELF.'?'.$thread_id.'.[FROM],off';
+	$parms = ($replies+1).",{$pref['forum_postspage']},{$topic_from},".e_SELF.'?'.$thread_id.'.[FROM],off';
 	$GOTOPAGES = $tp->parseTemplate("{NEXTPREV={$parms}}");
 }
 
@@ -397,7 +315,7 @@ for($i = 0; $i < count($thread_info)-1; $i++)
 	{
 		$post_info['anon'] = FALSE;
 	}
-	$e_hide_query = "SELECT thread_id FROM #forum_t WHERE (`thread_parent` = {$thread_id} OR `thread_id` = {$thread_id}) AND FLOOR(thread_user) = ".USERID;
+	$e_hide_query = "SELECT thread_id FROM #forum_t WHERE (`thread_parent` = {$thread_id} OR `thread_id` = {$thread_id}) AND SUBSTRING_INDEX(thread_user,'.',1) = ".USERID;
 	$e_hide_hidden = FORLAN_HIDDEN;
 	$e_hide_allowed = USER;
 
@@ -480,7 +398,7 @@ function showmodoptions()
 
 	$ret .= "
 		<div>
-		<a href='".e_PLUGIN."forum/forum_post.php?edit.{$post_info['thread_id']}.{$from}'>".IMAGE_admin_edit."</a>
+		<a href='".e_PLUGIN."forum/forum_post.php?edit.{$post_info['thread_id']}.{$topic_from}'>".IMAGE_admin_edit."</a>
 		<input type='image' ".IMAGE_admin_delete." name='delete_{$post_info['thread_id']}' value='thread_action' onclick=\"return confirm_('{$type}', {$forum_id}, {$thread_id}, '{$post_info['user_name']}')\" />
 		";
 	if ($type == 'thread')
@@ -581,7 +499,7 @@ function rpg($user_join, $user_forums)
 	{
 		$bar_image = e_PLUGIN."forum/images/".IMODE."/bar.jpg";
 	}
-		
+
 	$rpg_info .= "<div style='padding:2px; white-space:nowrap'>";
 	$rpg_info .= "<b>Level = ".$lvl_level."</b><br />";
 	$rpg_info .= "HP = ".$lvl_hp."<br /><img src='{$bar_image}' alt='' style='border:#345487 1px solid; height:10px; width:".$lvl_hp_percent."%'><br />";

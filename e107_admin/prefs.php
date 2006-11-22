@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/prefs.php,v $
-|     $Revision: 1.89 $
-|     $Date: 2006/05/01 23:58:46 $
+|     $Revision: 1.96 $
+|     $Date: 2006/11/18 02:29:09 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
@@ -82,7 +82,7 @@ if($sql->db_Select("plugin", "plugin_path", "plugin_installflag='1' AND plugin_p
 if ($authlist) {
 	$auth_dropdown .= "<select class='tbox' name='auth_method'>\n";
 	foreach($authlist as $a) {
-		$s = ($pref['auth_method'] == $a ? " selected='selected'>" : "");
+		$s = ($pref['auth_method'] == $a ? " selected='selected' " : "");
 		$auth_dropdown .= "<option {$s}>".$a."</option>\n";
 	}
 	$auth_dropdown .= "</select>\n";
@@ -167,39 +167,45 @@ $text = "<script type=\"text/javascript\">
 	$text .= "
 		</td>
 	</tr>
-	<tr>
 
+	<tr>
 	<td style='width:50%' class='forumheader3'>".PRFLAN_5."</td>
 	<td style='width:50%; text-align:right' class='forumheader3'>
 	<textarea class='tbox' name='sitetag' cols='59' rows='3'>".$pref['sitetag']."</textarea>
 	</td>
 	</tr>
-	<tr>
 
+	<tr>
 	<td style='width:50%' class='forumheader3'>".PRFLAN_6."</td>
 	<td style='width:50%; text-align:right' class='forumheader3'>
 	<textarea class='tbox' name='sitedescription' cols='59' rows='6'>".$pref['sitedescription']."</textarea>
 	</td>
 	</tr>
-	<tr>
 
+	<tr>
 	<td style='width:50%' class='forumheader3'>".PRFLAN_7."</td>
 	<td style='width:50%; text-align:right' class='forumheader3'>
 	<input class='tbox' type='text' name='siteadmin' size='50' value='".SITEADMIN."' maxlength='100' />
 	</td>
 	</tr>
-	<tr>
 
+	<tr>
 	<td style='width:50%' class='forumheader3'>".PRFLAN_8."</td>
 	<td style='width:50%; text-align:right' class='forumheader3'>
 	<input class='tbox' type='text' name='siteadminemail' size='50' value='".SITEADMINEMAIL."' maxlength='100' />
 	</td>
 	</tr>
-	<tr>
 
+	<tr>
 	<td style='width:50%' class='forumheader3'>".PRFLAN_162."<br /><span class='smalltext'>".PRFLAN_163."</span></td>
 	<td style='width:50%; text-align:right' class='forumheader3'>
 	<textarea class='tbox' name='sitecontactinfo' cols='59' rows='6'>".$pref['sitecontactinfo']."</textarea>
+	</td>
+	</tr>
+
+	<tr>
+	<td style='width:50%' class='forumheader3'>".PRFLAN_168."<br /><span class='smalltext'>".PRFLAN_169."</span></td>
+	<td style='width:50%; text-align:right' class='forumheader3'>".r_userclass("sitecontacts",$pref['sitecontacts'],"off","nobody main admin userclasses")."
 	</td>
 	</tr>
 
@@ -211,6 +217,7 @@ $text = "<script type=\"text/javascript\">
 	</td>
 	</tr>
 
+	<tr>
 	<td style='width:50%' class='forumheader3'>".PRFLAN_9."</td>
 	<td style='width:50%; text-align:right' class='forumheader3'>
 	<textarea class='tbox' name='sitedisclaimer' cols='59' rows='6'>".$pref['sitedisclaimer']."</textarea>
@@ -420,6 +427,14 @@ $text .= "<div id='registration' style='display:none; text-align:center'><table 
 	</tr>
 
 	<tr>
+	<td style='width:50%' class='forumheader3'>".PRFLAN_167."<br /></td>
+	<td class='forumheader3' style='width:50%;text-align:right' >
+	<input type='radio' name='disable_emailcheck' value='1'".($pref['disable_emailcheck'] ? " checked='checked'" : "")." /> ".PRFLAN_112."&nbsp;&nbsp;
+	<input type='radio' name='disable_emailcheck' value='0'".(!$pref['disable_emailcheck'] ? " checked='checked'" : "")." /> ".PRFLAN_113."
+	</td>
+	</tr>
+
+	<tr>
 	<td style='width:50%' class='forumheader3'>".PRFLAN_32."<br /><span class='smalltext'>".PRFLAN_33."</span></td>
 	<td style='width:50%; text-align:right' class='forumheader3'>
 	<input type='radio' name='anon_post' value='1'".($pref['anon_post'] ? " checked='checked'" : "")." /> ".PRFLAN_112."&nbsp;&nbsp;
@@ -537,12 +552,15 @@ $text .= "</table></div>";
 
 if(!isset($pref['post_html']))
 {
-	$pref['post_html'] = '254';
+	$pref['post_html'] = '250';
 	save_prefs();
 }
 
 $text .= "<div id='textpost' style='display:none; text-align:center'>
 	<table style='width:100%' class='fborder'>
+	<tr>
+	<td class='fcaption' style='text-align:left;' colspan='2'>".PRFLAN_101."</td>
+	</tr>
 
 	<tr>
 	<td class='forumheader3' style='width:50%;'>".PRFLAN_127.":  <div class='smalltext'>".PRFLAN_128."</div></td>
@@ -599,7 +617,7 @@ $text .= "<div id='textpost' style='display:none; text-align:center'>
 	<tr>
 	<td class='forumheader3' style='width:50%;'>".PRFLAN_116.":  <div class='smalltext'>".PRFLAN_117."</div></td>
 	<td class='forumheader3' style='width:50%; text-align: right;'>
-	".r_userclass('post_html',$pref['post_html'],'off','nobody, public, member, admin, classes')."
+	".r_userclass('post_html',$pref['post_html'],'off','nobody, public, member, admin, main, classes')."
 	</td>
 	</tr>\n
 
@@ -807,6 +825,13 @@ $text .= "<div id='security' style='display:none; text-align:center'>
 	$text .="</select></td>
 	</tr>
 
+	<tr>
+	<td style='width:50%' class='forumheader3'>".PRFLAN_170."<br /><span class='smalltext'>".PRFLAN_171."</span></td>
+	<td style='width:50%; text-align:right' class='forumheader3'>
+	<input type='radio' name='enable_rdns' value='1'".(varsettrue($pref['enable_rdns']) ? " checked='checked'" : "")." /> ".PRFLAN_112."&nbsp;&nbsp;
+	<input type='radio' name='enable_rdns' value='0'".(!varsettrue($pref['enable_rdns']) ? " checked='checked'" : "")." /> ".PRFLAN_113."
+	</td>
+	</tr>
 
 	<tr>
 	<td style='width:50%' class='forumheader3'>".PRFLAN_139.":</td>
@@ -814,7 +839,8 @@ $text .= "<div id='security' style='display:none; text-align:center'>
 	<input type='radio' name='adminpwordchange' value='1'".($pref['adminpwordchange'] ? " checked='checked'" : "")." /> ".PRFLAN_112."&nbsp;&nbsp;
 	<input type='radio' name='adminpwordchange' value='0'".(!$pref['adminpwordchange'] ? " checked='checked'" : "")." /> ".PRFLAN_113."
 	</td>
-	</tr>";
+	</tr>
+	";
 
 $text .= pref_submit();
 
@@ -858,6 +884,13 @@ $text .= "<div id='comments' style='display:none; text-align:center'>
 	</td>
 	</tr>
 
+	<tr>
+	<td style='width:50%' class='forumheader3'>".PRFLAN_166.": </td>
+	<td style='width:50%; text-align:right' class='forumheader3'>
+	<input type='radio' name='comments_emoticons' value='1'".($pref['comments_emoticons'] ? " checked='checked'" : "")." /> ".PRFLAN_112."&nbsp;&nbsp;
+	<input type='radio' name='comments_emoticons' value='0'".(!$pref['comments_emoticons'] ? " checked='checked'" : "")." /> ".PRFLAN_113."
+	</td>
+	</tr>
 	";
 
 $text .= pref_submit();

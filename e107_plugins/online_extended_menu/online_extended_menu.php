@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/online_extended_menu/online_extended_menu.php,v $
-|     $Revision: 1.14 $
-|     $Date: 2006/02/07 03:03:51 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.16 $
+|     $Date: 2006/10/22 22:36:03 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -60,7 +60,7 @@ if(!defined("e_TRACKING_DISABLED") && (isset($pref['track_online']) && $pref['tr
 		$tmp = addslashes(serialize($menu_pref));
 		$sql->db_Update("core", "e107_value='$tmp' WHERE e107_name='menu_pref' ");
 	}
-
+    global $gen;
 	if (!is_object($gen)) {
 		$gen = new convert;
 	}
@@ -69,10 +69,11 @@ if(!defined("e_TRACKING_DISABLED") && (isset($pref['track_online']) && $pref['tr
 
 	$text .= "<br />".ONLINE_EL8." ".($menu_pref['most_members_online'] + $menu_pref['most_guests_online'])."<br />(".ONLINE_EL2.$menu_pref['most_members_online'].", ".ONLINE_EL1.$menu_pref['most_guests_online'].") ".ONLINE_EL9." ".$datestamp."<br />";
 
-	$total_members = $sql->db_Count("user");
-
+ 	$total_members = $sql->db_Count("user","(*)","where user_ban='0'"); // greatly optimizes the query below.
 	if ($total_members > 1) {
-		$newest_member = $sql->db_Select("user", "user_id, user_name", "user_ban='0' ORDER BY user_join DESC LIMIT 0,1");
+
+		$newest_member = $sql->db_Select("user", "user_id, user_name", "user_id > ".($total_members-2)." AND user_ban='0' ORDER BY user_join DESC LIMIT 1");
+
 		$row = $sql->db_Fetch();
 		extract($row);
 		$text .= "<br />".ONLINE_EL5.": ".$total_members."<br />".ONLINE_EL6.": <a href='".e_BASE."user.php?id.".$user_id."'>".$user_name."</a>";

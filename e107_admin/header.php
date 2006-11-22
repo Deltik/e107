@@ -12,13 +12,15 @@
 |        GNU General Public License (http://gnu.org).
 |
 |   $Source: /cvsroot/e107/e107_0.7/e107_admin/header.php,v $
-|   $Revision: 1.52 $
-|   $Date: 2006/05/13 18:18:43 $
-|   $Author: mcfly_e107 $
+|   $Revision: 1.56 $
+|   $Date: 2006/07/08 02:23:46 $
+|   $Author: e107coders $
 +---------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
+define("ADMIN_AREA",TRUE);
+define("USER_AREA",FALSE);
 
 // send the charset to the browser - overides spurious server settings with the lan pack settings.
 header("Content-type: text/html; charset=".CHARSET, true);
@@ -88,6 +90,14 @@ if (!isset($no_core_css) || !$no_core_css) {
 	echo "<link rel='stylesheet' href='".e_FILE_ABS."e107.css' type='text/css' />\n";
 }
 
+// ---------- Favicon ---------
+if (file_exists(THEME."favicon.ico")) {
+	echo "<link rel='icon' href='".THEME_ABS."favicon.ico' type='image/x-icon' />\n<link rel='shortcut icon' href='".THEME_ABS."favicon.ico' type='image/xicon' />\n";
+}elseif (file_exists(e_BASE."favicon.ico")) {
+	echo "<link rel='icon' href='".SITEURL."favicon.ico' type='image/x-icon' />\n<link rel='shortcut icon' href='".SITEURL."favicon.ico' type='image/xicon' />\n";
+}
+
+
 if (function_exists('theme_head')) {
    	echo theme_head();
 }
@@ -110,8 +120,11 @@ if (strpos(e_SELF, 'fileinspector.php') === FALSE) {
 echo "<script type='text/javascript'>
 <!--
 function savepreset(ps,pid){
-	document.getElementById(ps).action='".e_SELF."?savepreset.'+pid;
-	document.getElementById(ps).submit();
+	if(confirm('".$tp->toJS(LAN_PRESET_CONFIRMSAVE)."'))
+	{
+		document.getElementById(ps).action='".e_SELF."?savepreset.'+pid;
+   		document.getElementById(ps).submit();
+	}
 }
 //-->
 </script>\n";
@@ -129,6 +142,17 @@ if(check_class($pref['post_html']) && $pref['wysiwyg'] && $e_wysiwyg == TRUE){
 }else{
 	define("e_WYSIWYG",FALSE);
 }
+// load plugin header-data.
+foreach($pref['e_meta_list'] as $val)
+{
+	if(is_readable(e_PLUGIN.$val."/e_meta.php"))
+	{
+		require_once(e_PLUGIN.$val."/e_meta.php");
+	}
+}
+
+
+
 echo "</head>
 <body>\n";
 
@@ -298,7 +322,7 @@ function admin_purge_related($table, $id)
 	{
 		$msg .= LAN_RATING." ".LAN_DELETED."<br />";
 	}
-	
+
 	if($msg)
 	{
 		$ns->tablerender(LAN_DELETE, $msg);

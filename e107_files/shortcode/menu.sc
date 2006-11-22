@@ -1,3 +1,4 @@
+/* $Id: menu.sc,v 1.27 2006/10/14 13:13:45 lisa_ Exp $ */
 global $sql;
 global $ns;
 global $eMenuList;
@@ -18,7 +19,7 @@ foreach($eMenuList[$tmp[0]] as $row)
 	if($row['menu_pages']) {
 		list($listtype,$listpages) = explode("-",$row['menu_pages']);
 		$pagelist = explode("|",$listpages);
-		$check_url = e_SELF."?".e_QUERY;
+		$check_url = e_SELF.(e_QUERY ? "?".e_QUERY : '');
 
 		if($listtype == '1')  //show menu
 		{
@@ -91,7 +92,9 @@ foreach($eMenuList[$tmp[0]] as $row)
 				include_once(e_LANGUAGEDIR."English/plugins/lan_{$row['menu_path']}.php");
 			} elseif (is_readable(e_PLUGIN.$row['menu_path']."/languages/English.php")) {
 				include_once(e_PLUGIN.$row['menu_path']."/languages/English.php");
-			} 
+			} elseif (is_readable(e_PLUGIN.$row['menu_path']."/languages/English/English.php")) {
+				include_once(e_PLUGIN.$row['menu_path']."/languages/English/English.php");
+			}
 			
 			if(file_exists(e_PLUGIN.$row['menu_path']."/".$mname.".php"))
 			{

@@ -11,14 +11,15 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/comment.php,v $
-|     $Revision: 1.47 $
-|     $Date: 2006/01/09 12:43:02 $
-|     $Author: sweetas $
+|     $Revision: 1.52 $
+|     $Date: 2006/10/12 13:44:28 $
+|     $Author: lisa_ $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
 require_once(e_HANDLER."news_class.php");
 require_once(e_HANDLER."comment_class.php");
+define("PAGE_NAME", COMLAN_99);
 
 if (!e_QUERY) {
 	header("location:".e_BASE."index.php");
@@ -41,7 +42,7 @@ if (isset($_POST['commentsubmit']) || isset($_POST['editsubmit'])) {
 		header("location: ".e_BASE."index.php");
 		exit;
 	}
-	
+
 	if($table == "poll") {
 		if (!$sql->db_Select("polls", "poll_title", "`poll_id` = {$id} AND `poll_comment` = 1")) {
 			header("location: ".e_BASE."index.php");
@@ -96,21 +97,12 @@ if (isset($_POST['replysubmit']))
 			$cobj->enter_comment($clean_authorname, $clean_comment, $table, $nid, $pid, $clean_subject);
 			$e107cache->clear("comment.php?{$table}.{$id}");
 		}
+		//plugin e_comment.php files
 		$plugin_redir = false;
-		$handle = opendir(e_PLUGIN);
-		while (false !== ($file = readdir($handle))) {
-			if ($file != "." && $file != ".." && is_dir(e_PLUGIN.$file)) {
-				$plugin_handle = opendir(e_PLUGIN.$file."/");
-				while (false !== ($file2 = readdir($plugin_handle))) {
-					if ($file2 == "e_comment.php") {
-						require_once(e_PLUGIN.$file."/".$file2);
-						if ($table == $e_plug_table) {
-							$plugin_redir = TRUE;
-							break 2;
-						}
-					}
-				}
-			}
+		$e_comment = $cobj->get_e_comment();
+		if ($table == $e_comment[$table]['eplug_comment_ids']){
+			$plugin_redir = TRUE;
+			$reply_location = str_replace("{NID}", $nid, $e_comment[$table]['reply_location']);
 		}
 
 		if ($plugin_redir)
@@ -165,7 +157,7 @@ if ($action == "reply") {
 			} else {
 				list($news['news_title']) = $sql->db_Fetch();
 				$subject = $news['news_title'];
-				$title = LAN_100;
+				$title = COMLAN_100;
 			}
 		} elseif ($table == "poll") {
 			if (!$sql->db_Select("polls", "poll_title", "poll_id='{$nid}' ")) {
@@ -174,7 +166,7 @@ if ($action == "reply") {
 			} else {
 				list($poll['poll_title']) = $sql->db_Fetch();
 				$subject = $poll['poll_title'];
-				$title = LAN_101;
+				$title = COMLAN_101;
 			}
 		} elseif ($table == "content") {
 			$sql->db_Select("content", "content_heading", "content_id='{$nid}'");
@@ -189,17 +181,17 @@ if ($action == "reply") {
 		list($content['content_type']) = $sql->db_Fetch();
 		if ($content['content_type'] == "0") {
 			$content_type = "article";
-			$title = LAN_103;
+			$title = COMLAN_103;
 		} elseif ($content['content_type'] == "3") {
 			$content_type = "review";
-			$title = LAN_104;
+			$title = COMLAN_104;
 		} elseif ($content['content_type'] == "1") {
 			$content_type = "content";
-			$title = LAN_105;
+			$title = COMLAN_105;
 		}
 	}
 
-	define('e_PAGETITLE', $title." / ".LAN_99." / ".LAN_102.$subject."");
+	define('e_PAGETITLE', $title." / ".COMLAN_99." / ".COMLAN_102.$subject."");
 	require_once(HEADERF);
 } else {
 
@@ -219,18 +211,18 @@ if ($action == "reply") {
 			if(isset($pref['trackbackEnabled']) && $pref['trackbackEnabled']) {
 				$query = "SELECT COUNT(tb.trackback_pid) AS tb_count, n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
 				LEFT JOIN #user AS u ON n.news_author = u.user_id
-				LEFT JOIN #news_category AS nc ON n.news_category = nc.category_id 
-				LEFT JOIN #trackback AS tb ON tb.trackback_pid  = n.news_id 
-				WHERE n.news_class IN (".USERCLASS_LIST.") 
-				AND n.news_id={$id} 
+				LEFT JOIN #news_category AS nc ON n.news_category = nc.category_id
+				LEFT JOIN #trackback AS tb ON tb.trackback_pid  = n.news_id
+				WHERE n.news_class REGEXP '".e_CLASS_REGEXP."'
+				AND n.news_id={$id}
 				AND n.news_allow_comments=0
 				GROUP by n.news_id";
 			} else {
 				$query = "SELECT n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
 				LEFT JOIN #user AS u ON n.news_author = u.user_id
-				LEFT JOIN #news_category AS nc ON n.news_category = nc.category_id 
-				WHERE n.news_class IN (".USERCLASS_LIST.") 
-				AND n.news_id={$id} 
+				LEFT JOIN #news_category AS nc ON n.news_category = nc.category_id
+				WHERE n.news_class REGEXP '".e_CLASS_REGEXP."'
+				AND n.news_id={$id}
 				AND n.news_allow_comments=0";
 			}
 
@@ -240,11 +232,11 @@ if ($action == "reply") {
 			} else {
 				$news = $sql->db_Fetch();
 				$subject = $tp->toForm($news['news_title']);
-				define("e_PAGETITLE", LAN_100." / ".LAN_99." / {$subject}");
+				define("e_PAGETITLE", COMLAN_100." / ".COMLAN_99." / {$subject}");
 				require_once(HEADERF);
 				ob_start();
 				$ix = new news;
-				$ix->render_newsitem($news, "default");
+				$ix->render_newsitem($news, "extend"); // extend so that news-title-only news text is displayed in full when viewing comments.
 				$field = $news['news_id'];
 				$comtype = 0;
 			}
@@ -257,7 +249,7 @@ if ($action == "reply") {
 				$row = $sql->db_Fetch();
 				$comments_poll = $row['poll_comment'];
 				$subject = $row['poll_title'];
-				define("e_PAGETITLE", LAN_101." / ".LAN_99." / ".$subject."");
+				define("e_PAGETITLE", COMLAN_101." / ".COMLAN_99." / ".$subject."");
 				require_once(HEADERF);
 				require(e_PLUGIN."poll/poll_menu.php");
 				$field = $row['poll_id'];
@@ -312,7 +304,7 @@ if(isset($pref['trackbackEnabled']) && $pref['trackbackEnabled'] && $table == "n
 
 		if($TRACKBACK_RENDER_METHOD)
 		{
-			$ns->tablerender("<a name='track'></a>".LAN_315, $text);
+			$ns->tablerender("<a name='track'></a>".COMLAN_315, $text);
 		}
 		else
 		{
@@ -321,10 +313,10 @@ if(isset($pref['trackbackEnabled']) && $pref['trackbackEnabled'] && $table == "n
 	}
 	else
 	{
-		echo "<a name='track'></a>".LAN_316;
+		echo "<a name='track'></a>".COMLAN_316;
 	}
 	if (ADMIN && getperms("B")) {
-		echo "<div style='text-align:right'><a href='".e_PLUGIN."trackback/modtrackback.php?".$id."'>".LAN_317."</a></div><br />";
+		echo "<div style='text-align:right'><a href='".e_PLUGIN."trackback/modtrackback.php?".$id."'>".COMLAN_317."</a></div><br />";
 	}
 }
 

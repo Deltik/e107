@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/admin.php,v $
-|     $Revision: 1.31 $
-|     $Date: 2006/02/17 23:35:38 $
-|     $Author: lisa_ $
+|     $Revision: 1.36 $
+|     $Date: 2006/11/16 10:41:46 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 require_once('../class2.php');
@@ -21,29 +21,62 @@ $e_sub_cat = 'main';
 require_once('auth.php');
 require_once(e_HANDLER.'admin_handler.php');
 
+// --- check for htmlarea.
 if (is_dir(e_ADMIN.'htmlarea') || is_dir(e_HANDLER.'htmlarea')) {
 	$text = ADLAN_ERR_2."<br /><br />
 	<div style='text-align:center'>".$HANDLERS_DIRECTORY."htmlarea/<br />".$ADMIN_DIRECTORY."htmlarea/</div>";
 	$ns -> tablerender(ADLAN_ERR_1, $text);
 }
 
+// check for old modules.
+if(getperms('0') && isset($pref['modules']) && $pref['modules'] && $sql->db_Field("plugin",5) == "plugin_addons"){
+
+	$mods=explode(",", $pref['modules']);
+	$thef = "e_module.php";
+	foreach ($mods as $mod)
+	{
+		if (is_readable(e_PLUGIN."{$mod}/module.php"))
+		{
+			$mod_found[] = e_PLUGIN."{$mod}/module.php";
+		}
+	}
+
+	if($mod_found)
+	{
+    	$text = ADLAN_ERR_5." <b>".$thef."</b>:<br /><br /><ul>";
+		foreach($mod_found as $val){
+			$text .= "<li>".str_replace("../","",$val)."</li>\n";
+		}
+		$text .="</ul><br />
+		<form method='post' action='".e_ADMIN."db.php' id='upd'>
+		<a href='#' onclick=\"document.getElementById('upd').submit()\">".ADLAN_ERR_6."</a>
+		<input type='hidden' name='plugin_scan' value='1' />
+		</form>";
+		$ns -> tablerender(ADLAN_ERR_4,$text);
+	}
+}
+
+// check for file-types;
 if (is_readable(e_ADMIN.'filetypes.php')) {
-	$a_types = trim(file_get_contents(e_ADMIN.'filetypes.php'));
+	$a_types = strtolower(trim(file_get_contents(e_ADMIN.'filetypes.php')));
 } else {
 	$a_types = 'zip, gz, jpg, png, gif';
 }
+
 $a_types = explode(',', $a_types);
 foreach ($a_types as $f_type) {
 	$allowed_types[] = '.'.trim(str_replace('.', '', $f_type));
 }
+
+// avatar check.
 $public = array(e_FILE.'public', e_FILE.'public/avatars');
 foreach ($public as $dir) {
 	if (is_dir($dir)) {
 		if ($dh = opendir($dir)) {
 			while (($file = readdir($dh)) !== false) {
-				if (is_dir($dir."/".$file) == FALSE && $file != '.' && $file != '..' && $file != '/' && $file != 'CVS' && $file != 'avatars' && $file != 'Thumbs.db') {
+				if (is_dir($dir."/".$file) == FALSE && $file != '.' && $file != '..' && $file != '/' && $file != 'CVS' && $file != 'avatars' && $file != 'Thumbs.db' && $file !=".htaccess" && $file !="php.ini") {
 					$fext = substr(strrchr($file, "."), 0);
-					if (!in_array($fext, $allowed_types)) {
+					if (!in_array(strtolower($fext), $allowed_types) ) {
 						if ($file == 'index.html' || $file == "null.txt") {
 							if (filesize($dir.'/'.$file)) {
 								$potential[] = str_replace('../', '', $dir).'/'.$file;
@@ -127,7 +160,7 @@ if(!defined("ADLINK_COLS")){
 	define("ADLINK_COLS",5);
 }
 function render_links($link, $title, $description, $perms, $icon = FALSE, $mode = FALSE) {
-	global $td;
+	global $td,$tp;
 	$text = '';
 	if (getperms($perms)) {
 		if ($mode == 'adminb') {
@@ -145,15 +178,15 @@ function render_links($link, $title, $description, $perms, $icon = FALSE, $mode 
 			}
 			if ($mode == 'default') {
 				$text .= "<td class='td' style='text-align:left; vertical-align:top; width:20%; white-space:nowrap'
-					onmouseover=\"eover(this, 'forumheader5')\" onmouseout=\"eover(this, 'td')\" onclick=\"document.location.href='".$link."'\">".$icon." ".$title."</td>";
+					onmouseover=\"eover(this, 'forumheader5')\" onmouseout=\"eover(this, 'td')\" onclick=\"document.location.href='".$link."'\">".$icon." ".$tp->toHTML($title,FALSE,"defs emotes_off")."</td>";
 			}
 			else if ($mode == 'classis') {
 				$text .= "<td style='text-align:center; vertical-align:top; width:20%'><a href='".$link."' title='$description'>".$icon."</a><br />
-					<a href='".$link."' title='$description'><b>".$title."</b></a><br /><br /></td>";
+					<a href='".$link."' title='$description'><b>".$tp->toHTML($title,FALSE,"defs emotes_off")."</b></a><br /><br /></td>";
 			}elseif ($mode == 'beginner'){
                 $text .= "<td style='text-align:center; vertical-align:top; width:20%' ><a href='".$link."' >".$icon."</a>
 					<div style='padding:5px'>
-					<a href='".$link."' title='".$description."' style='text-decoration:none'><b>".$title."</b></a></div><br /><br /><br /></td>";
+					<a href='".$link."' title='".$description."' style='text-decoration:none'><b>".$tp->toHTML($title,FALSE,"defs emotes_off")."</b></a></div><br /><br /><br /></td>";
 			}
 			$td++;
 		}

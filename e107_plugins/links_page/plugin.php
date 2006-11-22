@@ -11,23 +11,24 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/links_page/plugin.php,v $
-|     $Revision: 1.16 $
-|     $Date: 2005/12/14 19:28:44 $
-|     $Author: sweetas $
+|     $Revision: 1.21 $
+|     $Date: 2006/10/21 11:22:57 $
+|     $Author: mrpete $
 +----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
 
 // Plugin info -------------------------------------------------------------------------------------------------------
-$lan_file = e_PLUGIN."links_page/languages/".e_LANGUAGE.".php";
-include_once(file_exists($lan_file) ? $lan_file : e_PLUGIN."links_page/languages/English.php");
+@include_once(e_PLUGIN.'links_page/link_defines.php');
+@include_once(e_PLUGIN.'links_page/languages/'.e_LANGUAGE.'.php');
+@include_once(e_PLUGIN.'links_page/languages/English.php');
 
-$eplug_name = LCLAN_PLUGIN_LAN_1;
+$eplug_name = "LCLAN_PLUGIN_LAN_1";
 $eplug_version = "1.12";
-$eplug_author = "Eric Vanderfeesten (lisa)";
+$eplug_author = "e107devs";
 $eplug_url = "http://e107.org";
-$eplug_email = "lisa@eindhovenseschool.net";
+$eplug_email = "";
 $eplug_description = LCLAN_PLUGIN_LAN_2;
 $eplug_compatible = "e107v0.7+";
 $eplug_readme = "";
@@ -50,10 +51,6 @@ $eplug_caption = LCLAN_PLUGIN_LAN_3;
 
 // List of preferences -----------------------------------------------------------------------------------------------
 $eplug_prefs = array();
-
-// List of comment_type ids used by this plugin. -----------------------------
-$eplug_comment_ids = array("links_page");
-
 
 // List of table names -----------------------------------------------------------------------------------------------
 $eplug_table_names = array(

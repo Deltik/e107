@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/user_shortcodes.php,v $
-|     $Revision: 1.16 $
-|     $Date: 2006/02/23 01:02:13 $
-|     $Author: whoisrich $
+|     $Revision: 1.22 $
+|     $Date: 2006/10/14 23:41:11 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -64,6 +64,12 @@ SC_END
 SC_BEGIN USER_CHATPOSTS
 global $user;
 return $user['user_chats'];
+SC_END
+
+SC_BEGIN USER_DOWNLOADS
+global $sql,$user;
+$downloads = $sql->db_Count("download_requests","(*)","where download_request_userid=".$user['user_id']);
+return $downloads;
 SC_END
 
 SC_BEGIN USER_CHATPER
@@ -147,9 +153,9 @@ if(defined("USER_REALNAME_ICON"))
 {
 	return USER_REALNAME_ICON;
 }
-if(file_exists(THEME."generic/user_realname.png"))
+if(file_exists(THEME."images/user_realname.png"))
 {
-	return "<img src='".THEME_ABS."generic/user_realname.png' alt='' style='border:0px;vertical-align:middle;' /> ";
+	return "<img src='".THEME_ABS."images/user_realname.png' alt='' style='border:0px;vertical-align:middle;' /> ";
 }
 return "<img src='".e_IMAGE_ABS."user_icons/user_realname_".IMODE.".png' alt='' style='border:0px;vertical-align:middle;' /> ";
 SC_END
@@ -164,9 +170,9 @@ if(defined("USER_EMAIL_ICON"))
 {
 	return USER_EMAIL_ICON;
 }
-if(file_exists(THEME."generic/email.png"))
+if(file_exists(THEME."images/email.png"))
 {
-	return "<img src='".THEME_ABS."generic/email.png' alt='' style='vertical-align:middle;' /> ";
+	return "<img src='".THEME_ABS."images/email.png' alt='' style='vertical-align:middle;' /> ";
 }
 return "<img src='".e_IMAGE_ABS."generic/".IMODE."/email.png' alt='' style='vertical-align:middle;' /> ";
 SC_END
@@ -178,7 +184,7 @@ SC_END
 
 SC_BEGIN USER_EMAIL
 global $user,$tp;
-return ($user['user_hideemail'] && !ADMIN) ? "<i>".LAN_143."</i>" : $tp->toHTML($user['user_email'],"no_replace"); 
+return ($user['user_hideemail'] && !ADMIN) ? "<i>".LAN_143."</i>" : $tp->toHTML($user['user_email'],"no_replace");
 SC_END
 
 SC_BEGIN USER_ICON
@@ -186,9 +192,9 @@ if(defined("USER_ICON"))
 {
 	return USER_ICON;
 }
-if(file_exists(THEME."generic/user.png"))
+if(file_exists(THEME."images/user.png"))
 {
-	return "<img src='".THEME_ABS."generic/user.png' alt='' style='border:0px;vertical-align:middle;' /> ";
+	return "<img src='".THEME_ABS."images/user.png' alt='' style='border:0px;vertical-align:middle;' /> ";
 }
 return "<img src='".e_IMAGE_ABS."user_icons/user_".IMODE.".png' alt='' style='border:0px;vertical-align:middle;' /> ";
 SC_END
@@ -199,9 +205,9 @@ if(defined("USER_ICON"))
 {
 	$icon = USER_ICON;
 }
-else if(file_exists(THEME."generic/user.png"))
+else if(file_exists(THEME."images/user.png"))
 {
-	$icon = "<img src='".THEME_ABS."generic/user.png' alt='' style='border:0px;vertical-align:middle;' /> ";
+	$icon = "<img src='".THEME_ABS."images/user.png' alt='' style='border:0px;vertical-align:middle;' /> ";
 }
 else
 {
@@ -237,9 +243,9 @@ if(defined("USER_BIRTHDAY_ICON"))
 {
 	return USER_BIRTHDAY_ICON;
 }
-if(file_exists(THEME."generic/user_birthday.png"))
+if(file_exists(THEME."images/user_birthday.png"))
 {
-	return "<img src='".THEME_ABS."generic/user_birthday.png' alt='' style='vertical-align:middle;' /> ";
+	return "<img src='".THEME_ABS."images/user_birthday.png' alt='' style='vertical-align:middle;' /> ";
 }
 return "<img src='".e_IMAGE_ABS."user_icons/user_birthday_".IMODE.".png' alt='' style='vertical-align:middle;' /> ";
 SC_END
@@ -356,6 +362,19 @@ else
 }
 SC_END
 
+SC_BEGIN USER_AVATAR
+global $user, $tp;
+if ($user['user_image'])
+{
+	return $tp->parseTemplate("{USER_AVATAR=".$user['user_image']."}", true);
+}
+else
+{
+	return LAN_408;
+}
+SC_END
+
+
 SC_BEGIN USER_PICTURE_NAME
 global $user;
 if (ADMIN && getperms("4"))
@@ -376,15 +395,18 @@ if (USERID == $user['user_id'] || (ADMIN && getperms("4")))
 SC_END
 
 SC_BEGIN USER_EXTENDED_ALL
+
 global $user, $tp, $sql;
 global $EXTENDED_CATEGORY_START, $EXTENDED_CATEGORY_END, $EXTENDED_CATEGORY_TABLE;
-$qry = "
-	SELECT f.*, c.user_extended_struct_name AS category_name, c.user_extended_struct_id AS category_id FROM #user_extended_struct as f
+$qry = "SELECT f.*, c.user_extended_struct_name AS category_name, c.user_extended_struct_id AS category_id FROM #user_extended_struct as f
 	LEFT JOIN #user_extended_struct as c ON f.user_extended_struct_parent = c.user_extended_struct_id
 	ORDER BY c.user_extended_struct_order ASC, f.user_extended_struct_order ASC
 ";
 
+
+
 require_once(e_HANDLER."user_extended_class.php");
+
 $ue = new e107_user_extended;
 $ueCatList = $ue->user_extended_get_categories();
 $ueFieldList = $ue->user_extended_get_fields();
@@ -393,21 +415,22 @@ $ueCatList[0][0] = array('user_extended_struct_name' => LAN_410);
 foreach($ueCatList as $catnum => $cat)
 {
 	$key = $cat[0]['user_extended_struct_name'];
-	$cat_name = $tp->parseTemplate("{EXTENDED={$key}.text.{$user['user_id']}}", TRUE);
+	$cat_name = $tp->parseTemplate("{USER_EXTENDED={$key}.text.{$user['user_id']}}", TRUE);
 	if($cat_name != FALSE && count($ueFieldList[$catnum]))
 	{
+
 		$ret .= str_replace("{EXTENDED_NAME}", $key, $EXTENDED_CATEGORY_START);
 		foreach($ueFieldList[$catnum] as $f)
 		{
 			$key = $f['user_extended_struct_name'];
-			if($ue_name = $tp->parseTemplate("{EXTENDED={$key}.text.{$user['user_id']}}", TRUE))
+			if($ue_name = $tp->parseTemplate("{USER_EXTENDED={$key}.text.{$user['user_id']}}", TRUE))
 			{
-				$extended_record = str_replace("EXTENDED_ICON","EXTENDED={$key}.icon", $EXTENDED_CATEGORY_TABLE);
+				$extended_record = str_replace("EXTENDED_ICON","USER_EXTENDED={$key}.icon", $EXTENDED_CATEGORY_TABLE);
 			 	$extended_record = str_replace("{EXTENDED_NAME}", $tp->toHTML($ue_name,"","defs"), $extended_record);
-				$extended_record = str_replace("EXTENDED_VALUE","EXTENDED={$key}.value.{$user['user_id']}", $extended_record);
+				$extended_record = str_replace("EXTENDED_VALUE","USER_EXTENDED={$key}.value.{$user['user_id']}", $extended_record);
 				if(HIDE_EMPTY_FIELDS === TRUE)
 				{
-					$this_value = $tp->parseTemplate("{EXTENDED={$key}.value.{$user['user_id']}}", TRUE);
+					$this_value = $tp->parseTemplate("{USER_EXTENDED={$key}.value.{$user['user_id']}}", TRUE);
 					if($this_value != "")
 					{
 						$ret .= $tp->parseTemplate($extended_record, TRUE);
@@ -448,7 +471,7 @@ if($pref['profile_comments'])
 			$ret .= $cobj->render_comment($row);
 		}
 	}
-	return $ns->tablerender(LAN_5, $ret, 'profile_comments', TRUE);
+	return $ns->tablerender(COMLAN_5, $ret, 'profile_comments', TRUE);
 }
 return "";
 SC_END
@@ -462,11 +485,67 @@ if($pref['profile_comments'])
 	$ret = "";
 	if(ADMIN === TRUE)
 	{
-		$ret .= "<a href='".e_BASE.e_ADMIN."modcomment.php?profile.{$user['user_id']}'>".LAN_314."</a><br /><br />";
+		$ret .= "<a href='".e_BASE.e_ADMIN."modcomment.php?profile.{$user['user_id']}'>".COMLAN_314."</a><br /><br />";
 	}
 	$ret .= $cobj->form_comment("comment", "profile", $user['user_id'], "", "", TRUE);
 	return $ret;
 }
 SC_END
+
+SC_BEGIN TOTAL_USERS
+global $users_total;
+return $users_total;
+SC_END
+
+SC_BEGIN USER_FORM_RECORDS
+global $records, $user_frm;
+$ret = $user_frm->form_select_open("records");
+for($i=10; $i<=30; $i+=10)
+{
+	$sel = ($i == $records ? true: false);
+	$ret .= $user_frm->form_option($i, $sel, $i);
+}
+$ret .= $user_frm->form_select_close();
+return $ret;
+SC_END
+
+
+SC_BEGIN USER_FORM_ORDER
+global $order;
+if ($order == "ASC")
+{
+	$ret = "<select name='order' class='tbox'>
+	<option value='DESC'>".LAN_420."</option>
+	<option value='ASC' selected='selected'>".LAN_421."</option>
+	</select>";
+}
+else
+{
+	$ret = "<select name='order' class='tbox'>
+	<option value='DESC' selected='selected'>".LAN_420."</option>
+	<option value='ASC'>".LAN_421."</option>
+	</select>";
+}
+return $ret;
+SC_END
+
+
+SC_BEGIN USER_FORM_START
+global $from;
+return "
+<form method='post' action='".e_SELF."'>
+<input type='hidden' name='from' value='$from' />
+";
+SC_END
+
+SC_BEGIN USER_FORM_END
+return "</form>";
+SC_END
+
+SC_BEGIN USER_FORM_SUBMIT
+return "<input class='button' type='submit' name='submit' value='".LAN_422."' />";
+SC_END
+
+
 */
 ?>

@@ -11,9 +11,9 @@
 |    GNU    General Public  License (http://gnu.org).
 |
 |    $Source: /cvsroot/e107/e107_0.7/e107_plugins/links_page/link_class.php,v $
-|    $Revision: 1.27 $
-|    $Date: 2006/03/09 23:08:58 $
-|    $Author: whoisrich $
+|    $Revision: 1.38 $
+|    $Date: 2006/10/28 09:12:57 $
+|    $Author: lisa_ $
 +----------------------------------------------------------------------------+
 */
 
@@ -32,14 +32,14 @@ class linkclass {
         $linkspage_pref['link_comment'] = "";
         $linkspage_pref['link_rating'] = "";
 
-        $linkspage_pref['link_navigator_frontpage'] = "1";
+        $linkspage_pref['link_navigator_frontpage'] = "";
         $linkspage_pref['link_navigator_submit'] = "";
         $linkspage_pref['link_navigator_manager'] = "";
         $linkspage_pref['link_navigator_refer'] = "";
         $linkspage_pref['link_navigator_rated'] = "";
-        $linkspage_pref['link_navigator_allcat'] = "1";
-        $linkspage_pref['link_navigator_links'] = "1";
-        $linkspage_pref['link_navigator_category'] = "1";
+        $linkspage_pref['link_navigator_allcat'] = "";
+        $linkspage_pref['link_navigator_links'] = "";
+        $linkspage_pref['link_navigator_category'] = "";
 
         $linkspage_pref['link_cat_icon'] = "1";
         $linkspage_pref['link_cat_desc'] = "1";
@@ -111,7 +111,7 @@ class linkclass {
         return $linkspage_pref;
     }
 
-    function UpdateLinksPagePref($_POST){
+    function UpdateLinksPagePref(){
         global $sql, $eArrayStorage, $tp;
 
         $num_rows = $sql -> db_Select("core", "*", "e107_name='links_page' ");
@@ -134,6 +134,30 @@ class linkclass {
         }
         return $linkspage_pref;
     }
+
+	function ShowNextPrev($from='0', $number, $total){
+		global $linkspage_pref, $qs, $tp, $link_shortcodes, $LINK_NEXTPREV, $LINK_NP_TABLE, $pref;
+
+		$number = (e_PAGE == 'admin_linkspage_config.php' ? '20' : $number);
+		if($total<=$number){
+			return;
+		}
+		if(e_PAGE == 'admin_linkspage_config.php' || (isset($linkspage_pref["link_nextprev"]) && $linkspage_pref["link_nextprev"])){
+			$np_querystring = e_SELF."?[FROM]".(isset($qs[0]) ? ".".$qs[0] : "").(isset($qs[1]) ? ".".$qs[1] : "").(isset($qs[2]) ? ".".$qs[2] : "").(isset($qs[3]) ? ".".$qs[3] : "").(isset($qs[4]) ? ".".$qs[4] : "");
+			$parms = $total.",".$number.",".$from.",".$np_querystring."";
+			$LINK_NEXTPREV = $tp->parseTemplate("{NEXTPREV={$parms}}");
+
+			if(!isset($LINK_NP_TABLE)){
+				$template = (e_PAGE == 'admin_linkspage_config.php' ? e_THEME.$pref['sitetheme']."/" : THEME)."links_template.php";
+				if(is_readable($template)){
+					require_once($template);
+				}else{
+					require_once(e_PLUGIN."links_page/links_template.php");
+				}
+			}
+			echo $tp -> parseTemplate($LINK_NP_TABLE, FALSE, $link_shortcodes);
+		}
+	}
 
     function setPageTitle(){
         global $sql, $qs, $linkspage_pref;
@@ -180,30 +204,34 @@ class linkclass {
         define("e_PAGETITLE", $page);
     }
 
-    function parse_link_append($open, $id){
-        global $linkspage_pref;
+    function parse_link_append($rowl){
+
+        global $tp;
+
+        global $linkspage_pref, $rowl;
         if($linkspage_pref['link_open_all'] && $linkspage_pref['link_open_all'] == "5"){
-            $link_open_type = $open;
+            $link_open_type = $rowl['link_open'];
         }else{
             $link_open_type = $linkspage_pref['link_open_all'];
         }
+
         switch ($link_open_type) {
             case 1:
-            $link_append = "<a href='".e_PLUGIN."links_page/links.php?view.".$id."' rel='external'>";
+            $lappend = "<a class='linkspage_url' href='".$rowl['link_url']."' onclick=\"location.href='".e_PLUGIN."links_page/links.php?view.".$rowl['link_id']."';return false\" rel='external'>"; // Googlebot won't see it any other way. 
             break;
             case 2:
-            $link_append = "<a href='".e_PLUGIN."links_page/links.php?view.".$id."'>";
+            $lappend = "<a class='linkspage_url' href='".$rowl['link_url']."' onclick=\"location.href='".e_PLUGIN."links_page/links.php?view.".$rowl['link_id']."';return false\" >";  // Googlebot won't see it any other way.
             break;
             case 3:
-            $link_append = "<a href='".e_PLUGIN."links_page/links.php?view.".$id."'>";
+            $lappend = "<a class='linkspage_url' href='".$rowl['link_url']."' onclick=\"location.href='".e_PLUGIN."links_page/links.php?view.".$rowl['link_id']."';return false\" >";  // Googlebot won't see it any other way.
             break;
             case 4:
-            $link_append = "<a href=\"javascript:open_window('".e_PLUGIN."links_page/links.php?view.".$id."')\">";
+            $lappend = "<a class='linkspage_url' href=\"javascript:open_window('".e_PLUGIN."links_page/links.php?view.".$rowl['link_id']."')\">";
             break;
             default:
-            $link_append = "<a href='".e_PLUGIN."links_page/links.php?view.".$id."'>";
+            $lappend = "<a class='linkspage_url' href='".$rowl['link_url']."' onclick=\"location.href='".e_PLUGIN."links_page/links.php?view.".$rowl['link_id']."';return false\" >";  // Googlebot won't see it any other way.
         }
-        return $link_append;
+        return $lappend;
     }
 
     function showLinkSort($mode=''){
@@ -231,7 +259,7 @@ class linkclass {
 
         $sotext = "
         ".$rs -> form_open("post", e_SELF, "linkorder", "", "enctype='multipart/form-data'")."
-            ".LAN_LINKS_15." 
+            ".LAN_LINKS_15."
             ".$rs -> form_select_open("link_sort");
             if($mode == "cat"){
                 $sotext .= "
@@ -248,7 +276,7 @@ class linkclass {
             }
             $sotext .= "
             ".$rs -> form_select_close()."
-            ".LAN_LINKS_6." 
+            ".LAN_LINKS_6."
             ".$rs -> form_select_open("link_order")."
             ".$rs -> form_option(LAN_LINKS_8, ($checko == "a" ? "1" : "0"), $baseurl."?".($qry ? $qry."." : "")."ordera", "")."
             ".$rs -> form_option(LAN_LINKS_9, ($checko == "d" ? "1" : "0"), $baseurl."?".($qry ? $qry."." : "")."orderd", "")."
@@ -317,7 +345,7 @@ class linkclass {
                 $orderstring    = "order".($linkspage_pref["link_cat_order"] == "ASC" ? "a" : "d" ).($linkspage_pref["link_cat_sort"] ? $linkspage_pref["link_cat_sort"] : "date" );
             }else{
                 $orderstringcat = "order".($linkspage_pref["link_cat_order"] == "ASC" ? "a" : "d" ).($linkspage_pref["link_cat_sort"] ? $linkspage_pref["link_cat_sort"] : "date" );
-                
+
                 $orderstring    = "order".($linkspage_pref["link_order"] == "ASC" ? "a" : "d" ).($linkspage_pref["link_sort"] ? $linkspage_pref["link_sort"] : "date" );
             }
         }
@@ -342,7 +370,7 @@ class linkclass {
         $ns->tablerender($caption, "<div style='text-align:center'><b>".$message."</b></div>");
     }
 
-    function uploadLinkIcon($_POST){
+    function uploadLinkIcon(){
         global $ns, $pref;
         $pref['upload_storagetype'] = "1";
         require_once(e_HANDLER."upload_handler.php");
@@ -361,7 +389,7 @@ class linkclass {
         $this -> show_message($msg);
     }
 
-    function uploadCatLinkIcon($_POST){
+    function uploadCatLinkIcon(){
         global $ns, $pref;
         $pref['upload_storagetype'] = "1";
         require_once(e_HANDLER."upload_handler.php");
@@ -380,13 +408,13 @@ class linkclass {
         $this -> show_message($msg);
     }
 
-    function dbCategoryCreate($_POST) {
+    function dbCategoryCreate() {
         global $sql, $tp;
         $link_t = $sql->db_Count("links_page_cat", "(*)");
         $sql->db_Insert("links_page_cat", " '0', '".$tp -> toDB($_POST['link_category_name'])."', '".$tp -> toDB($_POST['link_category_description'])."', '".$tp -> toDB($_POST['link_category_icon'])."', '".($link_t+1)."', '".$tp -> toDB($_POST['link_category_class'])."', '".time()."' ");
         $this->show_message(LCLAN_ADMIN_4);
     }
-    function dbCategoryUpdate($_POST) {
+    function dbCategoryUpdate() {
         global $sql, $tp;
         $time = ($_POST['update_datestamp'] ? time() : ($_POST['link_category_datestamp'] != "0" ? $_POST['link_category_datestamp'] : time()) );
         $sql->db_Update("links_page_cat", "link_category_name ='".$tp -> toDB($_POST['link_category_name'])."', link_category_description='".$tp -> toDB($_POST['link_category_description'])."', link_category_icon='".$tp -> toDB($_POST['link_category_icon'])."', link_category_order='".$tp -> toDB($_POST['link_category_order'])."', link_category_class='".$tp -> toDB($_POST['link_category_class'])."', link_category_datestamp='".intval($time)."'   WHERE link_category_id='".intval($_POST['link_category_id'])."'");
@@ -450,49 +478,51 @@ class linkclass {
         $link_url           = $tp->toDB($_POST['link_url']);
         $link_description   = $tp->toDB($_POST['link_description']);
         $link_button        = $tp->toDB($_POST['link_but']);
-        
+
         if (!strstr($link_url, "http")) {
             $link_url = "http://".$link_url;
         }
-            
-        if(isset($mode) && $mode == "submit"){
-            if ($_POST['link_name'] && $_POST['link_url'] && $_POST['link_description']) {
+
+        //create link, submit area, tmp table
+		if(isset($mode) && $mode == "submit"){
+			if (!$_POST['link_name'] || !$_POST['link_url'] || !$_POST['link_description']) {
+				 message_handler("ALERT", 5);
+			} else {
                 $username           = (defined('USERNAME')) ? USERNAME : LAN_LINKS_3;
 
                 $submitted_link     = intval($_POST['cat_id'])."^".$link_name."^".$link_url."^".$link_description."^".$link_button."^".$username;
                 $sql->db_Insert("tmp", "'submitted_link', '".time()."', '$submitted_link' ");
-                
+
                 $edata_ls = array("link_category" => $_POST['cat_id'], "link_name" => $link_name, "link_url" => $link_url, "link_description" => $link_description, "link_button" => $link_button, "username" => $username, "submitted_link" => $submitted_link);
                 $e_event->trigger("linksub", $edata_ls);
                 //header("location:".e_SELF."?s");
                 js_location(e_SELF."?s");
-            } else {
-                message_handler("ALERT", 5);
             }
         }else{
             $link_t = $sql->db_Count("links_page", "(*)", "WHERE link_category='".intval($_POST['cat_id'])."'");
             $time   = ($_POST['update_datestamp'] ? time() : ($_POST['link_datestamp'] != "0" ? $_POST['link_datestamp'] : time()) );
 
-            if (is_numeric($qs[2]) && $qs[1] != "sn") {
-                if($qs[1] == "manage"){
+            //update link
+			if (is_numeric($qs[2]) && $qs[1] != "sn") {
+				$link_class = $_POST['link_class'];
+				if($qs[1] == "manage"){
                     $link_author = USERID;
-                    //$link_class = ($linkspage_pref['link_directpost'] ? $_POST['link_class'] : "255");
-                    $link_class = $_POST['link_class'];
                 }else{
-                    $link_author = ($_POST['link_author'] ? $tp -> toDB($_POST['link_author']) : USERID);
-                    $link_class = $_POST['link_class'];
+                    $link_author = ($_POST['link_author'] && $_POST['link_author']!='' ? $tp -> toDB($_POST['link_author']) : USERID);
                 }
 
                 $sql->db_Update("links_page", "link_name='$link_name', link_url='$link_url', link_description='$link_description', link_button= '$link_button', link_category='".intval($_POST['cat_id'])."', link_open='".intval($_POST['linkopentype'])."', link_class='".intval($link_class)."', link_datestamp='".intval($time)."', link_author='".$link_author."' WHERE link_id='".intval($qs[2])."'");
                 $e107cache->clear("sitelinks");
                 $this->show_message(LCLAN_ADMIN_3);
-            } else {
+            //create link
+			} else {
 
                 $sql->db_Insert("links_page", "0, '$link_name', '$link_url', '$link_description', '$link_button', '".intval($_POST['cat_id'])."', '".($link_t+1)."', '0', '".intval($_POST['linkopentype'])."', '".intval($_POST['link_class'])."', '".time()."', '".USERID."' ");
                 $e107cache->clear("sitelinks");
                 $this->show_message(LCLAN_ADMIN_2);
             }
-            if (is_numeric($qs[2]) && $qs[1] == "sn") {
+            //delete from tmp table after approval
+			if (is_numeric($qs[2]) && $qs[1] == "sn") {
                 $sql->db_Delete("tmp", "tmp_time='".intval($qs[2])."' ");
             }
         }
@@ -525,7 +555,7 @@ class linkclass {
                 $row['link_url']            = $submitted[2];
                 $row['link_description']    = $submitted[3]."\n[i]".LCLAN_ITEM_1." ".$submitted[5]."[/i]";
                 $row['link_button']         = $submitted[4];
-                
+
             }
         }
 
@@ -651,7 +681,8 @@ class linkclass {
         if (isset($qs[2]) && $qs[2] && $qs[1] == "edit") {
             $text .= $rs -> form_hidden("link_datestamp", $row['link_datestamp']);
             $text .= $rs -> form_checkbox("update_datestamp", 1, 0)." ".LCLAN_ITEM_21."<br /><br />";
-            $text .= $rs -> form_button("submit", "add_link", LCLAN_ITEM_22, "", "", "").$rs -> form_hidden("link_id", $row['link_id']);
+            $text .= $rs -> form_button("submit", "add_link", LCLAN_ITEM_22, "", "", "").$rs -> form_hidden("link_id", $row['link_id']).$rs -> form_hidden("link_author", $row['link_author']);
+			
         } else {
             $text .= $rs -> form_button("submit", "add_link", LCLAN_ITEM_23, "", "", "");
         }
@@ -752,10 +783,7 @@ class linkclass {
             ".$rs->form_close();
         }
         $ns->tablerender($caption, $text);
-
-        require_once(e_HANDLER."np_class.php");
-        $np_querystring = (isset($qs[0]) ? $qs[0] : "").(isset($qs[1]) ? ".".$qs[1] : "").(isset($qs[2]) ? ".".$qs[2] : "");
-        $ix = new nextprev(e_SELF, $from, $number, $link_total, NP_3, ($np_querystring ? $np_querystring : ""));
+		$this->ShowNextPrev($from, $number, $link_total);
     }
 
     function show_cat_create() {
@@ -991,12 +1019,12 @@ class linkclass {
                 hide=document.getElementById(hideid).style;
                 show.display=\"\";
                 hide.display=\"none\";
-                
+
                 //showh=document.getElementById(showid+'help').style;
                 //hideh=document.getElementById(hideid+'help').style;
                 //showh.display=\"\";
                 //hideh.display=\"none\";
-                
+
                 hideid = showid;
             }
         }
@@ -1103,7 +1131,7 @@ class linkclass {
         ".$rs -> form_radio("link_manager", "1", ($linkspage_pref['link_manager'] ? "1" : "0"), "", "").LCLAN_OPT_3."
         ".$rs -> form_radio("link_manager", "0", ($linkspage_pref['link_manager'] ? "0" : "1"), "", "").LCLAN_OPT_4;
         $text .= preg_replace("/\{(.*?)\}/e", '$\1', $TOPIC_ROW);
-        
+
         $TOPIC_TOPIC = LCLAN_OPT_46;
         $TOPIC_FIELD = r_userclass("link_manager_class", $linkspage_pref['link_manager_class'])."<br />".LCLAN_OPT_47;
         $text .= preg_replace("/\{(.*?)\}/e", '$\1', $TOPIC_ROW);
@@ -1305,7 +1333,7 @@ class linkclass {
         $TOPIC_TOPIC = LCLAN_OPT_79;
         $TOPIC_FIELD = $rs -> form_text("link_menu_navigator_caption", "15", $linkspage_pref['link_menu_navigator_caption'], "100", "tbox", "", "", "");
         $text .= preg_replace("/\{(.*?)\}/e", '$\1', $TOPIC_ROW);
-        
+
         $TOPIC_TOPIC = LCLAN_OPT_69;
         $TOPIC_FIELD = "
         ".$rs -> form_radio("link_menu_navigator_rendertype", "1", ($linkspage_pref['link_menu_navigator_rendertype'] ? "1" : "0"), "", "").LCLAN_OPT_76."

@@ -11,13 +11,17 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/db.php,v $
-|     $Revision: 1.15 $
-|     $Date: 2005/11/23 13:25:10 $
-|     $Author: sweetas $
+|     $Revision: 1.21 $
+|     $Date: 2006/10/14 15:53:46 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
 require_once("../class2.php");
+if (!getperms('0')) {
+	header('location:'.e_BASE.'index.php');
+	exit;
+}
 $e_sub_cat = 'database';
 
 if (isset($_POST['db_update'])) {
@@ -31,16 +35,50 @@ if (isset($_POST['verify_sql'])) {
 }
 
 require_once("auth.php");
+
+
+
+if(isset($_POST['delpref']) || (isset($_POST['delpref_checked']) && isset($_POST['delpref2']))  )
+{
+	del_pref_val();
+}
+
+
+if(isset($_POST['pref_editor']) || isset($_POST['delpref']) || isset($_POST['delpref_checked']))
+{
+	pref_editor();
+	require_once("footer.php");
+	exit;
+}
+
+
 if (isset($_POST['optimize_sql'])) {
 	optimizesql($mySQLdefaultdb);
 	require_once("footer.php");
 	exit;
 }
 
+
 if (isset($_POST['backup_core'])) {
 	backup_core();
 	message_handler("MESSAGE", DBLAN_1);
 }
+
+if(isset($_POST['delplug']))
+{
+	delete_plugin_entry();
+
+}
+
+if (isset($_POST['plugin_scan']) || e_QUERY == "plugin" || $_POST['delplug']) {
+	plugin_viewscan();
+	require_once("footer.php");
+	exit;
+}
+
+
+
+
 
 
 
@@ -52,7 +90,7 @@ $text = "<div style='text-align:center'>
 	<td style='width:70%' class='forumheader3'>".DBLAN_15."</td>
 	<td class='forumheader3' style='width:30%;text-align:center'><input class='button' style='width: 100%' type='submit' name='db_update' value='".DBLAN_16."' /></td>
 	</tr>
-	
+
 	<tr>
 	<td style='width:70%' class='forumheader3'>".DBLAN_4."</td>
 	<td class='forumheader3' style='width:30%;text-align:center'><input class='button' style='width: 100%' type='submit' name='verify_sql' value='".DBLAN_5."' /></td>
@@ -61,6 +99,16 @@ $text = "<div style='text-align:center'>
 	<tr>
 	<td style='width:70%' class='forumheader3'>".DBLAN_6."</td>
 	<td class='forumheader3' style='width:30%;text-align:center'><input class='button' style='width: 100%' type='submit' name='optimize_sql' value='".DBLAN_7."' /></td>
+	</tr>
+
+	<tr>
+	<td style='width:70%' class='forumheader3'>".DBLAN_28."</td>
+	<td class='forumheader3' style='width:30%;text-align:center'><input class='button' style='width: 100%' type='submit' name='plugin_scan' value=\"".DBLAN_29."\" /></td>
+	</tr>
+
+	<tr>
+	<td style='width:70%' class='forumheader3'>".DBLAN_19."</td>
+	<td class='forumheader3' style='width:30%;text-align:center'><input class='button' style='width: 100%' type='submit' name='pref_editor' value='".DBLAN_20."' /></td>
 	</tr>
 
 	<tr>
@@ -103,6 +151,129 @@ function optimizesql($mySQLdefaultdb) {
 	$ns = new e107table;
 	$ns->tablerender(DBLAN_14, $str);
 
+}
+
+function plugin_viewscan()
+{
+		global $sql, $pref, $ns, $tp;
+		require_once(e_HANDLER."plugin_class.php");
+		$ep = new e107plugin;
+		$ep->update_plugins_table(); // scan for e_xxx changes and save to plugin table.
+		$ep->save_addon_prefs();  // generate global e_xxx_list prefs from plugin table.
+
+		$ns -> tablerender(DBLAN_22, "<div style='text-align:center'>".DBLAN_23."<br /><br /><a href='".e_SELF."'>".DBLAN_13."</a></div>");
+
+		$text = "<form method='post' action='".e_ADMIN."db.php' id='plug_edit'>
+				<div style='text-align:center'>  <table class='fborder' style='".ADMIN_WIDTH."'>
+				<tr><td class='fcaption'>".DBLAN_24."</td>
+				<td class='fcaption'>".DBLAN_25."</td>
+				<td class='fcaption'>".DBLAN_26."</td>
+				<td class='fcaption'>".DBLAN_27."</td>";
+
+        $sql -> db_Select("plugin", "*", "plugin_id !='' order by plugin_path ASC"); // Must order by path to pick up duplicates. (plugin names may change).
+		while($row = $sql-> db_Fetch()){
+			$text .= "<tr>
+				<td class='forumheader3'>".$tp->toHtml($row['plugin_name'],FALSE,"defs")."</td>
+                <td class='forumheader3'>".$row['plugin_path']."</td>
+				<td class='forumheader3'>".str_replace(",","<br />",$row['plugin_addons'])."</td>
+				<td class='forumheader3' style='text-align:center'>";
+            if($previous == $row['plugin_path'])
+			{
+				$delid 	= $row['plugin_id'];
+				$delname = $row['plugin_name'];
+				$text .= "<input class='button' type='submit' title='".LAN_DELETE."' value='Delete Duplicate' name='delplug[$delid]' onclick=\"return jsconfirm('".LAN_CONFIRMDEL." ID:$delid [$delname]')\" />\n";
+			}
+			else
+			{
+            	$text .= ($row['plugin_installflag'] == 1) ? DBLAN_27 : " "; // "Installed and not installed";
+			}
+			$text .= "</td>
+			</tr>";
+			$previous = $row['plugin_path'];
+		}
+        $text .= "</table></div></form>";
+        $ns -> tablerender(ADLAN_CL_7, $text);
+
+}
+
+
+function pref_editor()
+{
+		global $pref,$ns,$tp;
+		ksort($pref);
+
+		$text = "<form method='post' action='".e_ADMIN."db.php' id='pref_edit'>
+				<div style='text-align:center'>
+				<table class='fborder' style='".ADMIN_WIDTH."'>
+                <tr>
+					<td class='fcaption'>".LAN_DELETE."</td>
+					<td class='fcaption'>".DBLAN_17."</td>
+					<td class='fcaption'>".DBLAN_18."</td>
+					<td class='fcaption'>".LAN_OPTIONS."</td>
+				</tr>";
+
+         foreach($pref as $key=>$val)
+		{
+			$ptext = (is_array($val)) ? "<pre>".print_r($val,TRUE)."</pre>" : htmlspecialchars($val);
+            $ptext = $tp -> textclean($ptext, 80);
+
+			$text .= "
+				<tr>
+				<td class='forumheader3' style='width:40px;text-align:center'><input type='checkbox' name='delpref2[$key]' value='1' /></td>
+				<td class='forumheader3'>".$key."</td>
+                <td class='forumheader3' style='width:50%'>".$ptext."</td>
+				<td class='forumheader3' style='width:20px;text-align:center'>
+					<input type='image' title='".LAN_DELETE."' src='".ADMIN_DELETE_ICON_PATH."' name='delpref[$key]' onclick=\"return jsconfirm('".LAN_CONFIRMDEL." [$key]')\" />
+       			</td>
+			</tr>";
+		}
+        $text .= "<tr><td class='forumheader' colspan='4' style='text-align:center'>
+			<input class='button' type='submit' title='".LAN_DELETE."' value=\"".DBLAN_21."\" name='delpref_checked' onclick=\"return jsconfirm('".LAN_CONFIRMDEL."')\" />
+			</tr>
+		</table></div></form>";
+        $text .= "<div style='text-align:center'><br /><a href='".e_SELF."'>".DBLAN_13."</a></div>\n";
+        $ns -> tablerender(DBLAN_20, $text);
+
+		return $text;
+
+}
+
+
+
+function del_pref_val(){
+	global $pref,$ns,$e107cache;
+	$del = array_keys($_POST['delpref']);
+	$delpref = $del[0];
+
+	if($delpref)
+	{
+   		unset($pref[$delpref]);
+    	$deleted_list .= "<li>".$delpref."</li>";
+	}
+	if($_POST['delpref2']){
+
+    	foreach($_POST['delpref2'] as $k=>$v)
+		{
+            $deleted_list .= "<li>".$k."</li>";
+			unset($pref[$k]);
+		}
+	}
+
+	$message = "<div><br /><ul>".$deleted_list."</ul></div>
+	<div style='text-align:center'><br /><a href='".e_SELF."'>".DBLAN_13."</a></div>";
+ 	save_prefs();
+	$e107cache->clear();
+    $ns -> tablerender(LAN_DELETED,$message);
+
+}
+
+function delete_plugin_entry()
+{
+	global $sql,$ns;
+	$del = array_keys($_POST['delplug']);
+	$message = ($sql -> db_Delete("plugin", "plugin_id='".intval($del[0])."' LIMIT 1")) ? LAN_DELETED : LAN_DELETED_FAILED;
+    $caption = ($message == LAN_DELETED) ? LAN_DELETED : LAN_ERROR;
+    $ns -> tablerender($caption,$message);
 }
 
 require_once("footer.php");

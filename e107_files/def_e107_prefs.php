@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/def_e107_prefs.php,v $
-|     $Revision: 1.56 $
-|     $Date: 2006/05/05 06:41:38 $
-|     $Author: e107coders $
+|     $Revision: 1.59 $
+|     $Date: 2006/11/07 20:16:40 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 
@@ -55,7 +55,7 @@ City, State, Country
   'longdate' => '%A %d %B %Y - %H:%M:%S',
   'shortdate' => '%d %b : %H:%M',
   'forumdate' => '%a %b %d %Y, %I:%M%p',
-  'sitelanguage' => 'English',
+  'sitelanguage' => $pref_language,
   'maintainance_flag' => '0',
   'time_offset' => '0',
   'log_lvcount' => '10',
@@ -70,7 +70,7 @@ City, State, Country
   'im_width' => '120',
   'im_height' => '100',
   'upload_enabled' => '0',
-  'upload_storagetype' => '2',
+  'upload_storagetype' => '1',
   'upload_maxfilesize' => '',
   'upload_class' => '255',
   'cachestatus' => '',
@@ -82,7 +82,7 @@ City, State, Country
   'antiflood1' => '1',
   'antiflood_timeout' => '10',
   'autoban' => '1',
-  'sitelang_init' => (isset($_POST['installlanguage']) ? $_POST['installlanguage'] :  "English"),
+  'sitelang_init' => $pref_language,
   'linkpage_screentip' => '0',
   'plug_status' => 'rss_menu',
   'plug_latest' => '',
@@ -154,7 +154,8 @@ City, State, Country
   'admincss' => 'style.css',
   'developer' => '0',
   'download_email' => '0',
-  'comments_disabled' => '0'
+  'comments_disabled' => '0',
+  'memberlist_access' => '253'
 );
 
 ?>

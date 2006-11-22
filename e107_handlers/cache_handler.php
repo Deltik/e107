@@ -12,9 +12,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/cache_handler.php,v $
-|     $Revision: 1.27 $
-|     $Date: 2005/12/14 17:37:34 $
-|     $Author: sweetas $
+|     $Revision: 1.35 $
+|     $Date: 2006/11/17 13:26:38 $
+|     $Author: mrpete $
 +----------------------------------------------------------------------------+
 */
 
@@ -24,26 +24,47 @@ if (!defined('e107_INIT')) { exit; }
 * Class to cache data as files, improving site speed and throughput.
 *
 * @package     e107
-* @version     $Revision: 1.27 $
-* @author      $Author: sweetas $
+* @version     $Revision: 1.35 $
+* @author      $Author: mrpete $
 */
 class ecache {
 
 	var $CachePageMD5;
+	var $CachenqMD5;
 
 	/**
 	* @return string
 	* @param string $query
 	* @desc Internal class function that returns the filename of a cache file based on the query.
 	* @scope private
+	* If the tag begins 'menu_', e_QUERY is not included in the hash which creates the file name
 	*/
 	function cache_fname($CacheTag) {
 		global $FILES_DIRECTORY;
-		if (isset($this)) {
-			if (defined("THEME") && !$this->CachePageMD5) {
-				$this->CachePageMD5 = md5(e_BASE.e_LANGUAGE.THEME.USERCLASS.e_QUERY.filemtime(THEME.'theme.php'));
+		if(strpos($CacheTag, "nomd5_") === 0) {
+			// Add 'nomd5' to indicate we are not calculating an md5
+			$CheckTag = '_nomd5';
+		}
+		elseif (isset($this)) {
+			if (defined("THEME")) {
+				if (strpos($CacheTag, "nq_") === 0)	{
+					// We do not care about e_QUERY, so don't use it in the md5 calculation
+					if (!$this->CachenqMD5) {
+						$this->CachenqMD5 = md5(e_BASE.(defined("ADMIN") && ADMIN == true ? "admin" : "").e_LANGUAGE.THEME.USERCLASS_LIST.filemtime(THEME.'theme.php'));
+					}
+					// Add 'nq' to indicate we are not using e_QUERY
+					$CheckTag = '_nq_'.$this->CachenqMD5;
+					
+				} else {
+					// It's a page - need the query in the hash
+					if (!$this->CachePageMD5) {
+						$this->CachePageMD5 = md5(e_BASE.e_LANGUAGE.THEME.USERCLASS_LIST.e_QUERY.filemtime(THEME.'theme.php'));
+					}
+					$CheckTag = '_'.$this->CachePageMD5;
+				}
+			} else {
+				$CheckTag = '';
 			}
-			$CheckTag = '_'.$this->CachePageMD5;
 		} else {
 			$CheckTag = '';
 		}
@@ -60,8 +81,8 @@ class ecache {
 	* @scope public
 	*/
 	function retrieve($CacheTag, $MaximumAge = false, $ForcedCheck = false) {
-		global $pref, $FILES_DIRECTORY;
-		if ($pref['cachestatus'] || $ForcedCheck == true) {
+		global $pref, $FILES_DIRECTORY, $tp;
+		if (($pref['cachestatus'] || $ForcedCheck == true) && !$tp->checkHighlighting()) {
 			$cache_file = (isset($this) ? $this->cache_fname($CacheTag) : ecache::cache_fname($CacheTag));
 			if (file_exists($cache_file)) {
 				if ($MaximumAge != false && (filemtime($cache_file) + ($MaximumAge * 60)) < time()) {
@@ -76,20 +97,23 @@ class ecache {
 				return false;
 			}
 		}
+		return false;
 	}
 
 	/**
 	* @return void
-	* @param string $query
-	* @param string $text
+	* @param string $CacheTag - name of tag for future retrieval
+	* @param string $Data - data to be cached
+	* @param bool   $ForceCache (optional, default false) - if TRUE, writes cache even when disabled
+	* @param bool   $bRaw (optional, default false) - if TRUE, writes data exactly as provided instead of prefacing with php leadin
 	* @desc Creates / overwrites the cache file for $query, $text is the data to store for $query.
 	* @scope public
 	*/
-	function set($CacheTag, $Data, $ForceCache = false) {
-		global $pref, $FILES_DIRECTORY;
-		if ($pref['cachestatus'] || $ForceCache == true) {
+	function set($CacheTag, $Data, $ForceCache = false, $bRaw=0) {
+		global $pref, $FILES_DIRECTORY, $tp;
+		if (($pref['cachestatus'] || $ForceCache == true) && !$tp->checkHighlighting()) {
 			$cache_file = (isset($this) ? $this->cache_fname($CacheTag) : ecache::cache_fname($CacheTag));
-			file_put_contents($cache_file, '<?php'.$Data);
+			file_put_contents($cache_file, ($bRaw? $Data : '<?php'.$Data) );
 			@chmod($cache_file, 0777);
 			@touch($cache_file);
 		}

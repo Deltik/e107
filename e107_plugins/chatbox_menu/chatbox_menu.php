@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/chatbox_menu/chatbox_menu.php,v $
-|     $Revision: 1.65 $
-|     $Date: 2006/02/27 12:32:24 $
-|     $Author: whoisrich $
+|     $Revision: 1.72 $
+|     $Date: 2006/11/20 12:49:40 $
+|     $Author: mrpete $
 +----------------------------------------------------------------------------+
 */
 
@@ -88,7 +88,7 @@ if(isset($_POST['chat_submit']) && $_POST['cmessage'] != "")
 						$sql -> db_Insert("chatbox", "0, '$nick', '$cmessage', '".time()."', '0' , '$ip' ");
 						$edata_cb = array("cmessage" => $cmessage, "ip" => $ip);
 						$e_event -> trigger("cboxpost", $edata_cb);
-						$e107cache->clear("chatbox");
+						$e107cache->clear("nq_chatbox");
 					}
 				}
 			}
@@ -104,7 +104,6 @@ if(isset($_POST['chat_submit']) && $_POST['cmessage'] != "")
 	}
 }
 
-$pref['cb_linkc'] = str_replace("e107_images/", e_IMAGE, $pref['cb_linkc']);
 if(!USER && !$pref['anon_post']){
 	if($pref['user_reg'])
 	{
@@ -113,7 +112,7 @@ if(!USER && !$pref['anon_post']){
 }
 else
 {
-	$cb_width = (defined("CBWIDTH") ? CBWIDTH : "100%");
+	$cb_width = (defined("CBWIDTH") ? CBWIDTH : "");
 
 	if($pref['cb_layer'] == 2)
 	{
@@ -129,7 +128,7 @@ else
 
 	if(($pref['anon_post'] == "1" && USER == FALSE))
 	{
-		$texta .= "\n<input class='tbox' type='text' id='nick' name='nick' value='' maxlength='50' style='width: ".$cb_width.";' /><br />";
+		$texta .= "\n<input class='tbox chatbox' type='text' id='nick' name='nick' value='' maxlength='50' ".($cb_width ? "style='width: ".$cb_width.";'" : '')." /><br />";
 	}
 
 	if($pref['cb_layer'] == 2)
@@ -142,7 +141,7 @@ else
 		$oc = "";
 	}
 	$texta .= "
-	<textarea class='tbox chatbox' id='cmessage' name='cmessage' cols='20' rows='5' style='width:".$cb_width."; overflow: auto' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'></textarea>
+	<textarea class='tbox chatbox' id='cmessage' name='cmessage' cols='20' rows='5' style='".($cb_width ? "width:".$cb_width.";" : '')." overflow: auto' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'></textarea>
 	<br />
 	<input class='button' type='submit' id='chat_submit' name='chat_submit' value='".CHATBOX_L4."' {$oc}/>
 	<input class='button' type='reset' name='reset' value='".CHATBOX_L5."' />";
@@ -161,7 +160,7 @@ if($emessage != ""){
 	$texta .= "<div style='text-align:center'><b>".$emessage."</b></div>";
 }
 
-if(!$text = $e107cache->retrieve("chatbox"))
+if(!$text = $e107cache->retrieve("nq_chatbox"))
 {
 	global $pref,$tp;
 	$pref['chatbox_posts'] = ($pref['chatbox_posts'] ? $pref['chatbox_posts'] : 10);
@@ -174,7 +173,7 @@ if(!$text = $e107cache->retrieve("chatbox"))
 
 	$qry = "
 	SELECT c.*, u.user_name FROM #chatbox AS c
-	LEFT JOIN #user AS u ON FLOOR(c.cb_nick) = u.user_id
+	LEFT JOIN #user AS u ON SUBSTRING_INDEX(c.cb_nick,'.',1) = u.user_id
 	ORDER BY c.cb_datestamp DESC LIMIT 0, ".intval($chatbox_posts);
 
 	if($sql -> db_Select_gen($qry))
@@ -191,14 +190,15 @@ if(!$text = $e107cache->retrieve("chatbox"))
 			}
 			else
 			{
-				$cb_nick = $tp -> toHTML($cb_nick);
+				$cb_nick = $tp -> toHTML($cb_nick,FALSE,'emotes_off, no_make_clickable');
+				$cb_nick = str_replace("Anonymous", LAN_ANONYMOUS, $cb_nick);
 			}
 
 			$datestamp = $obj2->convert_date($cb['cb_datestamp'], "short");
 			if(!$pref['cb_wordwrap']) { $pref['cb_wordwrap'] = 30; }
 			$emotes_active = $pref['cb_emote'] ? 'emotes_on' : 'emotes_off';
 
-			$cb_message = $tp -> toHTML($cb['cb_message'], FALSE, $emotes_active, $cb['cb_uid'], $pref['menu_wordwrap']);
+			$cb_message = $tp -> toHTML($cb['cb_message'], FALSE, $emotes_active, $cb_uid, $pref['menu_wordwrap']);
 
 			$replace[0] = "["; $replace[1] = "]";
 			$search[0] = "&lsqb;"; $search[1] =  "&rsqb;";
@@ -233,7 +233,7 @@ if(!$text = $e107cache->retrieve("chatbox"))
 	{
 		$text .= "<br /><div style='text-align:center'><a href='".e_PLUGIN."chatbox_menu/chat.php'>".(CB_MOD ? CHATBOX_L13 : CHATBOX_L12)."</a> (".$total_chats.")</div>";
 	}
-	$e107cache->set("chatbox", $text);
+	$e107cache->set("nq_chatbox", $text);
 }
 
 $caption = (file_exists(THEME."images/chatbox_menu.png") ? "<img src='".THEME_ABS."images/chatbox_menu.png' alt='' /> ".CHATBOX_L2 : CHATBOX_L2);

@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/comment_shortcodes.php,v $
-|     $Revision: 1.15 $
-|     $Date: 2005/12/14 17:37:34 $
-|     $Author: sweetas $
+|     $Revision: 1.19 $
+|     $Date: 2006/11/06 10:00:52 $
+|     $Author: lisa_ $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -38,6 +38,7 @@ if (isset($comrow['user_id']) && $comrow['user_id']) {
 }else{
 	$comrow['user_id'] = 0;
 	$USERNAME = preg_replace("/[0-9]+\./", '', $comrow['comment_author']);
+	$USERNAME = str_replace("Anonymous", LAN_ANONYMOUS, $USERNAME);
 }
 return $USERNAME;
 SC_END
@@ -53,7 +54,7 @@ global $REPLY, $comrow, $action, $pref, $table, $id, $thisaction, $thistable, $t
 $REPLY = '';
 if($comrow['comment_lock'] != "1"){
 	if ($thisaction == "comment" && $pref['nested_comments']) {
-		$REPLY = "<a href='".e_BASE."comment.php?reply.".$thistable.".".$comrow['comment_id'].".".$thisid."'>".COMLAN_6."</a>";
+		$REPLY = "<a href='".e_BASE."comment.php?reply.".$thistable.".".$comrow['comment_id'].".".$thisid."'>".COMLAN_326."</a>";
 	}
 }
 return $REPLY;
@@ -77,7 +78,7 @@ SC_END
 
 SC_BEGIN COMMENTS
 global $COMMENTS, $comrow;
-return (isset($comrow['user_id']) && $comrow['user_id'] ? LAN_99.": ".$comrow['user_comments'] : LAN_194)."<br />";
+return (isset($comrow['user_id']) && $comrow['user_id'] ? COMLAN_99.": ".$comrow['user_comments'] : COMLAN_194)."<br />";
 SC_END
 
 SC_BEGIN JOINED
@@ -85,19 +86,33 @@ global $JOINED, $comrow, $gen;
 $JOINED = '';
 if ($comrow['user_id'] && !$comrow['user_admin']) {
 	$comrow['user_join'] = $gen->convert_date($comrow['user_join'], "short");
-	$JOINED = ($comrow['user_join'] ? LAN_145." ".$comrow['user_join'] : '');
+	$JOINED = ($comrow['user_join'] ? COMLAN_145." ".$comrow['user_join'] : '');
 }
 return $JOINED;
 SC_END
 
 SC_BEGIN COMMENT
 global $COMMENT, $comrow, $tp, $pref;
-return (isset($comrow['comment_blocked']) && $comrow['comment_blocked'] ? LAN_0 : $tp->toHTML($comrow['comment_comment'], TRUE, FALSE, $comrow['user_id']));
+return (isset($comrow['comment_blocked']) && $comrow['comment_blocked'] ? COMLAN_0 : $tp->toHTML($comrow['comment_comment'], TRUE, FALSE, $comrow['user_id']));
 SC_END
 
 SC_BEGIN COMMENTEDIT
 global $COMMENTEDIT, $pref, $comrow;
-return ($pref['allowCommentEdit'] && (ADMIN || (USER && $comrow['user_id'] == USERID && $comrow['comment_lock'] != "1")) && !strstr(e_QUERY, "edit") ? "<a href='".e_SELF."?".e_QUERY.".edit.".$comrow['comment_id']."'><img src='".e_IMAGE."generic/".IMODE."/newsedit.png' alt='".LAN_318."' title='".LAN_318."' style='border: 0;' /></a>" : "");
+if ($pref['allowCommentEdit'] && USER && $comrow['user_id'] == USERID && $comrow['comment_lock'] != "1")
+{
+	if (!strstr(e_QUERY, "."))
+	{
+		return "<a href='".e_SELF."?".e_QUERY."&amp;comment=edit&amp;comment_id=".$comrow['comment_id']."'><img src='".e_IMAGE."generic/".IMODE."/newsedit.png' alt='".COMLAN_318."' title='".COMLAN_318."' style='border: 0;' /></a>";
+	}
+	else
+	{
+		return "<a href='".e_SELF."?".e_QUERY.".edit.".$comrow['comment_id']."'><img src='".e_IMAGE."generic/".IMODE."/newsedit.png' alt='".COMLAN_318."' title='".COMLAN_318."' style='border: 0;' /></a>";
+	}
+}
+else
+{
+	return "";
+}
 SC_END
 
 SC_BEGIN RATING
@@ -108,7 +123,7 @@ SC_END
 SC_BEGIN IPADDRESS
 global $IPADDRESS, $comrow;
 require_once(e_HANDLER."encrypt_handler.php");
-return (ADMIN ? "<a href='".e_BASE."userposts.php?0.comments.".$comrow['comment_ip']."'>IP: ".decode_ip($comrow['comment_ip'])."</a>" : "");
+return (ADMIN ? "<a href='".e_BASE."userposts.php?0.comments.".$comrow['comment_ip']."'>".COMLAN_330." ".decode_ip($comrow['comment_ip'])."</a>" : "");
 SC_END
 
 SC_BEGIN LEVEL
@@ -119,7 +134,7 @@ SC_END
 
 SC_BEGIN LOCATION
 global $LOCATION, $comrow, $tp;
-return (isset($comrow['user_location']) && $comrow['user_location'] ? LAN_313.": ".$tp->toHTML($comrow['user_location'], TRUE) : '');
+return (isset($comrow['user_location']) && $comrow['user_location'] ? COMLAN_313.": ".$tp->toHTML($comrow['user_location'], TRUE) : '');
 SC_END
 
 SC_BEGIN SIGNATURE

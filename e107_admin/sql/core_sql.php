@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/sql/core_sql.php,v $
-|     $Revision: 1.46 $
-|     $Date: 2006/04/16 08:35:10 $
+|     $Revision: 1.52 $
+|     $Date: 2006/10/24 17:02:57 $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -109,8 +109,8 @@ CREATE TABLE dblog (
   dblog_datestamp int(10) unsigned NOT NULL default '0',
   dblog_user_id int(10) unsigned NOT NULL default '0',
   dblog_ip varchar(80) NOT NULL default '',
-  dblog_query text NOT NULL,
-  dblog_remarks varchar(255) NOT NULL default '',
+  dblog_title varchar(255) NOT NULL default '',
+  dblog_remarks text NOT NULL,
   PRIMARY KEY  (dblog_id)
 ) TYPE=MyISAM;
 # --------------------------------------------------------
@@ -308,7 +308,8 @@ CREATE TABLE online (
   online_user_id varchar(100) NOT NULL default '',
   online_ip varchar(15) NOT NULL default '',
   online_location varchar(100) NOT NULL default '',
-  online_pagecount tinyint(3) unsigned NOT NULL default '0'
+  online_pagecount tinyint(3) unsigned NOT NULL default '0',
+  online_active int(10) unsigned NOT NULL default '0'
 ) TYPE=MyISAM;
 # --------------------------------------------------------
 
@@ -342,8 +343,9 @@ CREATE TABLE plugin (
   plugin_version varchar(10) NOT NULL default '',
   plugin_path varchar(100) NOT NULL default '',
   plugin_installflag tinyint(1) unsigned NOT NULL default '0',
-  plugin_rss varchar(255) NOT NULL default '',
-  PRIMARY KEY  (plugin_id)
+  plugin_addons text NOT NULL,
+  PRIMARY KEY  (plugin_id),
+  UNIQUE KEY plugin_path (plugin_path)
 ) TYPE=MyISAM;
 
 # --------------------------------------------------------
@@ -430,7 +432,8 @@ CREATE TABLE submitnews (
 CREATE TABLE tmp (
   tmp_ip varchar(20) NOT NULL default '',
   tmp_time int(10) unsigned NOT NULL default '0',
-  tmp_info text NOT NULL
+  tmp_info text NOT NULL,
+  KEY tmp_ip (tmp_ip)
 ) TYPE=MyISAM;
 # --------------------------------------------------------
 
@@ -453,7 +456,8 @@ CREATE TABLE upload (
   upload_filesize int(10) unsigned NOT NULL default '0',
   upload_active tinyint(3) unsigned NOT NULL default '0',
   upload_category tinyint(3) unsigned NOT NULL default '0',
-  PRIMARY KEY  (upload_id)
+  PRIMARY KEY  (upload_id),
+  KEY upload_active (upload_active)
 ) TYPE=MyISAM;
 
 # --------------------------------------------------------
@@ -559,6 +563,7 @@ CREATE TABLE generic (
   gen_ip varchar(80) NOT NULL default '',
   gen_intdata int(10) unsigned NOT NULL default '0',
   gen_chardata text NOT NULL,
-  PRIMARY KEY  (gen_id)
+  PRIMARY KEY  (gen_id),
+  KEY gen_type (gen_type)
 ) TYPE=MyISAM;
 # --------------------------------------------------------
