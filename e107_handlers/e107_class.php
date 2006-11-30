@@ -1,9 +1,9 @@
-ï»¿<?php
+<?php
 /*
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ï¿½Steve Dunstan 2001-2002
+|     ©Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/e107_class.php,v $
-|     $Revision: 1.54 $
-|     $Date: 2006/11/18 02:29:09 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.56 $
+|     $Date: 2006/11/29 23:32:20 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -34,7 +34,6 @@ class e107{
 	var $relative_base_path;
 	var $_ip_cache;
 	var $_host_name_cache;
-
 	/**
 	 * e107 class constructor
 	 *

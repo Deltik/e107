@@ -4,9 +4,9 @@
 |     e107 website system - Tiny MCE controller file.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/tiny_mce/wysiwyg.php,v $
-|     $Revision: 1.29 $
-|     $Date: 2006/11/10 07:06:57 $
-|     $Author: e107coders $
+|     $Revision: 1.32 $
+|     $Date: 2006/11/23 17:36:29 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 
@@ -15,24 +15,25 @@ define("ADMIN","");
 global $pref,$HANDLERS_DIRECTORY,$PLUGINS_DIRECTORY,$IMAGES_DIRECTORY;
 $lang = e_LANGUAGE;
 $tinylang = array(
-	"Arabic" => "ar",
-	"Danish" => "da",
-	"Dutch" => "nl",
-	"English" => "en",
-	"Farsi" => "fa",
-	"French" => "fr",
-	"Greek" => "el",
-	"Hebrew" => " ",
+	"Arabic" 	=> "ar",
+	"Danish" 	=> "da",
+	"Dutch" 		=> "nl",
+	"English" 	=> "en",
+	"Farsi" 		=> "fa",
+	"French" 	=> "fr",
+	"German"		=> "de", 
+	"Greek" 		=> "el",
+	"Hebrew" 	=> " ",
 	"Hungarian" => "hu",
-	"Italian" => "it",
-	"Japanese" => "ja",
-	"Korean" => "ko",
+	"Italian" 	=> "it",
+	"Japanese" 	=> "ja",
+	"Korean" 	=> "ko",
 	"Norwegian" => "nb",
-	"Polish" => "pl",
-	"Russian" => "ru",
-	"Slovak" => "sk",
-	"Spanish" => "es",
-	"Swedish" => "sv"
+	"Polish" 	=> "pl",
+	"Russian" 	=> "ru",
+	"Slovak" 	=> "sk",
+	"Spanish" 	=> "es",
+	"Swedish" 	=> "sv"
 );
 
 if(!$tinylang[$lang]){
@@ -118,12 +119,10 @@ function tinymce_html_bbcode_control(type, source) {
             }
 
 		// Convert e107 paths.
-
-				source = source.replace('\"".$IMAGES_DIRECTORY."','\"{e_IMAGE}');
-				source = source.replace('\"".$PLUGINS_DIRECTORY."','\"{e_PLUGIN}');
-				source = source.replace('\'".$IMAGES_DIRECTORY."','\'{e_IMAGE}');
-				source = source.replace('\'".$PLUGINS_DIRECTORY."','\'{e_PLUGIN}');
-
+                source = source.replace(/\"".str_replace("/","\/",$IMAGES_DIRECTORY)."/g,'\"{e_IMAGE}');
+				source = source.replace(/\"".str_replace("/","\/",$PLUGINS_DIRECTORY)."/g,'\"{e_PLUGIN}');
+				source = source.replace(/\'".str_replace("/","\/",$IMAGES_DIRECTORY)."/g,'\'{e_IMAGE}');
+				source = source.replace(/\'".str_replace("/","\/",$PLUGINS_DIRECTORY)."/g,'\'{e_PLUGIN}');
 
             break;
 
