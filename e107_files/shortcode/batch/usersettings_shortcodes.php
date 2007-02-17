@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/usersettings_shortcodes.php,v $
-|     $Revision: 1.21 $
-|     $Date: 2006/10/25 15:27:19 $
-|     $Author: e107coders $
+|     $Revision: 1.24 $
+|     $Date: 2007/01/16 13:57:11 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -180,7 +180,7 @@ SC_END
 
 SC_BEGIN AVATAR_CHOOSE
 $ret = "
-<input class='button' type ='button' style=' cursor:hand' size='30' value='".LAN_403."' onclick='expandit(this)' />
+<input class='button' type ='button' style=' cursor:pointer' size='30' value='".LAN_403."' onclick='expandit(this)' />
 <div style='display:none' >";
 $avatarlist[0] = "";
 $handle = opendir(e_IMAGE."avatars/");
@@ -227,7 +227,7 @@ global $sql, $tp, $curVal, $usersettings_shortcodes;
 $qry = "
 SELECT * FROM #user_extended_struct
 WHERE user_extended_struct_applicable IN (".$tp -> toDB($curVal['userclass_list'], true).")
-AND user_extended_struct_write IN (".$tp -> toDB($curVal['userclass_list'], true).")
+AND user_extended_struct_write IN (".USERCLASS_LIST.")
 AND user_extended_struct_type = 0
 ORDER BY user_extended_struct_order ASC
 ";
@@ -322,7 +322,7 @@ if(!$fInfo)
 
 if($fInfo)
 {
-	$fname = $tp->toHTML($fInfo['user_extended_struct_text'], "", "emotes_off defs");
+	$fname = $tp->toHTML($fInfo['user_extended_struct_text'], "", "emotes_off, defs");
 	if($fInfo['user_extended_struct_required'] == 1)
 	{
 		$fname = str_replace("{FIELDNAME}", $fname, $REQUIRED_FIELD);

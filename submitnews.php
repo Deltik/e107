@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/submitnews.php,v $
-|     $Revision: 1.16 $
-|     $Date: 2006/08/09 04:07:01 $
+|     $Revision: 1.18 $
+|     $Date: 2007/02/13 23:36:01 $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -146,10 +146,11 @@ if (!$sql->db_Select("news_category"))
 else
 {
     $text .= "
-		<select name='cat_id' class='tbox'>";
+	<select name='cat_id' class='tbox'>";
     while (list($cat_id, $cat_name, $cat_icon) = $sql->db_Fetch())
     {
-        $text .= ($_POST['cat_id'] == $cat_id ? "<option value='$cat_id' selected>" . $cat_name . "</option>" : "<option value='$cat_id'>" . $cat_name . "</option>");
+		$sel = ($_POST['cat_id'] == $cat_id) ? "selected='selected'" : "";
+        $text .= "<option value='$cat_id' $sel>" . $tp->toHTML($cat_name,FALSE,"defs") . "</option>";
     }
     $text .= "</select>";
 }
@@ -165,6 +166,10 @@ if ($pref['subnews_htmlarea'])
     require_once(e_HANDLER . "tiny_mce/wysiwyg.php");
     echo wysiwyg("item");
 }
+else
+{
+require_once(e_HANDLER."ren_help.php");
+}
 
 $insertjs = (!$pref['subnews_htmlarea'])?"rows='15' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'" : "rows='25' ";
 $text .= "
@@ -172,8 +177,12 @@ $text .= "
 	<tr>
 	<td style='width:20%' class='forumheader3'>" . LAN_135 . "</td>
 	<td style='width:80%' class='forumheader3'>
-	<textarea class='tbox' id='item' name='item'  cols='80'  style='width:95%' $insertjs></textarea>
-	</td>
+	<textarea class='tbox' id='item' name='item'  cols='80'  style='max-width:95%' $insertjs></textarea>";
+if (!$pref['subnews_htmlarea'])
+{
+  $text .= display_help("helpb", 'news');
+}
+$text .= "	</td>
 	</tr>\n";
 if ($pref['subnews_attach'] && $pref['upload_enabled'] && check_class($pref['upload_class']) && FILE_UPLOADS)
 {

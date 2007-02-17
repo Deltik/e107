@@ -11,9 +11,10 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/page.php,v $
-|     $Revision: 1.32 $
-|     $Date: 2006/11/12 04:10:36 $ - mods to make password protected pages work
+|     $Revision: 1.38 $
+|     $Date: 2007/01/20 05:10:45 $
 |     $Author: mrpete $
+|
 +----------------------------------------------------------------------------+
 */
 
@@ -52,7 +53,6 @@ else
 	}
 	else
 	{
-
 		$tmp = $page -> showPage();
 		define("e_PAGETITLE", $tmp['title']);
 		require_once(HEADERF);
@@ -62,12 +62,20 @@ else
 			require_once(FOOTERF);
 			exit;
 		}
+		if ($tmp['cachecontrol'] == TRUE)
+		{
 		ob_start();
 		$ns -> tablerender($tmp['title'], $tmp['text']);
 		$cache_data = ob_get_flush();
 		$e107cache->set($cacheString, $cache_data);
 		$e107cache->set($cachePageTitle, $tmp['title']."^".$tmp['comment_flag']);
 		$comment_flag = $tmp['comment_flag'];
+		}
+		else
+		{
+		  $ns -> tablerender($tmp['title'], $tmp['text']);
+		  $comment_flag = $tmp['comment_flag'];
+		}
 	}
 
 	if($com = $page -> pageComment($comment_flag))
@@ -83,15 +91,15 @@ require_once(FOOTERF);
 class pageClass
 {
 
-	var $bullet;																/* bullet image */
-	var $pageText;														/* main text of selected page, not parsed */
-	var $multipageFlag;												/* flag - true if multiple page page, false if not */
-	var $pageTitles;														/* array containing page titles */
-	var $pageID;															/* id number of page to be displayed */
-	var $pageSelected;												/* selected page of multiple page page */
-	var $pageToRender;												/* parsed page to be sent to screen */
-	var $debug;															/* temp debug flag */
-	var $title;																/* title of page, it if has one (as defined in [newpage=title] tag */
+	var $bullet;						/* bullet image */
+	var $pageText;						/* main text of selected page, not parsed */
+	var $multipageFlag;					/* flag - true if multiple page page, false if not */
+	var $pageTitles;					/* array containing page titles */
+	var $pageID;						/* id number of page to be displayed */
+	var $pageSelected;					/* selected page of multiple page page */
+	var $pageToRender;					/* parsed page to be sent to screen */
+	var $debug;							/* temp debug flag */
+	var $title;							/* title of page, it if has one (as defined in [newpage=title] tag */
 
 
 	function pageClass($debug=FALSE)
@@ -101,6 +109,7 @@ class pageClass
 		$tmp = explode(".", e_QUERY);
 		$this -> pageID = intval($tmp[0]);
 		$this -> pageSelected = (isset($tmp[1]) ? intval($tmp[1]) : 0);
+		$this -> pageTitles = array();
 		if(defined("BULLET"))
 		{
         	$this -> bullet = "<img src='".THEME."images/".BULLET."' alt='' style='vertical-align: middle;' />";
@@ -128,7 +137,7 @@ class pageClass
 	{
 		global $pref, $sql, $ns;
 
-		if(!$pref['listPages'])
+		if(!isset($pref['listPages']) || !$pref['listPages'])
 		{
 			message_handler("MESSAGE", LAN_PAGE_1);
 		}
@@ -172,7 +181,7 @@ class pageClass
 
 		$this -> pageText = $page_text;
 
-		$this -> pageCheckPerms($page_class, $page_password);
+		$this -> pageCheckPerms($page_class, $page_password, $page_title);
 
 		if($this -> debug)
 		{
@@ -183,9 +192,11 @@ class pageClass
 
 		$gen = new convert;
 
+		$text = '';    // Notice removal
+		
 		if($page_author)
 		{
-			$text = "<div class='smalltext' style='text-align:right'>".$user_name.", ".$gen->convert_date($page_datestamp, "long")."</div><br />";
+			$text .= "<div class='smalltext' style='text-align:right'>".$user_name.", ".$gen->convert_date($page_datestamp, "long")."</div><br />";
 		}
 
 		if($this -> title)
@@ -201,6 +212,7 @@ class pageClass
 		$ret['text'] = $text;
 		$ret['comment_flag'] = $page_comment_flag;
 		$ret['err'] = FALSE;
+		$ret['cachecontrol'] = (isset($page_password) && !$page_password);		// Don't cache password protected pages
 
 		return $ret;
 	}
@@ -208,6 +220,8 @@ class pageClass
 	function parsePage()
 	{
 		global $tp;
+		$this -> pageTitles = array();		// Notice removal
+
 		if(preg_match_all("/\[newpage.*?\]/si", $this -> pageText, $pt))
 		{
 			$pages = preg_split("/\[newpage.*?\]/si", $this -> pageText, -1, PREG_SPLIT_NO_EMPTY);
@@ -215,10 +229,10 @@ class pageClass
 		}
 		else
 		{
-			$this -> pageToRender = $tp -> toHTML($this -> pageText, TRUE, 'parse_sc, constants');
+			$this -> pageToRender = $tp -> toHTML($this -> pageText, TRUE, 'BODY');
 			return;
 		}
-
+		
 		foreach($pt[0] as $title)
 		{
 			$this -> pageTitles[] = $title;
@@ -251,11 +265,11 @@ class pageClass
 		foreach($this -> pageTitles as $title)
 		{
 			$titlep = preg_replace("/\[newpage=(.*?)\]/", "\\1", $title);
-			$this -> pageTitles[$count] = ($titlep == "[newpage]" ? LAN_PAGE_13." ".($count+1)."&nbsp;" : $tp -> toHTML($titlep, TRUE, 'parse_sc, constants,emotes_off,no_make_clickable'));
+			$this -> pageTitles[$count] = ($titlep == "[newpage]" ? LAN_PAGE_13." ".($count+1)."&nbsp;" : $tp -> toHTML($titlep, TRUE, 'TITLE'));
 			$count++;
 		}
 
-		$this -> pageToRender = $tp -> toHTML($pages[$this -> pageSelected], TRUE, 'parse_sc, constants');
+		$this -> pageToRender = $tp -> toHTML($pages[$this -> pageSelected], TRUE, 'BODY');
 		$this -> title = (substr($this -> pageTitles[$this -> pageSelected], -1) == ";" ? "" : $this -> pageTitles[$this -> pageSelected]);
 
 		if($this -> debug)
@@ -273,10 +287,10 @@ class pageClass
 
 	function pageIndex()
 	{
-		$itext = "<br /><br />";
 		$count = 0;
 		foreach($this -> pageTitles as $title)
 		{
+			if (!$count) { $itext = "<br /><br />"; }
 			$itext .= $this -> bullet." ".($count == $this -> pageSelected ? $title : "<a href='".e_SELF."?".$this -> pageID.".".$count."'>".$title."</a>")."<br />\n";
 			$count++;
 		}
@@ -285,6 +299,7 @@ class pageClass
 
 	function pageRating($page_rating_flag)
 	{
+	  $rate_text = '';      // Notice removal
 		if($page_rating_flag)
 		{
 			require_once(e_HANDLER."rate_class.php");
@@ -344,12 +359,16 @@ class pageClass
 		}
 	}
 
-	function pageCheckPerms($page_class, $page_password)
+	function pageCheckPerms($page_class, $page_password, $page_title="&nbsp;")
 	{
 		global $ns, $tp, $HEADER, $FOOTER, $sql;     // $tp added
 
+
 		if (!check_class($page_class))
 		{
+		define("e_PAGETITLE", $page_title);
+		// HEADERF requires that $tp is defined - hence declared as global above.
+		require_once(HEADERF);		// Do header now in case wrong password was entered
 			message_handler("MESSAGE", LAN_PAGE_6);
 			require_once(FOOTERF); exit;
 		}
@@ -359,7 +378,7 @@ class pageClass
 			return TRUE;
 		}
 
-		if($_POST['submit_page_pw'])
+		if(isset($_POST['submit_page_pw']))
 		{
 			if($_POST['page_pw'] == $page_password)
 			{
@@ -370,15 +389,21 @@ class pageClass
 		{
 			$cookiename = "e107page_".$this -> pageID;
 
-			if($_COOKIE[$cookiename] == md5($page_password.USERID))
+			if(isset($_COOKIE[$cookiename]) && ($_COOKIE[$cookiename] == md5($page_password.USERID)))
 			{
 				return TRUE;
 			}
+			// Invalid/empty password here
 		}
 
-		if ($_POST['submit_page_pw'])
+		define("e_PAGETITLE", $page_title);
+		// HEADERF requires that $tp is defined - hence declared as global above.
+		require_once(HEADERF);		// Do header now in case wrong password was entered
+
+		// Need to prompt for password here
+		if (isset($_POST['submit_page_pw']))
 		{
-			message_handler("MESSAGE", LAN_PAGE_7);
+			message_handler("MESSAGE", LAN_PAGE_7);		// Invalid password
 		}
 
 		$pw_entry_text = "
@@ -402,9 +427,7 @@ class pageClass
 		";
 		// Mustn't return to higher level code here
 
-		// HEADERF requires that $tp is defined - hence declared as global above.
-		require_once(HEADERF);
-		$ns->tablerender("&nbsp;", $pw_entry_text);		// HEADERF also clears $text - hence different variable
+		$ns->tablerender($page_title, $pw_entry_text);		// HEADERF also clears $text - hence different variable
 		require_once(FOOTERF);
 		exit;
 	}

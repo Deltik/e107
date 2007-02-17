@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/signup.php,v $
-|     $Revision: 1.102 $
-|     $Date: 2006/11/14 14:55:56 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.108 $
+|     $Date: 2007/02/04 09:30:44 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -57,7 +57,6 @@ if(e_QUERY == "resend" && !USER && ($pref['user_reg_veri'] == 1))
     	$new_email = FALSE;
 	}
 
-
 	if($_POST['submit_resend'])
 	{
 		if($_POST['resend_email'] && !$new_email && $sql->db_Select_gen("SELECT * FROM #user WHERE user_ban=0 AND user_sess='' AND (user_loginname= \"".$tp->toDB($_POST['resend_email'])."\" OR user_name = \"".$tp->toDB($_POST['resend_email'])."\" OR user_email = \"".$clean_email."\" ) "))
@@ -84,6 +83,7 @@ if(e_QUERY == "resend" && !USER && ($pref['user_reg_veri'] == 1))
 			}
 		}
 
+
 		if($sql->db_Select("user", "*", "(user_loginname = \"".$tp->toDB($_POST['resend_email'])."\" OR user_name = \"".$tp->toDB($_POST['resend_email'])."\" OR user_email = \"".$clean_email."\" ) AND user_ban=2 AND user_sess !='' LIMIT 1"))
 		{
 			$row = $sql -> db_Fetch();
@@ -98,8 +98,8 @@ if(e_QUERY == "resend" && !USER && ($pref['user_reg_veri'] == 1))
         	$mailheader_e107id = $nid;
 			require_once(e_HANDLER."mail.php");
 
-
-/*            echo "Sending to: ".$row['user_email'];
+/*
+            echo "Sending to: ".$row['user_email'];
             require_once(FOOTERF);
             exit;
 */
@@ -117,6 +117,9 @@ if(e_QUERY == "resend" && !USER && ($pref['user_reg_veri'] == 1))
                 exit;
             }
          }
+
+		require_once(e_HANDLER."message_handler.php");
+		message_handler("ALERT",LAN_106); // email not valid.
 		exit;
 	}
 	elseif(!$_POST['submit_resend'])
@@ -372,13 +375,15 @@ if (isset($_POST['register']))
 	if($_POST['password1xup']) $_POST['password1'] = $_POST['password1xup'];
 	if($_POST['password2xup']) $_POST['password2'] = $_POST['password2xup'];
 
-	if (strstr($_POST['loginname'], "#") || strstr($_POST['loginname'], "=") || strstr($_POST['loginname'], "\\") || strstr($_POST['loginname'], "'") || strstr($_POST['loginname'], '"'))
+//	Strip most invalid characters now
+	$temp_name = trim(preg_replace('/&nbsp;|\#|\=|\$/', "", strip_tags($_POST['loginname'])));
+	if ($temp_name != $_POST['loginname'])
 	{
 		$error_message .= LAN_409."\\n";
 		$error = TRUE;
 	}
+	$_POST['loginname'] = $temp_name;
 
-	$_POST['loginname'] = trim(preg_replace("/&nbsp;|\#|\=/", "", $_POST['loginname']));
 	if ($_POST['loginname'] == "Anonymous")
 	{
 		$error_message .= LAN_103."\\n";
@@ -391,10 +396,20 @@ if (isset($_POST['register']))
 		$_POST['name'] = $_POST['loginname'];
 	}
 
+	// Impose a minimum length on display name
+	$_POST['name'] = trim($_POST['name']);
+	if (strlen($_POST['name']) < 2)
+	{
+	  $error_message .= LAN_SIGNUP_56."\\n";
+	  $error = TRUE;
+	}
+	
+global $db_debug;
 	// Check for disallowed names.
-	if(isset($pref['signup_disallow_text']))
+	if(varsettrue($pref['signup_disallow_text']))
 	{
 		$tmp = explode(",", $pref['signup_disallow_text']);
+		if (E107_DEBUG_LEVEL) $db_debug->log('disallowed ('.count($tmp).'), like "'.$tmp[0].'"');
 		foreach($tmp as $disallow)
 		{
 			if( strstr($_POST['name'], $disallow) || strstr($_POST['loginname'], $disallow) ){
@@ -410,6 +425,13 @@ if (isset($_POST['register']))
 		exit;
 	}
 
+	// Check if display name exceeds maximum allowed length
+	if (isset($pref['displayname_maxlength']) && (strlen($_POST['name']) > $pref['displayname_maxlength']))
+	{
+	  $error_message .= LAN_SIGNUP_55."\\n";
+	  $error = TRUE;
+	}
+	
 	// Display Name exists.
 	if ($sql->db_Select("user", "*", "user_name='".$tp -> toDB($_POST['name'])."'"))
 	{
@@ -519,7 +541,7 @@ if (isset($_POST['register']))
 			{
 				$regexfail = $ext['user_extended_struct_name']." ".LAN_SIGNUP_53;
 			}
-	
+
 			if(defined($regexfail)) {$regexfail = constant($regexfail);}
 
 			if($regex != "" && $newval != "")
@@ -550,7 +572,7 @@ if (isset($_POST['register']))
 		if($brow['banlist_reason'])
 		{
 			$repl = array("\n","\r","<br />");
-			$error_message = str_replace($repl,"\\n",$tp->toHTML($brow['banlist_reason'],"","nobreak defs"))."\\n";
+			$error_message = str_replace($repl,"\\n",$tp->toHTML($brow['banlist_reason'],"","nobreak, defs"))."\\n";
 			$email = "";
 		}
 		else

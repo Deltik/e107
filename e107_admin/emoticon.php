@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/emoticon.php,v $
-|     $Revision: 1.35 $
-|     $Date: 2006/11/28 08:43:02 $
+|     $Revision: 1.37 $
+|     $Date: 2006/12/18 22:24:29 $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -26,7 +26,7 @@ $e_sub_cat = 'emoticon';
 
 require_once("auth.php");
 
-if(!$sql->db_Count("core", "(*)", "e107_name = 'emote_default'"))
+if(!$sql->db_Count("core", "(*)", "WHERE e107_name = 'emote_default'"))
 {
 	$tmp = 'a:28:{s:9:"alien!png";s:6:"!alien";s:10:"amazed!png";s:7:"!amazed";s:9:"angry!png";s:11:"!grr !angry";s:12:"biglaugh!png";s:4:"!lol";s:11:"cheesey!png";s:10:":D :oD :-D";s:12:"confused!png";s:10:":? :o? :-?";s:7:"cry!png";s:19:"&| &-| &o| :(( !cry";s:8:"dead!png";s:21:"x) xo) x-) x( xo( x-(";s:9:"dodge!png";s:6:"!dodge";s:9:"frown!png";s:10:":( :o( :-(";s:7:"gah!png";s:10:":@ :o@ :o@";s:8:"grin!png";s:10:":D :oD :-D";s:9:"heart!png";s:6:"!heart";s:8:"idea!png";s:10:":! :o! :-!";s:7:"ill!png";s:4:"!ill";s:7:"mad!png";s:13:"~:( ~:o( ~:-(";s:12:"mistrust!png";s:9:"!mistrust";s:11:"neutral!png";s:10:":| :o| :-|";s:12:"question!png";s:2:"?!";s:12:"rolleyes!png";s:10:"B) Bo) B-)";s:7:"sad!png";s:4:"!sad";s:10:"shades!png";s:10:"8) 8o) 8-)";s:7:"shy!png";s:4:"!shy";s:9:"smile!png";s:10:":) :o) :-)";s:11:"special!png";s:3:"%-6";s:12:"suprised!png";s:10:":O :oO :-O";s:10:"tongue!png";s:21:":p :op :-p :P :oP :-P";s:8:"wink!png";s:10:";) ;o) ;-)";}';
 	$sql->db_Insert("core", "'emote_default', '$tmp' ");
@@ -293,7 +293,7 @@ class emotec
 					}
 					$tmp = addslashes(serialize($confArray));
 					$sql->db_Insert("core", "'emote_".$value."', '$tmp' ");
-					echo "<div style='text-align: center;'><b>New emote pak found: '</b> ".$value."'</div>";
+					echo "<div style='text-align: center;'><b>".EMOLAN_22." '</b> ".$value."'</div>";
 				}
 				/* end ----------------------------------------------------------------------------------------------------------------------------------------- */
 
@@ -331,7 +331,7 @@ class emotec
 
 					$tmp = addslashes(serialize($confArray));
 					$sql->db_Insert("core", "'emote_".$value."', '$tmp' ");
-					echo "<div style='text-align: center;'><b>New emote xml pak found: '</b> ".$value."'</div>";
+					echo "<div style='text-align: center;'><b>".EMOLAN_23." '</b> ".$value."'</div>";
 				}
 
 				if($confFile['type'] == "php")
@@ -339,7 +339,7 @@ class emotec
 					echo "<b>.conf file found</b>: installing '".$value."'<br />";
 					include_once(e_IMAGE."emotes/".$value."/".$confFile['file']);
 					$sql->db_Insert("core", "'emote_".$value."', '$_emoteconf' ");
-					echo "<div style='text-align: center;'><b>New emote php found: '</b> ".$value."'</div>";
+					echo "<div style='text-align: center;'><b>".EMOLAN_24." '</b> ".$value."'</div>";
 				}
 				/* end ----------------------------------------------------------------------------------------------------------------------------------------- */
 

@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/download.php,v $
-|     $Revision: 1.93 $
-|     $Date: 2006/10/26 23:36:27 $
-|     $Author: e107coders $
+|     $Revision: 1.95 $
+|     $Date: 2006/12/03 15:09:29 $
+|     $Author: lisa_ $
 +----------------------------------------------------------------------------+
 */
 require_once("../class2.php");
@@ -786,16 +786,14 @@ class download {
 			</tr>
 
 			<tr>
-			<td style='width:20%' class='forumheader3' ><span style='cursor:help' title='if using mirrors, select how they will be displayed'>Mirror display type:</span></td>
+			<td style='width:20%' class='forumheader3' ><span style='cursor:help' title='".DOWLAN_154."'>".DOWLAN_155."</span></td>
 			<td style='width:80%' class='forumheader3'>
 
-			<input type='radio' name='download_mirror_type' value='1'".($download_mirror_type ? " checked='checked'" : "")." /> show mirror list, allow user to choose mirror<br />
-			<input type='radio' name='download_mirror_type' value='0'".(!$download_mirror_type ? " checked='checked'" : "")." /> use random mirror - no user choice
+			<input type='radio' name='download_mirror_type' value='1'".($download_mirror_type ? " checked='checked'" : "")." /> ".DOWLAN_156."<br />
+			<input type='radio' name='download_mirror_type' value='0'".(!$download_mirror_type ? " checked='checked'" : "")." /> ".DOWLAN_157."
 			</td>
 			</tr>";
 		}
-
-
 
 			$text .= "<tr>
 			<td style='width:20%' class='forumheader3'>".DOWLAN_15.":</td>
@@ -1475,7 +1473,7 @@ class download {
 				<tr>
 				<td style='width: 10%; text-align: center;' class='forumheader3'>$mirror_id</td>
 				<td style='width: 30%;' class='forumheader3'>".$tp -> toHTML($mirror_name)."</td>
-				<td style='width: 30%;' class='forumheader3'>".($mirror_image ? "<img src='".e_FILE."downloadimages/".$mirror_image."' alt='' />" : "None")."</td>
+				<td style='width: 30%;' class='forumheader3'>".($mirror_image ? "<img src='".e_FILE."downloadimages/".$mirror_image."' alt='' />" : DOWLAN_28)."</td>
 				<td style='width: 30%; text-align: center;' class='forumheader3'>
 				<a href='".e_SELF."?mirror.edit.{$mirror_id}'>".ADMIN_EDIT_ICON."</a>
 				<input type='image' title='".LAN_DELETE."' name='delete[mirror_{$mirror_id}]' src='".ADMIN_DELETE_ICON_PATH."' onclick=\"return jsconfirm('".DOWLAN_137." [ID: $mirror_id ]')\"/>

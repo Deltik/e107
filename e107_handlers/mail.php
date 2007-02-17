@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/mail.php,v $
-|     $Revision: 1.36 $
-|     $Date: 2006/11/09 09:28:58 $
-|     $Author: lisa_ $
+|     $Revision: 1.39 $
+|     $Date: 2006/12/30 18:55:34 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -39,7 +39,7 @@ php 4.3.6 does NOT have this problem.
 // Comment out the line below if you have trouble with some people not receiving emails.
 // e107_ini_set(sendmail_path, "/usr/sbin/sendmail -t -f ".$pref['siteadminemail']);
 
-function sendemail($send_to, $subject, $message, $to_name, $send_from, $from_name, $attachments, $Cc, $Bcc, $returnpath, $returnreceipt,$inline ="") {
+function sendemail($send_to, $subject, $message, $to_name, $send_from, $from_name, $attachments='', $Cc='', $Bcc='', $returnpath='', $returnreceipt='',$inline ="") {
 	global $pref,$mailheader_e107id;
 
 	require_once(e_HANDLER."phpmailer/class.phpmailer.php");
@@ -96,7 +96,8 @@ function sendemail($send_to, $subject, $message, $to_name, $send_from, $from_nam
 		$Html = preg_replace('%(http|ftp|https)(://\S+)%', '<a href="\1\2">\1\2</a>', $Html);
 		$Html = preg_replace('/([[:space:]()[{}])(www.[-a-zA-Z0-9@:%_\+.~#?&\/\/=]+)/i', '\\1<a href="http://\\2">\\2</a>', $Html);
 		$Html = preg_replace('/([_\.0-9a-z-]+@([0-9a-z][0-9a-z-]+\.)+[a-z]{2,3})/i', '<a href="mailto:\\1">\\1</a>', $Html);
-		$Html = str_replace("\n", "<br>\n", $Html);
+	    $Html = str_replace("\r","\n",$Html);		// Handle alternative newline characters
+		$Html = str_replace("\n", "<br />\n", $Html);
 	}
 	if (strpos($message,"</style>") !== FALSE){
     	$text = strstr($message,"</style>");
@@ -163,7 +164,11 @@ function sendemail($send_to, $subject, $message, $to_name, $send_from, $from_nam
 		}
 	}
 
-	if($pref['mail_bounce_email'] !=''){
+	if (isset($returnpath) && ($returnpath != ""))
+	{  // Passed parameter overrides any system default
+	$mail->Sender = $returnpath;
+	}
+	elseif($pref['mail_bounce_email'] !=''){
 		$mail->Sender = $pref['mail_bounce_email'];
     }
 

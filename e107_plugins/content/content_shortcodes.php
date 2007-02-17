@@ -378,7 +378,8 @@ SC_END
 
 SC_BEGIN CONTENT_CAT_LIST_TABLE_HEADING
 global $CONTENT_CAT_LIST_TABLE_HEADING, $tp, $row, $totalparent, $tp;
-return ($totalparent > 0 ? "<a href='".e_SELF."?cat.".$row['content_id'].".view'>".$tp -> toHTML($row['content_heading'], TRUE, "")."</a>" : $tp -> toHTML($row['content_heading'], TRUE, "") );
+//return ($totalparent > 0 ? "<a href='".e_SELF."?cat.".$row['content_id'].".view'>".$tp -> toHTML($row['content_heading'], TRUE, "")."</a>" : $tp -> toHTML($row['content_heading'], TRUE, "") );
+return "<a href='".e_SELF."?cat.".$row['content_id'].".view'>".$tp -> toHTML($row['content_heading'], TRUE, "")."</a>";
 SC_END
 
 SC_BEGIN CONTENT_CAT_LIST_TABLE_SUMMARY
@@ -394,7 +395,7 @@ if($row['content_text'] && isset($content_pref["content_cat_text"]) && $content_
 		$CONTENT_CAT_LIST_TABLE_TEXT = $tp->toHTML($row['content_text'], TRUE, "constants");
 	}else{
 		$rowtext = preg_replace("/\[newpage.*?]/si", " ", $row['content_text']);
-		$rowtext = $tp->toHTML($rowtext, TRUE, "nobreak constants");
+		$rowtext = $tp->toHTML($rowtext, TRUE, "nobreak, constants");
 		
 		$rowtext = strip_tags($rowtext);
 		$words = explode(" ", $rowtext);
@@ -477,7 +478,8 @@ SC_END
 
 SC_BEGIN CONTENT_CAT_LISTSUB_TABLE_HEADING
 global $CONTENT_CAT_LISTSUB_TABLE_HEADING, $tp, $row, $totalsubcat, $tp;
-return ($totalsubcat > 0 ? "<a href='".e_SELF."?cat.".$row['content_id']."'>".$tp -> toHTML($row['content_heading'], TRUE, "")."</a>" : $tp -> toHTML($row['content_heading'], TRUE, "") );
+//return ($totalsubcat > 0 ? "<a href='".e_SELF."?cat.".$row['content_id']."'>".$tp -> toHTML($row['content_heading'], TRUE, "")."</a>" : $tp -> toHTML($row['content_heading'], TRUE, "") );
+return "<a href='".e_SELF."?cat.".$row['content_id']."'>".$tp -> toHTML($row['content_heading'], TRUE, "")."</a>";
 SC_END
 
 SC_BEGIN CONTENT_CAT_LISTSUB_TABLE_AMOUNT

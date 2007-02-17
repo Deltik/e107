@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/plugin.php,v $
-|     $Revision: 1.68 $
-|     $Date: 2006/11/12 04:03:44 $
-|     $Author: mrpete $
+|     $Revision: 1.71 $
+|     $Date: 2007/02/04 21:42:26 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -84,9 +84,9 @@ if (isset($_POST['upload'])) {
 			if(!$unarc) {
 				/* unarc failed ... */
 				if($fileType == "zip") {
-					$error = "PCLZIP extract error: '".$archive -> errorName(TRUE)."'";
+					$error = EPL_ADLAN_46." '".$archive -> errorName(TRUE)."'";
 				} else {
-					$error = "PCLTAR extract error: ".PclErrorString().", code: ".intval(PclErrorCode());
+					$error = EPL_ADLAN_47.PclErrorString().", ".EPL_ADLAN_48.intval(PclErrorCode());
 				}
 				$ns->tablerender(EPL_ADLAN_40, EPL_ADLAN_42." ".$archiveName." ".$error);
 				require_once("footer.php");
@@ -180,7 +180,7 @@ if ($action == 'uninstall')
 		{
 			foreach($eplug_array_pref as $key => $val)
 			{
-				$plugin->manage_plugin_prefs('remove', $key, $val);
+				$plugin->manage_plugin_prefs('remove', $key, $eplug_folder, $val);
 			}
 		}
 
@@ -195,7 +195,7 @@ if ($action == 'uninstall')
 		}
 
 		if (is_array($eplug_user_prefs)) {
-			$sql = new db;
+			if (!is_object($sql)){ $sql = new db; }
 			$sql->db_Select("core", " e107_value", " e107_name='user_entended'");
 			$row = $sql->db_Fetch();
 			$user_entended = unserialize($row[0]);
@@ -317,8 +317,24 @@ if ($action == 'upgrade') {
 		$plugin->manage_prefs('remove', $upgrade_remove_prefs);
 	}
 
+	if (is_array($upgrade_add_array_pref))
+	{
+	  foreach($upgrade_add_array_pref as $key => $val)
+	  {
+		$plugin->manage_plugin_prefs('add', $key, $eplug_folder, $val);
+	  }
+	}
+
+	if (is_array($upgrade_remove_array_pref))
+	{
+	  foreach($upgrade_remove_array_pref as $key => $val)
+	  {
+		$plugin->manage_plugin_prefs('remove', $key, $eplug_folder, $val);
+	  }
+	}
+
 	if (is_array($upgrade_add_user_prefs)) {
-		$sql = new db;
+		if (!is_object($sql)){ $sql = new db; }
 		$sql->db_Select("core", " e107_value", " e107_name='user_entended'");
 		$row = $sql->db_Fetch();
 		$user_entended = unserialize($row[0]);
@@ -335,7 +351,7 @@ if ($action == 'upgrade') {
 	}
 
 	if (is_array($upgrade_remove_user_prefs)) {
-		$sql = new db;
+		if (!is_object($sql)){ $sql = new db; }  
 		$sql->db_Select("core", " e107_value", " e107_name='user_entended'");
 		$row = $sql->db_Fetch();
 		$user_entended = unserialize($row[0]);
@@ -418,7 +434,8 @@ function render_plugs($pluginList){
 
 		include(e_PLUGIN.$plug['plugin_path'].'/plugin.php');
 
- 		if ($eplug_conffile || is_array($eplug_table_names) || is_array($eplug_prefs) || is_array($eplug_user_prefs) || is_array($eplug_sc) || is_array($eplug_bb) || $eplug_module || $eplug_userclass || $eplug_status || $eplug_latest) {
+		// See whether plugin needs install - it does if any of the 'configuration' variables are set
+ 		if ($eplug_conffile || is_array($eplug_table_names) || is_array($eplug_prefs) || is_array($eplug_array_pref) || is_array($eplug_user_prefs) || is_array($eplug_sc) || is_array($eplug_bb) || $eplug_module || $eplug_userclass || $eplug_status || $eplug_latest) {
 			$img = (!$plug['plugin_installflag'] ? "<img src='".e_IMAGE."admin_images/uninstalled.png' alt='' />" : "<img src='".e_IMAGE."admin_images/installed.png' alt='' />");
 		} else {
 			$img = "<img src='".e_IMAGE."admin_images/noinstall.png' alt='' />";

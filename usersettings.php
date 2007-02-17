@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/usersettings.php,v $
-|     $Revision: 1.80 $
-|     $Date: 2006/11/29 05:11:16 $
-|     $Author: e107coders $
+|     $Revision: 1.86 $
+|     $Date: 2007/02/16 20:36:15 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -94,15 +94,15 @@ if (isset($_POST['updatesettings']))
 	}
 
 	if ($_uid && ADMIN)
-	{
+	{	// Admin logged in and editing another user's settings - so editing a different ID
 		$inp = $_uid;
 		$remflag = TRUE;
 	}
 	else
-	{
+	{	// Current user logged in - use their ID
 		$inp = USERID;
 	}
-	$_POST['image'] = str_replace(array('\'', '"', '(', ')'), '', $_POST['image']);   // these are invalid anyways, so why allow them? (XSS Fix)
+	$_POST['image'] = str_replace(array('\'', '"', '(', ')'), '', $_POST['image']);   // these are invalid anyway, so why allow them? (XSS Fix)
 
 	// check prefs for required fields =================================.
 
@@ -130,13 +130,23 @@ if (isset($_POST['updatesettings']))
 	$signup_option_names = array("realname", "signature", "image", "timezone", "class");
 
 	foreach($signup_option_names as $key => $value)
-	{
+	{  // Check required signup fields 
 		if ($pref['signup_option_'.$value] == 2 && !$_POST[$value] && !$_uid)
 		{
 			$error .= LAN_SIGNUP_6.$signup_option_title[$key].LAN_SIGNUP_7."\\n";
 		}
     }
 
+	if (isset($_POST['loginname']))
+	{  // Only check if its been edited
+	  $temp_name = trim(preg_replace('/&nbsp;|\#|\=|\$/', "", strip_tags($_POST['loginname'])));
+	  if ($temp_name != $_POST['loginname'])
+	  {
+		$error .= LAN_USET_13."\\n";
+	  }
+	  $_POST['loginname'] = $temp_name;
+	}
+	
 	// ====================================================================
 
 	$pwreset = "";
@@ -176,11 +186,18 @@ if (isset($_POST['updatesettings']))
 		}
 	}
 
-	if ($sql->db_Select("user", "user_name, user_email", "user_email='".$tp -> toDB($_POST['email'])."' AND user_id !=".USERID."' ")) {
+	// Check for duplicate of email address
+	if ($sql->db_Select("user", "user_name, user_email", "user_email='".$tp -> toDB($_POST['email'])."' AND user_id !='".$inp."' ")) 
+	{
 	  	$error .= LAN_408."\\n";
 	}
 
-//	$username = strip_tags($_POST['username']);
+	// Impose a minimum length on display name
+	$username = trim(strip_tags($_POST['username']));
+	if (isset($_POST['username']) && strlen($username) < 2)
+	{
+	  $error .= LAN_USET_12."\\n";
+	}
 
 	$user_sess = "";
 	if ($file_userfile['error'] != 4)
@@ -289,6 +306,7 @@ if (isset($_POST['updatesettings']))
 				if(!check_class($pref['displayname_class'], $udata['user_class'], $peer))
 				{
 					$new_username = "user_name = '{$loginname}', ";
+					$username = $loginname;
 				}
 			}
 

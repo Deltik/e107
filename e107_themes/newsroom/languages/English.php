@@ -10,15 +10,15 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_admin/ver.php,v $
-|     $Revision: 1.20 $
-|     $Date: 2007/02/17 17:41:54 $
+|     $Source: /cvsroot/e107/e107_0.7/e107_themes/newsroom/languages/English.php,v $
+|     $Revision: 1.1 $
+|     $Date: 2006/12/03 00:43:05 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 
-if (!defined('e107_INIT')) { exit; }
-
-$e107info['e107_version'] = "0.7.8";
-
+define("LAN_THEME_1", "Comments");
+define("LAN_THEME_2", "Comments off");
+define("LAN_THEME_3", "FULL STORY");
+define("LAN_THEME_4", "Posted on");
 ?>

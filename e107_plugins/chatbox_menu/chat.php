@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/chatbox_menu/chat.php,v $
-|     $Revision: 1.19 $
-|     $Date: 2006/07/04 08:42:17 $
-|     $Author: e107coders $
+|     $Revision: 1.24 $
+|     $Date: 2007/01/28 13:51:57 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 require_once("../../class2.php");
@@ -67,7 +67,7 @@ if($_POST['moderate'] && CB_MOD)
 		}
 		$sql -> db_Select_gen("DELETE FROM #chatbox WHERE cb_id IN ({$deletelist})");
 	}
-	$e107cache->clear("chatbox");
+	$e107cache->clear("nq_chatbox");
 	$message = CHATBOX_L18;
 }
 
@@ -111,7 +111,7 @@ foreach ($chatList as $row)
 {
 	$CHAT_TABLE_DATESTAMP = $obj2->convert_date($row['cb_datestamp'], "long");
 	$CHAT_TABLE_NICK = preg_replace("/[0-9]+\./", "", $row['cb_nick']);
-	$cb_message = $tp->toHTML($row['cb_message']);
+	$cb_message = $tp->toHTML($row['cb_message'], TRUE,'BODY');
 	if($row['cb_blocked'])
 	{
 		$cb_message .= "<br />".CHATBOX_L25;

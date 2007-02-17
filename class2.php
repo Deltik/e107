@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/class2.php,v $
-|     $Revision: 1.322 $
-|     $Date: 2006/11/25 03:38:19 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.332 $
+|     $Date: 2007/02/12 20:04:38 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 //
@@ -83,7 +83,7 @@ $_SERVER['PHP_SELF'] = (($pos = strpos($_SERVER['PHP_SELF'], ".php")) !== false 
 
 //
 // D: Setup PHP error handling
-//    (Now we can see PHP errors)
+//    (Now we can see PHP errors) -- but note that DEBUG is not yet enabled!
 //
 $error_handler = new error_handler();
 set_error_handler(array(&$error_handler, "handle_error"));
@@ -512,14 +512,14 @@ $sql -> db_Mark_Time('Start: Init session');
 init_session();
 
 // for multi-language these definitions needs to come after the language loaded.
-define("SITENAME", trim($tp->toHTML($pref['sitename'], "", "emotes_off defs no_make_clickable")));
+define("SITENAME", trim($tp->toHTML($pref['sitename'], "", "emotes_off, defs, no_make_clickable")));
 define("SITEBUTTON", $pref['sitebutton']);
-define("SITETAG", $tp->toHTML($pref['sitetag'], FALSE, "emotes_off defs"));
-define("SITEDESCRIPTION", $tp->toHTML($pref['sitedescription'], "", "emotes_off defs"));
+define("SITETAG", $tp->toHTML($pref['sitetag'], FALSE, "emotes_off, defs"));
+define("SITEDESCRIPTION", $tp->toHTML($pref['sitedescription'], "", "emotes_off, defs"));
 define("SITEADMIN", $pref['siteadmin']);
 define("SITEADMINEMAIL", $pref['siteadminemail']);
-define("SITEDISCLAIMER", $tp->toHTML($pref['sitedisclaimer'], "", "emotes_off defs"));
-define("SITECONTACTINFO", $tp->toHTML($pref['sitecontactinfo'], TRUE, "emotes_off defs"));
+define("SITEDISCLAIMER", $tp->toHTML($pref['sitedisclaimer'], "", "emotes_off, defs"));
+define("SITECONTACTINFO", $tp->toHTML($pref['sitecontactinfo'], TRUE, "emotes_off, defs"));
 
 // legacy module.php file loading.
 if (isset($pref['modules']) && $pref['modules']) {
@@ -552,7 +552,7 @@ if (!function_exists('checkvalidtheme')) {
 		// arg1 = theme to check
 		global $ADMIN_DIRECTORY, $tp, $e107;
 
-		if (strpos(e_QUERY, "themepreview") !== FALSE) {
+		if (ADMIN && strpos(e_QUERY, "themepreview") !== FALSE) {
 			list($action, $id) = explode('.', e_QUERY);
 			require_once(e_HANDLER."theme_handler.php");
 			$themeArray = themeHandler :: getThemes("id");
@@ -637,7 +637,7 @@ $ns=new e107table;
 
 $e107->ban();
 
-if($pref['force_userupdate'] && USER) {
+if(varset($pref['force_userupdate']) && USER) {
 	if(force_userupdate()) {
 		header("Location: ".e_BASE."usersettings.php?update");
 	}
@@ -717,6 +717,8 @@ $sql->db_Mark_Time('Start: Get menus');
 
 $menu_data = $e107cache->retrieve("menus_".USERCLASS_LIST."_".md5(e_LANGUAGE));
 $menu_data = $eArrayStorage->ReadArray($menu_data);
+$eMenuList=array();
+$eMenuActive=array();
 if(!is_array($menu_data)) {
 	if ($sql->db_Select('menus', '*', "menu_location > 0 AND menu_class IN (".USERCLASS_LIST.") ORDER BY menu_order")) {
 		while ($row = $sql->db_Fetch()) {
@@ -845,7 +847,13 @@ if (!class_exists('convert'))
 //@require_once(e_HANDLER."debug_handler.php");
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 function js_location($qry){
-	echo "<script type='text/javascript'>document.location.href='{$qry}'</script>\n"; exit;
+	global $error_handler;
+	if (count($error_handler->errors)) {
+		echo $error_handler->return_errors();
+		exit;
+	} else {
+		echo "<script type='text/javascript'>document.location.href='{$qry}'</script>\n"; exit;
+	}
 }
 
 function check_email($email) {
@@ -1048,32 +1056,30 @@ function get_user_data($uid, $extra = "")
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
-function save_prefs($table = 'core', $uid = USERID, $row_val = '') {
-	global $pref, $user_pref, $tp, $PrefCache, $sql, $eArrayStorage;
-	if ($table == 'core') {
-		if ($row_val == '') {
-			// Save old version as a backup
-			if(!$sql->db_Update('core', "e107_value='".addslashes($PrefCache)."' WHERE e107_name='SitePrefs_Backup'")){
-				$sql->db_Insert('core', "'SitePrefs', '".addslashes($PrefCache)."'");
-			}
+function save_prefs($table = 'core', $uid = USERID, $row_val = '') 
+{
+  global $pref, $user_pref, $tp, $PrefCache, $sql, $eArrayStorage;
+  if ($table == 'core') 
+  {
+	if ($row_val == '') 
+	{		// Save old version as a backup first
+	  $sql->db_Select_gen("REPLACE INTO #core (e107_name,e107_value) values ('SitePrefs_Backup', '".addslashes($PrefCache)."') ");
 
-			// traverse the pref array, with toDB on everything
-			$_pref = $tp -> toDB($pref, true, true);
-			// Create the data to be stored
-			$PrefCache1 = $eArrayStorage->WriteArray($_pref);
-			if(!$sql->db_Update('core', "e107_value='{$PrefCache1}' WHERE e107_name = 'SitePrefs'")){
-				$sql->db_Insert('core', "'SitePrefs', '{$PrefCache1}'");
-			}
-			ecache::clear('SitePrefs');
-		}
-	} else {
-
-		$_user_pref = $tp -> toDB($user_pref);
-
-		$tmp=addslashes(serialize($_user_pref));
-		$sql->db_Update("user", "user_prefs='$tmp' WHERE user_id=".intval($uid));
-		return $tmp;
+	  // Now save the updated values
+	  // traverse the pref array, with toDB on everything
+	  $_pref = $tp -> toDB($pref, true, true);
+	  // Create the data to be stored
+	  $sql->db_Select_gen("REPLACE INTO #core (e107_name,e107_value) values ('SitePrefs', '".$eArrayStorage->WriteArray($_pref)."') ");
+	  ecache::clear('SitePrefs');
 	}
+  }
+  else 
+  {
+	$_user_pref = $tp -> toDB($user_pref);
+	$tmp=addslashes(serialize($_user_pref));
+	$sql->db_Update("user", "user_prefs='$tmp' WHERE user_id=".intval($uid));
+	return $tmp;
+  }
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
@@ -1153,7 +1159,7 @@ class e_online {
 					}
 					$sql->db_Update("online", $query);
 				} else {
-					$sql->db_Insert("online", " '".time()."', 'null', '0', '{$ip}', '{$page}', 1, 0");
+					$sql->db_Insert("online", " '".time()."', '0', '0', '{$ip}', '{$page}', 1, 0");
 				}
 			}
 
@@ -1352,17 +1358,17 @@ function cookie($name, $value, $expire, $path = "/", $domain = "", $secure = 0) 
 // $something = pref;  // Bug if pref not set         ==> $something = varset(pref);
 // $something = isset(pref) ? pref : "";              ==> $something = varset(pref);
 // $something = isset(pref) ? pref : default;         ==> $something = varset(pref,default);
-// $something = isset(pref) && pref ? pref : default; ==> $something = varset(pref,default, true);
+// $something = isset(pref) && pref ? pref : default; ==> use varsettrue(pref,default)
 //
-function varset(&$val,$default='',$testvalue=false) {
+function varset(&$val,$default='') {
 	if (isset($val)) {
-		return (!$testvalue || $val) ? $val : $default;
+		return $val;
 	}
 	return $default;
 }
-function defset($str,$default='',$testvalue=false) {
+function defset($str,$default='') {
 	if (defined($str)) {
-		return (!$testvalue || constant($str)) ? constant($str) : $default;
+		return constant($str);
 	}
 	return $default;
 }
@@ -1417,6 +1423,9 @@ function class_list($uid = '') {
 			$clist[]=e_UC_MEMBER;
 			if (ADMIN === TRUE) {
 				$clist[] = e_UC_ADMIN;
+			}
+			if (getperms('0')) {
+			  $clist[] = e_UC_MAINADMIN;
 			}
 		} else {
 			$clist[] = e_UC_GUEST;
@@ -1514,6 +1523,9 @@ class error_handler {
 	var $debug = false;
 
 	function error_handler() {
+		//
+		// This is initialized before the current debug level is known
+		//
 		if ((isset($_SERVER['QUERY_STRING']) && strpos($_SERVER['QUERY_STRING'], 'debug=') !== FALSE) || isset($_COOKIE['e107_debug_level'])) {
 			$this->debug = true;
 			error_reporting(E_ALL);
@@ -1523,9 +1535,10 @@ class error_handler {
 	}
 
 	function handle_error($type, $message, $file, $line, $context) {
+		$startup_error = (!defined('E107_DEBUG_LEVEL')); // Error before debug system initialized
 		switch($type) {
 			case E_NOTICE:
-			if ($this->debug == true) {
+			if ($startup_error || E107_DBG_ALLERRORS) {
 				$error['short'] = "Notice: {$message}, Line {$line} of {$file}<br />\n";
 				$trace = debug_backtrace();
 				$backtrace[0] = (isset($trace[1]) ? $trace[1] : "");
@@ -1535,7 +1548,7 @@ class error_handler {
 			}
 			break;
 			case E_WARNING:
-			if ($this->debug == true) {
+			if ($startup_error || E107_DBG_BASIC) {
 				$error['short'] = "Warning: {$message}, Line {$line} of {$file}<br />\n";
 				$trace = debug_backtrace();
 				$backtrace[0] = (isset($trace[1]) ? $trace[1] : "");
@@ -1562,10 +1575,18 @@ class error_handler {
 	function return_errors() {
 		$index = 0; $colours[0] = "#C1C1C1"; $colours[1] = "#B6B6B6";
 		$ret = "<table class='fborder'>\n";
-		foreach ($this->errors as $key => $value) {
-			$ret .= "\t<tr>\n\t\t<td class='forumheader3' >{$value['short']}</td><td><input class='button' type ='button' style='cursor: hand; cursor: pointer;' size='30' value='Back Trace' onclick=\"expandit('bt_{$key}')\" /></td>\n\t</tr>\n";
-			$ret .= "\t<tr>\n<td style='display: none;' colspan='2' id='bt_{$key}'>".print_a($value['trace'], true)."</td></tr>\n";
-			if($index == 0) { $index = 1; } else { $index = 0; }
+		if (E107_DBG_ERRBACKTRACE)
+		{
+			foreach ($this->errors as $key => $value) {
+				$ret .= "\t<tr>\n\t\t<td class='forumheader3' >{$value['short']}</td><td><input class='button' type ='button' style='cursor: hand; cursor: pointer;' size='30' value='Back Trace' onclick=\"expandit('bt_{$key}')\" /></td>\n\t</tr>\n";
+				$ret .= "\t<tr>\n<td style='display: none;' colspan='2' id='bt_{$key}'>".print_a($value['trace'], true)."</td></tr>\n";
+				if($index == 0) { $index = 1; } else { $index = 0; }
+			}
+		} else {
+			foreach ($this->errors as $key => $value) 
+			{
+				$ret .= "<tr class='forumheader3'><td>{$value['short']}</td></tr>\n";
+			}
 		}
 		$ret .= "</table>";
 		return $ret;

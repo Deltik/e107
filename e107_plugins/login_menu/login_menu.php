@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/login_menu/login_menu.php,v $
-|     $Revision: 1.49 $
-|     $Date: 2006/11/29 01:48:21 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.52 $
+|     $Date: 2006/12/26 14:49:20 $
+|     $Author: mrpete $
 +----------------------------------------------------------------------------+
 */
 
@@ -95,11 +95,11 @@ if (USER == TRUE || ADMIN == TRUE)
 
 		// ------------ Comments Stats -----------
 
-		if (varset($menu_pref['login_menu']['new_comments'], false, true) == true)
+		if (varsettrue($menu_pref['login_menu']['new_comments'], false) == true)
 		{
 			$new_comments = 0;
 			$new_comments = $sql->db_Count('comments', '(*)', 'WHERE `comment_datestamp` > '.$time);
-
+			$new_total += $new_comments;
 			if (!$new_comments)
 			{
 				$new_comments = LOGIN_MENU_L26;
@@ -109,7 +109,7 @@ if (USER == TRUE || ADMIN == TRUE)
 
 		// ------------ Chatbox Stats -----------
 
-		if (isset($menu_pref['login_menu']) && $menu_pref['login_menu']['new_chatbox'] == true) {
+		if (isset($menu_pref['login_menu']['new_chatbox']) && $menu_pref['login_menu']['new_chatbox'] == true) {
 			$display_chats = TRUE;
 
 			if(in_array('chatbox_menu',$eMenuActive)){
@@ -129,7 +129,7 @@ if (USER == TRUE || ADMIN == TRUE)
 
 		// ------------ Forum Stats -----------
 
-		if (isset($menu_pref['login_menu']) && $menu_pref['login_menu']['new_forum'] == true) {
+		if (isset($menu_pref['login_menu']['new_forum']) && $menu_pref['login_menu']['new_forum'] == true) {
 			$qry = "
 			SELECT  count(*) as count FROM #forum_t  as t
 			LEFT JOIN #forum as f
@@ -150,7 +150,7 @@ if (USER == TRUE || ADMIN == TRUE)
 
 		// ------------ Member Stats -----------
 
-		if (isset($menu_pref['login_menu']) && $menu_pref['login_menu']['new_members'] == true) {
+		if (isset($menu_pref['login_menu']['new_members']) && $menu_pref['login_menu']['new_members'] == true) {
 			$new_users = $sql->db_Count('user', '(user_join)', 'WHERE user_join > '.$time);
 			$new_total += $new_users;
 			if (!$new_users) {

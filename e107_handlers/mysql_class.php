@@ -12,9 +12,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/mysql_class.php,v $
-|     $Revision: 1.60 $
-|     $Date: 2006/10/21 11:07:06 $
-|     $Author: mrpete $
+|     $Revision: 1.65 $
+|     $Date: 2007/02/07 21:24:58 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -27,8 +27,8 @@ $db_mySQLQueryCount = 0;	// Global total number of db object queries (all db's)
 * MySQL Abstraction class
 *
 * @package e107
-* @version $Revision: 1.60 $
-* @author $Author: mrpete $
+* @version $Revision: 1.65 $
+* @author $Author: e107steved $
 */
 class db {
 
@@ -145,10 +145,10 @@ class db {
 	function db_Write_log($log_type = '', $log_remark = '', $log_query = '') {
 		global $tp, $e107;
 		$d = time();
-		$uid = (USER === FALSE) ? USERID : '0';
+		$uid = (USER) ? USERID : '0';
 		$ip = $e107->getip();
 		$qry = $tp->toDB($log_query);
-		$this->db_Insert('dblog', "0, '{$log_type}', {$d}, {$uid}, '{$ip}', '{$qry}', '{$log_remark}'", 2);
+		$this->db_Insert('dblog', "0, '{$log_type}', {$d}, {$uid}, '{$ip}', '{$qry}', '{$log_remark}'");
 	}
 
 	/**
@@ -271,11 +271,8 @@ class db {
 		$this->mySQLcurTable = $table;
 		if(is_array($arg))
 		{
-			foreach($arg as $k => $v)
-			{
-				$keyList .= ($keyList ? ",`{$k}`" : "`{$k}`");
-				$valList .= ($valList ? ",'{$v}'" : "'{$v}'");
-			}
+			$keyList= "`".implode("`,`", array_keys($arg))."`";
+			$valList= "'".implode("','", $arg)."'";
 			$query = "INSERT INTO `".MPREFIX."{$table}` ({$keyList}) VALUES ({$valList})";
 		}
 		else
@@ -315,6 +312,7 @@ class db {
 		$this->mySQLcurTable = $table;
 		if ($result = $this->mySQLresult = $this->db_Query('UPDATE '.MPREFIX.$table.' SET '.$arg, NULL, 'db_Update', $debug, $log_type, $log_remark)) {
 			$result = mysql_affected_rows();
+			if ($result == -1) return FALSE;	// Error return from mysql_affected_rows
 			return $result;
 		} else {
 			$this->dbError("db_Update ($query)");
@@ -345,7 +343,6 @@ class db {
 		} else {
 			$this->dbError('db_Fetch');
 			return FALSE;
-
 		}
 	}
 

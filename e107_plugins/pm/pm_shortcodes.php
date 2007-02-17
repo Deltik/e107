@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/pm/pm_shortcodes.php,v $
-|     $Revision: 1.16 $
-|     $Date: 2006/11/16 16:55:10 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.18 $
+|     $Date: 2007/02/10 10:19:23 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -52,7 +52,7 @@ if($pm_prefs['allow_userclass'])
 {
 	$ret = "<input type='checkbox' name='to_userclass' value='1' />".LAN_PM_4." ";
 	require_once(e_HANDLER."userclass_class.php");
-	$args = (ADMIN ? "admin, classes" : "matchclass");
+	$args = (ADMIN ? "admin, classes" : "classes, matchclass");
 	if(check_class($pm_prefs['sendall_class']))
 	{
 		$args = "member, ".$args;
@@ -238,7 +238,7 @@ SC_END
 
 SC_BEGIN PM_SUBJECT
 global $pm_info, $tp;
-$ret = $tp->toHTML($pm_info['pm_subject'], true, 'no_make_clickable');
+$ret = $tp->toHTML($pm_info['pm_subject'], true, 'no_make_clickable,no_hook');
 if('link' == $parm)
 {
 	$ret = "<a href='".e_PLUGIN_ABS."pm/pm.php?show.{$pm_info['pm_id']}'>".$ret."</a>";

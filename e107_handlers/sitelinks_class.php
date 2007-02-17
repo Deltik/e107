@@ -12,8 +12,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/sitelinks_class.php,v $
-|     $Revision: 1.107 $
-|     $Date: 2006/11/24 03:17:48 $
+|     $Revision: 1.114 $
+|     $Date: 2007/02/13 23:23:22 $
 |     $Author: e107coders $
 +---------------------------------------------------------------+
 */
@@ -114,7 +114,7 @@ class sitelinks
 
 				$render_link[$key] = $this->makeLink($link,'', $style, $css_class);
 
-				if(!defined("LINKSRENDERONLYMAIN") && $style['linkmainonly']!= TRUE)	/* if this is defined in theme.php only main links will be rendered */
+				if(!defined("LINKSRENDERONLYMAIN") && !varset($style['linkmainonly']))	/* if this is defined in theme.php only main links will be rendered */
 				{
 
 					// if there's a submenu. :
@@ -195,7 +195,7 @@ class sitelinks
 
 		// Check for screentip regardless of URL.
 		if (isset($pref['linkpage_screentip']) && $pref['linkpage_screentip'] && $linkInfo['link_description']){
-			$screentip = " title = \"".$tp->toHTML($linkInfo['link_description'],"","value emotes_off defs no_hook")."\"";
+			$screentip = " title = \"".$tp->toHTML($linkInfo['link_description'],"","value, emotes_off, defs, no_hook")."\"";
 		}
 
 		// Check if its expandable first. It should override its URL.
@@ -240,14 +240,14 @@ class sitelinks
 		// If its a link.. make a link
 		$_link = "";
 		$_link .= $accessdigit;
-		if (!empty($href) && (($style['hilite_nolink'] && $highlighted)!=TRUE)){
-			$_link .= "<a".$linkadd.$screentip.$href.$link_append.$accesskey.">".$tp->toHTML($linkInfo['link_name'],"","emotes_off defs no_hook")."</a>";
+		if (!empty($href) && ((varset($style['hilite_nolink']) && $highlighted)!=TRUE)){
+			$_link .= "<a".$linkadd.$screentip.$href.$link_append.$accesskey.">".$tp->toHTML($linkInfo['link_name'],"","emotes_off, defs, no_hook")."</a>";
 		// If its not a link, but has a class or screentip do span:
 		}elseif (!empty($linkadd) || !empty($screentip)){
-			$_link .= "<span".$linkadd.$screentip.">".$tp->toHTML($linkInfo['link_name'],"","emotes_off defs no_hook")."</span>";
+			$_link .= "<span".$linkadd.$screentip.">".$tp->toHTML($linkInfo['link_name'],"","emotes_off, defs, no_hook")."</span>";
 			// Else just the name:
 		}else {
-			$_link .= $tp->toHTML($linkInfo['link_name'],"","emotes_off defs no_hook");
+			$_link .= $tp->toHTML($linkInfo['link_name'],"","emotes_off, defs, no_hook");
 		}
 
 		$_link = $linkstart.$indent.$_link;
@@ -321,16 +321,29 @@ function hilite($link,$enabled=''){
 // eg. news.php, news.php?list.1 or news.php?cat.2 etc
 	if(substr(basename($link),0,8) == "news.php")
 	{
+
 		if (strpos($link, "news.php?") !== FALSE && strpos(e_SELF,"/news.php")!==FALSE) {
 
 			$lnk = explode(".",$link_qry); // link queries.
 			$qry = explode(".",e_QUERY); // current page queries.
 
-			if($qry[0] == "item"){
+			if($qry[0] == "item")
+			{
 				return ($qry[2] == $lnk[1]) ? TRUE : FALSE;
      		}
 
-			if($lnk[0] == $qry[0] && $lnk[1] == $qry[1]){
+			if($qry[0] == "all" && $lnk[0] == "all")
+			{
+            	return TRUE;
+			}
+
+			if($lnk[0] == $qry[0] && $lnk[1] == $qry[1])
+			{
+            	return TRUE;
+			}
+
+			if($qry[1] == "list" && $lnk[0] == "list" && $lnk[1] == $qry[2])
+			{
             	return TRUE;
 			}
 

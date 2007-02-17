@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/lan_signup.php,v $
-|     $Revision: 1.23 $
-|     $Date: 2006/11/16 19:50:45 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.25 $
+|     $Date: 2006/12/30 22:39:35 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 define("PAGE_NAME", "Register");
@@ -113,6 +113,9 @@ define("LAN_SIGNUP_50", "New Email");
 define("LAN_SIGNUP_51", "Old Password");
 define("LAN_SIGNUP_52", "Incorrect Password");
 define("LAN_SIGNUP_53", "field failed validation test");
+define("LAN_SIGNUP_54", "Click here to fill in your details to register");
+define("LAN_SIGNUP_55", "That display name is too long. Please choose another");
+define("LAN_SIGNUP_56", "That display name is too short. Please choose another");
 
 
 

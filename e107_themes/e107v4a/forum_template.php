@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_themes/e107v4a/forum_template.php,v $
-|     $Revision: 1.14 $
-|     $Date: 2006/11/09 18:19:47 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.17 $
+|     $Date: 2006/12/24 13:45:37 $
+|     $Author: mrpete $
 +----------------------------------------------------------------------------+
 */
 
@@ -21,7 +21,9 @@ if (!defined('e107_INIT')) { exit; }
 
 $sc_style['ANON_IP']['pre'] = "<br /><span class='smalltext'>";
 $sc_style['ANON_IP']['post'] = "</span>";
-$location_tpl = (array_key_exists('user_location', $currentUser) ? "{USER_EXTENDED=location.text}: {USER_EXTENDED=location.value}" : "");
+
+$sc_style['USER_EXTENDED']['location.text_value']['mid'] = ": ";
+$sc_style['USER_EXTENDED']['location.text_value']['post'] = "<br />";
 
 $FORUMSTART = "
 <table style='width:100%' class='nforumholder' cellpadding='0' cellspacing='0'>
@@ -70,7 +72,7 @@ $FORUMTHREADSTYLE = "
 </td>
 </tr>
 <tr>
-<td class='nforumthread' style='vertical-align:top'>\n{AVATAR}\n<div class='smalltext'>\n{CUSTOMTITLE}\n{LEVEL}\n{MEMBERID}\n{JOINED}\n{$location_tpl}<br />\n{POSTS}\n</div>\n</td>
+<td class='nforumthread' style='vertical-align:top'>\n{AVATAR}\n<div class='smalltext'>\n{CUSTOMTITLE}\n{LEVEL}\n{MEMBERID}\n{JOINED}\n{USER_EXTENDED=location.text_value}\n{POSTS}\n</div>\n</td>
 <td class='nforumthread' style='vertical-align:top'>{POLL}\n{POST}\n{SIGNATURE}\n</td>
 </tr>
 <tr>
@@ -102,7 +104,7 @@ $FORUMREPLYSTYLE = "
 </td>
 </tr>
 <tr>
-<td class='nforumthread' style='vertical-align:top'>\n{AVATAR}\n<span class='smalltext'>\n{CUSTOMTITLE}\n{LEVEL}\n{MEMBERID}\n{JOINED}\n{$location_tpl}<br />\n{POSTS}\n</span>\n</td>
+<td class='nforumthread' style='vertical-align:top'>\n{AVATAR}\n<span class='smalltext'>\n{CUSTOMTITLE}\n{LEVEL}\n{MEMBERID}\n{JOINED}\n{USER_EXTENDED=location.text_value}\n{POSTS}\n</span>\n</td>
 <td class='nforumthread' style='vertical-align:top'>\n{POST}\n{SIGNATURE}\n</td>
 </tr>
 <tr>
@@ -210,8 +212,8 @@ $FORUM_VIEW_FORUM = "
 </td>
 
 <td style='vertical-align:top; text-align:center; width:20%' class='nforumview2'><span class='smalltext'><b>{POSTER}</b><br />{THREADDATE}</span></td>
-<td style='vertical-align:center; text-align:center; width:5%' class='nforumview2'><span class='smalltext'>{REPLIES}</span></td>
-<td style='vertical-align:center; text-align:center; width:5%' class='nforumview2'><span class='smalltext'>{VIEWS}</span></td>
+<td style='vertical-align:middle; text-align:center; width:5%' class='nforumview2'><span class='smalltext'>{REPLIES}</span></td>
+<td style='vertical-align:middle; text-align:center; width:5%' class='nforumview2'><span class='smalltext'>{VIEWS}</span></td>
 <td style='vertical-align:top; text-align:center; width:20%' class='nforumview2'><span class='smalltext'>{LASTPOST}</span></td>
 </tr>";
 
@@ -235,13 +237,13 @@ $FORUM_VIEW_END = "
 <div class='spacer'>
 <table style='width:100%' class='nforumholder' cellpadding='0' cellspacing='0'>
 <tr>
-<td style='vertical-align:center; width:50%' class='nforumview3'><span class='smalltext'>{MODERATORS}</span></td>
-<td style='text-align:right; vertical-align:center; width:50%' class='nforumview3'><span class='smalltext'>{BROWSERS}</span></td>
+<td style='vertical-align:middle; width:50%' class='nforumview3'><span class='smalltext'>{MODERATORS}</span></td>
+<td style='text-align:right; vertical-align:middle; width:50%' class='nforumview3'><span class='smalltext'>{BROWSERS}</span></td>
 </tr>
 
 <tr>
-<td style='vertical-align:center; width:50%' class='nforumview4'>{ICONKEY}</td>
-<td style='vertical-align:center; text-align:center; width:50%' class='nforumview4'>{PERMS}<br /><br />{SEARCH}
+<td style='vertical-align:middle; width:50%' class='nforumview4'>{ICONKEY}</td>
+<td style='vertical-align:middle; text-align:center; width:50%' class='nforumview4'>{PERMS}<br /><br />{SEARCH}
 </td>
 </tr>
 </table>

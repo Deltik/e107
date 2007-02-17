@@ -11,26 +11,48 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/log/loginfo.php,v $
-|     $Revision: 1.15 $
-|     $Date: 2006/11/09 22:03:18 $
-|     $Author: mrpete $
+|     $Revision: 1.17 $
+|     $Date: 2007/02/10 15:54:31 $
+|     $Author: e107steved $
+|
+| File locking added
+|
 +----------------------------------------------------------------------------+
 */
 
 if (!defined('log_INIT')) { exit; }
 
 $logIfile = "logs/logi_{$date}.php";
-require_once($logIfile);
+$i_handle = fopen($logIfile, 'r+');
+if($i_handle && flock( $i_handle, LOCK_EX ) ) 
+{
+  $log_file_contents = '';
+  while (!feof($i_handle))
+  {  // Assemble a string of data
+    $log_file_contents.= fgets($i_handle,1000);
+  }
+  $log_file_contents = str_replace(array('<'.'?php','?'.'>'),'',$log_file_contents);
+  if (eval($log_file_contents) === FALSE) echo "error in log file contents<br /><br /><br /><br />";
+}
+else
+{
+  echo "Couldn't log data<br /><br /><br /><br />";
+  exit;
+}
 
 $browser = getBrowser($agent);
 $os = getOs($agent);
 
-if($screenstats && $screenstats != "@") {
-	if(array_key_exists($screenstats, $screenInfo)) {
-		$screenInfo[$screenstats] ++;
-	} else {
-		$screenInfo[$screenstats] = 1;
-	}
+if($screenstats && $screenstats != "@") 
+{
+  if(array_key_exists($screenstats, $screenInfo)) 
+  {
+	$screenInfo[$screenstats] ++;
+  } 
+  else 
+  {
+	$screenInfo[$screenstats] = 1;
+  }
 }
 
 if(array_key_exists($browser, $browserInfo)) {
@@ -109,13 +131,17 @@ $data .= '$searchInfo = '.var_export($searchInfo, true).";\n\n";
 $data .= '$visitInfo = '.var_export($visitInfo, true).";\n\n";
 $data .= '?>';
 
-if ($handle = fopen($logIfile, 'w')) {
-	fwrite($handle, $data);
+
+if ($i_handle)
+{
+  ftruncate($i_handle, 0);
+  fseek( $i_handle, 0 );
+  fwrite($i_handle, $data);
+  fclose($i_handle);
 }
-fclose($handle);
+
 
 function getBrowser($agent) {
-	
 	//
 	// All "root" browsers must come at the end of the list, unfortunately.
 	// Otherwise, browsers based on them will never be seen.
@@ -198,6 +224,7 @@ function getBrowser($agent) {
 
 function getOs($agent) {
 	$os = array(
+		"windowsvista" => array('name' => 'Windows Vista', 'rule' => 'wi(n|ndows)[ \-]?nt[ /]?6\.0'),
 		"windows2003" => array('name' => 'Windows 2003', 'rule' => 'wi(n|ndows)[ \-]?(2003|nt[ /]?5\.2)'),
 		"windowsxp"   => array('name' => 'Windows XP',   'rule' => 'Windows XP'),
 		"windowsxp2"  => array('name' => 'Windows XP',   'rule' => 'wi(n|ndows)[ \-]?nt[ /]?5\.1'),

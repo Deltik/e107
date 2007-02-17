@@ -7,15 +7,15 @@ if (!defined('e107_INIT')) { exit; }
 	
 	if($mode == "new_page" || $mode == "new_menu" ){
 		$lvisit = $this -> getlvisit();
-		$qry = "user_join>".$lvisit." AND user_ban='0' AND ";
+		$qry = "user_join>".$lvisit." AND ";
 	}else{
 		$qry = " ";
 	}
-	$qry .= " (user_class = '' || user_class REGEXP '".e_CLASS_REGEXP."') ORDER BY user_join DESC LIMIT 0,".intval($arr[7]);
+	$qry .= " user_ban=0 ORDER BY user_join DESC LIMIT 0,".intval($arr[7]);
 
 	$bullet = $this -> getBullet($arr[6], $mode);
 
-	if(!$sql -> db_Select("user", "*", $qry)){ 
+	if(!$sql -> db_Select("user", "user_id,user_name,user_join", $qry)){ 
 		$LIST_DATA = LIST_MEMBER_2;
 	}else{
 		while($row = $sql -> db_Fetch()){

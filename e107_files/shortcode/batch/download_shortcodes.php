@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/download_shortcodes.php,v $
-|     $Revision: 1.19 $
-|     $Date: 2006/11/27 02:23:16 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.25 $
+|     $Date: 2007/02/04 15:27:28 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -27,7 +27,7 @@ if($parm == "nolink"){
 }
 if($parm == "request"){
 
-	$agreetext = $tp->toJS($tp->toHTML($pref['agree_text'],FALSE,"parse_sc defs"));
+	$agreetext = $tp->toJS($tp->toHTML($pref['agree_text'],FALSE,"parse_sc, defs"));
 	if($row['download_mirror_type']){
 		$text = ($pref['agree_flag'] ? "<a href='".e_BASE."download.php?mirror.".$row['download_id']."' onclick= \"return confirm('{$agreetext}');\">" : "<a href='".e_BASE."download.php?mirror.".$row['download_id']."' title='".LAN_dl_32."'>");
 	}else{
@@ -115,7 +115,7 @@ SC_END
 
 SC_BEGIN DOWNLOAD_LIST_LINK
 global $tp,$row,$pref;
-$agreetext = $tp->toJS($tp->toHTML($pref['agree_text'],FALSE,"parse_sc defs"));
+$agreetext = $tp->toJS($tp->toHTML($pref['agree_text'],FALSE,"parse_sc, defs"));
 	if($row['download_mirror_type']){
 		return ($pref['agree_flag'] ? "<a href='".e_BASE."download.php?mirror.".$row['download_id']."' onclick= \"return confirm('{$agreetext}');\">" : "<a href='".e_BASE."download.php?mirror.".$row['download_id']."' >");
 	}else{
@@ -155,7 +155,7 @@ SC_END
 
 SC_BEGIN DOWNLOAD_CATEGORY_DESCRIPTION
 global $tp,$dl;
-$text = $tp -> toHTML($dl['download_category_description'], TRUE);
+$text = $tp -> toHTML($dl['download_category_description'], TRUE,'description');
 if($parm){
 	return substr($text,0,$parm);
 }else{
@@ -175,8 +175,12 @@ return $dl['download_name'];
 SC_END
 
 SC_BEGIN DOWNLOAD_VIEW_NAME_LINKED
-global $dl;
-return "<a href='".e_BASE."request.php?".$dl['download_id']."' title='".LAN_dl_46."'>".$dl['download_name']."</a>";
+global $pref,$dl,$tp;
+if ($pref['agree_flag'] == 1) {
+	return "<a href='".e_BASE."request.php?".$dl['download_id']."' onclick= \"return confirm('".$tp->toJS($tp->toHTML($pref['agree_text'],FALSE,"parse_sc, defs"))."' title='".LAN_dl_46."'>".$dl['download_name']."</a>";
+} else {
+	return "<a href='".e_BASE."request.php?".$dl['download_id']."' title='".LAN_dl_46."'>".$dl['download_name']."</a>";
+}
 SC_END
 
 SC_BEGIN DOWNLOAD_VIEW_AUTHOR
@@ -200,7 +204,7 @@ SC_END
 SC_BEGIN DOWNLOAD_VIEW_DESCRIPTION
 global $tp, $dl;
 $maxlen = ($parm ? intval($parm) : 0);
-$text = ($dl['download_description'] ?  $tp->toHTML($dl['download_description'], TRUE) : "");
+$text = ($dl['download_description'] ?  $tp->toHTML($dl['download_description'], TRUE, 'description') : "");
 if($maxlen){
 	return substr($text, 0, $maxlen);
 }else{
@@ -240,7 +244,6 @@ else
 {
 	return LAN_dl_75;
 }
-
 SC_END
 
 SC_BEGIN DOWNLOAD_VIEW_IMAGEFULL
@@ -251,7 +254,7 @@ SC_END
 SC_BEGIN DOWNLOAD_VIEW_LINK
 global $pref,$dl,$tp;
 if ($pref['agree_flag'] == 1) {
-	$dnld_link = "<a href='".e_BASE."request.php?".$dl['download_id']."' onclick= \"return confirm('".$tp->toJS($tp->toHTML($pref['agree_text'],FALSE,"parse_sc defs"))."');\">";
+	$dnld_link = "<a href='".e_BASE."request.php?".$dl['download_id']."' onclick= \"return confirm('".$tp->toJS($tp->toHTML($pref['agree_text'],FALSE,"parse_sc, defs"))."');\">";
 } else {
 	$dnld_link = "<a href='".e_BASE."request.php?".$dl['download_id']."'>";
 }
@@ -373,7 +376,7 @@ return LAN_dl_7;
 SC_END
 
 SC_BEGIN DOWNLOAD_VIEW_REQUESTED_LAN
-return LAN_dl_18;
+return LAN_dl_77;
 SC_END
 
 SC_BEGIN DOWNLOAD_VIEW_LINK_LAN
@@ -427,9 +430,10 @@ SC_BEGIN DOWNLOAD_CATEGORY_SELECT
 	  	SELECT dc.download_category_name, dc.download_category_order, dc.download_category_id, dc.download_category_parent,
 	  	dc1.download_category_parent AS d_parent1
 	  	FROM #download_category AS dc
-	  	LEFT JOIN #download_category as dc1 ON dc1.download_category_id=dc.download_category_parent AND dc1.download_category_class IN (".USERCLASS_LIST.")";
-        $qry .= " WHERE dc.download_category_class IN (".USERCLASS_LIST.") ";
-	 	$qry .= " ORDER by dc.download_category_parent, dc.download_category_order";
+	  	LEFT JOIN #download_category as dc1 ON dc1.download_category_id=dc.download_category_parent AND dc1.download_category_class IN (".USERCLASS_LIST.")
+	    LEFT JOIN #download_category as dc2 ON dc2.download_category_id=dc1.download_category_parent ";
+        if (ADMIN === FALSE) $qry .= " WHERE dc.download_category_class IN (".USERCLASS_LIST.") ";
+	 	$qry .= " ORDER by dc2.download_category_order, dc1.download_category_order, dc.download_category_order";   // This puts main categories first, then sub-cats, then sub-sub cats
 
   	  	if (!$sql->db_Select_gen($qry))
 	  	{

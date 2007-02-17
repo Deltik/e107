@@ -6,9 +6,9 @@
 |     Released under the terms and conditions of the GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_themes/templates/header_default.php,v $
-|     $Revision: 1.99 $
-|     $Date: 2006/11/08 16:32:06 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.103 $
+|     $Date: 2007/01/18 00:36:16 $
+|     $Author: mrpete $
 +-----------------------------------------------------------------------------------------------+
 */
 
@@ -74,7 +74,7 @@ if (!function_exists("parseheader")) {
 header("Content-type: text/html; charset=".CHARSET, true);
 
 
-echo (defined("STANDARDS_MODE") ? "" : "<?xml version='1.0' encoding='".CHARSET."' "."?".">")."<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n";
+echo (defined("STANDARDS_MODE") ? "" : "<?xml version='1.0' encoding='".CHARSET."' "."?".">\n")."<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n";
 
 //
 // C: Send start of HTML
@@ -90,7 +90,7 @@ echo "<html xmlns='http://www.w3.org/1999/xhtml'".(defined("TEXTDIRECTION") ? " 
 echo "<!-- *JS* -->\n";
 
 // Wysiwyg JS support on or off.
-if (isset($WYSIWYG) && $WYSIWYG == TRUE && check_class($pref['post_html']) && isset($e_wysiwyg) && $e_wysiwyg != "") {
+if (varset($pref['wysiwyg'],FALSE) && check_class($pref['post_html']) && varset($e_wysiwyg) != "") {
 	require_once(e_HANDLER."tiny_mce/wysiwyg.php");
 	define("e_WYSIWYG",TRUE);
 	echo wysiwyg($e_wysiwyg);
@@ -188,15 +188,17 @@ echo "<meta http-equiv='content-type' content='text/html; charset=".CHARSET."' /
 echo (defined("CORE_LC")) ? "<meta http-equiv='content-language' content='".CORE_LC."' />\n" : "";
 
 // --- Load plugin Meta files and eplug_ before others --------
-foreach($pref['e_meta_list'] as $val)
+if (is_array($pref['e_meta_list']))
 {
-	if(is_readable(e_PLUGIN.$val."/e_meta.php"))
+	foreach($pref['e_meta_list'] as $val)
 	{
-		echo "<!-- $val meta -->\n";
-		require_once(e_PLUGIN.$val."/e_meta.php");
+		if(is_readable(e_PLUGIN.$val."/e_meta.php"))
+		{
+			echo "<!-- $val meta -->\n";
+			require_once(e_PLUGIN.$val."/e_meta.php");
+		}
 	}
 }
-
 
 $diz_merge = (defined("META_MERGE") && META_MERGE != FALSE && $pref['meta_description'][e_LANGUAGE]) ? $pref['meta_description'][e_LANGUAGE]." " : "";
 $key_merge = (defined("META_MERGE") && META_MERGE != FALSE && $pref['meta_keywords'][e_LANGUAGE]) ? $pref['meta_keywords'][e_LANGUAGE]."," : "";
@@ -277,7 +279,7 @@ if (isset($script_text) && $script_text) {
 //
 // I: Calculate JS onload() functions for the BODY tag
 //
-
+global $eMenuActive;
 $fader_onload='';
 if(in_array('fader_menu', $eMenuActive))
 {

@@ -11,15 +11,17 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/print.php,v $
-|     $Revision: 1.10 $
-|     $Date: 2006/11/18 18:42:12 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.15 $
+|     $Date: 2007/02/13 22:25:16 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
 $HEADER="";
 $FOOTER="";
-require_once(HEADERF);
+$CUSTOMHEADER = "";
+$CUSTOMFOOTER = "";
+
 
 $qs = explode(".", e_QUERY);
 if ($qs[0] == "") {
@@ -30,13 +32,15 @@ $source = $qs[0];
 $parms = intval($qs[1]);
 unset($qs);
 
+
 if(strpos($source,'plugin:') !== FALSE)
 {
 	$plugin = substr($source,7);
 	if(file_exists(e_PLUGIN.$plugin."/e_emailprint.php"))
 	{
 		include_once(e_PLUGIN.$plugin."/e_emailprint.php");
-		$text = print_item($parms);
+		$print_text = print_item($parms);
+//		define("e_PAGETITLE", $plugin);
 	}
 	else
 	{
@@ -48,8 +52,9 @@ else
 {
 	$con = new convert;
 	$sql->db_Select("news", "*", "news_id='{$parms}'");
-	$row = $sql->db_Fetch(); 
+	$row = $sql->db_Fetch();
 	extract($row);
+	define("e_PAGETITLE", $news_title);
 	$news_body = $tp->toHTML($news_body, TRUE);
 	$news_extended = $tp->toHTML($news_extended, TRUE);
 	if ($news_author == 0)
@@ -65,26 +70,27 @@ else
 		list($a_id, $a_name) = $sql->db_Fetch();
 	}
 	$news_datestamp = $con->convert_date($news_datestamp, "long");
-	$text = "<font style=\"font-size: 11px; color: black; font-family: tahoma, verdana, arial, helvetica; text-decoration: none\">
+	$print_text = "<span style=\"font-size: 13px; color: black; font-family: tahoma, verdana, arial, helvetica; text-decoration: none\">
 	<b>".LAN_PRINT_135.": ".$news_title."</b>
 	<br />
-	(".LAN_PRINT_86." ".$category_name.")
+	(".LAN_PRINT_86." ".$tp->toHTML($category_name,FALSE,"defs").")
 	<br />
 	".LAN_PRINT_94." ".$a_name."<br />
 	".$news_datestamp."
 	<br /><br />".
 	$news_body;
 
-	if ($news_extended != ""){ $text .= "<br /><br />".$news_extended; }
-	if ($news_source != ""){ $text .= "<br /><br />".$news_source; }
-	if ($news_url != ""){ $text .= "<br />".$news_url; }
-	 
-	$text .= "<br /><br /></font><hr />".
+	if ($news_extended != ""){ $print_text .= "<br /><br />".$news_extended; }
+	if ($news_source != ""){ $print_text .= "<br /><br />".$news_source; }
+	if ($news_url != ""){ $print_text .= "<br />".$news_url; }
+
+	$print_text .= "<br /><br /></span><hr />".
 	LAN_PRINT_303.SITENAME."
 	<br />
-	( http://".$_SERVER[HTTP_HOST].e_HTTP."comment.php?comment.news.".$news_id." )
+	( http://".$_SERVER['HTTP_HOST'].e_HTTP."news.php?extend.".$news_id." )
 	";
 }
+
 
 if(defined("TEXTDIRECTION") && TEXTDIRECTION == "rtl"){
 	$align = 'right';
@@ -92,10 +98,14 @@ if(defined("TEXTDIRECTION") && TEXTDIRECTION == "rtl"){
 	$align = 'left';
 }
 
+// Header down here to give us a chance to set a page title
+require_once(HEADERF);
+
 echo "
+<div style='background-color:white'>
 <div style='text-align:".$align."'>".$tp->parseTemplate("{LOGO}", TRUE)."</div><hr /><br />
-<div style='text-align:".$align."'>".$text."</div><br /><br />
-<div style='text-align:".$align."'><form action=''><input type='button' value='".LAN_PRINT_307."' onClick='window.print()' /></form></div>";
+<div style='text-align:".$align."'>".$print_text."</div><br /><br />
+<form action=''><div style='text-align:center'><input type='button' value='".LAN_PRINT_307."' onclick='window.print()' /></div></form></div>";
 
 require_once(FOOTERF);
 

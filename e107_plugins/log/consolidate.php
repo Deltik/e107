@@ -10,32 +10,39 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
+|     $Source: /cvsroot/e107/e107_0.7/e107_plugins/log/consolidate.php,v $
+|     $Revision: 1.17 $
+|     $Date: 2007/02/10 15:54:31 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
 /* first thing to do is check if the log file is out of date ... */
-
-//require_once("../../class2.php");
-
 $pathtologs = e_PLUGIN."log/logs/";
 $date = date("z.Y", time());
-$date2 = date("Y-m-j", (time() -86400));
-$date3 = date("Y-m");
-$day = date("z", time());
-$year = date("Y", time());
+$yesterday = date("z.Y",(time() - 86400));		// This makes sure year wraps round OK
+$date2 = date("Y-m-j", (time() -86400));		// Yesterday's date for the database summary	
+$date3 = date("Y-m");							// Current month's date for monthly summary
 
-$pfileprev = "logp_".($day-1).".".$year.".php";
-$pfile = "logp_".$date.".php";
-$ifileprev = "logi_".($day-1).".".$year.".php";
+$pfileprev = "logp_".$yesterday.".php";		// Yesterday's log file
+$pfile = "logp_".$date.".php";				// Today's log file
+$ifileprev = "logi_".$yesterday.".php";
 $ifile = "logi_".$date.".php";
 
-if(file_exists($pathtologs.$pfile)) {
+if(file_exists($pathtologs.$pfile)) 
+{
 	/* log file is up to date, no consolidation required */
 	return;
-}else if(!file_exists($pathtologs.$pfileprev)) {
-	/* no logfile found at all - create - this will only ever happen once ... */
+}
+else if(!file_exists($pathtologs.$pfileprev)) 
+{  // See if any older log files
+  if (($retvalue = check_for_old_files($pathtologs)) === FALSE)
+  { 	/* no logfile found at all - create - this will only ever happen once ... */
 	createLog("blank");
 	return FALSE;
+  }
+  // ... if we've got files
+  list($pfileprev,$ifileprev,$date2,$tstamp) = explode('|',$retvalue);
 }
 
 
@@ -47,7 +54,7 @@ if($sql -> db_Select("logstats", "*", "log_id='statBrowser' OR log_id='statOs' O
 	$infoArray = array();
 	while($row = $sql -> db_Fetch())
 	{
-		$$row[1] = unserialize($row[2]);
+		$$row[1] = unserialize($row[2]);	// $row[1] is the stats type - save in a variable
 		if($row[1] == "statUnique") $statUnique = $row[2];
 		if($row[1] == "statTotal") $statTotal = $row[2];
 	}
@@ -207,14 +214,16 @@ if(!unlink($pathtologs.$ifileprev))
 	fclose($handle);
 }
 
-/* and finally, we need to create a new logfiles for today ... */
+/* and finally, we need to create new logfiles for today ... */
 createLog();
 /* done! */
 
 
-function createLog($mode="default") {
-	global $pathtologs, $statTotal, $statUnique, $pageArray, $pfile, $ifile;
-	if(!is_writable($pathtologs)) {
+function createLog($mode="default") 
+{
+	global $pathtologs, $statTotal, $statUnique, $pfile, $ifile;
+	if(!is_writable($pathtologs)) 
+	{
 		echo "Log directory is not writable - please CHMOD ".e_PLUGIN."log/logs to 777";
 		return FALSE;
 	}
@@ -232,18 +241,6 @@ function createLog($mode="default") {
 	$varStart."browserInfo = array();\n".
 	$varStart."osInfo = array();\n".
 	$varStart."pageInfo = array(\n";
-
-	if($mode == "default") {
-		reset($pageArray);
-		$loop = FALSE;
-		foreach($pageArray as $key => $info) {
-			if($loop) {
-				$data .= ",\n";
-			}
-			$data .= $quote.$key.$quote." => array('url' => '".$info['url']."', 'ttl' => 0, 'unq' => 0, 'ttlv' => ".$info['ttlv'].", 'unqv' => ".$info['unqv'].")";
-			$loop = TRUE;
-		}
-	}
 
 	$data .= "\n);\n\n?".  chr(62);
 
@@ -269,16 +266,60 @@ function createLog($mode="default") {
 	//	return FALSE;
 	}
 
-	if ($handle = fopen($pathtologs.$pfile, 'w')) { 
+	if ($handle = fopen($pathtologs.$pfile, 'w')) 
+	{ 
 		fwrite($handle, $data);
 	}
 	fclose($handle);
 
-	if ($handle = fopen($pathtologs.$ifile, 'w')) { 
-		fwrite($handle, "");
+
+$data = "<?php
+
+/* e107 website system: Log info file: ".date("z:Y", time())." */
+
+";
+$data .= '$domainInfo'." = array();\n\n";
+$data .= '$screenInfo'." = array();\n\n";
+$data .= '$browserInfo'." = array();\n\n";
+$data .= '$osInfo'." = array();\n\n";
+$data .= '$refInfo'." = array();\n\n";
+$data .= '$searchInfo'." = array();\n\n";
+$data .= '$visitInfo'." = array();\n\n";
+$data .= "?>";
+
+	if ($handle = fopen($pathtologs.$ifile, 'w')) 
+	{ 
+		fwrite($handle, $data);
 	}
 	fclose($handle);
 	return;
+}
+
+// Called if both today's and yesterday's log files missing, to see
+// if there are any older files we could process. Return FALSE if nothing
+// Otherwise return a string of relevant information
+function check_for_old_files($pathtologs)
+{
+  $no_files = TRUE;
+  if ($dir_handle = opendir($pathtologs))
+  {
+    while (false !== ($file = readdir($dir_handle))) 
+	{
+	// Do match on #^logp_(\d{1,3})\.php$#i
+	  if (preg_match('#^logp_(\d{1,3}\.\d{4})\.php$#i',$file,$match) == 1)
+	  {  // got a matching file
+	    $yesterday = $match[1];						// Day of year - zero is 1st Jan
+		$pfileprev = "logp_".$yesterday.".php";		// Yesterday's log file
+		$ifileprev = "logi_".$yesterday.".php";
+		list($day,$year) = explode('.',$yesterday);
+		$tstamp = mktime(0,0,0,1,1,$year) + ($day*86400);
+		$date2 = date("Y-m-j", $tstamp);		// Yesterday's date for the database summary	
+		$temp = array($pfileprev,$ifileprev,$date2,$tstamp);
+		return implode('|',$temp);
+	  }
+	}
+  }
+  return FALSE;
 }
 
 ?>

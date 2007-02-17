@@ -11,15 +11,15 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/chatbox_menu/chatbox_menu.php,v $
-|     $Revision: 1.73 $
-|     $Date: 2006/11/23 02:09:47 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.77 $
+|     $Date: 2007/01/28 14:08:11 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
 global $tp, $e107cache, $e_event, $e107, $pref, $footer_js, $PLUGINS_DIRECTORY;
 
-if($pref['cb_layer'] || isset($_POST['chatbox_ajax']))
+if(($pref['cb_layer']==2) || isset($_POST['chatbox_ajax']))
 {
 	if(isset($_POST['chat_submit']))
 	{
@@ -55,7 +55,7 @@ if(isset($_POST['chat_submit']) && $_POST['cmessage'] != "")
 		{
 			if((strlen(trim($cmessage)) < 1000) && trim($cmessage) != "")
 			{
-				$cmessage = $tp -> toDB($cmessage, false, true);
+				$cmessage = $tp -> toDB($cmessage);
 				if($sql -> db_Select("chatbox", "*", "cb_message='$cmessage' AND cb_datestamp+84600>".time()))
 				{
 					$emessage = CHATBOX_L17;
@@ -125,7 +125,7 @@ else
 		$texta =  (e_QUERY ? "\n<form id='chatbox' method='post' action='".e_SELF."?".e_QUERY."'>" : "\n<form id='chatbox' method='post' action='".e_SELF."'>");
 	}
 	$texta .= "<div style='text-align:center; width:100%'>";
-
+	
 	if(($pref['anon_post'] == "1" && USER == FALSE))
 	{
 		$texta .= "\n<input class='tbox chatbox' type='text' id='nick' name='nick' value='' maxlength='50' ".($cb_width ? "style='width: ".$cb_width.";'" : '')." /><br />";
@@ -148,7 +148,7 @@ else
 
 	if($pref['cb_emote'] && $pref['smiley_activate']){
 		$texta .= "
-		<input class='button' type ='button' style='cursor:hand; cursor:pointer' size='30' value='".CHATBOX_L14."' onclick=\"expandit('emote')\" />
+		<input class='button' type ='button' style='cursor:pointer' size='30' value='".CHATBOX_L14."' onclick=\"expandit('emote')\" />
 		<div style='display:none' id='emote'>".r_emote()."
 		</div>\n";
 	}
@@ -196,7 +196,7 @@ if(!$text = $e107cache->retrieve("nq_chatbox"))
 
 			$datestamp = $obj2->convert_date($cb['cb_datestamp'], "short");
 			if(!$pref['cb_wordwrap']) { $pref['cb_wordwrap'] = 30; }
-			$emotes_active = $pref['cb_emote'] ? 'emotes_on' : 'emotes_off';
+			$emotes_active = $pref['cb_emote'] ? 'BODY, emotes_on' : 'BODY, emotes_off';
 
 			$cb_message = $tp -> toHTML($cb['cb_message'], FALSE, $emotes_active, $cb_uid, $pref['menu_wordwrap']);
 

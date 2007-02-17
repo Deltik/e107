@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/signup_shortcodes.php,v $
-|     $Revision: 1.6 $
-|     $Date: 2006/08/25 15:14:58 $
-|     $Author: e107coders $
+|     $Revision: 1.10 $
+|     $Date: 2007/01/07 15:24:49 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -64,6 +64,15 @@ global $pref, $tp, $SIGNUP_XUP_FORM, $signup_shortcodes;
 if(isset($pref['xup_enabled']) && $pref['xup_enabled'])
 {
 	return $tp->parseTemplate($SIGNUP_XUP_FORM, TRUE, $signup_shortcodes);
+}
+SC_END
+
+SC_BEGIN SIGNUP_XUP_ACTION
+global $pref, $tp, $SIGNUP_XUP_BUTTON, $signup_shortcodes;
+if(isset($pref['xup_enabled']) && $pref['xup_enabled'])
+{
+// Puts the button to allow XUP signup onto the 'normal' signup screen
+	return $tp->parseTemplate($SIGNUP_XUP_BUTTON, TRUE, $signup_shortcodes);
 }
 SC_END
 
@@ -121,7 +130,8 @@ SC_END
 
 SC_BEGIN SIGNUP_HIDE_EMAIL
 global $rs;
-return $rs->form_radio("hideemail", 0, 1)." ".LAN_SIGNUP_10."&nbsp;&nbsp;".$rs->form_radio("hideemail", 0)." ".LAN_200;
+$default_email_setting = 1;   // Gives option of turning into a pref later if wanted
+return $rs->form_radio("hideemail", 1, $default_email_setting==1)." ".LAN_SIGNUP_10."&nbsp;&nbsp;".$rs->form_radio("hideemail",  0,$default_email_setting==0)." ".LAN_200;
 SC_END
 
 
@@ -162,7 +172,7 @@ foreach($extList as $ext)
 	if($ext['user_extended_struct_required'] == 1 || $ext['user_extended_struct_required'] == 2)
 	{
 		$replace = array(
-			$tp->toHTML($ext['user_extended_struct_text'], '', 'emotes_off defs'),
+			$tp->toHTML($ext['user_extended_struct_text'], '', 'emotes_off, defs'),
 			($ext['user_extended_struct_required'] == 1 ? $EXTENDED_USER_FIELD_REQUIRED : ''),
 			$usere->user_extended_edit($ext, $_POST['ue']['user_'.$ext['user_extended_struct_name']])
 		);
@@ -192,7 +202,7 @@ if($pref['signup_option_image'])
 	$text = "
 	<input class='tbox' style='width:80%' id='avatar' type='text' name='image' size='40' value='$image' maxlength='100' />
 
-	<input class='button' type ='button' style='cursor:hand' size='30' value='".LAN_SIGNUP_27."' onclick='expandit(this)' />
+	<input class='button' type ='button' style='cursor:pointer' size='30' value='".LAN_SIGNUP_27."' onclick='expandit(this)' />
 	<div style='display:none' >";
 	$avatarlist[0] = "";
 	$handle = opendir(e_IMAGE."avatars/");

@@ -12,9 +12,9 @@
 |        GNU General Public License (http://gnu.org).
 |
 |		$Source: /cvsroot/e107/e107_0.7/e107_plugins/content/content.php,v $
-|		$Revision: 1.109 $
-|		$Date: 2006/11/07 22:09:43 $
-|		$Author: lisa_ $
+|		$Revision: 1.113 $
+|		$Date: 2007/01/20 05:19:21 $
+|		$Author: mrpete $
 +---------------------------------------------------------------+
 */
 
@@ -779,36 +779,36 @@ function show_content_cat($mode=""){
 			$captionchild		= $content_pref['content_cat_item_caption'];
 
 			$crumbpage = $aa -> getCrumbPage("cat", $array, $qs[1]);
-			if(isset($textparent)){ 
+			if(isset($textparent) && $textparent){ 
 				$textparent = $crumbpage.$textparent;
 			}else{
 				$textchild = $crumbpage.$textchild;
 			}
 			if(isset($content_pref["content_cat_menuorder"]) && $content_pref["content_cat_menuorder"] == "1"){
 				if(isset($content_pref["content_cat_rendertype"]) && $content_pref["content_cat_rendertype"] == "1"){
-					if(isset($textparent)){		$ns -> tablerender($caption, $textparent); }
-					if(isset($textsubparent)){	$ns -> tablerender($captionsubparent, $textsubparent); }
-					if(isset($textchild)){		$ns -> tablerender($captionchild, $textchild); }
+					if(isset($textparent) && $textparent){ $ns -> tablerender($caption, $textparent); }
+					if(isset($textsubparent) && $textsubparent){ $ns -> tablerender($captionsubparent, $textsubparent); }
+					if(isset($textchild) && $textchild){ $ns -> tablerender($captionchild, $textchild); }
 				}else{
-					$ns -> tablerender($caption, (isset($textparent) ? $textparent : "").(isset($textsubparent) ? $textsubparent : "").$textchild);
+					$ns -> tablerender($caption, (isset($textparent) && $textparent ? $textparent : "").(isset($textsubparent) && $textsubparent ? $textsubparent : "").$textchild);
 				}
 				if(isset($content_pref["content_nextprev"]) && $content_pref["content_nextprev"]){
 					$aa->ShowNextPrev(FALSE, $from, $number, $contenttotal);
 				}
 			}else{
 				if(isset($content_pref["content_cat_rendertype"]) && $content_pref["content_cat_rendertype"] == "1"){
-					if(isset($textchild)){		$ns -> tablerender($captionchild, $textchild); }
+					if(isset($textchild) && $textchild){ $ns -> tablerender($captionchild, $textchild); }
 					if(isset($content_pref["content_nextprev"]) && $content_pref["content_nextprev"]){
 						$aa->ShowNextPrev(FALSE, $from, $number, $contenttotal);
 					}
-					if(isset($textparent)){		$ns -> tablerender($caption, $textparent); }
-					if(isset($textsubparent)){	$ns -> tablerender($captionsubparent, $textsubparent); }
+					if(isset($textparent) && $textparent){ $ns -> tablerender($caption, $textparent); }
+					if(isset($textsubparent) && $textsubparent){ $ns -> tablerender($captionsubparent, $textsubparent); }
 				}else{
-					if(isset($textchild)){		$ns -> tablerender($captionchild, $textchild); }
+					if(isset($textchild) && $textchild){ $ns -> tablerender($captionchild, $textchild); }
 					if(isset($content_pref["content_nextprev"]) && $content_pref["content_nextprev"]){
 						$aa->ShowNextPrev(FALSE, $from, $number, $contenttotal);
 					}
-					$ns -> tablerender($caption, (isset($textparent) ? $textparent : "").(isset($textsubparent) ? $textsubparent : ""));
+					$ns -> tablerender($caption, (isset($textparent) && $textparent ? $textparent : "").(isset($textsubparent) && $textsubparent ? $textsubparent : ""));
 				}
 			}
 		}
@@ -816,7 +816,7 @@ function show_content_cat($mode=""){
 
 		if($mode == "comment"){
 			$textparent = $aa -> getCrumbPage("cat", $array, $mainparent).$textparent;
-			if(isset($textparent)){ $ns -> tablerender($caption, $textparent); }
+			if(isset($textparent) && $textparent){ $ns -> tablerender($caption, $textparent); }
 
 			if($resultitem = $sql -> db_Select($plugintable, "*", $qry )){
 				$row = $sql -> db_Fetch();
@@ -1282,7 +1282,7 @@ function show_content_item(){
 					}
 
 					if($idp==1){
-						$CONTENT_CONTENT_TABLE_SUMMARY = (isset($content_pref["content_content_summary"]) && $content_pref["content_content_summary"] && $row['content_summary'] ? $tp -> toHTML($row['content_summary'], TRUE, "") : "");
+						$CONTENT_CONTENT_TABLE_SUMMARY = (isset($content_pref["content_content_summary"]) && $content_pref["content_content_summary"] && $row['content_summary'] ? $tp -> toHTML($row['content_summary'], TRUE, "SUMMARY") : "");
 						$CONTENT_CONTENT_TABLE_SUMMARY = $tp -> replaceConstants($CONTENT_CONTENT_TABLE_SUMMARY);
 					}else{
 						$CONTENT_CONTENT_TABLE_SUMMARY = "";
@@ -1307,13 +1307,13 @@ function show_content_item(){
 				}
 
 			}else{
-				$CONTENT_CONTENT_TABLE_SUMMARY	= (isset($content_pref["content_content_summary"]) && $content_pref["content_content_summary"] && $row['content_summary'] ? $tp -> toHTML($row['content_summary'], TRUE, "") : "");
+				$CONTENT_CONTENT_TABLE_SUMMARY	= (isset($content_pref["content_content_summary"]) && $content_pref["content_content_summary"] && $row['content_summary'] ? $tp -> toHTML($row['content_summary'], TRUE, "SUMMARY") : "");
 				$CONTENT_CONTENT_TABLE_SUMMARY	= $tp -> replaceConstants($CONTENT_CONTENT_TABLE_SUMMARY);
 				$lastpage = TRUE;
 			}
 
 			$CONTENT_CONTENT_TABLE_TEXT		= $tp -> replaceConstants($CONTENT_CONTENT_TABLE_TEXT);
-			$CONTENT_CONTENT_TABLE_TEXT		= $tp -> toHTML($CONTENT_CONTENT_TABLE_TEXT, TRUE, "");
+			$CONTENT_CONTENT_TABLE_TEXT		= $tp -> toHTML($CONTENT_CONTENT_TABLE_TEXT, TRUE, "BODY");
 
 			$custom							= $eArrayStorage->ReadArray($row['content_pref']);
 
@@ -1335,11 +1335,10 @@ function show_content_item(){
 			$CONTENT_CONTENT_TABLE_INFO_PRE = FALSE;
 			$CONTENT_CONTENT_TABLE_INFO_POST = FALSE;
 			
-			if ($date!="" || $auth!="" || $ep!="" || $edit!="" || $par!="" || $com!="" || $score!="" || $ref!="" || $sub!="" || $rat!="" || $fil!="") {
+			//if any of these exist, pre/post activate the container table
+			if ($ico!="" || $date!="" || $auth!="" || $ep!="" || $edit!="" || $par!="" || $com!="" || $score!="" || $ref!="" || $sub!="" || $rat!="" || $fil!="") {
 				$CONTENT_CONTENT_TABLE_INFO_PRE = TRUE;
 				$CONTENT_CONTENT_TABLE_INFO_POST = TRUE;
-			}
-			if($CONTENT_CONTENT_TABLE_INFO_PRE || $ico==''){
 				$CONTENT_CONTENT_TABLE_INFO_PRE_HEADDATA = TRUE;
 				$CONTENT_CONTENT_TABLE_INFO_POST_HEADDATA = TRUE;
 			}

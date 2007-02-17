@@ -11,9 +11,9 @@
 |        GNU General Public License (http://gnu.org).
 |
 |   $Source: /cvsroot/e107/e107_0.7/e107_admin/newspost.php,v $
-|   $Revision: 1.138 $
-|   $Date: 2006/11/12 18:48:14 $
-|   $Author: e107coders $
+|   $Revision: 1.142 $
+|   $Date: 2007/02/07 21:21:20 $
+|   $Author: e107steved $
 +---------------------------------------------------------------+
 
 */
@@ -44,7 +44,7 @@ $pst->id = "admin_newspost";
 
 $newspost = new newspost;
 require_once("auth.php");
-$pst->save_preset(); // save and render result using unique name
+$pst->save_preset('news_datestamp'); // save and render result using unique name. Don't save item datestamp
 
 require_once(e_HANDLER."userclass_class.php");
 require_once(e_HANDLER."news_class.php");
@@ -419,15 +419,18 @@ class newspost {
 		<td style='width:20%' class='forumheader3'>".NWSLAN_6.": </td>
 		<td style='width:80%' class='forumheader3'>";
 
-		if (!$sql->db_Select("news_category")) {
+		if (!$sql->db_Select("news_category"))
+		{
 			$text .= NWSLAN_10;
-			} else {
+		}
+		else
+		{
+			$text .= "\t<select name='cat_id' class='tbox'>\n";
 
-			$text .= "
-			<select name='cat_id' class='tbox'>";
-
-			while (list($cat_id, $cat_name, $cat_icon) = $sql->db_Fetch()) {
-				$text .= ($_POST['cat_id'] == $cat_id ? "<option value='$cat_id' selected='selected'>".$cat_name."</option>" : "<option value='$cat_id'>".$cat_name."</option>");
+			while (list($cat_id, $cat_name, $cat_icon) = $sql->db_Fetch())
+			{
+				$sel = ($_POST['cat_id'] == $cat_id) ? "selected='selected'" : "";
+				$text .= "<option value='$cat_id' {$sel}>".$tp->toHTML($cat_name,FALSE,"defs")."</option>\n";
 			}
 			$text .= "</select>";
 		}
@@ -913,7 +916,7 @@ class newspost {
 			}
 			$text .= "</table></form>";
 			} else {
-			$text .= "<div style='text-align:center'><div style='vertical-align:center'>".NWSLAN_10."</div>";
+			$text .= "<div style='text-align:center'><div style='vertical-align:middle'>".NWSLAN_10."</div>";
 		}
 		$text .= "</div>";
 		$ns->tablerender(NWSLAN_51, $text);
@@ -994,7 +997,7 @@ class newspost {
 		$text .= " <tr>
 		<td class='forumheader3' style='width:60%'><span class='defaulttext'>".NWSLAN_106."</span></td>
 		<td class='forumheader3' style='width:40%'>
-		".r_userclass("subnews_class", $pref['subnews_class']). "</td></tr>";
+		".r_userclass("subnews_class", $pref['subnews_class'],"off","nobody,public,guest,member,admin,classes"). "</td></tr>";
 
 
 		$text .= "

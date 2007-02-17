@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/news.php,v $
-|     $Revision: 1.111 $
-|     $Date: 2006/11/12 04:10:29 $
-|     $Author: mrpete $
+|     $Revision: 1.116 $
+|     $Date: 2007/02/07 01:19:44 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
@@ -77,7 +77,7 @@ if ($action == 'cat' || $action == 'all'){
 	if ($action == 'all'){
 		if(!defined("NEWSALL_LIMIT")){ define("NEWSALL_LIMIT",10); }
 		// show archive of all news items using list-style template.
-		$news_total = $sql->db_Count("news", "(*)", "WHERE news_class REGEXP '".e_CLASS_REGEXP."'");
+		$news_total = $sql->db_Count("news", "(*)", "WHERE news_class REGEXP '".e_CLASS_REGEXP."' AND NOT (news_class REGEXP ".$nobody_regexp.") AND news_start < ".time()." AND (news_end=0 || news_end>".time().")");
 		$query = "SELECT n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
 		LEFT JOIN #user AS u ON n.news_author = u.user_id
 		LEFT JOIN #news_category AS nc ON n.news_category = nc.category_id
@@ -96,7 +96,7 @@ if ($action == 'cat' || $action == 'all'){
 	}
 
 	if($category_name){
-		define("e_PAGETITLE", $category_name);
+		define("e_PAGETITLE", $tp->toHTML($category_name,FALSE,"defs"));
 	}
 
 	require_once(HEADERF);
@@ -140,7 +140,7 @@ if ($action == 'cat' || $action == 'all'){
 	$text .= "<div class='nextprev'>".$tp->parseTemplate("{NEXTPREV={$parms}}")."</div>";
 
     if(!$NEWSLISTTITLE){
-		$NEWSLISTTITLE = LAN_NEWS_82." '{$category_name}'";
+		$NEWSLISTTITLE = LAN_NEWS_82." '".$tp->toHTML($category_name,FALSE,"defs")."'";
 	}
 
 	ob_start();
@@ -192,13 +192,13 @@ $order = $tp -> toDB($order, true);
 $interval = 10;
 if ($action == "list"){
 	$sub_action = intval($sub_action);
-	$news_total = $sql->db_Count("news", "(*)", "WHERE news_category=$sub_action AND news_class REGEXP '".e_CLASS_REGEXP."' AND news_render_type<2");
+	$news_total = $sql->db_Count("news", "(*)", "WHERE news_category=$sub_action AND news_class REGEXP '".e_CLASS_REGEXP."' AND NOT (news_class REGEXP ".$nobody_regexp.") AND news_start < ".time()." AND (news_end=0 || news_end>".time().")");
 	$query = "SELECT n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
 		LEFT JOIN #user AS u ON n.news_author = u.user_id
 		LEFT JOIN #news_category AS nc ON n.news_category = nc.category_id
 		WHERE n.news_class REGEXP '".e_CLASS_REGEXP."' AND NOT (n.news_class REGEXP ".$nobody_regexp.") AND n.news_start < ".time()."
-		AND (n.news_end=0 || n.news_end>".time().") AND n.news_render_type<2
-		AND n.news_category={$sub_action} ORDER BY n.news_sticky DESC,".$order." DESC LIMIT ".intval($from).",".ITEMVIEW;
+		AND (n.news_end=0 || n.news_end>".time().") AND n.news_category={$sub_action} ORDER BY n.news_sticky DESC,".$order." DESC LIMIT ".intval($from).",".ITEMVIEW;
+
 }
 elseif($action == "item")
 {
@@ -318,7 +318,7 @@ if (!$sql->db_Select_gen($query)) {
 }
 
 
-$p_title = ($action == "item") ? $newsAr[1]['news_title'] : $newsAr[1]['category_name'];
+$p_title = ($action == "item") ? $newsAr[1]['news_title'] : $tp->toHTML($newsAr[1]['category_name'],FALSE,"defs");
 
 if($action != "" && !is_numeric($action))
 {
@@ -422,7 +422,7 @@ if(isset($pref['news_unstemplate']) && $pref['news_unstemplate'] && file_exists(
 	}
 	$parms = $news_total.",".ITEMVIEW.",".$from.",".e_SELF.'?'."[FROM].".$action.(isset($sub_action) ? ".".$sub_action : "");
 	$nextprev = $tp->parseTemplate("{NEXTPREV={$parms}}");
-	echo ($nextprev ? "<div class='nextprev'>".$nextprev."</div>" : "");
+ 	echo ($nextprev ? "<div class='nextprev'>".$nextprev."</div>" : "");
 
 	$cache_data = ob_get_clean();
 	require_once(HEADERF);
@@ -439,7 +439,7 @@ function newsarchive($newsAr){
 	require_once(e_FILE.'shortcode/batch/news_archives.php');
 
 	ob_start();
-	
+
 	$i = $interval + 1;
 	while(isset($newsAr[$i]))
 	{
@@ -557,7 +557,7 @@ function renderCache($cache, $nfp = FALSE){
 	global $pref,$tp,$sql,$CUSTOMFOOTER, $FOOTER,$cust_footer,$ph;
 	global $db_debug,$ns,$eTraffic,$eTimingStart, $error_handler, $db_time, $sql2, $mySQLserver, $mySQLuser, $mySQLpassword, $mySQLdefaultdb,$e107;
 	echo $cache;
-	if ($nfp && $pref['nfp_display'] == 2) {
+	if (isset($nfp) && isset($pref['nfp_display']) && $pref['nfp_display'] == 2) {
 		require_once(e_PLUGIN."newforumposts_main/newforumposts_main.php");
 	}
 	render_newscats();
