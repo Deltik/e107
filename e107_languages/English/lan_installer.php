@@ -106,7 +106,7 @@ define("LANINS_071", "Finalising Installation");
 define("LANINS_072", "Admin Username");
 define("LANINS_073", "This is the name you will use to login into the site. If you wish to use this as your display name also");
 define("LANINS_074", "Admin Display Name");
-define("LANINS_075", "This is the name that you wish your users to see displayed in your profile, forums and other areas. If you wish to use the same as your login name then leave this blank.");
+define("LANINS_075", "This is the name that you wish your users to see displayed in your profile, forums and other areas. If you wish to use the same as your username then leave this blank.");
 define("LANINS_076", "Admin Password");
 define("LANINS_077", "Please type the admin password you wish to use here");
 define("LANINS_078", "Admin Password Confirmation");
@@ -132,9 +132,17 @@ define("LANINS_092", "Contact Us");
 define("LANINS_093", "Grants access to private menu items");
 define("LANINS_094", "Example private forum class");
 define("LANINS_095", "Integrity Check");
-define("LANINS_096", "");
-define("LANINS_097", "");
-define("LANINS_098", "");
-define("LANINS_099", "");
-define("LANINS_100", "");
+
+define("LANINS_096", 'Latest Comments');
+define("LANINS_097", '[more ...]');
+define("LANINS_098", 'Articles');
+define("LANINS_099", 'Articles Front Page ...');
+define("LANINS_100", 'Latest Forum Posts');
+define("LANINS_101", 'Update menu Settings');
+define("LANINS_102", 'Date / Time');
+define("LANINS_103", 'Reviews');
+define("LANINS_104", 'Review Front Page ...');
+
+define("LANINS_105", '');
+define("LANINS_106", '');
 ?>

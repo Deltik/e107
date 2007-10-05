@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/e107_class.php,v $
-|     $Revision: 1.59 $
-|     $Date: 2007/02/14 22:15:46 $
+|     $Revision: 1.61 $
+|     $Date: 2007/08/13 19:56:24 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -104,7 +104,14 @@ class e107{
 			define("e_LANGUAGEDIR_ABS", e_HTTP.$LANGUAGES_DIRECTORY);
 
 			define("e_DOCS", e_BASE.$HELP_DIRECTORY);
-			define("e_DOCROOT", $_SERVER['DOCUMENT_ROOT']."/");
+			if(isset($_SERVER['DOCUMENT_ROOT'])) 
+			{ 
+			  define("e_DOCROOT", $_SERVER['DOCUMENT_ROOT']."/"); 
+			} 
+			else 
+			{ 
+			  define("e_DOCROOT", false); 
+			}
 
 			define("e_DOCS_ABS", e_HTTP.$HELP_DIRECTORY);
 
@@ -205,18 +212,18 @@ class e107{
 	function get_memory_usage(){
 		if(function_exists("memory_get_usage")){
 			$memusage = memory_get_usage();
-			$memunit = 'b';
+			$memunit = CORE_LAN_B;
 			if ($memusage > 1048576){
 				$memusage = $memusage / 1024;
-				$memunit = 'kb';
+				$memunit = CORE_LAN_KB;
 			}
 			if ($memusage > 1048576){
 				$memusage = $memusage / 1024;
-				$memunit = 'mb';
+				$memunit = CORE_LAN_MB;
 			}
 			if ($memusage > 1048576){
 				$memusage = $memusage / 1024;
-				$memunit = 'gb';
+				$memunit = CORE_LAN_GB;
 			}
 			return (number_format($memusage, 0).$memunit);
 		} else {

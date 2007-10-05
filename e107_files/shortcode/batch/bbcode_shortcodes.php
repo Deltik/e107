@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/bbcode_shortcodes.php,v $
-|     $Revision: 1.11 $
-|     $Date: 2007/02/11 10:40:16 $
+|     $Revision: 1.13 $
+|     $Date: 2007/06/13 19:36:15 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -37,9 +37,16 @@ $bbcode_tag  = ($bbcode_helptag != 'helpb') ? ",'$bbcode_helptag'" : "";
 $rand = rand(1000,9999);
 $imagedir_display = str_replace("../","",$bbcode_imagedir);
 
-if($parm == "emotes" && $pref['comments_emoticons'] && $pref['smiley_activate'] && !e_WYSIWYG)
+if($parm == "emotes")
 {
+  if ($pref['comments_emoticons'] && $pref['smiley_activate'] && !e_WYSIWYG)
+  {
 	$bbcode['emotes'] = array("expandit","emoticon_selector_".$rand, LANHELP_44, "emotes.png", "Emoticon_Select", "emoticon_selector_".$rand);
+  }
+  else
+  {	// If emotes disabled, don't return anything (without this we return an empty image reference)
+    return '';
+  }
 }
 
 // Format: $bbcode['UNIQUE_NAME'] = array(ONCLICK_FUNC, ONCLICK_VAR, HELPTEXT, ICON, INCLUDE_FUNC, INCLUDE_FUNCTION_VAR);
@@ -91,10 +98,10 @@ foreach($eplug_bb as $key=>$val)  // allow plugins to plug into it.
 
 
 $_onclick_func = ($bbcode[$parm][0]) ? $bbcode[$parm][0] : $bbcode_func;
-$_onclick_var = $bbcode[$parm][1];
-$_helptxt = $bbcode[$parm][2];
-$_function = $bbcode[$parm][4];
-$_function_var = $bbcode[$parm][5];
+$_onclick_var = varset($bbcode[$parm][1],'');
+$_helptxt = varset($bbcode[$parm][2],'');
+$_function = varset($bbcode[$parm][4],'');
+$_function_var = varset($bbcode[$parm][5],'');
 
 
 if($bbcode[$parm])  // default - insert text.

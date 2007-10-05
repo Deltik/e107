@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/log/languages/English.php,v $
-|     $Revision: 1.7 $
-|     $Date: 2006/06/22 19:49:58 $
-|     $Author: e107coders $
+|     $Revision: 1.9 $
+|     $Date: 2007/08/14 19:26:55 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -60,5 +60,15 @@ define("ADSTAT_L38", "Unique visits by month");
 define("ADSTAT_L39", "remove this entry");
 define("ADSTAT_L40", "days");
 define("ADSTAT_L41", "Error");
+define("ADSTAT_L42", "No monthly stats yet.");
+
+define("ADSTAT_L43", "Today's page errors");
+define("ADSTAT_L44", "All-time page errors");
+define("ADSTAT_L45", "Stats deleted for: ");
+define("ADSTAT_L46", "Note: any stats for today will not be deleted");
+define("ADSTAT_L47", "No stats found for: ");
+define("ADSTAT_L48", "");
+define("ADSTAT_L49", "");
+define("ADSTAT_L50", "");
 
 ?>

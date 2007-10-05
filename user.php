@@ -11,12 +11,17 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/user.php,v $
-|     $Revision: 1.41 $
-|     $Date: 2006/11/07 20:16:40 $
+|     $Revision: 1.44 $
+|     $Date: 2007/09/24 14:51:53 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
+
+// Next bit is to fool PM plugin into doing things
+global $user;
+$user['user_id'] = USERID;
+
 require_once(e_FILE."shortcode/batch/user_shortcodes.php");
 require_once(e_HANDLER."form_handler.php");
 
@@ -52,7 +57,7 @@ $user_frm = new form;
 require_once(HEADERF);
 if (!defined("USER_WIDTH")){ define("USER_WIDTH","width:95%"); }
 
-if (!check_class(varset($pref['memberlist_access'], 253)) && !$self_page)
+if (!getperms("0") && !check_class(varset($pref['memberlist_access'], 253)) && !$self_page)
 {
 	$ns->tablerender(LAN_20, "<div style='text-align:center'>".USERLAN_2."</div>");
 	require_once(FOOTERF);
@@ -157,6 +162,7 @@ else
 	$text .= $tp->parseTemplate($USER_SHORT_TEMPLATE_START, TRUE, $user_shortcodes);
 	foreach ($userList as $row)
 	{
+		$loop_uid = $row['user_id'];
 		$text .= renderuser($row, "short");
 	}
 	$text .= $tp->parseTemplate($USER_SHORT_TEMPLATE_END, TRUE, $user_shortcodes);

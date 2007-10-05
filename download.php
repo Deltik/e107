@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/download.php,v $
-|     $Revision: 1.84 $ 
-|     $Date: 2007/01/20 05:10:39 $
-|     $Author: mrpete $
+|     $Revision: 1.91 $ 
+|     $Date: 2007/09/22 09:43:03 $
+|     $Author: e107steved $
 |
 +----------------------------------------------------------------------------+
 */
@@ -21,12 +21,13 @@
 require_once("class2.php");
 require_once(e_HANDLER."comment_class.php");
 require_once(e_FILE."shortcode/batch/download_shortcodes.php");
-unset($text);
-$agreetext = $tp->toHTML($pref['agree_text'],TRUE,"parse_sc");
+
 $cobj = new comment;
 global $tp;
 
-if(!defined("USER_WIDTH")){ define("USER_WIDTH","width:100%"); }
+$dl_text = '';			// Output variable
+
+if(!defined("USER_WIDTH")) { define("USER_WIDTH","width:100%"); }
 
 // To prevent display of sub-categories on the main display, un-comment the following line
 //$pref['download_subsub'] = '0';
@@ -35,38 +36,112 @@ if(!defined("USER_WIDTH")){ define("USER_WIDTH","width:100%"); }
 define("IMAGE_DOWNLOAD", (file_exists(THEME."images/download.png") ? THEME."images/download.png" : e_IMAGE."generic/".IMODE."/download.png"));
 define("IMAGE_NEW", (file_exists(THEME."images/new.png") ? THEME."images/new.png" : e_IMAGE."generic/".IMODE."/new.png"));
 
+$template_load_core = '
+  $template_name = $load_template.".php";
+  if (is_readable(THEME."templates/".$template_name))
+  {
+	require_once(THEME."templates/".$template_name);
+  }
+  elseif (is_readable(THEME.$template_name))
+  {
+	require_once(THEME.$template_name);
+  }
+  else
+  {
+	require_once(e_THEME."templates/".$template_name);
+  }
+';
+
 
 if (!e_QUERY || $_GET['elan'])
-{	// no qs - render categories ...
-	require_once(HEADERF);
-	if($cacheData = $e107cache->retrieve("download_cat",720)) // expires every 12 hours.
-	{
-		echo $cacheData;
+{
+  $action = 'maincats';		// List categories
+  $maincatval = '';			// Show all main categories
+}
+else
+{	// Get parameters from the query
+  $maincatval = '';			// Show all main categories
+  $tmp = explode(".", e_QUERY);
+  if (is_numeric($tmp[0]))			// $tmp[0] at least must be valid
+  {
+	$dl_from = intval($tmp[0]);
+	$action = varset(preg_replace("#\W#", "", $tp -> toDB($tmp[1])),'list');
+	$id = intval($tmp[2]);
+	$view = intval($tmp[3]);
+	$order = preg_replace("#\W#", "", $tp -> toDB($tmp[4]));
+	$sort = preg_replace("#\W#", "", $tp -> toDB($tmp[5]));
+  }
+  else
+  {
+	$action = preg_replace("#\W#", "", $tp -> toDB($tmp[0]));
+	$id = intval($tmp[1]);
+  }
+  switch ($action)
+  {
+    case 'list' :	// Category-based listing
+	  if (isset($_POST['view'])) extract($_POST);
+	  if (!isset($dl_from)) $dl_from = 0;
+
+	  // Get category type, page title
+	  if ($sql->db_Select("download_category", "download_category_name,download_category_description,download_category_parent,download_category_class", "(download_category_id='{$id}') AND (download_category_class IN (".USERCLASS_LIST."))") )
+	  {
+		$row = $sql->db_Fetch();
+		extract($row);
+		$type = $download_category_name;
+		$type .= ($download_category_description) ? " [ ".$download_category_description." ]" : "";
+		define("e_PAGETITLE", PAGE_NAME." / ".$download_category_name);
+	  }
+	  else
+	  {  // No access to this category
+		define("e_PAGETITLE", PAGE_NAME);
+		require_once(HEADERF);
+		$ns->tablerender(LAN_dl_18, "<div style='text-align:center'>".LAN_dl_3."</div>");
 		require_once(FOOTERF);
 		exit;
-	}
+	  }
+	  if ($download_category_parent == 0)
+	  {  // It's a main category - change the listing type required
+	    $action = 'maincats';
+		$maincatval = $id;
+	  }
+	  break;
+	case 'view' :	// Details of individual download
+	  break;
+	case 'report' :
+	  break;
+	case 'mirror' :
+	  break;
+  }
+}
+
+if (!isset($order))	$order = varset($pref['download_order'],"download_datestamp");
+if (!isset($sort))	$sort =  varset($pref['download_sort'], "DESC");
+if (!isset($view))	$view =  varset($pref['download_view'], "10");
 
 
-	if (!isset($DOWNLOAD_CAT_PARENT_TABLE))
+//--------------------------------------------------
+//			GENERATE DISPLAY TEXT
+//--------------------------------------------------
+switch ($action)
+{	// Displaying main category or categories
+  case 'maincats' :
+    require_once(HEADERF);
+	if ($cacheData = $e107cache->retrieve("download_cat".$maincatval,720)) // expires every 12 hours.
 	{
-		if (is_readable(THEME."templates/download_template.php"))
-		{
-			require_once(THEME."templates/download_template.php");
-		}
-		elseif (is_readable(THEME."download_template.php"))
-		{
-			require_once(THEME."download_template.php");
-		}
-		else
-		{
-			require_once(e_BASE.$THEMES_DIRECTORY."templates/download_template.php");
-		}
+	  echo $cacheData;
+	  require_once(FOOTERF);
+	  exit;
 	}
+
+	// Load the theme
+	$load_template = 'download_template';
+	if (!isset($DOWNLOAD_CAT_PARENT_TABLE)) eval($template_load_core);
+
     if(!defined("DL_IMAGESTYLE")){ define("DL_IMAGESTYLE","border:1px solid blue");}
 
-// Read in tree of categories which this user is allowed to see
-    $dl = new down_cat_handler($pref['download_subsub']);
-
+	// Read in tree of categories which this user is allowed to see
+    $dl = new down_cat_handler($pref['download_subsub'],USERCLASS_LIST,$maincatval);
+	
 	if ($dl->down_count == 0)
 	{
 	  $ns->tablerender(LAN_dl_18, "<div style='text-align:center'>".LAN_dl_2."</div>");
@@ -99,44 +174,27 @@ if (!e_QUERY || $_GET['elan'])
 		</form>";
 
 	$download_cat_table_end = preg_replace("/\{(.*?)\}/e", '$\1', $DOWNLOAD_CAT_TABLE_END);
-	$text = $download_cat_table_start.$download_cat_table_string.$download_cat_table_end;  // Notice removal
-
+	$dl_text = $download_cat_table_start.$download_cat_table_string.$download_cat_table_end; 
 
 	ob_start();
 
 	if(isset($DOWNLOAD_CAT_TABLE_RENDERPLAIN) && $DOWNLOAD_CAT_TABLE_RENDERPLAIN)
 	{
-	  echo $text;
+	  echo $dl_text;
 	}
 	else 
 	{
-	  $ns->tablerender(LAN_dl_18, $text);
+	  $ns->tablerender(LAN_dl_18, $dl_text);
 	}
 
 	$cache_data = ob_get_flush();
-	$e107cache->set("download_cat", $cache_data);
+	$e107cache->set("download_cat".$maincatval, $cache_data);
 
 	require_once(FOOTERF);
 	exit;
-}
+  // Add other 'cases' here
+}  // End switch ($action)
 
-
-// Got a query string from now on
-$tmp = explode(".", e_QUERY);
-if (is_numeric($tmp[0]))
-{
-	$from = intval($tmp[0]);
-	$action = preg_replace("#\W#", "", $tp -> toDB($tmp[1]));
-	$id = intval($tmp[2]);
-	$view = intval($tmp[3]);
-	$order = preg_replace("#\W#", "", $tp -> toDB($tmp[4]));
-	$sort = preg_replace("#\W#", "", $tp -> toDB($tmp[5]));
-}
- else
-{
-	$action = preg_replace("#\W#", "", $tp -> toDB($tmp[0]));
-	$id = intval($tmp[1]);
-}
 
 if (isset($_POST['commentsubmit']))
 {
@@ -155,58 +213,22 @@ if (isset($_POST['commentsubmit']))
 			$clean_subject = $_POST['subject'];
 
 			$cobj->enter_comment($clean_authorname, $clean_comment, "download", $id, $pid, $clean_subject);
-			$e107cache->clear("comment.download.{$sub_action}");
+//			$e107cache->clear("comment.download.{$sub_action}");	$sub_action not used here
+			$e107cache->clear("comment.download");
 		}
 	}
 }
 
-//  -------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//====================================================
+//				LIST
+//====================================================
+if ($action == "list") 
+{
+  $total_downloads = $sql->db_Count("download", "(*)", "WHERE download_category = '{$id}' AND download_active > 0 AND download_visible REGEXP '".e_CLASS_REGEXP."'");
 
-if ($action == "list") {
-
-	if (isset($_POST['view'])) {
-		extract($_POST);
-	}
-
-	if (!$from) {
-		$from = 0;
-	}
-	if (!$order) {
-		$order = ($pref['download_order'] ? $pref['download_order'] : "download_datestamp");
-	}
-	if (!$sort) {
-		$sort = ($pref['download_sort'] ? $pref['download_sort'] : "DESC");
-	}
-	if (!$view) {
-		$view = ($pref['download_view'] ? $pref['download_view'] : "10");
-	}
-
-	$total_downloads = $sql->db_Count("download", "(*)", "WHERE download_category = '{$id}' AND download_active > 0 AND download_visible REGEXP '".e_CLASS_REGEXP."'");
-
-// Next three lines extract page title
-	if ($sql->db_Select("download_category", "*", "(download_category_id='{$id}') AND (download_category_class IN (".USERCLASS_LIST."))") )
-	{
-	$row = $sql->db_Fetch();
-	extract($row);
-
-	$type = $download_category_name;
-
-	$type .= ($download_category_description) ? " [ ".$download_category_description." ]" : "";
-	define("e_PAGETITLE", PAGE_NAME." / ".$download_category_name);
-	}
-	else
-	{  // No access to this category
-	  define("e_PAGETITLE", PAGE_NAME);
-	  require_once(HEADERF);
-	  $ns->tablerender(LAN_dl_18, "<div style='text-align:center'>".LAN_dl_3."</div>");
-	  require_once(FOOTERF);
-	  exit;
-	}
-
-	require_once(HEADERF);
+  require_once(HEADERF);
 
 	/* SHOW SUBCATS ... */
-
 	if($sql -> db_Select("download_category", "download_category_id", "download_category_parent='{$id}' "))
 	{
 		/* there are subcats - display them ... */
@@ -223,18 +245,10 @@ if ($action == "list") {
 		";
 		$sql->db_Select_gen($qry);
 		$scArray = $sql -> db_getList();
-		if (!$DOWNLOAD_CAT_PARENT_TABLE)
-		{
-			if (file_exists(THEME."download_template.php"))
-			{
-				require_once(THEME."download_template.php");
-			}
-			else
-			{
-				require_once(e_BASE.$THEMES_DIRECTORY."templates/download_template.php");
-			}
-		}
+		$load_template = 'download_template';
+		if (!isset($DOWNLOAD_CAT_PARENT_TABLE)) eval($template_load_core);
 		if(!defined("DL_IMAGESTYLE")){ define("DL_IMAGESTYLE","border:1px solid blue");}
+
 		foreach($scArray as $row)
 		{
 			$download_cat_table_string .= parse_download_cat_child_table($row, FALSE);
@@ -279,24 +293,16 @@ if ($action == "list") {
 	$DOWNLOAD_CATEGORY = $tp->toHTML($download_category_name,FALSE,"emotes_off, no_make_clickable");
 	$DOWNLOAD_CATEGORY_DESCRIPTION = $tp -> toHTML($download_category_description, TRUE,'description');
 
-	if (!$DOWNLOAD_LIST_TABLE) {
-		if (file_exists(THEME."download_template.php")) {
-			require_once(THEME."download_template.php");
-		} else {
-			require_once(e_BASE.$THEMES_DIRECTORY."templates/download_template.php");
-		}
-	}
+	$load_template = 'download_template';
+	if (!isset($DOWNLOAD_LIST_TABLE)) eval($template_load_core);
     if(!defined("DL_IMAGESTYLE")){ define("DL_IMAGESTYLE","border:1px solid blue");}
 
 	$gen = new convert;
 	require_once(e_HANDLER."rate_class.php");
 	$rater = new rater;
-// Shouldn't need these declarations now
-//	$sql = new db;
-//	$sql2 = new db;
 	$tdownloads = 0;
 
-	$filetotal = $sql->db_Select("download", "*", "download_category='{$id}' AND download_active > 0 AND download_visible IN (".USERCLASS_LIST.") ORDER BY {$order} {$sort} LIMIT {$from}, {$view}");
+	$filetotal = $sql->db_Select("download", "*", "download_category='{$id}' AND download_active > 0 AND download_visible IN (".USERCLASS_LIST.") ORDER BY {$order} {$sort} LIMIT {$dl_from}, {$view}");
 	$ft = ($filetotal < $view ? $filetotal : $view);
 	while ($row = $sql->db_Fetch()) {
 		extract($row);
@@ -312,27 +318,42 @@ if ($action == "list") {
 	$text .= $download_list_table_start.$download_list_table_string.$download_list_table_end;
 
 
-	if($DOWNLOAD_LIST_TABLE_RENDERPLAIN) {
+	if ($filetotal)
+	{  // Only show list if some files in it
+	  if($DOWNLOAD_LIST_TABLE_RENDERPLAIN) 
+	  {
 		echo $text;
-	} else {
+	  } 
+	  else 
+ 	  {
 		$ns->tablerender($type, $text);
+	  }
 	}
 
+	if(!isset($DOWNLOAD_LIST_NEXTPREV))
+	{
+        $sc_style['DOWNLOAD_LIST_NEXTPREV']['pre'] = "<div class='nextprev'>";
+		$sc_style['DOWNLOAD_LIST_NEXTPREV']['post'] = "</div>";
 
-	echo "<div style='text-align:center;margin-left:auto;margin-right:auto'><a href='".e_SELF."'>".LAN_dl_9."</a><br /><br />";
-	$parms = $total_downloads.",".$view.",".$from.",".e_SELF."?[FROM].list.{$id}.{$view}.{$order}.{$sort}.";
-	echo ($total_downloads > $view) ? "<div class='nextprev'>&nbsp;".$tp->parseTemplate("{NEXTPREV={$parms}}")."</div>" : "";
-    echo "</div>";
+    	$DOWNLOAD_LIST_NEXTPREV = "
+			<div style='text-align:center;margin-left:auto;margin-right:auto'>{DOWNLOAD_BACK_TO_CATEGORY_LIST}<br /><br />
+            {DOWNLOAD_LIST_NEXTPREV}
+			</div>";
+    }
+
+	$nextprev_parms = $total_downloads.",".$view.",".$dl_from.",".e_SELF."?[FROM].list.{$id}.{$view}.{$order}.{$sort}.";
+    echo $tp->parseTemplate($DOWNLOAD_LIST_NEXTPREV, TRUE, $download_shortcodes);
 
 	require_once(FOOTERF);
 	exit;
 }    // end of action=="list"
 
 
-//  ---------------- View Mode ---------------------------------------------------------------------------------------------------------------------------------------------------
-
-if ($action == "view") {
-
+//====================================================
+//				VIEW
+//====================================================
+if ($action == "view") 
+{
 	$gen = new convert;
 
 	$highlight_search = FALSE;
@@ -357,15 +378,8 @@ if ($action == "view") {
 
 	$dl = $sql -> db_Fetch();
 
-	if (!isset($DOWNLOAD_VIEW_TABLE) && is_readable(THEME."download_template.php"))
-	{
-		include_once(THEME."download_template.php");
- 	}
-	else
-	{
-        include_once(e_THEME."templates/download_template.php");
-	}
-
+	$load_template = 'download_template';
+	if (!isset($DOWNLOAD_VIEW_TABLE)) eval($template_load_core);
 	if(!defined("DL_IMAGESTYLE")){ define("DL_IMAGESTYLE","border:0px");}
     if(!isset($DL_VIEW_PAGETITLE))
 	{
@@ -421,9 +435,11 @@ if ($action == "view") {
 
 }
 
-//  ---------------- Report Broken Link Mode ---------------------------------------------------------------------------------------------------------------------------------------------------
-
-if ($action == "report" && check_class($pref['download_reportbroken'])) {
+//====================================================
+//				REPORT BROKEN LINKS
+//====================================================
+if ($action == "report" && check_class($pref['download_reportbroken'])) 
+{
 	if (!$sql->db_Select("download", "*", "download_id = {$id} AND download_active > 0")) {
 		require_once(HEADERF);
 		require_once(FOOTERF);
@@ -489,20 +505,16 @@ if ($action == "report" && check_class($pref['download_reportbroken'])) {
 	exit;
 }
 
-//  ---------------- Mirror Mode ---------------------------------------------------------------------------------------------------------------------------------------------------
 
-
+//====================================================
+//				MIRRORS
+//====================================================
 if($action == "mirror")
 {
 	require_once(HEADERF);
 
-	if (!$DOWNLOAD_MIRROR_START) {
-		if (file_exists(THEME."download_template.php")) {
-			require_once(THEME."download_template.php");
-		} else {
-			require_once(e_BASE.$THEMES_DIRECTORY."templates/download_template.php");
-		}
-	}
+	$load_template = 'download_template';
+	if (!isset($DOWNLOAD_MIRROR_START)) eval($template_load_core);
 
 	$sql -> db_Select("download_mirror");
 	$mirrorList = $sql -> db_getList("ALL", 0, 200, "mirror_id");
@@ -599,6 +611,9 @@ function parsesize($size) {
 	}
 }
 
+
+
+
 function parse_download_cat_parent_table($row) 
 {
 	global $tp,$current_row,$DOWNLOAD_CAT_PARENT_TABLE;
@@ -607,6 +622,10 @@ function parse_download_cat_parent_table($row)
 
 	$template = ($current_row == 1) ? $DOWNLOAD_CAT_PARENT_TABLE : str_replace("forumheader3","forumheader3 forumheader3_alt",$DOWNLOAD_CAT_PARENT_TABLE);
 
+	$DOWNLOAD_CAT_MAIN_ICON = '';
+	$DOWNLOAD_CAT_MAIN_NAME = '';
+	$DOWNLOAD_CAT_MAIN_DESCRIPTION = '';
+	
 	if (check_class($download_category_class)) 
 	{
 		if(strstr($download_category_icon, chr(1)))
@@ -615,6 +634,7 @@ function parse_download_cat_parent_table($row)
 		}
 		$DOWNLOAD_CAT_MAIN_ICON = ($download_category_icon ? "<img src='".e_IMAGE."icons/".$download_category_icon."' alt='' style='float: left' />" : "&nbsp;");
 		$DOWNLOAD_CAT_MAIN_NAME = $tp->toHTML($download_category_name,FALSE,"emotes_off, no_make_clickable");
+		$DOWNLOAD_CAT_MAIN_DESCRIPTION = $tp->toHTML($row['download_category_description'],TRUE,'DESCRIPTION');
 	}
 	return(preg_replace("/\{(.*?)\}/e", '$\1', $template));
 }
@@ -676,9 +696,12 @@ function parse_download_cat_child_table($row)
 }
 
 
-function parse_download_list_table($row) {
+function parse_download_list_table($row) 
+{
+// ***** $agreetext may not need to be global
 	global $download_shortcodes,$tp,$current_row,$DOWNLOAD_LIST_TABLE, $rater, $pref, $gen, $agreetext;
 
+	$agreetext = $tp->toHTML($pref['agree_text'],TRUE,"parse_sc");
 	$current_row = ($current_row) ? 0 : 1;  // Alternating CSS for each row.(backwards compatible)
 	$template = ($current_row == 1) ? $DOWNLOAD_LIST_TABLE : str_replace("forumheader3","forumheader3 forumheader3_alt",$DOWNLOAD_LIST_TABLE);
 
@@ -690,8 +713,6 @@ function parse_download_list_table($row) {
 //=============================================
 //		DOWNLOAD CATEGORY CLASS
 //=============================================
-define("SUB_PREFIX","-->");				// Added in front of sub categories
-define("SUBSUB_PREFIX","---->");		// Added in front of sub-sub categories
 
 class down_cat_handler
 {
@@ -699,11 +720,13 @@ class down_cat_handler
   var $cat_count;			// Count visible subcats and subsubcats
   var $down_count;			// Counts total downloads
   
-  function down_cat_handler($nest_level = 1, $load_class = USERCLASS_LIST)
+  function down_cat_handler($nest_level = 1, $load_class = USERCLASS_LIST, $main_cat_load = '')
   {  // Constructor - make a copy of the tree for re-use
      // $nest_level = 0 merges subsubcats with subcats. >0 creates full tree.
 	 // If load-class non-null, assumed to be a 'class set' such as USERCLASS_LIST
-    $this->cat_tree = $this->down_cat_tree($nest_level,$load_class);
+	define("SUB_PREFIX","-->");				// Added in front of sub categories
+	define("SUBSUB_PREFIX","---->");		// Added in front of sub-sub categories
+    $this->cat_tree = $this->down_cat_tree($nest_level,$load_class, $main_cat_load);
   }
   
   
@@ -711,19 +734,21 @@ class down_cat_handler
 // Returns empty array if nothing defined
 // Within the 'main category' level of the nesting, array 'subcats' has the next level's info
 // Within the 'sub-category' level of the nesting, array 'subsubcats' has the next level's info
-	function down_cat_tree($nest_level = 1, $load_cat_class = USERCLASS_LIST)
+// If $main_cat_load is numeric, and the value of a 'main' category, only that main category is displayed.
+//		(Unpredictable if $main_cat_load is some other category)
+	function down_cat_tree($nest_level = 1, $load_cat_class = USERCLASS_LIST, $main_cat_load = '')
 	{
 	  global $sql2;
 
 	  $catlist = array();
 	  $this->cat_count = 0;
 	  $this->down_count = 0;
-	  $temp1 = "";
 	  $temp2 = "";
+	  $temp1 = "";
 	  if ($load_cat_class != "")
 	  {
 		$temp1 = " WHERE dc.download_category_class IN ({$load_cat_class}) ";
-		$temp2 = "AND d.download_visible IN ({$load_cat_class})";
+		$temp2 = "AND d.download_visible IN ({$load_cat_class}) ";
 	  }
 	  
 	  $qry = "
@@ -748,8 +773,11 @@ class down_cat_handler
 	    $tmp = $row['download_category_parent'];
 	    if ($tmp == '0')
 	    {  // Its a main category
-		  $row['subcats'] = array();
-	      $catlist[$row['download_category_id']] = $row;
+		  if (!is_numeric($main_cat_load) || ($main_cat_load == $row['download_category_id']))
+		  {
+		    $row['subcats'] = array();
+	        $catlist[$row['download_category_id']] = $row;
+		  }
 	    }
 	    else
 	    {
@@ -780,7 +808,7 @@ class down_cat_handler
 		      {
 		        $catlist[$row['d_parent1']]['subcats'][$tmp]['subsubcats'][$row['download_category_id']] = $row;
 		      }
-		       // Separately accumulate 'last update for subcat plus associated subsubcats
+		       // Separately accumulate 'last update' for subcat plus associated subsubcats
 			  if ($catlist[$row['d_parent1']]['subcats'][$tmp]['d_last_subs'] < $row['d_last'])
 				    $catlist[$row['d_parent1']]['subcats'][$tmp]['d_last_subs'] = $row['d_last'];
 			}
@@ -823,6 +851,8 @@ class down_cat_handler
     }
 	
 }
+
+
 
 
 ?>

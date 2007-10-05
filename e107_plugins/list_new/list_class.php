@@ -11,9 +11,9 @@
 |       GNU General Public License (http://gnu.org).
 |
 |		$Source: /cvsroot/e107/e107_0.7/e107_plugins/list_new/list_class.php,v $
-|		$Revision: 1.14 $
-|		$Date: 2006/12/31 15:06:59 $
-|		$Author: e107coders $
+|		$Revision: 1.17 $
+|		$Date: 2007/09/16 17:27:03 $
+|		$Author: e107steved $
 +---------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -118,10 +118,12 @@ class listclass {
 	//content needs this to split each main parent into separate sections
 	function getContentSections($mode)
 	{
-		global $sql, $sections, $titles, $content_types, $content_name;
+		global $sql, $sections, $titles, $content_types, $content_name, $pref;
 
-		if(!$content_install = $sql -> db_Select("plugin", "plugin_id", "plugin_path = 'content' AND plugin_installflag = '1' ")){
-			return;
+//		if(!$content_install = $sql -> db_Select("plugin", "plugin_id", "plugin_path = 'content' AND plugin_installflag = '1' "))
+		if (!$content_install = isset($pref['plug_installed']['content']))		
+		{
+		  return;
 		}
 		$datequery = " AND (content_datestamp=0 || content_datestamp < ".time().") AND (content_enddate=0 || content_enddate>".time().") ";
 
@@ -138,7 +140,7 @@ class listclass {
 					$titles[] = $content_name." : ".$row['content_heading'];
 				}
 			}
-		}		
+		}
 		$content_types = array_unique($content_types);
 
 		return;
@@ -146,7 +148,7 @@ class listclass {
 
 	function getSections()
 	{
-		global $sql, $sections, $titles;
+		global $sql, $sections, $titles, $pref;
 
 		$this -> getDefaultSections();
 
@@ -160,7 +162,8 @@ class listclass {
 			$tmp = array_reverse($tmp);
 			$icon['fname'] = $tmp[1];
 
-			if($plugin_installed = $sql -> db_Select("plugin", "plugin_id", "plugin_path = '".$icon['fname']."' AND plugin_installflag = '1' "))
+//			if($plugin_installed = $sql -> db_Select("plugin", "plugin_id", "plugin_path = '".$icon['fname']."' AND plugin_installflag = '1' "))
+			if ($plugin_installed = isset($pref['plug_installed'][$icon['fname']]))
 			{
 				if($icon['fname'] == "content")
 				{
@@ -178,7 +181,7 @@ class listclass {
 
 	function getDefaultPrefs()
 	{
-		global $sql, $sections, $titles, $defaultarray, $content_types, $tp;
+		global $sql, $sections, $titles, $defaultarray, $content_types, $tp, $pref;
 
 		//section preferences
 		for($i=0;$i<count($sections);$i++)
@@ -187,7 +190,8 @@ class listclass {
 			{
 				if(!in_array($sections[$i], $content_types))
 				{
-					if($plugin_installed = $sql -> db_Select("plugin", "plugin_id", "plugin_path = '".$tp -> toDB($sections[$i], true)."' AND plugin_installflag = '1' "))
+//					if($plugin_installed = $sql -> db_Select("plugin", "plugin_id", "plugin_path = '".$tp -> toDB($sections[$i], true)."' AND plugin_installflag = '1' "))
+					if ($plugin_installed = isset($pref['plug_installed'][$tp -> toDB($sections[$i], true)]))
 					{
 						$list_pref["$sections[$i]_recent_menu_caption"]	= $sections[$i];
 						$list_pref["$sections[$i]_recent_page_caption"]	= $sections[$i];
@@ -247,7 +251,7 @@ class listclass {
 			$list_pref["$sections[$i]_new_page_order"]			= ($i+1);
 			$list_pref["$sections[$i]_new_page_icon"]			= "1";
 		}
-		
+
 		//new menu preferences
 		$list_pref['new_menu_caption']				= LIST_ADMIN_15;
 		$list_pref['new_menu_icon_use']				= "1";
@@ -343,7 +347,7 @@ class listclass {
 		$menutext = "";
 		$start = "";
 		$end = "";
-		
+
 		$LIST_ICON = "";
 		$LIST_DATE = "";
 		$LIST_HEADING = "";
@@ -356,29 +360,29 @@ class listclass {
 
 		if(is_array($LIST_DATA)){			//if it is an array, data exists and data is not empty
 			for($i=0;$i<count($LIST_DATA[$mode]);$i++)
-			{				
+			{
 				$LIST_ICON		= $LIST_DATA[$mode][$i][0];
 				$LIST_HEADING	= $LIST_DATA[$mode][$i][1];
 				$LIST_AUTHOR	= $LIST_DATA[$mode][$i][2];
 				$LIST_CATEGORY	= $LIST_DATA[$mode][$i][3];
 				$LIST_DATE		= $LIST_DATA[$mode][$i][4];
 				$LIST_INFO		= $LIST_DATA[$mode][$i][5];
-				
+
 				if($mode == "recent_menu"){
 					global $sc_style;
-					$LIST_AUTHOR	= ($LIST_AUTHOR ? $sc_style['LIST_AUTHOR']['pre'].$LIST_AUTHOR.$sc_style['LIST_AUTHOR']['post'] : "");					
-					$LIST_CATEGORY	= ($LIST_CATEGORY ? $sc_style['LIST_CATEGORY']['pre'].$LIST_CATEGORY.$sc_style['LIST_CATEGORY']['post'] : "");					
+					$LIST_AUTHOR	= ($LIST_AUTHOR ? $sc_style['LIST_AUTHOR']['pre'].$LIST_AUTHOR.$sc_style['LIST_AUTHOR']['post'] : "");
+					$LIST_CATEGORY	= ($LIST_CATEGORY ? $sc_style['LIST_CATEGORY']['pre'].$LIST_CATEGORY.$sc_style['LIST_CATEGORY']['post'] : "");
 					$menutext .= preg_replace("/\{(.*?)\}/e", '$\1', $LIST_MENU_RECENT);
-				
+
 				}elseif($mode == "new_menu"){
 					global $sc_style;
-					$LIST_AUTHOR	= ($LIST_AUTHOR ? $sc_style['LIST_AUTHOR']['pre'].$LIST_AUTHOR.$sc_style['LIST_AUTHOR']['post'] : "");					
-					$LIST_CATEGORY	= ($LIST_CATEGORY ? $sc_style['LIST_CATEGORY']['pre'].$LIST_CATEGORY.$sc_style['LIST_CATEGORY']['post'] : "");					
+					$LIST_AUTHOR	= ($LIST_AUTHOR ? $sc_style['LIST_AUTHOR']['pre'].$LIST_AUTHOR.$sc_style['LIST_AUTHOR']['post'] : "");
+					$LIST_CATEGORY	= ($LIST_CATEGORY ? $sc_style['LIST_CATEGORY']['pre'].$LIST_CATEGORY.$sc_style['LIST_CATEGORY']['post'] : "");
 					$menutext .= preg_replace("/\{(.*?)\}/e", '$\1', $LIST_MENU_NEW);
-				
+
 				}elseif($mode == "recent_page"){
 					$menutext .= $tp -> parseTemplate($LIST_PAGE_RECENT, FALSE, $list_shortcodes);
-				
+
 				}elseif($mode == "new_page"){
 					$menutext .= $tp -> parseTemplate($LIST_PAGE_NEW, FALSE, $list_shortcodes);
 				}
@@ -415,13 +419,13 @@ class listclass {
 					$start = preg_replace("/\{(.*?)\}/e", '$\1', $LIST_MENU_RECENT_START);
 					$end = preg_replace("/\{(.*?)\}/e", '$\1', $LIST_MENU_RECENT_END);
 				}
-			
+
 			}elseif($mode == "new_menu"){
 				if($list_pref[$mode."_showempty"] || $menutext){
 					$start = preg_replace("/\{(.*?)\}/e", '$\1', $LIST_MENU_NEW_START);
 					$end = preg_replace("/\{(.*?)\}/e", '$\1', $LIST_MENU_NEW_END);
 				}
-			
+
 			}elseif($mode == "recent_page"){
 				if($list_pref[$mode."_showempty"] || $menutext){
 					$start = preg_replace("/\{(.*?)\}/e", '$\1', $LIST_PAGE_RECENT_START);
@@ -475,7 +479,7 @@ class listclass {
 		{
 			if(file_exists(THEME."images/bullet2.gif"))
 			{
-				$default_bullet = "<img src='".THEME."images/bullet2.gif' alt='' />";
+				$default_bullet = "<img src='".THEME_ABS."images/bullet2.gif' alt='' />";
 			}
 		}
 
@@ -497,7 +501,7 @@ class listclass {
 
 	function parse_heading($heading, $mode){
 		global $list_pref;
-		
+
 		if($list_pref[$mode."_char_heading"] && strlen($heading) > $list_pref[$mode."_char_heading"]){
 			$heading = substr($heading, 0, $list_pref[$mode."_char_heading"]).$list_pref[$mode."_char_postfix"];
 		}
@@ -506,7 +510,7 @@ class listclass {
 
 	function getListDate($datestamp, $mode){
 		global $list_pref;
-		
+
 		$datestamp += TIMEOFFSET;
 
 		$todayarray = getdate();

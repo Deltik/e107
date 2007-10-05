@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/class2.php,v $
-|     $Revision: 1.332 $
-|     $Date: 2007/02/12 20:04:38 $
+|     $Revision: 1.348 $
+|     $Date: 2007/09/27 20:57:50 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -110,8 +110,23 @@ if(isset($retrieve_prefs) && is_array($retrieve_prefs)) {
 }
 
 define("MAGIC_QUOTES_GPC", (ini_get('magic_quotes_gpc') ? TRUE : FALSE));
-$srvtmp = explode(".",$_SERVER['HTTP_HOST']);
+
+// Define the domain name and subdomain name.
+if(is_numeric(str_replace(".","",$_SERVER['HTTP_HOST']))){
+	$srvtmp = "";  // Host is an IP address.
+}else{
+	$srvtmp = explode(".",$_SERVER['HTTP_HOST']);
+}
+
 define("e_SUBDOMAIN", (count($srvtmp)>2 && $srvtmp[2] ? $srvtmp[0] : FALSE)); // needs to be available to e107_config.
+$domrep = array("www.");
+if(e_SUBDOMAIN){
+	$domrep[] = e_SUBDOMAIN.".";
+}
+define("e_DOMAIN",($srvtmp != "" ? str_replace($domrep,"",$_SERVER['HTTP_HOST']) : FALSE)); // if it's an IP it must be set to FALSE.
+
+unset($srvtmp,$domrep);
+
 
 //  Ensure thet '.' is the first part of the include path
 $inc_path = explode(PATH_SEPARATOR, ini_get('include_path'));
@@ -128,7 +143,7 @@ unset($inc_path);
 @include_once(realpath(dirname(__FILE__).'/e107_config.php'));
 if(!isset($ADMIN_DIRECTORY)){
 	// e107_config.php is either empty, not valid or doesn't exist so redirect to installer..
-	header("Location: install.php");
+  	header("Location: install.php");
 }
 
 //
@@ -178,7 +193,7 @@ $tp = new e_parse;
 
 //define("e_QUERY", $matches[2]);
 //define("e_QUERY", $_SERVER['QUERY_STRING']);
-$e_QUERY = $tp->post_toForm($e_QUERY);
+$e_QUERY = str_replace("&","&amp;",$tp->post_toForm($e_QUERY));
 define("e_QUERY", $e_QUERY);
 //$e_QUERY = e_QUERY;
 
@@ -341,16 +356,24 @@ define("SITEURLBASE", ($pref['ssl_enabled'] == '1' ? "https://" : "http://").$_S
 define("SITEURL", SITEURLBASE.e_HTTP);
 
 // let the subdomain determine the language (when enabled).
-if(isset($pref['multilanguage_subdomain']) && $pref['multilanguage_subdomain'] && ($pref['user_tracking'] == "session")){
-		e107_ini_set("session.cookie_domain",$pref['multilanguage_subdomain']);
-		require_once(e_HANDLER."language_class.php");
-		$lng = new language;
-        if(e_SUBDOMAIN == "www"){
-        	$GLOBALS['elan'] = $pref['sitelanguage'];
-		}
-		elseif($eln = $lng->convert(e_SUBDOMAIN))
+
+if(isset($pref['multilanguage_subdomain']) && $pref['multilanguage_subdomain'] && ($pref['user_tracking'] == "session") && e_DOMAIN && MULTILANG_SUBDOMAIN !== FALSE){
+
+		$mtmp = explode("\n",$pref['multilanguage_subdomain']);
+
+		if(in_array(e_DOMAIN,$mtmp) || ($pref['multilanguage_subdomain'] ==1))
 		{
-          	$GLOBALS['elan'] = $eln;
+			e107_ini_set("session.cookie_domain",".".e_DOMAIN);
+			require_once(e_HANDLER."language_class.php");
+			$lng = new language;
+	        if(e_SUBDOMAIN == "www")
+			{
+	        	$GLOBALS['elan'] = $pref['sitelanguage'];
+			}
+			elseif($eln = $lng->convert(e_SUBDOMAIN))
+			{
+	          	$GLOBALS['elan'] = $eln;
+			}
 		}
 }
 
@@ -407,7 +430,7 @@ define("e_PAGE", $page);
 if (isset($_POST['setlanguage']) || isset($_GET['elan']) || isset($GLOBALS['elan'])) {
 	if($_GET['elan'])  // query support, for language selection splash pages. etc
 	{
-		$_POST['sitelanguage'] = $_GET['elan'];
+		$_POST['sitelanguage'] = str_replace(array(".","/","%"),"",$_GET['elan']);
 	}
 	if($GLOBALS['elan'] && !isset($_POST['sitelanguage']))
 	{
@@ -424,7 +447,7 @@ if (isset($_POST['setlanguage']) || isset($_GET['elan']) || isset($GLOBALS['elan
 		$_COOKIE['e107language_'.$pref['cookie_name']] = $_POST['sitelanguage'];
 		if (strpos(e_SELF, ADMINDIR) === FALSE) {
 			$locat = ((!$_GET['elan'] && e_QUERY) || (e_QUERY && e_LANCODE)) ? e_SELF."?".e_QUERY : e_SELF;
-		  		header("Location:".$locat);
+		  	 	header("Location:".$locat);
 		}
 	}
 }
@@ -530,6 +553,10 @@ if (isset($pref['modules']) && $pref['modules']) {
 		}
 	}
 }
+
+
+$js_body_onload = array();			// Initialise this array in case a module wants to add to it
+
 
 // Load e_modules after all the constants, but before the themes, so they can be put to use.
 if(isset($pref['e_module_list']) && $pref['e_module_list']){
@@ -648,7 +675,7 @@ $sql->db_Mark_Time('Start: Signup/splash/admin');
 define("e_SIGNUP", e_BASE.(file_exists(e_BASE."customsignup.php") ? "customsignup.php" : "signup.php"));
 define("e_LOGIN", e_BASE.(file_exists(e_BASE."customlogin.php") ? "customlogin.php" : "login.php"));
 
-if ($pref['membersonly_enabled'] && !USER && e_PAGE != e_SIGNUP && e_PAGE != "index.php" && e_PAGE != "fpw.php" && e_PAGE != e_LOGIN && strpos(e_PAGE, "admin") === FALSE && e_PAGE != 'membersonly.php' && e_PAGE != 'sitedown.php') {
+if ($pref['membersonly_enabled'] && !USER && e_SELF != SITEURL.e_SIGNUP && e_SELF != SITEURL."index.php" && e_SELF != SITEURL."fpw.php" && e_SELF != SITEURL.e_LOGIN && strpos(e_PAGE, "admin") === FALSE && e_SELF != SITEURL.'membersonly.php' && e_SELF != SITEURL.'sitedown.php') {
 	header("Location: ".e_HTTP."membersonly.php");
 	exit;
 }
@@ -803,11 +830,14 @@ if ($pref['anon_post'] ? define("ANON", TRUE) : define("ANON", FALSE));
 
 if (Empty($pref['newsposts']) ? define("ITEMVIEW", 15) : define("ITEMVIEW", $pref['newsposts']));
 
-if ($pref['antiflood1'] == 1) {
-	define('FLOODPROTECT', TRUE);
-	define('FLOODTIMEOUT', $pref['antiflood_timeout']);
-}else{
-	define('FLOODPROTECT', FALSE);
+if ($pref['antiflood1'] == 1) 
+{
+  define('FLOODPROTECT', TRUE);
+  define('FLOODTIMEOUT', max(varset($pref['antiflood_timeout'],10),3));
+}
+else
+{
+  define('FLOODPROTECT', FALSE);
 }
 
 $layout = isset($layout) ? $layout : '_default';
@@ -868,9 +898,11 @@ function check_class($var, $userclass = USERCLASS, $peer = FALSE, $debug = FALSE
 		return TRUE;
 	}
 
+	if (is_numeric($var) && !$var) return TRUE;		// Accept numeric class zero - 'PUBLIC'
+
 	if (!$var || $var == "")
-	{
-		return TRUE;
+	{	// ....but an empty string or NULL variable is not valid
+		return FALSE;
 	}
 
 	if(strpos($var, ",") !== FALSE)
@@ -1056,24 +1088,24 @@ function get_user_data($uid, $extra = "")
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
-function save_prefs($table = 'core', $uid = USERID, $row_val = '') 
+function save_prefs($table = 'core', $uid = USERID, $row_val = '')
 {
   global $pref, $user_pref, $tp, $PrefCache, $sql, $eArrayStorage;
-  if ($table == 'core') 
+  if ($table == 'core')
   {
-	if ($row_val == '') 
+	if ($row_val == '')
 	{		// Save old version as a backup first
-	  $sql->db_Select_gen("REPLACE INTO #core (e107_name,e107_value) values ('SitePrefs_Backup', '".addslashes($PrefCache)."') ");
+	  $sql->db_Select_gen("REPLACE INTO `#core` (e107_name,e107_value) values ('SitePrefs_Backup', '".addslashes($PrefCache)."') ");
 
 	  // Now save the updated values
 	  // traverse the pref array, with toDB on everything
 	  $_pref = $tp -> toDB($pref, true, true);
 	  // Create the data to be stored
-	  $sql->db_Select_gen("REPLACE INTO #core (e107_name,e107_value) values ('SitePrefs', '".$eArrayStorage->WriteArray($_pref)."') ");
+	  $sql->db_Select_gen("REPLACE INTO `#core` (e107_name,e107_value) values ('SitePrefs', '".$eArrayStorage->WriteArray($_pref)."') ");
 	  ecache::clear('SitePrefs');
 	}
   }
-  else 
+  else
   {
 	$_user_pref = $tp -> toDB($user_pref);
 	$tmp=addslashes(serialize($_user_pref));
@@ -1086,7 +1118,8 @@ function save_prefs($table = 'core', $uid = USERID, $row_val = '')
 
 class e_online {
 	function online($online_tracking = false, $flood_control = false) {
-		if($online_tracking == true || $flood_control == true) {
+		if($online_tracking == true || $flood_control == true)
+		{
 			global $online_timeout, $online_warncount, $online_bancount;
 			if(!isset($online_timeout)) {
 				$online_timeout = 300;
@@ -1106,7 +1139,8 @@ class e_online {
 			$ip = $e107->getip();
 			$udata = (USER === true ? USERID.".".USERNAME : "0");
 
-			if (USER) {
+			if (USER)
+			{
 				// Find record that matches IP or visitor, or matches user info
 				if ($sql->db_Select("online", "*", "(`online_ip` = '{$ip}' AND `online_user_id` = '0') OR `online_user_id` = '{$udata}'")) {
 					$row = $sql->db_Fetch();
@@ -1142,7 +1176,9 @@ class e_online {
 				} else {
 					$sql->db_Insert("online", " '".time()."', '0', '{$udata}', '{$ip}', '{$page}', 1, 0");
 				}
-			} else {
+			}
+			else
+			{
 				//Current page request is from a visitor
 				if ($sql->db_Select("online", "*", "`online_ip` = '{$ip}' AND `online_user_id` = '0'")) {
 					$row = $sql->db_Fetch();
@@ -1163,10 +1199,12 @@ class e_online {
 				}
 			}
 
-			if (ADMIN || $pref['autoban'] != 1) {
+			if (ADMIN || ($pref['autoban'] != 1 && $pref['autoban'] != 2)) // Auto-Ban is switched off. (0 or 3)
+			{
 				$row['online_pagecount'] = 1;
 			}
-			if ($row['online_pagecount'] > $online_bancount && $row['online_ip'] != "127.0.0.1") {
+
+			if ($row['online_pagecount'] > $online_bancount && ($row['online_ip'] != "127.0.0.1")) {
 				$sql->db_Insert("banlist", "'{$ip}', '0', 'Hit count exceeded ({$row['online_pagecount']} requests within allotted time)' ");
 				$e_event->trigger("flood", $ip);
 				exit;
@@ -1194,7 +1232,9 @@ class e_online {
 			define("GUESTS_ONLINE", $total_online - $members_online);
 			define("ON_PAGE", $sql->db_Count("online", "(*)", "WHERE `online_location` = '{$page}' "));
 			define("MEMBER_LIST", $member_list);
-		} else {
+		}
+		else
+		{
 			define("e_TRACKING_DISABLED", true);
 			define("TOTAL_ONLINE", "");
 			define("MEMBERS_ONLINE", "");
@@ -1392,7 +1432,7 @@ function message_handler($mode, $message, $line = 0, $file = "") {
 }
 
 // -----------------------------------------------------------------------------
-function table_exists($check) {
+function table_exists($check) { 
 	if (!$GLOBALS['mySQLtablelist']) {
 		$tablist=mysql_list_tables($GLOBALS['mySQLdefaultdb']);
 		while (list($temp) = mysql_fetch_array($tablist)) {
@@ -1482,8 +1522,11 @@ if(!function_exists("print_a")) {
 	}
 }
 
-function force_userupdate() {
 
+// Check that all required user fields (including extended fields) are valid.
+// Return TRUE if update required
+function force_userupdate() 
+{
 	global $sql,$pref,$currentUser;
 
 	if (e_PAGE == "usersettings.php" || strpos(e_SELF, ADMINDIR) == TRUE)
@@ -1500,6 +1543,8 @@ function force_userupdate() {
 			return TRUE;
 		}
     }
+
+	if (!varset($pref['disable_emailcheck'],TRUE) && !trim($currentUser['user_email'])) return TRUE;
 
 	if($sql -> db_Select("user_extended_struct", "user_extended_struct_name", "user_extended_struct_required = '1'"))
 	{
@@ -1583,7 +1628,7 @@ class error_handler {
 				if($index == 0) { $index = 1; } else { $index = 0; }
 			}
 		} else {
-			foreach ($this->errors as $key => $value) 
+			foreach ($this->errors as $key => $value)
 			{
 				$ret .= "<tr class='forumheader3'><td>{$value['short']}</td></tr>\n";
 			}

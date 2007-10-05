@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/calendar_menu/plugin.php,v $
-|     $Revision: 1.17 $ - with mods to hopefully trigger upgrade to new version
-|     $Date: 2006/11/16 10:24:15 $
-|     $Author: e107coders $
+|     $Revision: 1.20 $ - with mods to hopefully trigger upgrade to new version
+|     $Date: 2007/04/12 08:45:37 $
+|     $Author: lisa_ $
 |
 | 22.07.06 - Mods for V3.6 upgrade, including log directory
 | 02.08.06 - Support for category icon display added
@@ -56,7 +56,7 @@ $eplug_icon_small = $eplug_folder."/images/calendar_16.png";
 $eplug_caption = EC_LAN_81; // "Configure Event Calendar";
 
 $ecalSQL = new db;
-$ecalSQL->db_Select("plugin", "plugin_version", "plugin_name='Event Calendar' AND plugin_installflag > 0");
+$ecalSQL->db_Select("plugin", "plugin_version", "plugin_path='calendar_menu' AND plugin_installflag > 0");
 list($ecalVer) = $ecalSQL->db_Fetch();
 $ecalVer = preg_replace("/[a-zA-z\s]/", '', $ecalVer);
 
@@ -79,9 +79,9 @@ $eplug_prefs = array(
 "eventpost_timecustom" => "%H%M",
 "eventpost_dateevent"  => 1,
 "eventpost_datenext"   => 1,
-"eventpost_eventdatecustom" => "&A %d %B %Y",
+"eventpost_eventdatecustom" => "%A %d %B %Y",
 "eventpost_nextdatecustom"   => "%d %b",
-"eventpost_mailsubject" => EC_ADLAN_12,
+"eventpost_mailsubject" => EC_ADLAN_A12,
 "eventpost_mailfrom" => EC_ADLAN_A151,
 "eventpost_mailaddress" => EC_ADLAN_A152,
 "eventpost_asubs" => 1,

@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/signup.php,v $
-|     $Revision: 1.108 $
-|     $Date: 2007/02/04 09:30:44 $
-|     $Author: e107steved $
+|     $Revision: 1.113 $
+|     $Date: 2007/09/22 22:28:07 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 
@@ -325,15 +325,16 @@ if (e_QUERY)
 
 if (isset($_POST['register']))
 {
+  $_POST['xupexist'] = trim(varset($_POST['xupexist'],''));
 	$e107cache->clear("online_menu_totals");
 	$error_message = "";
 	require_once(e_HANDLER."message_handler.php");
-	if ($signup_imagecode && !isset($_POST['xupexist']))
+	if (isset($_POST['rand_num']) && $signup_imagecode && !$_POST['xupexist'] )
 	{
 		if (!$sec_img->verify_code($_POST['rand_num'], $_POST['code_verify']))
 		{
-			$error_message .= LAN_SIGNUP_3."\\n";
-			$error = TRUE;
+		  $error_message .= LAN_SIGNUP_3."\\n";
+		  $error = TRUE;
 		}
 	}
 
@@ -403,7 +404,7 @@ if (isset($_POST['register']))
 	  $error_message .= LAN_SIGNUP_56."\\n";
 	  $error = TRUE;
 	}
-	
+
 global $db_debug;
 	// Check for disallowed names.
 	if(varsettrue($pref['signup_disallow_text']))
@@ -420,18 +421,25 @@ global $db_debug;
 	}
 
 	// Check if form maxlength has been bypassed
-	if ( strlen($_POST['name']) > 30 || strlen($_POST['loginname']) > 30)
+	if ( strlen($_POST['name']) > 30 || strlen($_POST['loginname']) > 100)
 	{
-		exit;
+	  exit;
 	}
 
 	// Check if display name exceeds maximum allowed length
-	if (isset($pref['displayname_maxlength']) && (strlen($_POST['name']) > $pref['displayname_maxlength']))
+	if (strlen($_POST['name']) > varset($pref['displayname_maxlength'],15))
 	{
 	  $error_message .= LAN_SIGNUP_55."\\n";
 	  $error = TRUE;
 	}
-	
+
+	// Check if login name exceeds maximum allowed length
+	if (strlen($_POST['loginname']) > varset($pref['loginname_maxlength'],30))
+	{
+	  $error_message .= LAN_SIGNUP_57."\\n";
+	  $error = TRUE;
+	}
+
 	// Display Name exists.
 	if ($sql->db_Select("user", "*", "user_name='".$tp -> toDB($_POST['name'])."'"))
 	{
@@ -645,6 +653,7 @@ global $db_debug;
 			require_once(FOOTERF);
 		}
 
+
 		if ($pref['user_reg_veri'])
 		{
 			// ==== Update Userclass =======>
@@ -681,6 +690,7 @@ global $db_debug;
 			}
 
             $_POST['ip'] = $ip;
+			$_POST['user_id'] = $nid;
 			$e_event->trigger("usersup", $_POST);  // send everything in the template, including extended fields.
 
 			require_once(HEADERF);
@@ -737,6 +747,7 @@ global $db_debug;
 
 			// ==========================================================
             $_POST['ip'] = $ip;
+			$_POST['user_id'] = $nid;
 			$e_event->trigger("usersup", $_POST);  // send everything in the template, including extended fields.
 
 			if($pref['signup_text_after'])
@@ -770,17 +781,22 @@ if (!$website)
 	$website = "http://";
 }
 
-if (strpos(LAN_109, "stage") === FALSE)
+if ($qs == 'stage1' && $pref['use_coppa'] == 1)
 {
-	if (isset($_POST['newver']))
+	if(isset($_POST['newver']))
 	{
-		if (!$_POST['coppa'])
+		if(!varsettrue($_POST['coppa']))
 		{
 			$text = $tp->parseTemplate($COPPA_FAIL);
 			$ns->tablerender(LAN_110, $text);
 			require_once(FOOTERF);
 			exit;
 		}
+	}
+	else
+	{
+  		header('Location: '.e_BASE.'signup.php');
+		exit;
 	}
 }
 
@@ -914,7 +930,7 @@ function render_email($preview = FALSE)
 	$HEAD .= "<html xmlns='http://www.w3.org/1999/xhtml' >\n";
 	$HEAD .= "<head><meta http-equiv='content-type' content='text/html; charset=utf-8' />\n";
 	$HEAD .= ($SIGNUPEMAIL_USETHEME == 1) ? "<link rel=\"stylesheet\" href=\"".SITEURL.THEME."style.css\" type=\"text/css\" />\n" : "";
-    $HEAD .= ($preview) ? "<title>Signup Preview</title>\n" : "";
+    $HEAD .= ($preview) ? "<title>".LAN_SIGNUP_58."</title>\n" : "";
 	if($SIGNUPEMAIL_USETHEME == 2)
 	{
 		$CSS = file_get_contents(THEME."style.css");
@@ -940,4 +956,3 @@ function render_email($preview = FALSE)
 
 	return $ret;
 }
-?>

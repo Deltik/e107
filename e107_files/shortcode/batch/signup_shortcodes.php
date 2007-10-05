@@ -11,9 +11,11 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/signup_shortcodes.php,v $
-|     $Revision: 1.10 $
-|     $Date: 2007/01/07 15:24:49 $
+|     $Revision: 1.13 $
+|     $Date: 2007/07/30 20:25:09 $
 |     $Author: e107steved $
+|
+| Mods to show extended field categories
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -81,14 +83,16 @@ SC_BEGIN SIGNUP_DISPLAYNAME
 global $pref, $rs;
 if (check_class($pref['displayname_class']))
 {
-	return $rs->form_text("name", 30, ($_POST['name'] ? $_POST['name'] : $name), 30);
+  $dis_name_len = varset($pref['displayname_maxlength'],15);
+  return $rs->form_text("name", $dis_name_len+5, ($_POST['name'] ? $_POST['name'] : $name), $dis_name_len);
 }
 SC_END
 
 
 SC_BEGIN SIGNUP_LOGINNAME
 global $rs;
-return $rs->form_text("loginname", 30,  ($_POST['loginname'] ? $_POST['loginname'] : $loginname), 30);
+$log_name_length = varset($pref['loginname_maxlength'],30);
+return $rs->form_text("loginname", $log_name_length+5,  ($_POST['loginname'] ? $_POST['loginname'] : $loginname), $log_name_length);
 SC_END
 
 SC_BEGIN SIGNUP_REALNAME
@@ -156,10 +160,8 @@ SC_END
 
 
 SC_BEGIN SIGNUP_EXTENDED_USER_FIELDS
-global $usere, $tp, $SIGNUP_EXTENDED_USER_FIELDS, $EXTENDED_USER_FIELD_REQUIRED;
+global $usere, $tp, $SIGNUP_EXTENDED_USER_FIELDS, $EXTENDED_USER_FIELD_REQUIRED, $SIGNUP_EXTENDED_CAT;
 $text = "";
-
-$extList = $usere->user_extended_get_fieldList();
 
 $search = array(
 '{EXTENDED_USER_FIELD_TEXT}',
@@ -167,19 +169,43 @@ $search = array(
 '{EXTENDED_USER_FIELD_EDIT}'
 );
 
-foreach($extList as $ext)
+
+// What we need is a list of fields, ordered first by parent, and then by display order?
+// category entries are `user_extended_struct_type` = 0
+// 'unallocated' entries are `user_extended_struct_parent` = 0
+
+// Get a list of defined categories
+$catList = $usere->user_extended_get_categories(FALSE);
+// Add in category zero - the 'no category' category
+array_unshift($catList,array('user_extended_struct_parent' => 0, 'user_extended_struct_id' => '0'));
+
+
+
+foreach($catList as $cat)
 {
-	if($ext['user_extended_struct_required'] == 1 || $ext['user_extended_struct_required'] == 2)
-	{
-		$replace = array(
-			$tp->toHTML($ext['user_extended_struct_text'], '', 'emotes_off, defs'),
-			($ext['user_extended_struct_required'] == 1 ? $EXTENDED_USER_FIELD_REQUIRED : ''),
-			$usere->user_extended_edit($ext, $_POST['ue']['user_'.$ext['user_extended_struct_name']])
-		);
-		$text .= str_replace($search, $replace, $SIGNUP_EXTENDED_USER_FIELDS);
-	}
+  $extList = $usere->user_extended_get_fieldList($cat['user_extended_struct_id']);
+
+  $done_heading = FALSE;
+  
+  foreach($extList as $ext)
+  {
+  	if($ext['user_extended_struct_required'] == 1 || $ext['user_extended_struct_required'] == 2)
+   	{
+      if(!$done_heading  && ($cat['user_extended_struct_id'] > 0))
+      {	// Add in a heading
+		$text .= str_replace('{EXTENDED_CAT_TEXT}', $tp->toHTML($cat['user_extended_struct_name'], '', 'emotes_off defs'), $SIGNUP_EXTENDED_CAT);
+		$done_heading = TRUE;
+	  }
+  	  $replace = array(
+    			$tp->toHTML($ext['user_extended_struct_text'], '', 'emotes_off defs'),
+    			($ext['user_extended_struct_required'] == 1 ? $EXTENDED_USER_FIELD_REQUIRED : ''),
+    			$usere->user_extended_edit($ext, $_POST['ue']['user_'.$ext['user_extended_struct_name']])
+        );
+      $text .= str_replace($search, $replace, $SIGNUP_EXTENDED_USER_FIELDS);
+    }
+  }
 }
-	return $text;
+return $text;
 SC_END
 
 SC_BEGIN SIGNUP_SIGNATURE
@@ -223,17 +249,18 @@ if($pref['signup_option_image'])
 	$text .= "<br />
 	</div><br />";
 
-	if ($pref['avatar_upload'] && FILE_UPLOADS)
+    // Intentionally disable uploadable avatar and photos at this stage
+	if (false && $pref['avatar_upload'] && FILE_UPLOADS)
 	{
 		$text .= "<br /><span class='smalltext'>".LAN_SIGNUP_25."</span> <input class='tbox' name='file_userfile[]' type='file' size='40' />
 		<br /><div class='smalltext'>".LAN_SIGNUP_34."</div>";
 	}
 
-	if ($pref['photo_upload'] && FILE_UPLOADS)
+	if (false && $pref['photo_upload'] && FILE_UPLOADS)
 	{
 		$text .= "<br /><span class='smalltext'>".LAN_SIGNUP_26."</span> <input class='tbox' name='file_userfile[]' type='file' size='40' />
 		<br /><div class='smalltext'>".LAN_SIGNUP_34."</div>";
-	}
+	}  
 	return $text;
 }
 SC_END

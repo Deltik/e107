@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/phpmailer/mailout_process.php,v $
-|     $Revision: 1.13 $
-|     $Date: 2006/12/22 21:01:08 $
+|     $Revision: 1.16 $
+|     $Date: 2007/08/02 20:37:11 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -114,11 +114,7 @@ if($_POST['cancel_emails']){
 		$mail->Sender = $pref['mail_bounce_email'];
 	}
 
-	$attach = chop($_POST['email_attachment']);
-	if (($temp = strrchr($attach,'/')) !== FALSE)
-	{
-		$attach = substr($attach,$temp + 1);
-	}
+	$attach = trim($_POST['email_attachment']);
 
 	if(is_readable(e_DOWNLOAD.$attach))
 	{
@@ -129,11 +125,16 @@ if($_POST['cancel_emails']){
 		$attach_link = e_FILE.'public/'.$attach;
 	}
 
+	if (($temp = strrchr($attach,'/')) !== FALSE)
+	{	// Just specify filename as attachment - no path
+		$attach = substr($temp,1);
+	}
+
 	if ($attach != "" && !$mail->AddAttachment($attach_link, $attach))
 	{
 		$mss = MAILAN_58."<br />$attach_link";  // problem with attachment.
 		$ns->tablerender("Error", $mss);
-		require_once(e_ADMIN."footer.php");
+//		require_once(e_ADMIN."footer.php");
 		exit;
 	}
 
@@ -202,7 +203,8 @@ if($_POST['cancel_emails']){
 
 	stopwatch();
 
-    while($row = $sql-> db_Fetch()){
+    while($row = $sql-> db_Fetch())
+	{
 
 
 // ---------------------- Mailing Part. -------------------------------------->
@@ -230,6 +232,7 @@ if($_POST['cancel_emails']){
 		}
 
 		$mail->ClearAddresses();
+   		$mail->ClearCustomHeaders();
 
 
 // --------- End of the mailing. --------------------------------------------->

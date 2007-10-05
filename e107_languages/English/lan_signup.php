@@ -4,19 +4,19 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/lan_signup.php,v $
-|     $Revision: 1.25 $
-|     $Date: 2006/12/30 22:39:35 $
+|     $Revision: 1.28 $
+|     $Date: 2007/06/28 19:38:15 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 define("PAGE_NAME", "Register");
 define("LAN_7", "Display Name: ");
 define("LAN_8", "the name that will be displayed on site");
-define("LAN_9", "Login Name: ");
+define("LAN_9", "Username: ");
 define("LAN_10", "the name that you use to login");
 define("LAN_17", "Password: ");
 define("LAN_103", "That username cannot be accepted as valid, please choose a different user name");
-define("LAN_104", "That login name already exists in the database, please choose a different login name");
+define("LAN_104", "That username already exists in the database, please choose a different username");
 define("LAN_105", "The two passwords do not match");
 define("LAN_106", "That doesn't appear to be a valid email address");
 define("LAN_107", "Thank you! You are now a registered member of");
@@ -87,7 +87,7 @@ define("LAN_SIGNUP_34", "Please note: Any image uploaded to this server that is 
 define("LAN_SIGNUP_35", "Click here to register using an XUP file");
 define("LAN_SIGNUP_36", "An error has occurred creating your user information, please contact the site admin");
 
-define("LAN_LOGINNAME", "Login Name");
+define("LAN_LOGINNAME", "Username");
 define("LAN_PASSWORD", "Password");
 define("LAN_USERNAME", "Display Name");
 define("LAN_EMAIL_01", "Dear");
@@ -116,7 +116,8 @@ define("LAN_SIGNUP_53", "field failed validation test");
 define("LAN_SIGNUP_54", "Click here to fill in your details to register");
 define("LAN_SIGNUP_55", "That display name is too long. Please choose another");
 define("LAN_SIGNUP_56", "That display name is too short. Please choose another");
-
+define("LAN_SIGNUP_57", "That login name is too long. Please choose another");
+define("LAN_SIGNUP_58", "Signup Preview");
 
 
 ?>

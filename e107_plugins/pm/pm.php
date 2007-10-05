@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/pm/pm.php,v $
-|     $Revision: 1.22 $
-|     $Date: 2006/12/30 12:41:34 $
+|     $Revision: 1.26 $
+|     $Date: 2007/09/22 17:41:29 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -27,8 +27,11 @@ include_once(is_readable($lan_file) ? $lan_file : e_PLUGIN."pm/languages/English
 define("ATTACHMENT_ICON", "<img src='".e_PLUGIN."pm/images/attach.png' alt='' />");
 
 $qs = explode(".", e_QUERY);
-$action = $qs[0];
-if($action == "") { $action = 'inbox'; }
+$action = varset($qs[0],'inbox');
+if (!$action) $action = 'inbox';
+
+$pm_proc_id = intval(varset($qs[1],0));
+
 $pm_prefs = $sysprefs->getArray("pm_prefs");
 
 if(!isset($pm_prefs['pm_class']) || !check_class($pm_prefs['pm_class']))
@@ -85,7 +88,7 @@ if("del" == $action || isset($_POST['pm_delete_selected']))
 	}
 	if('del' == $action)
 	{
-		$message = $pm->del(intval($qs[1]));
+		$message = $pm->del($pm_proc_id);
 	}
 	if($qs[2] != "")
 	{
@@ -102,24 +105,25 @@ if("del" == $action || isset($_POST['pm_delete_selected']))
 			$action = "outbox";
 		}
 	}
+	$pm_proc_id = 0;
 	unset($qs);
 }
 
 if('block' == $action)
 {
-	$message = $pm->block_add(intval($qs[1]));
+	$message = $pm->block_add($pm_proc_id);
 	$action = 'inbox';
 }
 
 if('unblock' == $action)
 {
-	$message = $pm->block_del(intval($qs[1]));
+	$message = $pm->block_del($pm_proc_id);
 	$action = 'inbox';
 }
 
 if("get" == $action)
 {
-	$pm->send_file(intval($qs[1]), intval($qs[2]));
+	$pm->send_file($pm_proc_id, intval($qs[2]));
 	exit;
 }
 
@@ -138,12 +142,12 @@ if($message != "")
 
 if("send" == $action)
 {
-	$ns->tablerender(LAN_PM, show_send(intval($qs[1])));
+	$ns->tablerender(LAN_PM, show_send($pm_proc_id));
 }
 
 if("reply" == $action)
 {
-	$pmid = intval($qs[1]);
+	$pmid = $pm_proc_id;
 	if($pm_info = $pm->pm_get($pmid))
 	{
 		if($pm_info['pm_to'] != USERID)
@@ -163,17 +167,17 @@ if("reply" == $action)
 
 if("inbox" == $action)
 {
-	$ns->tablerender(LAN_PM." - ".LAN_PM_25, show_inbox(intval($qs[1])), "PM");
+	$ns->tablerender(LAN_PM." - ".LAN_PM_25, show_inbox($pm_proc_id), "PM");
 }
 
 if("outbox" == $action)
 {
-	$ns->tablerender(LAN_PM." - ".LAN_PM_26, show_outbox(intval($qs[1])), "PM");
+	$ns->tablerender(LAN_PM." - ".LAN_PM_26, show_outbox($pm_proc_id), "PM");
 }
 
 if("show" == $action)
 {
-	show_pm(intval($qs[1]));
+	show_pm($pm_proc_id);
 }
 
 require_once(FOOTERF);
@@ -181,7 +185,7 @@ exit;
 
 function show_send($to_uid)
 {
-	global $tp, $pm_info;
+	global $tp, $pm_info, $pm_prefs;
 	$pm_outbox = pm_getInfo('outbox');
 	if($to_uid)
 	{
@@ -279,19 +283,20 @@ function show_pm($pmid)
 		exit;
 	}
 	if($pm_info['pm_read'] == 0 && $pm_info['pm_to'] == USERID)
-	{
+	{	// Inbox
 		$now = time();
 		$pm_info['pm_read'] = $now;
 		$pm->pm_mark_read($pmid, $pm_info);
 	}
 	$txt .= $tp->parseTemplate($PM_SHOW, true, $pm_shortcodes);
 	$ns -> tablerender(LAN_PM, $txt);
-	if($pm_info['pm_from'] == USERID) {
-		$ns->tablerender(LAN_PM." - ".LAN_PM_26, show_outbox(intval($qs[1])), "PM");
+	if($pm_info['pm_from'] == USERID) 
+	{	// Show Outbox
+		$ns->tablerender(LAN_PM." - ".LAN_PM_26, show_outbox($pm_proc_id), "PM");
 	} 
 	else
-	{
-		$ns->tablerender(LAN_PM." - ".LAN_PM_25, show_inbox(intval($qs[1])), "PM");
+	{	// Show Inbox
+		$ns->tablerender(LAN_PM." - ".LAN_PM_25, show_inbox($pm_proc_id), "PM");
 	}
 }
 

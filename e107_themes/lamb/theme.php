@@ -37,7 +37,7 @@ define("THEME_DISCLAIMER", "<br /><i>".LAN_THEME_1."</i>");
 $layout = "_default";
 
 $HEADER = "<div id='header'>
-<img src='".THEME."images/logo.png' style='width: 168px; height: 80px; display: block' alt='' />
+<img src='".THEME_ABS."images/logo.png' style='width: 168px; height: 80px; display: block' alt='' />
 </div>
 <div id='banner'>
 {BANNER}
@@ -71,7 +71,7 @@ $FOOTER = "
 <div id='footer'>
 <div class='columnwrap'>
 <div style='text-align: center;' class='smalltext'>
-{SITEDISCLAIMER}<br />{THEMEDISCLAIMER}
+{SITEDISCLAIMER}<br />{THEME_DISCLAIMER}
 <br />
 <img src='".e_IMAGE_ABS."generic/php-small-trans-light.gif' alt='' /> <img src='".e_IMAGE_ABS."button.png' alt='' /> 
 <img src='".e_IMAGE_ABS."generic/poweredbymysql-88.png' alt=''  /> &nbsp;&nbsp;&nbsp;&nbsp;
@@ -99,7 +99,7 @@ $NEWSSTYLE = "
 on
 {NEWSDATE}
 <br />
-<img src='".e_IMAGE."admin_images/userclass_16.png' alt='' style='vertical-align: middle;' />
+<img src='".e_IMAGE_ABS."admin_images/userclass_16.png' alt='' style='vertical-align: middle;' />
 {NEWSCOMMENTS}{TRACKBACK}
 </div>
 <br />";

@@ -12,8 +12,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/bbcode_handler.php,v $
-|     $Revision: 1.52 $
-|     $Date: 2007/02/16 22:44:25 $
+|     $Revision: 1.57 $
+|     $Date: 2007/07/31 20:10:55 $ 
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -62,7 +62,9 @@ class e_bbcode
 
 
 
-  function parseBBCodes($value, $p_ID, $force_lower = 'default')
+// If $bb_strip is TRUE, all bbcodes are stripped. If FALSE, none are stripped.
+// If a comma separated (lower case) list is passed, only the listed codes are stripped (and the rest are processed)
+  function parseBBCodes($value, $p_ID, $force_lower = 'default', $bb_strip = FALSE)
   {
 	global $postID;
 	$postID = $p_ID;
@@ -73,6 +75,20 @@ class e_bbcode
   $unmatch_stack = array();				// Stack for unmatched bbcodes
   $result = '';							// Accumulates fully processed text
   $stacktext = '';						// Accumulates text which might be subject to one or more bbcodes
+  $nopro = FALSE;						// Blocks processing within [code]...[/code] tags
+
+  $strip_array = array();
+  if (!is_bool($bb_strip))
+  {
+    $strip_array = explode(',',$bb_strip);
+  }
+  $pattern = '#^\[(/?)([A-Za-z_]+)(\d*)([=:]?)(.*?)]$#i';	// Pattern to split up bbcodes
+		// $matches[0] - same as the input text
+		// $matches[1] - '/' for a closing tag. Otherwise empty string
+		// $matches[2] - the bbcode word
+		// $matches[3] - any digits immediately following the bbcode word
+		// $matches[4] - '=' or ':' according to the separator used
+		// $matches[5] - any parameter
 
   $content = preg_split('#(\[(?:\w|/\w).*?\])#mis', $value, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE );
   
@@ -84,19 +100,20 @@ class e_bbcode
 	  $oddtext = '';
       if ($cont[0] == '[')
 	  {  // We've got a bbcode - split it up and process it
-		$pattern = '#^\[(/?)([A-Za-z]+)(\d*)([=:]?)(.*?)]$#i';
-		// $matches[0] - same as the input text
-		// $matches[1] - '/' for a closing tag. Otherwise empty string
-		// $matches[2] - the bbcode word
-		// $matches[3] - any digits immediately following the bbcode word
-		// $matches[4] - '=' or ':' according to the separator used
-		// $matches[5] - any parameter
 		$match_count = preg_match($pattern,$cont,$matches);
-	    $bbparam = $matches[5];
-        $bbword = $matches[2];
-	    if (($bbword) && ($bbword == trim($bbword)))
+	    $bbparam = (isset($matches[5])) ? $matches[5] : '';
+        $bbword = (isset($matches[2])) ? $matches[2] : '';
+		if ($force_lower) $bbword = strtolower($bbword);
+		if ($nopro && ($bbword == 'code') && ($matches[1] == '/')) $nopro = FALSE;		// End of code block
+	    if (($bbword) && ($bbword == trim($bbword)) && !$nopro)
 	    {  // Got a code to process here
-		  if ($force_lower) $bbword = strtolower($bbword);
+		  if (($bb_strip === TRUE) || in_array($bbword,$strip_array))
+		  {
+		    $is_proc = TRUE;		// Just discard this bbcode
+		  }
+		  else
+		  {
+		  
 		  if ($matches[1] == '/')
 		  {  // Closing code to process
 		    $found = FALSE;
@@ -158,7 +175,10 @@ class e_bbcode
 		     // If its a single code, we can process it now. Otherwise just stack the value
 		    if (array_key_exists('_'.$bbword,$this->bbLocation))
 		    {  // Single code to process
-	          $stacktext .= $this->proc_bbcode('_'.$bbword);
+			  if (count($code_stack) == 0)
+	            $result .= $this->proc_bbcode('_'.$bbword,$bbparam);
+			  else
+	            $stacktext .= $this->proc_bbcode('_'.$bbword,$bbparam);
 			  $is_proc = TRUE;
 		    }
 		    elseif (array_key_exists($bbword,$this->bbLocation))
@@ -169,9 +189,12 @@ class e_bbcode
 			    $stacktext = '';
 			  }
 	          array_unshift($code_stack,array('type' => 'bbcode','code' => $bbword, 'numbers'=> $matches[3], 'param'=>$bbparam));
+			  if ($bbword == 'code') $nopro = TRUE;
 	          $is_proc = TRUE;
 		    }
 	      }
+		  
+		  }
 	    }
 		// Next lines could be deleted - but gives better rejection of 'stray' opening brackets
 		if ((!$is_proc) && (($temp = strrpos($cont,"[")) !== 0)) 

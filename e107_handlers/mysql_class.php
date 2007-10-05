@@ -12,9 +12,10 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/mysql_class.php,v $
-|     $Revision: 1.65 $
-|     $Date: 2007/02/07 21:24:58 $
+|     $Revision: 1.81 $
+|     $Date: 2007/08/08 21:01:38 $
 |     $Author: e107steved $
+|
 +----------------------------------------------------------------------------+
 */
 
@@ -23,11 +24,13 @@ if (!defined('e107_INIT')) { exit; }
 $db_time = 0.0;				// Global total time spent in all db object queries
 $db_mySQLQueryCount = 0;	// Global total number of db object queries (all db's)
 
+$db_ConnectionID = NULL;
+
 /**
 * MySQL Abstraction class
 *
 * @package e107
-* @version $Revision: 1.65 $
+* @version $Revision: 1.81 $
 * @author $Author: e107steved $
 */
 class db {
@@ -81,8 +84,9 @@ class db {
 	*
 	* @access public
 	*/
-	function db_Connect($mySQLserver, $mySQLuser, $mySQLpassword, $mySQLdefaultdb) {
-		global $eTraffic;
+	function db_Connect($mySQLserver, $mySQLuser, $mySQLpassword, $mySQLdefaultdb) 
+	{
+		global $eTraffic, $db_ConnectionID;
 		$eTraffic->BumpWho('db Connect', 1);
 
 		$this->mySQLserver = $mySQLserver;
@@ -96,7 +100,7 @@ class db {
 			if (!$this->mySQLaccess = @mysql_pconnect($this->mySQLserver, $this->mySQLuser, $this->mySQLpassword)) {
 				return 'e1';
 			} else {
-				if (!@mysql_select_db($this->mySQLdefaultdb)) {
+				if (!@mysql_select_db($this->mySQLdefaultdb,$this->mySQLaccess)) {
 					return 'e2';
 				} else {
 					$this->dbError('dbConnect/SelectDB');
@@ -106,14 +110,16 @@ class db {
 			if (!$this->mySQLaccess = @mysql_connect($this->mySQLserver, $this->mySQLuser, $this->mySQLpassword)) {
 				return 'e1';
 			} else {
-				if (!@mysql_select_db($this->mySQLdefaultdb)) {
+				if (!@mysql_select_db($this->mySQLdefaultdb,$this->mySQLaccess)) {
 					return 'e2';
 				} else {
 					$this->dbError('dbConnect/SelectDB');
 				}
 			}
 		}
+	  if ($db_ConnectionID == NULL) $db_ConnectionID = $this->mySQLaccess;		// Save the connection resource
 	}
+
 
 	/**
 	* @return void
@@ -157,6 +163,7 @@ class db {
 	* @param unknown $rli
 	* @desc Enter description here...
 	* @access private
+	* This is the 'core' routine which handles much of the interface between other functions and the DB
 	*/
 	function db_Query($query, $rli = NULL, $qry_from = '', $debug = FALSE, $log_type = '', $log_remark = '') {
 		global $db_time,$db_mySQLQueryCount,$queryinfo, $eTraffic;
@@ -173,8 +180,14 @@ class db {
 			$this->db_Write_log($log_type, $log_remark, $query);
 		}
 
+		if(!$this->mySQLaccess)
+		{
+			global $db_ConnectionID;
+        	$this->mySQLaccess = $db_ConnectionID;
+		}
+
 		$b = microtime();
-		$sQryRes = is_null($rli) ? @mysql_query($query) : @mysql_query($query, $rli);
+		$sQryRes = is_null($rli) ? @mysql_query($query,$this->mySQLaccess) : @mysql_query($query, $rli);
 		$e = microtime();
 
 		$eTraffic->Bump('db_Query', $b, $e);
@@ -280,9 +293,16 @@ class db {
 			$query = 'INSERT INTO '.MPREFIX."{$table} VALUES ({$arg})";
 		}
 
+		if(!$this->mySQLaccess)
+		{
+			global $db_ConnectionID;
+        	$this->mySQLaccess = $db_ConnectionID;
+		}
+
+
 		if ($result = $this->mySQLresult = $this->db_Query($query, NULL, 'db_Insert', $debug, $log_type, $log_remark )) {
-			$tmp = mysql_insert_id();
-			return $tmp;
+			$tmp = mysql_insert_id($this->mySQLaccess);
+			return ($tmp) ? $tmp : TRUE; // return true even if table doesn't have auto-increment.
 		} else {
 			$this->dbError("db_Insert ($query)");
 			return FALSE;
@@ -310,8 +330,15 @@ class db {
 	function db_Update($table, $arg, $debug = FALSE, $log_type = '', $log_remark = '') {
 		$table = $this->db_IsLang($table);
 		$this->mySQLcurTable = $table;
+
+		if(!$this->mySQLaccess)
+		{
+			global $db_ConnectionID;
+        	$this->mySQLaccess = $db_ConnectionID;
+		}
+
 		if ($result = $this->mySQLresult = $this->db_Query('UPDATE '.MPREFIX.$table.' SET '.$arg, NULL, 'db_Update', $debug, $log_type, $log_remark)) {
-			$result = mysql_affected_rows();
+			$result = mysql_affected_rows($this->mySQLaccess);
 			if ($result == -1) return FALSE;	// Error return from mysql_affected_rows
 			return $result;
 		} else {
@@ -332,10 +359,10 @@ class db {
 	*
 	* @access public
 	*/
-	function db_Fetch() {
+	function db_Fetch($type = MYSQL_BOTH) {
 		global $eTraffic;
 		$b = microtime();
-		$row = @mysql_fetch_array($this->mySQLresult);
+		$row = @mysql_fetch_array($this->mySQLresult,$type);
 		$eTraffic->Bump('db_Fetch', $b);
 		if ($row) {
 			$this->dbError('db_Fetch');
@@ -397,8 +424,13 @@ class db {
 	*/
 	function db_Close() {
 		global $eTraffic;
+		if(!$this->mySQLaccess)
+		{
+			global $db_ConnectionID;
+        	$this->mySQLaccess = $db_ConnectionID;
+		}
 		$eTraffic->BumpWho('db Close', 1);
-		mysql_close();
+		mysql_close($this->mySQLaccess);
 		$this->dbError('dbClose');
 	}
 
@@ -416,6 +448,14 @@ class db {
 	function db_Delete($table, $arg = '', $debug = FALSE, $log_type = '', $log_remark = '') {
 		$table = $this->db_IsLang($table);
 		$this->mySQLcurTable = $table;
+
+		if(!$this->mySQLaccess)
+		{
+			global $db_ConnectionID;
+        	$this->mySQLaccess = $db_ConnectionID;
+		}
+
+
 		if (!$arg) {
 			if ($result = $this->mySQLresult = $this->db_Query('DELETE FROM '.MPREFIX.$table, NULL, 'db_Delete', $debug, $log_type, $log_remark)) {
 				return $result;
@@ -425,7 +465,7 @@ class db {
 			}
 		} else {
 			if ($result = $this->mySQLresult = $this->db_Query('DELETE FROM '.MPREFIX.$table.' WHERE '.$arg, NULL, 'db_Delete', $debug, $log_type, $log_remark)) {
-				$tmp = mysql_affected_rows();
+				$tmp = mysql_affected_rows($this->mySQLaccess);
 				return $tmp;
 			} else {
 				$this->dbError('db_Delete ('.$arg.')');
@@ -441,8 +481,8 @@ class db {
 	*/
 	function db_Rows() {
 		$rows = $this->mySQLrows = @mysql_num_rows($this->mySQLresult);
-		return $rows;
 		$this->dbError('db_Rows');
+		return $rows;
 	}
 
 	/**
@@ -477,35 +517,53 @@ class db {
 	* @desc Enter description here...
 	* @access private
 	*/
-	function db_Select_gen($query, $debug = FALSE, $log_type = '', $log_remark = '') {
-
+	function db_Select_gen($query, $debug = FALSE, $log_type = '', $log_remark = '')
+	{
 		/*
 		changes by jalist 19/01/05:
 		added string replace on table prefix to tidy up long database queries
 		usage: instead of sending "SELECT * FROM ".MPREFIX."table", do "SELECT * FROM #table"
+		Returns result compatible with mysql_query - may be TRUE for some results, resource ID for others
 		*/
 
 		$this->tabset = FALSE;
-		if(strpos($query,'#') !== FALSE) {
-			$query = preg_replace_callback("/\s#([\w]*?)\W/", array($this, 'ml_check'), $query);
+		if(strpos($query,'`#') !== FALSE)
+		{
+			$query = preg_replace_callback("/\s`#([\w]*?)`\W/", array($this, 'ml_check'), $query);
 		}
-		if ($this->mySQLresult = $this->db_Query($query, NULL, 'db_Select_gen', $debug, $log_type, $log_remark)) {
-			$this->dbError('db_Select_gen');
-			return $this->db_Rows();
-		} else {
-			$this->dbError('dbQuery ('.$query.')');
-			return FALSE;
+		elseif(strpos($query,'#') !== FALSE)
+	  {
+			$query = preg_replace_callback("/\s#([\w]*?)\W/", array($this, 'ml_check'), $query);
+	  }
+
+		if (($this->mySQLresult = $this->db_Query($query, NULL, 'db_Select_gen', $debug, $log_type, $log_remark)) === TRUE)
+		{	// Successful query which doesn't return a row count
+		  $this->dbError('db_Select_gen');
+		  return TRUE;
+		}
+		elseif ($this->mySQLresult === FALSE)
+		{	// Failed query
+		  $this->dbError('dbQuery ('.$query.')');
+		  return FALSE;
+		}
+		else
+		{	// Successful query which does return a row count - get the count and return it
+		  $this->dbError('db_Select_gen');
+		  return $this->db_Rows();
 		}
 	}
 
-	function ml_check($matches) {
+	function ml_check($matches)
+	{
 		$table = $this->db_IsLang($matches[1]);
-		if($this->tabset == false) {
+		if($this->tabset == false)
+		{
 			$this->mySQLcurTable = $table;
 			$this->tabset = true;
 		}
-		return " ".MPREFIX.$table.substr($matches[0],-1);
+		return ' `'.MPREFIX.$table.'`'.substr($matches[0],-1);
 	}
+
 
 	/**
 	* @return unknown
@@ -550,8 +608,14 @@ class db {
 		  	return $table;
 		}
 
+		if(!$this->mySQLaccess)
+		{
+			global $db_ConnectionID;
+        	$this->mySQLaccess = $db_ConnectionID;
+		}
+
 		if (!$mySQLtablelist) {
-			$tablist = mysql_list_tables($this->mySQLdefaultdb);
+			$tablist = mysql_list_tables($this->mySQLdefaultdb,$this->mySQLaccess);
 			while (list($temp) = mysql_fetch_array($tablist)) {
 				$mySQLtablelist[] = $temp;
 			}
@@ -683,7 +747,13 @@ class db {
         $convert = array("PRIMARY"=>"PRI","INDEX"=>"MUL","UNIQUE"=>"UNI");
         $key = ($convert[$key]) ? $convert[$key] : "OFF";
 
-        $result = mysql_query("SHOW COLUMNS FROM ".MPREFIX.$table);
+		if(!$this->mySQLaccess)
+		{
+			global $db_ConnectionID;
+        	$this->mySQLaccess = $db_ConnectionID;
+		}
+
+        $result = mysql_query("SHOW COLUMNS FROM ".MPREFIX.$table,$this->mySQLaccess);
         if (mysql_num_rows($result) > 0) {
             $c=0;
    			while ($row = mysql_fetch_assoc($result)) {
@@ -696,7 +766,7 @@ class db {
 				}
                 else
 				{
-					if(($key == "") && ($fieldid == $row['Field']))
+					if(($key == "OFF") && ($fieldid == $row['Field']))
 					{
                     	return TRUE;  // key not in use, but field matches.
 					}
@@ -720,11 +790,20 @@ class db {
 	 * @param string $data
 	 * @return string
 	 */
-	function escape($data, $strip = true) {
-		if ($strip) {
+	function escape($data, $strip = true)
+	{
+		if ($strip)
+		{
 			$data = strip_if_magic($data);
 		}
-		return mysql_real_escape_string($data);
+
+		if(!$this->mySQLaccess)
+		{
+			global $db_ConnectionID;
+        	$this->mySQLaccess = $db_ConnectionID;
+		}
+
+		return mysql_real_escape_string($data,$this->mySQLaccess);
 	}
 }
 

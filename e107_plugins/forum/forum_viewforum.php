@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/forum/forum_viewforum.php,v $
-|     $Revision: 1.62 $
-|     $Date: 2006/12/24 13:44:26 $
-|     $Author: mrpete $
+|     $Revision: 1.66 $
+|     $Date: 2007/09/26 19:35:53 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -120,7 +120,7 @@ if ($pages)
 	if(strpos($FORUM_VIEW_START, 'THREADPAGES') !== FALSE || strpos($FORUM_VIEW_END, 'THREADPAGES') !== FALSE)
 	{
 		$parms = "{$topics},{$view},{$thread_from},".e_SELF.'?'.$forum_id.'.[FROM],off';
-		$THREADPAGES = LAN_316." ".$tp->parseTemplate("{NEXTPREV={$parms}}");
+		$THREADPAGES = $tp->parseTemplate("{NEXTPREV={$parms}}");
 	}
 }
 
@@ -299,7 +299,7 @@ require_once(FOOTERF);
 
 function parse_thread($thread_info)
 {
-	global $forum, $tp, $FORUM_VIEW_FORUM, $gen, $pref, $forum_id, $menu_pref;
+	global $forum, $tp, $FORUM_VIEW_FORUM, $FORUM_VIEW_FORUM_STICKY, $FORUM_VIEW_FORUM_ANNOUNCE, $gen, $pref, $forum_id, $menu_pref;
 	$text = "";
 	$VIEWS = $thread_info['thread_views'];
 	$REPLIES = $thread_info['thread_total_replies'];
@@ -326,11 +326,6 @@ function parse_thread($thread_info)
 		}
 		$LASTPOST .= "<br />".$lastpost_datestamp;
 	}
-	else
-	{
-		$REPLIES = LAN_317;
-		$LASTPOST = " - ";
-	}
 
 	$newflag = FALSE;
 	if (USER)
@@ -343,8 +338,9 @@ function parse_thread($thread_info)
 
 	$THREADDATE = $gen->convert_date($thread_info['thread_datestamp'], 'forum');
 	$ICON = ($newflag ? IMAGE_new : IMAGE_nonew);
-	if ($REPLIES >= $pref['forum_popular'] && $REPLIES != "None") {
-		$ICON = ($newflag ? IMAGE_new_popular : IMAGE_nonew_popular);
+	if ($REPLIES >= $pref['forum_popular']) 
+	{
+	  $ICON = ($newflag ? IMAGE_new_popular : IMAGE_nonew_popular);
 	}
 
 	$THREADTYPE = '';
@@ -462,6 +458,12 @@ function parse_thread($thread_info)
 		return(preg_replace("/\{(.*?)\}/e", '$\1', $FORUM_VIEW_FORUM_ANNOUNCE));
 	}
 
+	if (!$REPLIES)
+	{
+		$REPLIES = LAN_317;		// 'None' 
+		$LASTPOST = " - ";
+	}
+
 	return(preg_replace("/\{(.*?)\}/e", '$\1', $FORUM_VIEW_FORUM));
 }
 
@@ -486,10 +488,10 @@ function parse_sub($subInfo)
 		$tmp = explode(".", $subInfo['forum_lastpost_info']);
 		$lp_thread = "<a href='".e_PLUGIN."forum/forum_viewtopic.php?{$tmp[1]}.last'>".IMAGE_post2."</a>";
 		$lp_date = $gen->convert_date($tmp[0], 'forum');
-		$tmp = explode(".", $subInfo['forum_lastpost_user']);
+		$tmp = explode(".", $subInfo['forum_lastpost_user'],2);
 		if($subInfo['user_name'])
 		{
-			$lp_name = "<a href='".e_BASE."user.php?{$tmp[0]}'>{$subInfo['user_name']}</a>";
+			$lp_name = "<a href='".e_BASE."user.php?id.{$tmp[0]}'>{$subInfo['user_name']}</a>";
 		}
 		else
 		{

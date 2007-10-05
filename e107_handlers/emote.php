@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/emote.php,v $
-|     $Revision: 1.16 $
-|     $Date: 2006/12/19 20:25:23 $
+|     $Revision: 1.18 $
+|     $Date: 2007/05/24 21:07:15 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -28,11 +28,12 @@ function r_emote()
 		$tp->e_emote = new e_emoteFilter;
 	}
 	
-	foreach($tp->e_emote->emotes as $key => $value)
+	$str = '';
+	foreach($tp->e_emote->emotes as $key => $value)		// filename => text code
 	{
-		$key = str_replace("!", "_", $key);
-		$key = preg_replace("#_(\w{3})$#", ".\\1", $key);
-		$key = e_IMAGE."emotes/" . $pref['emotepack'] . "/" .$key;
+		$key = str_replace("!", ".", $key);					// Usually '.' was replaced by '!' when saving
+		$key = preg_replace("#_(\w{3})$#", ".\\1", $key);	// '_' followed by exactly 3 chars is file extension
+		$key = e_IMAGE."emotes/" . $pref['emotepack'] . "/" .$key;		// Add in the file path
 
 		$value2 = substr($value, 0, strpos($value, " "));
 		$value = ($value2 ? $value2 : $value);

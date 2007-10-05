@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/forum/forum_post.php,v $
-|     $Revision: 1.75 $
-|     $Date: 2007/02/17 16:58:54 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.82 $
+|     $Date: 2007/08/14 19:31:12 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -44,7 +44,14 @@ if ($action == 'rp')
 {
 	// reply to thread
 	$thread_info = $forum->thread_get($id, 'last', 11);
-	$forum_info = $forum->forum_get($thread_info['head']['thread_forum_id']);
+	if (!is_array($thread_info) || !count($thread_info))
+	{
+	  $forum_info = FALSE;		// Someone fed us a dud forum id - should exist if replying
+	}
+	else
+	{
+	  $forum_info = $forum->forum_get($thread_info['head']['thread_forum_id']);
+	}
 }
 elseif ($action == 'nt')
 {
@@ -61,7 +68,7 @@ elseif ($action == 'quote' || $action == 'edit')
 	}
 }
 
-if (!check_class($forum_info['forum_postclass']) || !check_class($forum_info['parent_postclass'])) {
+if (($forum_info === FALSE) || !check_class($forum_info['forum_postclass']) || !check_class($forum_info['parent_postclass'])) {
 	require_once(HEADERF);
 	$ns->tablerender(LAN_20, "<div style='text-align:center'>".LAN_399."</div>");
 	require_once(FOOTERF);
@@ -334,10 +341,7 @@ if (isset($_POST['update_thread']))
 		$newvals['thread_edit_datestamp'] = time();
 		$newvals['thread_thread'] = $_POST['post'];
 		$newvals['thread_name'] = $_POST['subject'];
-		if(isset($_POST['email_notify']))
-		{
-			$newvals['thread_active'] = '99';
-		}
+		$newvals['thread_active'] = (isset($_POST['email_notify'])) ? '99' : '1';	// Always set in case it's changed
 		if (isset($_POST['threadtype']) && MODERATOR)
 		{
 			$newvals['thread_s'] = $_POST['threadtype'];
@@ -443,20 +447,26 @@ if (!$FORUMPOST)
 }
 /* check post access (bugtracker #1424) */
 
-if($action == "rp" && !$sql -> db_Select("forum_t", "*", "thread_id='$id'"))
+if($action == "rp" && !$sql -> db_Select("forum_t", "*", "thread_id='{$id}'"))
 {
 	$ns -> tablerender(LAN_20, "<div style='text-align:center'>".LAN_399."</div>");
 	 require_once(FOOTERF);
 	exit;
 }
-else if($action == "nt" && !$sact && !$sql -> db_Select("forum", "*", "forum_id='$id'"))
+elseif($action == "nt")
 {
-	 $ns -> tablerender(LAN_20, "<div style='text-align:center'>".LAN_399."</div>");
-	 require_once(FOOTERF);
+  if (!$sact && !$sql -> db_Select("forum", "*", "forum_id='{$id}'"))
+  {
+	$ns -> tablerender(LAN_20, "<div style='text-align:center'>".LAN_399."</div>");
+	require_once(FOOTERF);
 	exit;
+  }
 }
 else
 {
+  // DB access should pass - after all, the thread should exist
+	$sql->db_Select_gen("SELECT t.*, p.forum_postclass FROM #forum_t AS t 
+	LEFT JOIN #forum AS p ON t.thread_forum_id=p.forum_id WHERE thread_id='{$id}'");
 	$fpr = $sql -> db_Fetch();
 	if(!check_class($fpr['forum_postclass']))
 	{
@@ -582,13 +592,15 @@ function process_upload()
 		$tid = 0;
 	}
 
-	if (isset($_FILES['file_userfile']['error']) && $_FILES['file_userfile']['error'] != 4)
+	if (isset($_FILES['file_userfile']['error']))
 	{
 		require_once(e_HANDLER."upload_handler.php");
 		if ($uploaded = file_upload('/'.e_FILE."public/", "attachment", "FT{$tid}_"))
 		{
 			foreach($uploaded as $upload)
 			{
+			  if ($upload['error'] == 0)
+			  {
 				if(strstr($upload['type'], "image"))
 				{
 					if(isset($pref['forum_maxwidth']) && $pref['forum_maxwidth'] > 0)
@@ -632,9 +644,13 @@ function process_upload()
 				{
 					//upload was not an image, link to file
 					//echo "<pre>"; print_r($upload); echo "</pre>";
-					$_POST['post'] .= "[br][file=".e_FILE."public/".$upload['name']."]".$upload['name']."[/file]";
+					$_POST['post'] .= "[br][file=".e_FILE."public/".$upload['name']."]".(isset($upload['rawname']) ? $upload['rawname'] : $upload['name'])."[/file]";
 				}
-
+			  }
+			  else
+			  {  // Error in uploaded file
+			    echo "Error in uploaded file: ".(isset($upload['rawname']) ? $upload['rawname'] : $upload['name'])."<br />";
+			  }
 			}
 		}
 	}

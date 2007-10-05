@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/poll/poll_class.php,v $
-|     $Revision: 1.49 $
-|     $Date: 2007/01/07 15:24:49 $
+|     $Revision: 1.54 $
+|     $Date: 2007/08/12 19:53:06 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -67,7 +67,7 @@ class poll
 
 		if(POLLACTION == "edit")
 		{
-			$sql -> db_Update("polls", "poll_title='$poll_title', poll_options='$poll_options', poll_type=$mode, poll_comment='".$tp -> toDB($poll_comment)."', poll_allow_multiple=".intval($multipleChoice).", poll_result_type=".intval($showResults).", poll_vote_userclass=".intval($pollUserclass).", poll_storage_method=".intval($storageMethod)." WHERE poll_id=".intval(POLLID));
+			$sql -> db_Update("polls", "poll_title='$poll_title', poll_options='$poll_options', poll_comment='".$tp -> toDB($poll_comment)."', poll_allow_multiple=".intval($multipleChoice).", poll_result_type=".intval($showResults).", poll_vote_userclass=".intval($pollUserclass).", poll_storage_method=".intval($storageMethod)." WHERE poll_id=".intval(POLLID));
 
 			/* update poll results - bugtracker #1124 .... */
 			$sql -> db_Select("polls", "poll_votes", "poll_id='".intval(POLLID)."' ");
@@ -240,9 +240,9 @@ class poll
 			$POLLMODE = $this->pollmode;
 		}
 
-		$barl = (file_exists(THEME."images/barl.png") ? THEME."images/barl.png" : e_PLUGIN."poll/images/barl.png");
-		$barr = (file_exists(THEME."images/barr.png") ? THEME."images/barr.png" : e_PLUGIN."poll/images/barr.png");
-		$bar = (file_exists(THEME."images/bar.png") ? THEME."images/bar.png" : e_PLUGIN."poll/images/bar.png");
+		$barl = (file_exists(THEME."images/barl.png") ? THEME_ABS."images/barl.png" : e_PLUGIN."poll/images/barl.png");
+		$barr = (file_exists(THEME."images/barr.png") ? THEME_ABS."images/barr.png" : e_PLUGIN."poll/images/barr.png");
+		$bar = (file_exists(THEME."images/bar.png") ? THEME_ABS."images/bar.png" : e_PLUGIN."poll/images/bar.png");
 
 		if($type == "preview")
 		{
@@ -286,9 +286,17 @@ class poll
 
 		if(count($voteArray))
 		{
-			foreach($voteArray as $votes){
-				$percentage[] = round(($votes/$voteTotal) * 100, 2);
+		  foreach($voteArray as $votes)
+		  {
+		    if ($voteTotal > 0)
+			{
+			  $percentage[] = round(($votes/$voteTotal) * 100, 2);
 			}
+			else
+			{
+			  $percentage[] = 0;
+			}
+		  }
 		}
 		/* get template */
 		if (file_exists(THEME."poll_template.php"))
@@ -399,7 +407,7 @@ class poll
 		}
 
 		if(!defined("POLLRENDERED")) define("POLLRENDERED", TRUE);
-		$caption = (file_exists(THEME."images/poll_menu.png") ? "<img src='".THEME."images/poll_menu.png' alt='' /> ".POLLAN_MENU_CAPTION : POLLAN_MENU_CAPTION);
+		$caption = (file_exists(THEME."images/poll_menu.png") ? "<img src='".THEME_ABS."images/poll_menu.png' alt='' /> ".POLLAN_MENU_CAPTION : POLLAN_MENU_CAPTION);
 		if($type == "preview")
 		{
 			$caption = POLLAN_23;
@@ -533,7 +541,7 @@ class poll
 
 		<tr>
 		<td style='width:30%' class='forumheader3'>".POLLAN_15."</td>
-		<td class='forumheader3'>".r_userclass("pollUserclass", $_POST['pollUserclass'], "admin")."</td>
+		<td class='forumheader3'>".r_userclass("pollUserclass", $_POST['pollUserclass'], 'off', "member,admin,classes,matchclass")."</td>
 		</tr>
 
 		<tr>

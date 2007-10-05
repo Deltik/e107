@@ -6,9 +6,9 @@
 |     Released under the terms and conditions of the GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_themes/templates/header_default.php,v $
-|     $Revision: 1.103 $
-|     $Date: 2007/01/18 00:36:16 $
-|     $Author: mrpete $
+|     $Revision: 1.108 $
+|     $Date: 2007/09/27 20:57:51 $
+|     $Author: e107steved $
 +-----------------------------------------------------------------------------------------------+
 */
 
@@ -71,7 +71,11 @@ if (!function_exists("parseheader")) {
 //
 
 // send the charset to the browser - overrides spurious server settings with the lan pack settings.
-header("Content-type: text/html; charset=".CHARSET, true);
+// Would like to set the MIME type appropriately - but it broke other things
+//if (stristr($_SERVER["HTTP_ACCEPT"], "application/xhtml+xml")) 
+//  header("Content-type: application/xhtml+xml; charset=".CHARSET, true);
+//else
+  header("Content-type: text/html; charset=".CHARSET, true);
 
 
 echo (defined("STANDARDS_MODE") ? "" : "<?xml version='1.0' encoding='".CHARSET."' "."?".">\n")."<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n";
@@ -103,12 +107,23 @@ if (isset($theme_js_php) && $theme_js_php) {
 } else {
 	echo "<script type='text/javascript' src='".e_FILE_ABS."e107.js'></script>\n";
 	if (file_exists(THEME.'theme.js')) { echo "<script type='text/javascript' src='".THEME_ABS."theme.js'></script>\n"; }
-	if (filesize(e_FILE.'user.js')) { echo "<script type='text/javascript' src='".e_FILE_ABS."user.js'></script>\n"; }
+	if (is_readable(e_FILE.'user.js') && filesize(e_FILE.'user.js')) { echo "<script type='text/javascript' src='".e_FILE_ABS."user.js'></script>\n"; }
 }
 
 if (isset($eplug_js) && $eplug_js) {
 	echo "\n<!-- eplug_js -->\n";
-	echo "<script type='text/javascript' src='{$eplug_js}'></script>\n";
+	if(is_array($eplug_js))
+	{
+    	foreach($eplug_js as $kjs)
+		{
+        	echo "<script type='text/javascript' src='{$kjs}'></script>\n";
+		}
+	}
+	else
+	{
+		echo "<script type='text/javascript' src='{$eplug_js}'></script>\n";
+	}
+
 }
 
 if((isset($pref['enable_png_image_fix']) && $pref['enable_png_image_fix'] == true) || (isset($sleight) && $sleight == true)) {
@@ -124,7 +139,18 @@ echo "<!-- *CSS* -->\n";
 
 if (isset($eplug_css) && $eplug_css) {
 	echo "\n<!-- eplug_css -->\n";
-	echo "<link rel='stylesheet' href='{$eplug_css}' type='text/css' />\n";
+    if(is_array($eplug_css))
+	{
+    	foreach($eplug_css as $kcss)
+		{
+        	echo "<link rel='stylesheet' href='{$kcss}' type='text/css' />\n";
+		}
+	}
+	else
+	{
+		echo "<link rel='stylesheet' href='{$eplug_css}' type='text/css' />\n";
+	}
+
 }
 
 echo "<!-- Theme css -->\n";
@@ -279,16 +305,16 @@ if (isset($script_text) && $script_text) {
 //
 // I: Calculate JS onload() functions for the BODY tag
 //
+// Fader menu
 global $eMenuActive;
-$fader_onload='';
-if(in_array('fader_menu', $eMenuActive))
-{
-	$fader_onload = 'changecontent(); ';
-}
+if(in_array('fader_menu', $eMenuActive)) $js_body_onload[] = 'changecontent(); ';
 
-$links_onload = 'externalLinks();';
-$theme_onload = (defined('THEME_ONLOAD') ? THEME_ONLOAD : '');
-$body_onload = ($fader_onload != '' || $links_onload != '' || $theme_onload != '' ? " onload='".$fader_onload.$links_onload.$theme_onload."'" : "");
+// External links handling
+$js_body_onload[] = 'externalLinks();';
+
+// Theme JS
+if (defined('THEME_ONLOAD')) $js_body_onload[] = THEME_ONLOAD;
+if (count($js_body_onload)) $body_onload = " onload=\"".implode(" ",$js_body_onload)."\"";
 
 //
 // J: Send end of <head> and start of <body>
@@ -363,9 +389,10 @@ if ($e107_popup != 1) {
 	if (e_PAGE == 'news.php' && isset($NEWSHEADER)) {
 		parseheader($NEWSHEADER);
 	} else {
+		$full_query = e_SELF."?".e_QUERY."!";
 		foreach ($custompage as $key_extract => $cust_extract) {
 			foreach ($cust_extract as $key => $kpage) {
-				if ($kpage && strstr(e_SELF, $kpage) || strstr(e_SELF."?".e_QUERY,$kpage)) {
+				if ($kpage && (strstr(e_SELF, $kpage) || strstr($full_query,$kpage))) {
 					$ph = TRUE;
 					if ($key_extract=='no_array') {
 						$cust_header = $CUSTOMHEADER ? $CUSTOMHEADER : $HEADER;

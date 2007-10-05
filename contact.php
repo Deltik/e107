@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/contact.php,v $
-|     $Revision: 1.9 $
-|     $Date: 2006/11/09 19:57:47 $
+|     $Revision: 1.13 $
+|     $Date: 2007/09/06 07:25:25 $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -37,10 +37,11 @@ if(isset($_POST['send-contactus'])){
 
 	$error = "";
 
-	$sender_name = $tp->toEmail($_POST['author_name'],TRUE);
+	$sender_name = $tp->toEmail($_POST['author_name'],TRUE,"rawtext");
 	$sender = check_email($_POST['email_send']);
-	$subject = $tp->toEmail($_POST['subject'],TRUE);
-	$body = $tp->toEmail($_POST['body'],TRUE);
+	$subject = $tp->toEmail($_POST['subject'],TRUE,"rawtext");
+	$body = $tp->toEmail($_POST['body'],TRUE,"rawtext");
+
 
 // Check Image-Code
     if (isset($_POST['rand_num']) && !$sec_img->verify_code($_POST['rand_num'], $_POST['code_verify']))
@@ -66,6 +67,7 @@ if(isset($_POST['send-contactus'])){
     }
 
 
+
 // Check email address on remote server (if enabled).
 	if ($pref['signup_remote_emailcheck'] && $error == "")
 	{
@@ -88,7 +90,10 @@ if(isset($_POST['send-contactus'])){
     if(!$error)
 	{
 		$body .= "\n\nIP:\t".USERIP."\n";
-		$body .= "User:\t#".USERID." ".USERNAME."\n";
+		if(USERID !== FALSE)
+		{
+			$body .= "User:\t#".USERID." ".USERNAME."\n";
+		}
 
 		if(!$_POST['contact_person'] && isset($pref['sitecontacts'])) // only 1 person, so contact_person not posted.
 		{
@@ -102,12 +107,12 @@ if(isset($_POST['send-contactus'])){
 			}
 			else
 			{
-        		$query = $pref['sitecontacts'] . " IN (user_class) ";
+				$query = "FIND_IN_SET(".$pref['sitecontacts'].",user_class) ";
 			}
 		}
 		else
 		{
-      		$query = "user_id = ".$_POST['contact_person'];
+      		$query = "user_id = ".intval($_POST['contact_person']);
 		}
 
     	if($sql -> db_Select("user", "user_name,user_email",$query." LIMIT 1"))

@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_themes/kubrick/languages/English.php,v $
-|     $Revision: 1.3 $
-|     $Date: 2005/08/29 16:22:56 $
-|     $Author: streaky $
+|     $Revision: 1.4 $
+|     $Date: 2007/03/03 19:59:43 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 

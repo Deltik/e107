@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/mailout.php,v $
-|     $Revision: 1.59 $
-|     $Date: 2006/11/29 22:27:40 $
-|     $Author: e107coders $
+|     $Revision: 1.61 $
+|     $Date: 2007/09/29 17:24:30 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -33,7 +33,7 @@ if (!getperms("W")) {
 include_lan(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_users.php");
 require_once(e_HANDLER."userclass_class.php");
 
-if (isset($_POST['testemail'])) {
+if (isset($_POST['testemail']) && getperms("0")) {
     if(trim($_POST['testaddress']) == ""){
 		$message = MAILAN_19;
 	}else{
@@ -122,18 +122,13 @@ if (isset($_POST['submit'])) {
 	$_POST['mail_id']  = time();
 
 	$sql->db_Select_gen($qry);
-	if (ob_get_level() == 0) {
-		ob_start();
-	}
+
 	while ($row = $sql->db_Fetch()) {
 		$qry = "0,'sendmail', '".$_POST['mail_id']."', '".$row['user_id']."', '', '0', \"".$tp->toDB($_POST['email_subject'])."\" ";
 		if($sql2 -> db_Insert("generic", $qry)){
 			$c++;
 		}
-		ob_flush();
-		flush();
 	}
-	ob_end_flush();
 
 	$debug = (e_MENU == "debug") ? "?[debug]" : "";
 
@@ -246,9 +241,9 @@ if (isset($_POST['submit'])) {
 
 //. Update Preferences.
 
-if (isset($_POST['updateprefs'])) {
+if (isset($_POST['updateprefs']) && getperms("0")) {
 	$pref['mailer'] = $_POST['mailer'];
-	$pref['sendmail'] = $_POST['sendmail'];
+	if (strpos($_POST['sendmail'],'sendmail') !== FALSE) $pref['sendmail'] = $_POST['sendmail'];
 	$pref['smtp_server'] = $tp->toDB($_POST['smtp_server']);
 	$pref['smtp_username'] = $tp->toDB($_POST['smtp_username']);
 	$pref['smtp_password'] = $tp->toDB($_POST['smtp_password']);
@@ -276,7 +271,7 @@ if (isset($message)) {
 
 // ----------------- Actions ----------------------------------------------->
 
-if(e_QUERY == "prefs"){
+if((e_QUERY == "prefs") && getperms("0")){
 	show_prefs();
 }
 

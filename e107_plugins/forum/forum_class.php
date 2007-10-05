@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/forum/forum_class.php,v $
-|     $Revision: 1.65 $
-|     $Date: 2006/11/15 12:57:18 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.70 $
+|     $Date: 2007/09/29 20:52:13 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -53,7 +53,7 @@ class e107forum
 			list($uid, $uname) = explode(".", $thread_info['thread_user'], 2);
 			if ($thread_info)
 			{
-				if($thread_user['user_name'] != "")
+				if($thread_info['user_name'] != "")
 				{
 					$thread_lastuser = $uid.".".$thread_info['user_name'];
 				}
@@ -110,29 +110,35 @@ class e107forum
 		}
 	}
 
-	function forum_markasread($forum_id) {
-		global $sql;
-		if ($forum_id != 'all') {
-			$forum_id = intval($forum_id);
-			$extra = " AND thread_forum_id='$forum_id' ";
+	function forum_markasread($forum_id) 
+	{
+	  global $sql;
+	  if ($forum_id != 'all') 
+	  {
+		$forum_id = intval($forum_id);
+		$extra = " AND thread_forum_id='{$forum_id}' ";
+	  }
+	  $qry = "thread_lastpost > ".USERLV." AND thread_parent = 0 {$extra} ";
+	  if ($sql->db_Select('forum_t', 'thread_id', $qry)) 
+	  {
+		while ($row = $sql->db_Fetch()) 
+		{
+		  $u_new .= $row['thread_id'].".";
 		}
-		$qry = "thread_lastpost > ".USERLV." AND thread_parent = 0 {$extra} ";
-		if ($sql->db_Select('forum_t', 'thread_id', $qry)) {
-			while ($row = $sql->db_Fetch()) {
-				$u_new .= ".".$row['thread_id'].".";
-			}
-			$u_new .= USERVIEWED;
-			$sql->db_Update("user", "user_viewed='$u_new' WHERE user_id='".USERID."' ");
-			header("location:".e_SELF);
-			exit;
-		}
+		$u_new .= USERVIEWED;
+		$t = array_unique(explode('.',$u_new));		// Filter duplicates
+		$u_new = implode('.',$t);
+		$sql->db_Update("user", "user_viewed='{$u_new}' WHERE user_id='".USERID."' ");
+		header("location:".e_SELF);
+		exit;
+	  }
 	}
 
 	function thread_markasread($thread_id)
 	{
 		global $sql;
 		$thread_id = intval($thread_id);
-		$u_new = USERVIEWED.".$thread_id";
+		$u_new = USERVIEWED.".".$thread_id;
 		return $sql->db_Update("user", "user_viewed='$u_new' WHERE user_id='".USERID."' ");
 	}
 
@@ -230,6 +236,7 @@ class e107forum
 
 	function forum_newflag_list()
 	{
+	  if (!USER) return FALSE;		// Can't determine new threads for non-logged in users
 		global $sql;
 		$viewed = "";
 		if(USERVIEWED)
@@ -711,26 +718,29 @@ class e107forum
 			{
 				$pref['forum_eprefix'] = "[forum]";
 			}
-			//   Send email to orinator of flagged
-			if ($parent_thread[0]['thread_active'] == 99 && $parent_thread[0]['user_id'] != USERID)
+			//   Send email to originator if 'notify' set
+			$email_addy = '';
+			if ($pref['email_notify'] && $parent_thread[0]['thread_active'] == 99 && $parent_thread[0]['user_id'] != USERID)
 			{
 				$gen = new convert;
 				$email_name = $parent_thread[0]['user_name'];
+				$email_addy = $parent_thread[0]['user_email'];
 				$message = LAN_384.SITENAME.".<br /><br />". LAN_382.$datestamp."<br />". LAN_94.": ".$thread_poster['post_user_name']."<br /><br />". LAN_385.$email_post."<br /><br />". LAN_383."<br /><br />".$mail_link;
 				include_once(e_HANDLER."mail.php");
-				sendemail($parent_thread[0]['user_email'], $pref['forum_eprefix']." '".$thread_name."', ".LAN_381.SITENAME, $message);
+				sendemail($email_addy, $pref['forum_eprefix']." '".$thread_name."', ".LAN_381.SITENAME, $message, $email_name);
 			}
 
-			//   Send email to all users tracking thread
-			if ($sql->db_Select("user", "*", "user_realm REGEXP('-".intval($thread_parent)."-') "))
+
+			//   Send email to all users tracking thread - except the one that's just posted
+			if ($pref['forum_track'] && $sql->db_Select("user", "user_id, user_email, user_name", "user_realm REGEXP('-".intval($thread_parent)."-') "))
 			{
 				include_once(e_HANDLER.'mail.php');
 				$message = LAN_385.SITENAME.".<br /><br />". LAN_382.$datestamp."<br />". LAN_94.": ".$thread_poster['post_user_name']."<br /><br />". LAN_385.$email_post."<br /><br />". LAN_383."<br /><br />".$mail_link;
 				while ($row = $sql->db_Fetch())
-				{
-					if ($row['user_email'])
+				{	// Don't sent to self, nor to originator of thread if they've got 'notify' set
+					if ($row['user_email'] && ($row['user_email'] != $email_addy) && ($row['user_id'] != USERID))	// (May be wrong, but this could be faster than filtering current user in the query)
 					{
-						sendemail($row['user_email'], $pref['forum_eprefix']." '".$thread_name."', ".LAN_381.SITENAME, $message);
+						sendemail($row['user_email'], $pref['forum_eprefix']." '".$thread_name."', ".LAN_381.SITENAME, $message, $row['user_name']);
 					}
 				}
 			}
@@ -810,7 +820,7 @@ class e107forum
 				return FORLAN_9;
 			}
 		}
-		else
+		if($type == 'make_inactive')
 		{
 			$pruned = $sql->db_Update("forum_t", "thread_active=0 WHERE thread_lastpost < $prunedate AND thread_parent=0 AND thread_forum_id IN ({$forumList})");
 			return FORLAN_8." ".$pruned." ".FORLAN_91;

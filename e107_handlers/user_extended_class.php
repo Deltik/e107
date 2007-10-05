@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/user_extended_class.php,v $
-|     $Revision: 1.40 $
-|     $Date: 2006/11/29 05:11:16 $
-|     $Author: e107coders $
+|     $Revision: 1.43 $
+|     $Date: 2007/07/30 20:25:16 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -30,11 +30,7 @@ to store its data and structural information.
 
 */
 
-if (is_readable(e_LANGUAGEDIR.e_LANGUAGE."/lan_user_extended.php")) {
-	@include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_user_extended.php");
-} else {
-	@include_once(e_LANGUAGEDIR."English/lan_user_extended.php");
-}
+include_lan(e_LANGUAGEDIR.e_LANGUAGE."/lan_user_extended.php");
 
 class e107_user_extended
 {
@@ -113,6 +109,8 @@ class e107_user_extended
 		return $ret;
 	}
 
+
+	// Get the definition of all fields, or those in a specific category, grouped by category ID
 	function user_extended_get_fields($cat = "")
 	{
 		global $sql;
@@ -127,10 +125,11 @@ class e107_user_extended
 		return $ret;
 	}
 
-	function user_extended_get_fieldList()
+	// Get the definition of all fields, or those in a specific category, indexed by field ID
+	function user_extended_get_fieldList($cat = "")
 	{
 		global $sql;
-		$more = ($cat) ? " AND user_extended_struct_parent = ".intval($cat)." " : "";
+		$more = ($cat != '') ? " AND user_extended_struct_parent = ".intval($cat)." " : "";
 		if($sql->db_Select("user_extended_struct", "*", "user_extended_struct_type > 0 {$more} ORDER BY user_extended_struct_order ASC"))
 		{
 			while($row = $sql->db_Fetch())
@@ -286,7 +285,7 @@ class e107_user_extended
 			$choices[$k] = str_replace("[E_COMMA]", ",", $choices[$k]);
 		}
 		$parms = explode("^,^",$struct['user_extended_struct_parms']);
-		$include = preg_replace("/\n/", " ", $tp->toText($parms[0]));
+		$include = preg_replace("/\n/", " ", $tp->toHtml($parms[0]));
 		$regex = $tp->toText($parms[1]);
 		$regexfail = $tp->toText($parms[2]);
 		$fname = "ue[user_".$struct['user_extended_struct_name']."]";

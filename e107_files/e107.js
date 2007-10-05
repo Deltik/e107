@@ -5,8 +5,8 @@
 |	e107 website system - Javascript File.
 |
 |	$Source: /cvsroot/e107/e107_0.7/e107_files/e107.js,v $
-|	$Revision: 1.20 $
-|	$Date: 2007/01/19 20:46:53 $
+|	$Revision: 1.23 $
+|	$Date: 2007/07/17 20:27:58 $
 |	$Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -34,24 +34,23 @@ var localTime = Math.floor(nowLocal.getTime()/1000);	/* time, in ms -- recorded 
  */
 function SyncWithServerTime(serverTime)
 {
-	if (serverTime) {
+	if (serverTime) 
+	{
 	  	/* update time difference cookie */
-		tdCookie='e107_tdOffset=';
-		tdSetTimeCookie='e107_tdSetTime=';
-		serverDelta=Math.floor(localTime-serverTime);
-	  	document.cookie = tdCookie+serverDelta;
-	  	document.cookie = tdSetTimeCookie+(localTime-serverDelta); /* server time when set */
+		var serverDelta=Math.floor(localTime-serverTime);
+	  	document.cookie = 'e107_tdOffset='+serverDelta+'; path=/';
+	  	document.cookie = 'e107_tdSetTime='+(localTime-serverDelta)+'; path=/'; /* server time when set */
 	}
 
-	tzCookie = 'e107_tzOffset=';
-	if (document.cookie.indexOf(tzCookie) < 0) {
+	var tzCookie = 'e107_tzOffset=';
+//	if (document.cookie.indexOf(tzCookie) < 0) {
 		/* set if not already set */
-		timezoneOffset = nowLocal.getTimezoneOffset(); /* client-to-GMT in minutes */
-		document.cookie = tzCookie + timezoneOffset;
-	}
+		var timezoneOffset = nowLocal.getTimezoneOffset(); /* client-to-GMT in minutes */
+		document.cookie = tzCookie + timezoneOffset+'; path=/';
+//	}
 }
-
-if(document.getElementById&&!document.all){ns6=1;}else{ns6=0;}
+var ns6=0;
+if(document.getElementById&&!document.all){ns6=1;}
 var agtbrw=navigator.userAgent.toLowerCase();
 var operaaa=(agtbrw.indexOf('opera')!=-1);
 var head="display:''";
@@ -224,15 +223,15 @@ function addtext(text, emote)
 			val = text.split('][');
 			if (val[0] == text) val[1] = '';
 		}
-		else 
-		{ 
-		val = text; 
+		else
+		{
+		val = text;
 		}
 
 		if ((clientVer >= 4) && is_ie && is_win)
 		{
 			theSelection = document.selection.createRange().text; /* wrap selected text */
-			if (theSelection) 
+			if (theSelection)
 			{
 				if (emote != true)
 				{
@@ -244,8 +243,8 @@ function addtext(text, emote)
 				  {  // bbcode
 					document.selection.createRange().text = val[0] +']' +  theSelection + '[' + val[1];
 				  }
-				} 
-				else 
+				}
+				else
 				{
 					document.selection.createRange().text = val + theSelection;
 				}
@@ -255,7 +254,7 @@ function addtext(text, emote)
 			}
 
 		}
-		else 
+		else
 		  if (ta.selectionEnd && (ta.selectionEnd - ta.selectionStart > 0))
 		  { // Selected text here
 			if (emote != true)
@@ -268,28 +267,28 @@ function addtext(text, emote)
 			  {  // Single piece of text to insert, and delete any selected text
 				mozSwap(ta, text); /* wrap selected text */
 			  }
-			} 
-			else 
+			}
+			else
 			{
 				mozWrap(ta, val, ''); /* wrap selected text */
 			}
 			return;
 		  }
 		text = ' ' + text + ' ';
-		if (ta.createTextRange && e107_selectedRange) 
+		if (ta.createTextRange && e107_selectedRange)
 		{
 			var caretPos = e107_selectedRange; /* IE */
 			caretPos.text = caretPos.text.charAt(caretPos.text.length - 1) == ' ' ? caretPos.text + text + ' ' : caretPos.text + text;
-		} 
-		else 
-		  if (ta.selectionStart || ta.selectionStart == '0') 
+		}
+		else
+		  if (ta.selectionStart || ta.selectionStart == '0')
 		  { /* Moz */
 		   	var startPos = ta.selectionStart;
 			var endPos = ta.selectionEnd;
 			var charb4 = ta.value.charAt(endPos-1);
 			ta.value = ta.value.substring(0, endPos)+ text + ta.value.substring(endPos);
-		  } 
-		  else 
+		  }
+		  else
 		  {
 			ta.value  += text;
 		  }
@@ -353,16 +352,16 @@ function duplicateHTML(copy,paste,baseid){
 		}
 }
 
-function preview_image(src_val,img_path){
+function preview_image(src_val,img_path, not_found)
+{
 	var ta;
-	var desti
-
 	var desti = src_val + '_prev';
+
 	ta = document.getElementById(src_val).value;
 	if(ta){
 		document.getElementById(desti).src = img_path + ta;
 	}else{
-		document.getElementById(desti).src = '".e_IMAGE."generic/blank.gif';
+		document.getElementById(desti).src = not_found;
 	}
 	return;
 }

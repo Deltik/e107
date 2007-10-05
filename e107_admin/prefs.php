@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/prefs.php,v $
-|     $Revision: 1.97 $
-|     $Date: 2007/02/16 01:04:26 $
-|     $Author: e107coders $
+|     $Revision: 1.102 $
+|     $Date: 2007/09/18 21:10:16 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 require_once("../class2.php");
@@ -55,10 +55,34 @@ if (isset($_POST['updateprefs']))
 	$_POST['siteurl']     = substr($_POST['siteurl'], -1) == "/" ? $_POST['siteurl'] : $_POST['siteurl']."/";
 
 
+// Table of range checking values - min and max for numerics. Only do the important ones
+	$pref_limits = array(
+	  'loginname_maxlength' => array('min' => 10, 'max' => 100, 'default' => 30),
+	  'displayname_maxlength' => array('min' => 5, 'max' => 30, 'default' => 15),
+	  'antiflood_timeout' => array('min' => 3, 'max' => 300, 'default' => 10)
+	);
+
 	foreach($_POST as $key => $value)
 	{
-		$pref[$key] = $tp->toDB($value);
+	  if (isset($pref_limits[$key]))
+	  {	// Its a numeric value to check
+	    if (is_numeric($value))
+		{
+		  if ($value < $pref_limits[$key]['min']) $value = $pref_limits[$key]['min'];
+		  if ($value > $pref_limits[$key]['max']) $value = $pref_limits[$key]['max'];
+		}
+		else
+		{
+		  $value = $pref_limits[$key]['default'];
+		} 
+	    $pref[$key] = $value;
+	  }
+	  else
+	  {
+	    $pref[$key] = $tp->toDB($value);
+	  }
 	}
+
 
 	$e107cache->clear();
 	save_prefs();
@@ -131,36 +155,40 @@ $text = "<script type=\"text/javascript\">
 	<form method='post' action='".e_SELF."'>
 	<div id='main' style='text-align:center'>
 	<table style='width:100%' class='fborder'>
+	<colgroup>
+	  <col style='width:50%' />
+	  <col style='width:50%' />
+	</colgroup>
 	<tr>
 	<td class='fcaption' title='".PRFLAN_80."' style='text-align:left;' colspan='2'>".PRFLAN_1."</td>
 	</tr>
 
 	<tr>
-	<td style='width:50%' class='forumheader3'>".PRFLAN_2."</td>
-	<td style='width:50%; text-align:right' class='forumheader3'>
+	<td class='forumheader3'>".PRFLAN_2."</td>
+	<td style='text-align:right' class='forumheader3'>
 	<input class='tbox' type='text' name='sitename' size='50' value='".$pref['sitename']."' maxlength='100' />
 	</td>
 	</tr>
 
 	<tr>
-	<td style='width:50%' class='forumheader3'>".PRFLAN_3."</td>
-	<td style='width:50%; text-align:right' class='forumheader3'>
+	<td class='forumheader3'>".PRFLAN_3."</td>
+	<td style='text-align:right' class='forumheader3'>
 	<input class='tbox' type='text' name='siteurl' size='50' value='".$pref['siteurl']."' maxlength='150' /><br />
 	".($pref['siteurl'] == SITEURL ? "" : "<br />( ".PRFLAN_159.": <b>".SITEURL."</b> )")."
 	</td>
 	</tr>
 
 	<tr>
-	<td style='width:50%' class='forumheader3'>".PRFLAN_134."<br /><span class='smalltext'>".PRFLAN_135."</span></td>
-	<td style='width:50%; text-align:right' class='forumheader3'>
+	<td class='forumheader3'>".PRFLAN_134."<br /><span class='smalltext'>".PRFLAN_135."</span></td>
+	<td style='text-align:right' class='forumheader3'>
 	<input type='radio' name='redirectsiteurl' value='1'".($pref['redirectsiteurl'] ? " checked='checked'" : "")." /> ".PRFLAN_112."&nbsp;&nbsp;
 	<input type='radio' name='redirectsiteurl' value='0'".(!$pref['redirectsiteurl'] ? " checked='checked'" : "")." /> ".PRFLAN_113."
 	</td>
 	</tr>
 
 	<tr>
-	<td style='width:50%' class='forumheader3'>".PRFLAN_4."</td>
-	<td style='width:50%; text-align:right' class='forumheader3'>";
+	<td class='forumheader3'>".PRFLAN_4."</td>
+	<td style='text-align:right' class='forumheader3'>";
 
     $param = "sitebutton,".e_IMAGE.",".SITEBUTTON.",81px,30px,";
     $text .= $tp->parseTemplate("{IMAGESELECTOR={$param}}");
@@ -170,57 +198,71 @@ $text = "<script type=\"text/javascript\">
 	</tr>
 
 	<tr>
-	<td style='width:50%' class='forumheader3'>".PRFLAN_5."</td>
-	<td style='width:50%; text-align:right' class='forumheader3'>
+	<td class='forumheader3'>".PRFLAN_5."</td>
+	<td style='text-align:right' class='forumheader3'>
 	<textarea class='tbox' name='sitetag' cols='59' rows='3'>".$pref['sitetag']."</textarea>
 	</td>
 	</tr>
 
 	<tr>
-	<td style='width:50%' class='forumheader3'>".PRFLAN_6."</td>
-	<td style='width:50%; text-align:right' class='forumheader3'>
+	<td class='forumheader3'>".PRFLAN_6."</td>
+	<td style='text-align:right' class='forumheader3'>
 	<textarea class='tbox' name='sitedescription' cols='59' rows='6'>".$pref['sitedescription']."</textarea>
 	</td>
 	</tr>
 
 	<tr>
-	<td style='width:50%' class='forumheader3'>".PRFLAN_7."</td>
-	<td style='width:50%; text-align:right' class='forumheader3'>
+	<td class='forumheader3'>".PRFLAN_7."</td>
+	<td style='text-align:right' class='forumheader3'>
 	<input class='tbox' type='text' name='siteadmin' size='50' value='".SITEADMIN."' maxlength='100' />
 	</td>
 	</tr>
 
 	<tr>
-	<td style='width:50%' class='forumheader3'>".PRFLAN_8."</td>
-	<td style='width:50%; text-align:right' class='forumheader3'>
+	<td class='forumheader3'>".PRFLAN_8."</td>
+	<td style='text-align:right' class='forumheader3'>
 	<input class='tbox' type='text' name='siteadminemail' size='50' value='".SITEADMINEMAIL."' maxlength='100' />
 	</td>
 	</tr>
 
 	<tr>
-	<td style='width:50%' class='forumheader3'>".PRFLAN_162."<br /><span class='smalltext'>".PRFLAN_163."</span></td>
-	<td style='width:50%; text-align:right' class='forumheader3'>
+	<td class='forumheader3'>".PRFLAN_174."<br /><span class='smalltext'>".PRFLAN_175."</span></td>
+	<td style='text-align:right' class='forumheader3'>
+	<input class='tbox' type='text' name='replyto_name' size='50' value='".$pref['replyto_name']."' maxlength='100' />
+	</td>
+	</tr>
+
+	<tr>
+	<td class='forumheader3'>".PRFLAN_176."<br /><span class='smalltext'>".PRFLAN_177."</span></td>
+	<td style='text-align:right' class='forumheader3'>
+	<input class='tbox' type='text' name='replyto_email' size='50' value='".$pref['replyto_email']."' maxlength='100' />
+	</td>
+	</tr>
+
+	<tr>
+	<td class='forumheader3'>".PRFLAN_162."<br /><span class='smalltext'>".PRFLAN_163."</span></td>
+	<td style='text-align:right' class='forumheader3'>
 	<textarea class='tbox' name='sitecontactinfo' cols='59' rows='6'>".$pref['sitecontactinfo']."</textarea>
 	</td>
 	</tr>
 
 	<tr>
-	<td style='width:50%' class='forumheader3'>".PRFLAN_168."<br /><span class='smalltext'>".PRFLAN_169."</span></td>
-	<td style='width:50%; text-align:right' class='forumheader3'>".r_userclass("sitecontacts",$pref['sitecontacts'],"off","nobody main admin userclasses")."
+	<td class='forumheader3'>".PRFLAN_168."<br /><span class='smalltext'>".PRFLAN_169."</span></td>
+	<td style='text-align:right' class='forumheader3'>".r_userclass("sitecontacts",$pref['sitecontacts'],"off","nobody,main,admin,userclasses")."
 	</td>
 	</tr>
 
 	<tr>
-	<td style='width:50%' class='forumheader3'>".PRFLAN_164."<br /><span class='smalltext'>".PRFLAN_165."</span></td>
-	<td style='width:50%; text-align:right' class='forumheader3'>
+	<td class='forumheader3'>".PRFLAN_164."<br /><span class='smalltext'>".PRFLAN_165."</span></td>
+	<td style='text-align:right' class='forumheader3'>
 	<input type='radio' name='contact_emailcopy' value='1'".($pref['contact_emailcopy'] ? " checked='checked'" : "")." /> ".PRFLAN_112."&nbsp;&nbsp;
 	<input type='radio' name='contact_emailcopy' value='0'".(!$pref['contact_emailcopy'] ? " checked='checked'" : "")." /> ".PRFLAN_113."
 	</td>
 	</tr>
 
 	<tr>
-	<td style='width:50%' class='forumheader3'>".PRFLAN_9."</td>
-	<td style='width:50%; text-align:right' class='forumheader3'>
+	<td class='forumheader3'>".PRFLAN_9."</td>
+	<td style='text-align:right' class='forumheader3'>
 	<textarea class='tbox' name='sitedisclaimer' cols='59' rows='6'>".$pref['sitedisclaimer']."</textarea>
 	</td>
 	</tr>
@@ -262,7 +304,8 @@ $text .= "</table>
 	</td>
 	</tr>
 	";
-if(function_exists("memory_get_usage")){
+if(function_exists("memory_get_usage"))
+{
 	$text .= "
 	<tr>
 	<td style='width:50%' class='forumheader3'>".PRFLAN_137." </td>
@@ -485,7 +528,7 @@ $text .= "<div id='registration' style='display:none; text-align:center'><table 
 	<tr>
 	<td style='width:50%' class='forumheader3'>".PRFLAN_155.":</td>
 	<td class='forumheader3' style='width:50%;text-align:right' >
-	".r_userclass('displayname_class',$pref['displayname_class'],'off','nobody, public, admin, classes')."
+	".r_userclass('displayname_class',$pref['displayname_class'],'off','nobody,public,admin,classes')."
 	<input class='button' type='submit' name='submit_resetdisplaynames' value='".PRFLAN_156."' />
 	</td>
 	</tr>
@@ -493,7 +536,14 @@ $text .= "<div id='registration' style='display:none; text-align:center'><table 
 	<tr>
 	<td style='width:50%' class='forumheader3'>".PRFLAN_158.":</td>
 	<td class='forumheader3' style='width:50%;text-align:right' >
-	<input type='text' class='tbox' size='3' name='displayname_maxlength' value='".$pref['displayname_maxlength']."' />
+	<input type='text' class='tbox' size='3' name='displayname_maxlength' value='".varset($pref['displayname_maxlength'],15)."' />
+	</td>
+	</tr>
+
+	<tr>
+	<td style='width:50%' class='forumheader3'>".PRFLAN_172.":</td>
+	<td class='forumheader3' style='width:50%;text-align:right' >
+	<input type='text' class='tbox' size='3' name='loginname_maxlength' value='".varset($pref['loginname_maxlength'],30)."' />
 	</td>
 	</tr>
 
@@ -618,7 +668,7 @@ $text .= "<div id='textpost' style='display:none; text-align:center'>
 	<tr>
 	<td class='forumheader3' style='width:50%;'>".PRFLAN_116.":  <div class='smalltext'>".PRFLAN_117."</div></td>
 	<td class='forumheader3' style='width:50%; text-align: right;'>
-	".r_userclass('post_html',$pref['post_html'],'off','nobody, public, member, admin, main, classes')."
+	".r_userclass('post_html',$pref['post_html'],'off','nobody,public,member,admin,main,classes')."
 	</td>
 	</tr>\n
 
@@ -641,7 +691,7 @@ $text .= "<div id='textpost' style='display:none; text-align:center'>
 	<tr>
 	<td class='forumheader3' style='width:50%;'>".PRFLAN_131.":  <div class='smalltext'>".PRFLAN_132."</div></td>
 	<td class='forumheader3' style='width:50%; text-align: right;'>
-	".r_userclass('php_bbcode',$pref['php_bbcode'],'off','nobody, admin, classes')."
+	".r_userclass('php_bbcode',$pref['php_bbcode'],'off','nobody,admin,classes')."
 	</td>
 	</tr>\n
 
@@ -925,6 +975,14 @@ $text .= "<div id='advanced' style='display:none; text-align:center'>
 	<tr>
 	<td style='width:50%' class='forumheader3'>".PRFLAN_150."<br /><span class='smalltext'>&nbsp;</span></td>
 	<td style='width:50%; text-align:right' class='forumheader3'>{$auth_dropdown}</td>
+	</tr>
+
+	<tr>
+	<td style='width:50%' class='forumheader3'>".PRFLAN_173."<br /><span class='smalltext'>&nbsp;</span></td>
+	<td style='width:50%; text-align:right' class='forumheader3'>
+	<input type='radio' name='check_updates' value='1'".($pref['check_updates'] ? " checked='checked'" : "")." /> ".PRFLAN_112."&nbsp;&nbsp;
+	<input type='radio' name='check_updates' value='0'".(!$pref['check_updates'] ? " checked='checked'" : "")." /> ".PRFLAN_113."
+	</td>
 	</tr>
 
 	";

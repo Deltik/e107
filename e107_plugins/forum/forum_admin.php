@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/forum/forum_admin.php,v $
-|     $Revision: 1.44 $
-|     $Date: 2006/11/15 01:06:16 $
+|     $Revision: 1.46 $
+|     $Date: 2007/03/25 02:24:05 $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
@@ -986,7 +986,22 @@ class forum
 
 	function show_prefs()
 	{
-		global $pref, $ns;
+		global $pref, $ns, $sql;
+
+		if($sql->db_Count('plugin','(*)', "where plugin_path = 'poll' AND plugin_installflag = 1"))
+		{
+			$poll_installed = true;
+		}
+		else
+		{
+			$poll_installed = false;
+			if($pref['forum_poll'] == 1)
+			{
+				$pref['forum_poll'] = 0;
+				save_prefs();
+			}
+		}
+		
 		$text = "<div style='text-align:center'>
 		<form method='post' action='".e_SELF."?".e_QUERY."'>\n
 		<table style='".ADMIN_WIDTH."' class='fborder'>
@@ -1012,8 +1027,16 @@ class forum
 		</tr>
 
 		<tr>
-		<td style='width:75%' class='forumheader3'>".FORLAN_49."<br /><span class='smalltext'>".FORLAN_50."</span></td>
-		<td style='width:25%;text-align:center' class='forumheader3' >".($pref['forum_poll'] ? "<input type='checkbox' name='forum_poll' value='1' checked='checked' />" : "<input type='checkbox' name='forum_poll' value='1' />")."</td>
+		<td style='width:75%' class='forumheader3'>".FORLAN_49."<br /><span class='smalltext'>".FORLAN_50."</span></td>";
+		if($poll_installed)
+		{
+			$text .= "<td style='width:25%;text-align:center' class='forumheader3' >".($pref['forum_poll'] ? "<input type='checkbox' name='forum_poll' value='1' checked='checked' />" : "<input type='checkbox' name='forum_poll' value='1' />")."</td>";
+		}
+		else
+		{
+			$text .= "<td style='width:25%;text-align:center' class='forumheader3' >".FORLAN_66."</td>";
+		}
+		$text .= "
 		</tr>
 
 		<tr>
@@ -1223,8 +1246,8 @@ class forum
 
 		<tr>
 		<td style='text-align:center' class='forumheader3'>".FORLAN_2."<br />
-		".FORLAN_89." <input type='radio' name='prune_type' value='".FORLAN_3."' />&nbsp;&nbsp;&nbsp;
-		".FORLAN_90." <input type='radio' name='prune_type' value='".FORLAN_111."' checked='checked' />
+		".FORLAN_89." <input type='radio' name='prune_type' value='delete' />&nbsp;&nbsp;&nbsp;
+		".FORLAN_90." <input type='radio' name='prune_type' value='make_inactive' checked='checked' />
 		</td>
 		</tr>
 

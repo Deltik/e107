@@ -12,8 +12,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/lan_prefs.php,v $
-|     $Revision: 1.60 $
-|     $Date: 2007/01/02 21:54:00 $
+|     $Revision: 1.65 $
+|     $Date: 2007/09/22 09:48:51 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -100,7 +100,7 @@ define("CUSTSIG_17", "Subscribe to content/mailouts");
 define("CUSTSIG_18", "Disallow usernames");
 define("CUSTSIG_19", "usernames containing the following text will be rejected, separate entries by commas");
 
-define("PRFLAN_91", "If someone is attacking your site by multiple requests to your server, his IP will be automatically banned ! Don't replace a correct server config !!!");
+define("PRFLAN_91", "If someone is attacking your site by multiple requests to your server, his IP will be automatically banned ! Best done with server config if possible!!!");
 define("PRFLAN_92", "Secure signup verification -- hide password in email?");
 define("PRFLAN_93", "strftime function page at php.net");
 define("PRFLAN_94", "here");
@@ -165,8 +165,8 @@ define("PRFLAN_154", "New user verification method <br />If 'Admin Approval' is 
 
 define("PRFLAN_155", "Display Name available to");
 define("PRFLAN_156", "Reset ALL Display Names");
-define("PRFLAN_157", "All Display Names have been reset to the Login Name");
-define("PRFLAN_158", "Display Name maximum length");
+define("PRFLAN_157", "All Display Names have been reset to the Username");
+define("PRFLAN_158", "Display Name maximum length (5..30)");
 define("PRFLAN_159", "viewing this page with");
 
 define("PRFLAN_160", "Check remote servers when validating email addresses.");
@@ -185,6 +185,13 @@ define("PRFLAN_169", "If the chosen group contains more than one person, the use
 
 define("PRFLAN_170", "Use reverse DNS to allow host banning");
 define("PRFLAN_171", "Turning this option on will allow you to ban users by hostname, rather then just IP or email address.  <br />NOTE: This may affect pageload times on some hosts");
+define("PRFLAN_172", "Login Name maximum length (10..100)");
+define("PRFLAN_173", "Check at SourceForge for E107 updates once/day");
+
+define("PRFLAN_174", "Name for responses to emails from site");
+define("PRFLAN_175", "This will appear in the 'From' field of registration and other emails from this site");
+define("PRFLAN_176", "Email address for emails from site");
+define("PRFLAN_177", "Address specified for replies to emails from this site.");
 
 
 ?>

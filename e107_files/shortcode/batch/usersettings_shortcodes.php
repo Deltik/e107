@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/usersettings_shortcodes.php,v $
-|     $Revision: 1.24 $
-|     $Date: 2007/01/16 13:57:11 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.27 $
+|     $Date: 2007/07/23 20:05:19 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -22,9 +22,11 @@ $usersettings_shortcodes = $tp -> e_sc -> parse_scbatch(__FILE__);
 /*
 SC_BEGIN USERNAME
 global $rs, $curVal, $pref;
+// This is the 'display name'
 if (check_class($pref['displayname_class']))
 {
-	return $rs->form_text("username", 20, $curVal['user_name'], $pref['displayname_maxlength'], "tbox");
+  $dis_name_len = varset($pref['displayname_maxlength'],15);
+  return $rs->form_text("username", $dis_name_len, $curVal['user_name'], $dis_name_len, "tbox");
 }
 else
 {
@@ -36,7 +38,8 @@ SC_BEGIN LOGINNAME
 global $rs, $curVal;
 if (ADMIN && getperms("4"))
 {
-	return $rs->form_text("loginname", 20, $curVal['user_loginname'], 100, "tbox");
+  $log_name_length = varset($pref['loginname_maxlength'],30);
+  return $rs->form_text("loginname", $log_name_length, $curVal['user_loginname'], $log_name_length, "tbox");
 }
 else
 {
@@ -169,7 +172,7 @@ SC_BEGIN AVATAR_UPLOAD
 global $pref;
 if ($pref['avatar_upload'] && FILE_UPLOADS)
 {
-		return "<input class='tbox' name='file_userfile[]' type='file' size='47' />";
+		return "<input class='tbox' name='file_userfile[avatar]' type='file' size='47' />";
 }
 SC_END
 
@@ -209,7 +212,8 @@ SC_BEGIN PHOTO_UPLOAD
 global $pref;
 if ($pref['photo_upload'] && FILE_UPLOADS)
 {
-		return "<input class='tbox' name='file_userfile[]' type='file' size='47' />";
+	return "<input type='checkbox' name='user_delete_photo' value='1' />".LAN_USET_16."<br />\n
+	        <input class='tbox' name='file_userfile[photo]' type='file' size='47' />";
 }
 SC_END
 
@@ -240,9 +244,9 @@ $catList[] = array("user_extended_struct_id" => 0, "user_extended_struct_name" =
 foreach($catList as $cat)
 {
 	cachevars("extendedcat_{$cat['user_extended_struct_id']}", $cat);
-	$ret .= $tp->parseTemplate("{USEREXTENDED_CAT={$cat['user_extended_struct_id']}}", FALSE, $usersettings_shortcodes);
+  	$ret .= $tp->parseTemplate("{USEREXTENDED_CAT={$cat['user_extended_struct_id']}}", TRUE, $usersettings_shortcodes);
 }
-return $ret;
+ return $ret;
 SC_END
 
 SC_BEGIN USEREXTENDED_CAT
@@ -283,7 +287,7 @@ if($catInfo)
 		foreach($fieldList as $field)
 		{
 			cachevars("extendedfield_{$cat['user_extended_struct_name']}", $field);
-			$ret .= $tp->parseTemplate("{USEREXTENDED_FIELD={$field['user_extended_struct_name']}}", FALSE, $usersettings_shortcodes);
+			$ret .= $tp->parseTemplate("{USEREXTENDED_FIELD={$field['user_extended_struct_name']}}", TRUE, $usersettings_shortcodes);
 		}
 	}
 }

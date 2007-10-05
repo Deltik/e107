@@ -17,6 +17,11 @@ $txt .= $tp->parseTemplate($LATESTPOSTS_END, TRUE, $forum_shortcodes);
 return $txt;
 SC_END
 
+
+SC_BEGIN LATESTPOSTSCOUNT
+  return;			// Null return as placeholder
+SC_END
+
 SC_BEGIN THREADTOPIC
 global $thread_info, $action, $gen, $tp, $post_info, $forum_shortcodes, $THREADTOPIC_REPLY;
 $post_info = $thread_info['head'];
@@ -117,7 +122,7 @@ SC_END
 
 SC_BEGIN EMAILNOTIFY
 global $pref, $thread_info, $action;
-if ($pref['email_notify'] && $action == "nt")
+if ($pref['email_notify'] && $action == "nt" && USER)
 {
 	if(isset($_POST['fpreview']))
 	{

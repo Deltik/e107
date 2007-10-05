@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/search.php,v $
-|     $Revision: 1.56 $
-|     $Date: 2007/02/04 18:58:44 $
+|     $Revision: 1.60 $
+|     $Date: 2007/07/03 19:25:37 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -60,13 +60,13 @@ function search_info($id, $type, $plug_require, $info='') {
 
 //core search routines
 
-if ($search_info['news'] = search_info('news', 'core', false, array('sfile' => e_HANDLER.'search/search_news.php', 'qtype' => LAN_98, 'refpage' => 'news.php', 'advanced' => e_HANDLER.'search/advanced_news.php', 'id' => 'news'))) {
+if ($search_info['news'] = search_info('news', 'core', false, array('sfile' => e_HANDLER.'search/search_news.php', 'qtype' => LAN_SEARCH_98, 'refpage' => 'news.php', 'advanced' => e_HANDLER.'search/advanced_news.php', 'id' => 'news'))) {
    //	$search_id++;
 } else {
 	unset($search_info['news']);
 }
 
-if ($search_info['comments'] = search_info('comments', 'core', false, array('sfile' => e_HANDLER.'search/search_comment.php', 'qtype' => LAN_99, 'refpage' => 'comment.php', 'advanced' => e_HANDLER.'search/advanced_comment.php', 'id' => 'comment'))) {
+if ($search_info['comments'] = search_info('comments', 'core', false, array('sfile' => e_HANDLER.'search/search_comment.php', 'qtype' => LAN_SEARCH_99, 'refpage' => 'comment.php', 'advanced' => e_HANDLER.'search/advanced_comment.php', 'id' => 'comment'))) {
    //	$search_id++;
 } else {
 	unset($search_info['comments']);
@@ -166,15 +166,18 @@ if (isset($_GET['q']) || isset($_GET['in']) || isset($_GET['ex']) || isset($_GET
 
 	if (isset($_GET['r']) && !is_numeric($_GET['r'])) {
 		$perform_search = false;
-		$SEARCH_MESSAGE = LAN_201;
+		$SEARCH_MESSAGE = LAN_SEARCH_201;
 		$result_flag = 0;
 	} else if (strlen($full_query) == 0) {
 		$perform_search = false;
-		$SEARCH_MESSAGE = LAN_201;
-	} else if (strlen($full_query) < 3) {
+		$SEARCH_MESSAGE = LAN_SEARCH_201;
+	} 
+	elseif (strlen($full_query) < ($char_count = ($search_prefs['mysql_sort'] ? 4 : 3))) 
+	{
 		$perform_search = false;
-		$SEARCH_MESSAGE = LAN_417;
-	} else if ($search_prefs['time_restrict']) {
+		$SEARCH_MESSAGE = str_replace('--CHARS--', $char_count, LAN_417);
+	} 
+	elseif ($search_prefs['time_restrict']) {
 		$time = time() - $search_prefs['time_secs'];
 		$query_check = $tp -> toDB($full_query);
 		$ip = getip();
@@ -342,7 +345,7 @@ $SEARCH_TYPE_SEL = "<input type='radio' name='adv' value='0' ".($_GET['adv'] ? "
 
 foreach ($search_info as $key => $value) {
 	if (!isset($search_info[$key]['advanced'])) {
-		$js_adv .= " && abid != ".$key;
+		$js_adv .= " && abid != '".$key."'";
 	}
 }
 
@@ -353,7 +356,7 @@ if (isset($search_info[$_GET['t']]['advanced'])) {
 }
 
 if (check_class($search_prefs['google'])) {
-	$js_adv .= " && abid != ".$google_id;
+	$js_adv .= " && abid != '".$google_id."'";
 }
 
 if ($perform_search) {
@@ -462,6 +465,7 @@ if ($perform_search) {
 				$search_chars = $search_info[$key]['chars'];
 				$search_res = $search_info[$key]['results'];
 				@require_once($search_info[$key]['sfile']);
+				$_GET['q'] = rawurlencode($_GET['q']);
 				$parms = $results.",".$search_res.",".$_GET['r'].",".e_SELF."?q=".$_GET['q']."&t=".$key."&r=[FROM]";
 				$core_parms = array('r' => '', 'q' => '', 't' => '', 's' => '');
 				foreach ($_GET as $pparm_key => $pparm_value) {

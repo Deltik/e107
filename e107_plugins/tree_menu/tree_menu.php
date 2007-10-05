@@ -12,9 +12,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/tree_menu/tree_menu.php,v $
-|     $Revision: 1.26 $
-|     $Date: 2006/11/25 15:39:55 $
-|     $Author: lisa_ $
+|     $Revision: 1.28 $
+|     $Date: 2007/05/31 21:17:00 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -94,8 +94,8 @@ foreach($mainLinkArray as $links) {
 
 		$url = "javascript:void(0);";
 		$spanName = $id;
-		$image = ($image ? "<img src='".e_IMAGE."icons/".$image."' alt='' style='vertical-align:middle;' />" : "&raquo;");
-		$plink = "<div".($menu_pref['tm_class2'] ? " class='{$menu_pref['tm_class2']}'" : "")." style='width:100%; cursor: pointer;' onclick='expandit(\"span_".$spanName."\");updatecook(\"".$spanName."\");'>".$image.setLink($name, $url, $openMethod, $description)."</div>\n";
+		$image = ($image ? "<img src='".e_IMAGE_ABS."icons/".$image."' alt='' style='vertical-align:middle;' />" : "&raquo;");
+		$plink = "<div".($menu_pref['tm_class2'] ? " class='{$menu_pref['tm_class2']}'" : "")." style='width:100%; cursor: pointer;' onclick='expandit(\"span_".$spanName."\");updatecook(\"".$spanName."\");'>".$image." ".setLink($name, $url, $openMethod, $description)."</div>\n";
 		$text .= ($menu_pref['tm_spacer'] ? "<div class='spacer'>\n".$plink."\n</div>\n" : $plink);
 	} else {
 		// no sublinks found ...
@@ -103,8 +103,8 @@ foreach($mainLinkArray as $links) {
 		{
 			$linkName = $url;
 			$spanName = "";
-			$image = ($image ? "<img src='".e_IMAGE."icons/".$image."' alt='' style='vertical-align:middle;' />" : "&middot;");
-			$plink = "<div".($menu_pref['tm_class1'] ? " class='{$menu_pref['tm_class1']}'" : "")." style='width:100%; cursor: pointer;'>".$image.setLink($name, $url, $openMethod, $description)."</div>";
+			$image = ($image ? "<img src='".e_IMAGE_ABS."icons/".$image."' alt='' style='vertical-align:middle;' />" : "&middot;");
+			$plink = "<div".($menu_pref['tm_class1'] ? " class='{$menu_pref['tm_class1']}'" : "")." style='width:100%; cursor: pointer;'>".$image." ".setLink($name, $url, $openMethod, $description)."</div>";
 			$text .= ($menu_pref['tm_spacer'] ? "<div class='spacer'>\n".$plink."\n</div>\n" : $plink);
 		}
 	}
@@ -115,10 +115,10 @@ foreach($mainLinkArray as $links) {
 		$text .= "\n<span style=\"display:none\" id=\"span_".$spanName."\">\n";
 		foreach($sublink as $link) {
 			extract($link);
-			$image = ($image ? "<img src='".e_IMAGE."icons/".$image."' alt='' style='vertical-align:middle' />  " : "&middot; ");
+			$image = ($image ? "<img src='".e_IMAGE_ABS."icons/".$image."' alt='' style='vertical-align:middle' />  " : "&middot; ");
 			$spanName = $parent_name;
 
-			$plink = $image.setLink($name, $url, $openMethod, $description)."<br />\n";
+			$plink = $image." ".setLink($name, $url, $openMethod, $description)."<br />\n";
 			$text .=($menu_pref['tm_class3'] ? "<span".($menu_pref['tm_class3'] ? " class='{$menu_pref['tm_class3']}'" : "").">".$plink."</span>\n\n" : $plink);
 		}
 		$text .= "</span>\n";

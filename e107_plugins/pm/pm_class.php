@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/pm/pm_class.php,v $
-|     $Revision: 1.18 $
-|     $Date: 2007/02/17 17:31:15 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.21 $
+|     $Date: 2007/08/02 20:41:22 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -56,6 +56,8 @@ class private_message
 		return FALSE;
 	}
 
+
+	// Send a PM
 	function add($vars)
 	{
 		global $pm_prefs, $tp, $sql;
@@ -68,7 +70,7 @@ class private_message
 		{
 			foreach($vars['uploaded'] as $u)
 			{
-				if(!isset($u['error']))
+				if (!isset($u['error']) || !$u['error'])
 				{
 					$pmsize += $u['size'];
 					$a_list[] = $u['name'];
@@ -78,8 +80,14 @@ class private_message
 		}
 		$pmsize += strlen($vars['pm_message']);
 
-		$pm_subject = $tp->toDB($vars['pm_subject']);
-		$pm_message = $tp->toDB($vars['pm_message']);
+		$pm_subject = trim($tp->toDB($vars['pm_subject']));
+		$pm_message = trim($tp->toDB($vars['pm_message']));
+		
+		if (!$pm_subject && !$pm_message && !$attachlist)
+		{  // Error - no subject, no message body and no uploaded files
+		  return LAN_PM_65;
+		}
+		
 		$sendtime = time();
 		if(isset($vars['to_userclass']) || isset($vars['to_array']))
 		{
@@ -188,7 +196,7 @@ class private_message
 		$txt = LAN_PM_101.SITENAME."\n\n";
 		$txt .= LAN_PM_102.USERNAME."\n";
 		$txt .= LAN_PM_103.$pminfo['pm_subject']."\n";
-		if($attch_count > 0)
+		if($attach_count > 0)
 		{
 			$txt .= LAN_PM_104.$attach_count."\n";
 		}
@@ -226,9 +234,14 @@ class private_message
 	function block_add($from, $to = USERID)
 	{
 		global $sql, $tp;
-		if($sql->db_Select("user", "user_name", "user_id = '".intval($from)."'"))
+		if($sql->db_Select("user", "user_name, user_perms", "user_id = '".intval($from)."'"))
 		{
-			$uinfo = $sql->db_Fetch();
+		  $uinfo = $sql->db_Fetch();
+		  if (($uinfo['user_perms'] == '0') || ($uinfo['user_perms'] == '0.'))
+		  {  // Don't allow block of main admin
+		    return LAN_PM_64;
+		  }
+		  
 			if(!$sql->db_Count("private_msg_block", "(*)", "WHERE pm_block_from = '".intval($from)."' AND pm_block_to = '".$tp -> toDB($to)."'"))
 			{
 				if($sql->db_Insert("private_msg_block", "0, '".intval($from)."', '".$tp -> toDB($to)."', '".time()."', '0'"))

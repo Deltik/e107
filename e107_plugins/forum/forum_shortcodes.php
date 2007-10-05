@@ -22,7 +22,7 @@ SC_END
 SC_BEGIN POST
 global $post_info, $tp, $iphost;
 $ret = "";
-$ret = $tp->toHTML($post_info["thread_thread"], TRUE, "BODY", 'class:'.$post_info["user_class"]);
+$ret = $tp->toHTML($post_info["thread_thread"], TRUE, "USER_BODY", 'class:'.$post_info["user_class"]);
 if (ADMIN && $iphost) {
 $ret .= "<br />".$iphost;
 }
@@ -30,8 +30,9 @@ return $ret;
 SC_END
 	
 SC_BEGIN PRIVMESSAGE
-global $post_info, $tp;
-if($post_info['user_id'] > 0){
+global $pref, $post_info, $tp;
+if(isset($pref['plug_installed']['pm']) && ($post_info['user_id'] > 0))
+{
 	return $tp->parseTemplate("{SENDPM={$post_info['user_id']}}");
 }
 SC_END
@@ -249,6 +250,11 @@ SC_END
 SC_BEGIN POLL
 global $pollstr;
 return $pollstr;
+SC_END
+
+SC_BEGIN NEWFLAG
+// Defined in case an indicator is required
+return '';
 SC_END
 
 */

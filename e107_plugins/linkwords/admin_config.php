@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/linkwords/admin_config.php,v $
-|     $Revision: 1.5 $
-|     $Date: 2007/02/08 20:18:20 $
+|     $Revision: 1.7 $
+|     $Date: 2007/07/23 21:02:23 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -29,7 +29,9 @@ $lw_context_areas = array(
 			'title' => LWLAN_33,
 			'summary' => LWLAN_34,
 			'body' => LWLAN_35,
-			'description' => LWLAN_36
+			'description' => LWLAN_36,
+			'user_title' => LWLAN_40,
+			'user_body'  => LWLAN_41
 			// Don't do the next three - linkwords are meaningless on them
 //			'olddefault' => LWLAN_37,
 //			'linktext' => LWLAN_38,
@@ -99,8 +101,8 @@ if (isset($_POST['submit_linkword']))
 	{
 		$word = $tp -> toDB($_POST['linkword_word']);
 		$link = $tp -> toDB($_POST['linkword_link']);
-		$active = $_POST['linkword_active'];
-		$sql -> db_Insert("linkwords", "0, $active, '$word', '$link' ");
+		$active = intval($_POST['linkword_active']);
+		$sql -> db_Insert("linkwords", "0, {$active}, '{$word}', '{$link}' ");
 		$message = LWLAN_2;
 	}
 }
@@ -128,48 +130,6 @@ if (isset($message))
 	$ns->tablerender("", "<div style='text-align:center'><b>".$message."</b></div>");
 }
 
-
-if (($action == 'words') || ($action == 'edit'))
-{
-  $text = "<div class='center'>\n";
-  if(!$sql -> db_Select("linkwords"))
-  {
-	$text .= LWLAN_4;
-  }
-  else
-  {
-	$text = "
-	<table style='".ADMIN_WIDTH."' class='fborder'>
-	<tr>
-	<td class='forumheader' style='width: 20%;'>".LWLAN_5."</td>
-	<td class='forumheader' style='width: 40%;'>".LWLAN_6."</td>
-	<td class='forumheader' style='width: 10%; text-align: center;'>".LWLAN_7."</td>
-	<td class='forumheader' style='width: 30%; text-align: center;'>".LWLAN_8."</td>
-	</tr>\n";
-
-	while($row = $sql -> db_Fetch())
-	{
-		extract($row);
-		$text .= "
-		
-		<form action='".e_SELF."' method='post' id='myform_$linkword_id'  onsubmit=\"return jsconfirm('".LWLAN_18." [ID: $linkword_id ]')\">
-		<tr>
-		<td class='forumheader' style='width: 20%;'>$linkword_word</td>
-		<td class='forumheader' style='width: 40%;'>$linkword_link</td>
-		<td class='forumheader' style='width: 10%; text-align: center;'>".(!$linkword_active ? LWLAN_12 : LWLAN_13)."</td>
-		<td class='forumheader' style='width: 30%; text-align: center;'>
-		<input class='button' type='button' onclick=\"document.location='".e_SELF."?edit.$linkword_id'\" value='".LWLAN_16."' id='edit_$linkword_id' name='edit_linkword_id' />
-		<input class='button' type='submit'  value='".LWLAN_17."' id='delete_$linkword_id' name='delete_$linkword_id' />
-		</td>
-		</tr>
-		</form>\n";
-	}
-	$text .= "</table>";
-  }
-
-  $text .= "</div>";
-  $ns -> tablerender(LWLAN_11, $text);
-}
 
 
 if($action == "edit")
@@ -227,6 +187,50 @@ $text = "
 </div>\n";
 
 $ns -> tablerender(LWLAN_31, $text);
+}
+
+
+// Now display existing linkwords
+if (($action == 'words') || ($action == 'edit'))
+{
+  $text = "<div class='center'>\n";
+  if(!$sql -> db_Select("linkwords"))
+  {
+	$text .= LWLAN_4;
+  }
+  else
+  {
+	$text = "
+	<table style='".ADMIN_WIDTH."' class='fborder'>
+	<tr>
+	<td class='forumheader' style='width: 20%;'>".LWLAN_5."</td>
+	<td class='forumheader' style='width: 40%;'>".LWLAN_6."</td>
+	<td class='forumheader' style='width: 10%; text-align: center;'>".LWLAN_7."</td>
+	<td class='forumheader' style='width: 30%; text-align: center;'>".LWLAN_8."</td>
+	</tr>\n";
+
+	while($row = $sql -> db_Fetch())
+	{
+		extract($row);
+		$text .= "
+		
+		<form action='".e_SELF."' method='post' id='myform_$linkword_id'  onsubmit=\"return jsconfirm('".LWLAN_18." [ID: $linkword_id ]')\">
+		<tr>
+		<td class='forumheader' style='width: 20%;'>$linkword_word</td>
+		<td class='forumheader' style='width: 40%;'>$linkword_link</td>
+		<td class='forumheader' style='width: 10%; text-align: center;'>".(!$linkword_active ? LWLAN_12 : LWLAN_13)."</td>
+		<td class='forumheader' style='width: 30%; text-align: center;'>
+		<input class='button' type='button' onclick=\"document.location='".e_SELF."?edit.$linkword_id'\" value='".LWLAN_16."' id='edit_$linkword_id' name='edit_linkword_id' />
+		<input class='button' type='submit'  value='".LWLAN_17."' id='delete_$linkword_id' name='delete_$linkword_id' />
+		</td>
+		</tr>
+		</form>\n";
+	}
+	$text .= "</table>";
+  }
+
+  $text .= "</div>";
+  $ns -> tablerender(LWLAN_11, $text);
 }
 
 

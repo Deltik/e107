@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_themes/templates/usersettings_template.php,v $
-|     $Revision: 1.7 $
-|     $Date: 2006/10/18 16:34:48 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.9 $
+|     $Date: 2007/08/12 21:40:31 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -71,9 +71,9 @@ $sc_style['PHOTO_UPLOAD']['pre'] = "
 
 <tr>
 <td style='width:40%; vertical-align:top' class='forumheader3'>".LAN_414."<br /><span class='smalltext'>".LAN_426."</span></td>
-<td style='width:60%' class='forumheader2'>
+<td style='width:60%' class='forumheader2'><span class='smalltext'>
 ";
-$sc_style['PHOTO_UPLOAD']['post'] = "</td></tr>";
+$sc_style['PHOTO_UPLOAD']['post'] = "</span></td></tr>";
 
 
 $sc_style['XUP']['pre'] = "
@@ -135,7 +135,7 @@ $USERSETTINGS_EDIT = "
 	{PASSWORD2}
 
 	<tr>
-	<td style='width:40%' class='forumheader3'>".LAN_112."</td>
+	<td style='width:40%' class='forumheader3'>".LAN_112.req(!$pref['disable_emailcheck'])."</td>
 	<td style='width:60%' class='forumheader2'>
 	{EMAIL}
 	</td>
