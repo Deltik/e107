@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/news.php,v $
-|     $Revision: 1.121 $
-|     $Date: 2007/09/17 09:27:51 $
-|     $Author: e107coders $
+|     $Revision: 1.123 $
+|     $Date: 2007/10/15 19:15:35 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
@@ -200,24 +200,42 @@ if ($action == 'cat' || $action == 'all')
 //------------------------------------------------------
 if ($action == "extend") 
 {	// --> Cache
-	if($tmp = checkCache($cacheString)){
-		require_once(HEADERF);
-		renderCache($tmp, TRUE);
+	if($tmp = checkCache($cacheString))
+	{
+	  require_once(HEADERF);
+	  renderCache($tmp, TRUE);
 	}
 	// <-- Cache
 
-	$query = "SELECT n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
+	if(isset($pref['trackbackEnabled']) && $pref['trackbackEnabled']) 
+	{
+	  $query = "SELECT COUNT(tb.trackback_pid) AS tb_count, n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
 		LEFT JOIN #user AS u ON n.news_author = u.user_id
 		LEFT JOIN #news_category AS nc ON n.news_category = nc.category_id
-		WHERE n.news_class REGEXP '".e_CLASS_REGEXP."' AND NOT (n.news_class REGEXP ".$nobody_regexp.") AND n.news_start < ".time()." AND (n.news_end=0 || n.news_end>".time().") AND n.news_id=".intval($sub_action);
+		LEFT JOIN #trackback AS tb ON tb.trackback_pid  = n.news_id
+		WHERE n.news_id=".intval($sub_action)." AND n.news_class REGEXP '".e_CLASS_REGEXP."' 
+		AND NOT (n.news_class REGEXP ".$nobody_regexp.") 
+		AND n.news_start < ".time()." AND (n.news_end=0 || n.news_end>".time().") ";
+	}
+	else
+	{
+	  $query = "SELECT n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
+		LEFT JOIN #user AS u ON n.news_author = u.user_id
+		LEFT JOIN #news_category AS nc ON n.news_category = nc.category_id
+		WHERE n.news_id=".intval($sub_action)." AND n.news_class REGEXP '".e_CLASS_REGEXP."' 
+		AND NOT (n.news_class REGEXP ".$nobody_regexp.") 
+		AND n.news_start < ".time()." AND (n.news_end=0 || n.news_end>".time().") ";
+	}
 	$sql->db_Select_gen($query);
 	$news = $sql->db_Fetch();
 
-	if($news['news_title']){
-		if($pref['meta_news_summary'] && $news['news_title']){
-        	define("META_DESCRIPTION",SITENAME.": ".$news['news_title']." - ".$news['news_summary']);
-		}
-		define("e_PAGETITLE",$news['news_title']);
+	if($news['news_title'])
+	{
+	  if($pref['meta_news_summary'] && $news['news_title'])
+	  {
+       	define("META_DESCRIPTION",SITENAME.": ".$news['news_title']." - ".$news['news_summary']);
+	  }
+	  define("e_PAGETITLE",$news['news_title']);
 	}
 
 	require_once(HEADERF);
@@ -247,8 +265,9 @@ switch ($action)
 {
   case "list" :
 	$sub_action = intval($sub_action);
-//	$news_total = $sql->db_Count("news", "(*)", "WHERE news_category={$sub_action} AND news_class REGEXP '".e_CLASS_REGEXP."' AND NOT (news_class REGEXP ".$nobody_regexp.") AND news_start < ".time()." AND (news_end=0 || news_end>".time().")");
-	$query = "SELECT  SQL_CALC_FOUND_ROWS n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
+	$news_total = $sql->db_Count("news", "(*)", "WHERE news_category={$sub_action} AND news_class REGEXP '".e_CLASS_REGEXP."' AND NOT (news_class REGEXP ".$nobody_regexp.") AND news_start < ".time()." AND (news_end=0 || news_end>".time().")");
+//	$query = "SELECT  SQL_CALC_FOUND_ROWS n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
+	$query = "SELECT  n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
 		LEFT JOIN #user AS u ON n.news_author = u.user_id
 		LEFT JOIN #news_category AS nc ON n.news_category = nc.category_id
 		WHERE n.news_class REGEXP '".e_CLASS_REGEXP."' AND NOT (n.news_class REGEXP ".$nobody_regexp.") 
@@ -261,46 +280,59 @@ switch ($action)
   case "item" :
 	$sub_action = intval($sub_action);
 	$news_total = 1;
-	$query = "SELECT n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
+/*	if(isset($pref['trackbackEnabled']) && $pref['trackbackEnabled']) 
+	{
+	  $query = "SELECT COUNT(tb.trackback_pid) AS tb_count, n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
 		LEFT JOIN #user AS u ON n.news_author = u.user_id
 		LEFT JOIN #news_category AS nc ON n.news_category = nc.category_id
-		WHERE n.news_class REGEXP '".e_CLASS_REGEXP."' AND NOT (n.news_class REGEXP ".$nobody_regexp.") 
-		AND n.news_start < ".time()." AND (n.news_end=0 || n.news_end>".time().") AND n.news_id={$sub_action}";
+		LEFT JOIN #trackback AS tb ON tb.trackback_pid  = n.news_id
+		WHERE n.news_id={$sub_action} AND n.news_class REGEXP '".e_CLASS_REGEXP."' AND NOT (n.news_class REGEXP ".$nobody_regexp.") 
+		AND n.news_start < ".time()." AND (n.news_end=0 || n.news_end>".time().")
+		GROUP by n.news_id";
+	}
+	else
+	{  */
+	  $query = "SELECT n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
+		LEFT JOIN #user AS u ON n.news_author = u.user_id
+		LEFT JOIN #news_category AS nc ON n.news_category = nc.category_id
+		WHERE n.news_id={$sub_action} AND n.news_class REGEXP '".e_CLASS_REGEXP."' AND NOT (n.news_class REGEXP ".$nobody_regexp.") 
+		AND n.news_start < ".time()." AND (n.news_end=0 || n.news_end>".time().")";
+//	}
 	break;
 
   case "month" :
+  case "day" :
 	$item = $tp -> toDB($sub_action).'20000101';
 	$year = substr($item, 0, 4);
 	$month = substr($item, 4,2);
-	$startdate = mktime(0, 0, 0, $month, 1, $year);
-	$lastday = date("t", $startdate);
+	if ($action == 'day')
+	{
+	  $day = substr($item, 6, 2);
+	  $lastday = $day;
+	}
+	else
+	{	// A month's worth
+	  $day = 1;
+	  $lastday = date("t", $startdate);
+	}
+	$startdate = mktime(0, 0, 0, $month, $day, $year);
 	$enddate = mktime(23, 59, 59, $month, $lastday, $year);
-	$query = "SELECT SQL_CALC_FOUND_ROWS n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
+	$query = "SELECT n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
 		LEFT JOIN #user AS u ON n.news_author = u.user_id
 		LEFT JOIN #news_category AS nc ON n.news_category = nc.category_id
 		WHERE n.news_class REGEXP '".e_CLASS_REGEXP."' AND NOT (n.news_class REGEXP ".$nobody_regexp.") 
 		AND n.news_start < ".time()." AND (n.news_end=0 || n.news_end>".time().") 
 		AND n.news_render_type<2 AND n.news_datestamp > {$startdate} AND n.news_datestamp < {$enddate} 
 		ORDER BY ".$order." DESC LIMIT ".intval($newsfrom).",".ITEMVIEW;
+
+	$news_total = $sql->db_Count("news", "(*)", "WHERE n.news_class REGEXP '".e_CLASS_REGEXP."' AND NOT (n.news_class REGEXP ".$nobody_regexp.") 
+		AND n.news_start < ".time()." AND (n.news_end=0 || n.news_end>".time().") 
+		AND n.news_render_type<2 AND n.news_datestamp > {$startdate} AND n.news_datestamp < {$enddate}");
 	break;
 
-  case "day" :
-	$item = $tp -> toDB($sub_action).'20000101';
-	$year = substr($item, 0, 4);
-	$month = substr($item, 4, 2);
-	$day = substr($item, 6, 2);
-	$startdate = mktime(0, 0, 0, $month, $day, $year);
-	$lastday = date("t", $startdate);
-	$enddate = mktime(23, 59, 59, $month, $day, $year);
-	$query = "SELECT SQL_CALC_FOUND_ROWS n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
-		LEFT JOIN #user AS u ON n.news_author = u.user_id
-		LEFT JOIN #news_category AS nc ON n.news_category = nc.category_id
-		WHERE n.news_class REGEXP '".e_CLASS_REGEXP."' AND NOT (n.news_class REGEXP ".$nobody_regexp.") AND n.news_start < ".time()." AND (n.news_end=0 || n.news_end>".time().") AND n.news_render_type<2 AND n.news_datestamp > $startdate AND n.news_datestamp < $enddate ORDER BY ".$order." DESC LIMIT ".intval($newsfrom).",".ITEMVIEW;
-	break;
-	
   default :
     $action = '';
-//	$news_total = $sql->db_Count("news", "(*)", "WHERE news_class REGEXP '".e_CLASS_REGEXP."' AND NOT (news_class REGEXP ".$nobody_regexp.") AND news_start < ".time()." AND (news_end=0 || news_end>".time().") AND news_render_type<2" );
+	$news_total = $sql->db_Count("news", "(*)", "WHERE news_class REGEXP '".e_CLASS_REGEXP."' AND NOT (news_class REGEXP ".$nobody_regexp.") AND news_start < ".time()." AND (news_end=0 || news_end>".time().") AND news_render_type<2" );
 
 	if(!isset($pref['newsposts_archive']))
 	{
@@ -309,8 +341,9 @@ switch ($action)
 	$interval = $pref['newsposts']-$pref['newsposts_archive'];		// Number of 'full' posts to show
 
 	// Get number of news item to show
-	if(isset($pref['trackbackEnabled']) && $pref['trackbackEnabled']) {
-		$query = "SELECT SQL_CALC_FOUND_ROWS COUNT(tb.trackback_pid) AS tb_count, n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon, COUNT(*) AS tbcount FROM #news AS n
+	if(isset($pref['trackbackEnabled']) && $pref['trackbackEnabled']) 
+	{
+		$query = "SELECT COUNT(tb.trackback_pid) AS tb_count, n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon, COUNT(*) AS tbcount FROM #news AS n
 		LEFT JOIN #user AS u ON n.news_author = u.user_id
 		LEFT JOIN #news_category AS nc ON n.news_category = nc.category_id
 		LEFT JOIN #trackback AS tb ON tb.trackback_pid  = n.news_id
@@ -322,7 +355,7 @@ switch ($action)
 	}
 	else
 	{
-		$query = "SELECT SQL_CALC_FOUND_ROWS n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
+		$query = "SELECT n.*, u.user_id, u.user_name, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
 		LEFT JOIN #user AS u ON n.news_author = u.user_id
 		LEFT JOIN #news_category AS nc ON n.news_category = nc.category_id
 		WHERE n.news_class REGEXP '".e_CLASS_REGEXP."' AND NOT (n.news_class REGEXP ".$nobody_regexp.")
@@ -365,7 +398,8 @@ if($tmp_cache = checkCache($cacheString)) // normal news front-page - with cache
 }
 
 
-if (!($news_total = $sql->db_Select_gen($query))) 
+//if (!($news_total = $sql->db_Select_gen($query))) 
+if (!$sql->db_Select_gen($query))
 {  // No news items
   require_once(HEADERF);
   echo "<br /><br /><div style='text-align:center'><b>".(strstr(e_QUERY, "month") ? LAN_NEWS_462 : LAN_NEWS_83)."</b></div><br /><br />";
@@ -375,14 +409,7 @@ if (!($news_total = $sql->db_Select_gen($query)))
 
 $newsAr = $sql -> db_getList();
 
-// ***** CAUTION ! - DEBUG MUCKS THIS UP! *****
-$sql -> db_Query("SELECT FOUND_ROWS()");
-$frows = $sql -> db_Fetch();
-$news_total = $frows[0];
 
-//echo "<br />Total ".$news_total." items found, ".count($newsAr)." displayed, Interval = {$interval}<br /><br />";
-
-//$p_title = ($action == "item") ? $newsAr[1]['news_title'] : $tp->toHTML($newsAr[1]['category_name'],FALSE,"defs");
 $p_title = ($action == "item") ? $newsAr[1]['news_title'] : $tp->toHTML($newsAr[1]['category_name'],FALSE,"TITLE");
 
 if($action != "" && !is_numeric($action))
