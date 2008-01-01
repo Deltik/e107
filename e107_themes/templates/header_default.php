@@ -6,8 +6,8 @@
 |     Released under the terms and conditions of the GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_themes/templates/header_default.php,v $
-|     $Revision: 1.108 $
-|     $Date: 2007/09/27 20:57:51 $
+|     $Revision: 1.110 $
+|     $Date: 2007/11/23 20:48:09 $
 |     $Author: e107steved $
 +-----------------------------------------------------------------------------------------------+
 */
@@ -103,7 +103,7 @@ if (varset($pref['wysiwyg'],FALSE) && check_class($pref['post_html']) && varset(
 }
 
 if (isset($theme_js_php) && $theme_js_php) {
-	echo "<link rel='stylesheet' href='".THEME_ABS."theme-js.php' type='text/css />";
+	echo "<link rel='stylesheet' href='".THEME_ABS."theme-js.php' type='text/css' />";
 } else {
 	echo "<script type='text/javascript' src='".e_FILE_ABS."e107.js'></script>\n";
 	if (file_exists(THEME.'theme.js')) { echo "<script type='text/javascript' src='".THEME_ABS."theme.js'></script>\n"; }
@@ -141,10 +141,10 @@ if (isset($eplug_css) && $eplug_css) {
 	echo "\n<!-- eplug_css -->\n";
     if(is_array($eplug_css))
 	{
-    	foreach($eplug_css as $kcss)
-		{
-        	echo "<link rel='stylesheet' href='{$kcss}' type='text/css' />\n";
-		}
+      foreach($eplug_css as $kcss)
+	  {	// Allow inline style definition - but only if $eplug_css is an array (maybe require an array later)
+        if ('<style' == substr($kcss,0,6)) echo $kcss; else echo "<link rel='stylesheet' href='{$kcss}' type='text/css' />\n";
+	  }
 	}
 	else
 	{
@@ -196,10 +196,10 @@ if(defined("PREVIEWTHEME")) {
 }
 
 //
-// DEPRECATED!!! This is used in log/stats.php to generate some css. We'll clean this up in a future release.
+// DEPRECATED!!! This is used in log/stats.php to generate some css. Its gone in 0.8 - requirement removed
 //
-
 if(function_exists('core_head')){ echo core_head(); }
+
 
 //
 // F: Send Meta Tags and Icon links

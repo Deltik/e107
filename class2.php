@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/class2.php,v $
-|     $Revision: 1.349 $
-|     $Date: 2007/10/21 22:02:36 $
-|     $Author: e107coders $
+|     $Revision: 1.355 $
+|     $Date: 2007/12/29 19:01:24 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 //
@@ -119,13 +119,15 @@ if(is_numeric(str_replace(".","",$_SERVER['HTTP_HOST']))){
 }
 
 define("e_SUBDOMAIN", (count($srvtmp)>2 && $srvtmp[2] ? $srvtmp[0] : FALSE)); // needs to be available to e107_config.
-$domrep = array("www.");
-if(e_SUBDOMAIN){
-	$domrep[] = e_SUBDOMAIN.".";
-}
-define("e_DOMAIN",($srvtmp != "" ? str_replace($domrep,"",$_SERVER['HTTP_HOST']) : FALSE)); // if it's an IP it must be set to FALSE.
 
-unset($srvtmp,$domrep);
+if(e_SUBDOMAIN)
+{
+   	unset($srvtmp[0]);
+}
+
+define("e_DOMAIN",(count($srvtmp) > 1 ? (implode(".",$srvtmp)) : FALSE)); // if it's an IP it must be set to FALSE.
+
+unset($srvtmp);
 
 
 //  Ensure thet '.' is the first part of the include path
@@ -360,8 +362,15 @@ define("SITEURL", SITEURLBASE.e_HTTP);
 if(isset($pref['multilanguage_subdomain']) && $pref['multilanguage_subdomain'] && ($pref['user_tracking'] == "session") && e_DOMAIN && MULTILANG_SUBDOMAIN !== FALSE){
 
 		$mtmp = explode("\n",$pref['multilanguage_subdomain']);
+        foreach($mtmp as $val)
+		{
+        	if(e_DOMAIN == trim($val))
+			{
+            	$domain_active = TRUE;
+			}
+		}
 
-		if(in_array(e_DOMAIN,$mtmp) || ($pref['multilanguage_subdomain'] ==1))
+		if($domain_active || ($pref['multilanguage_subdomain'] == "1"))
 		{
 			e107_ini_set("session.cookie_domain",".".e_DOMAIN);
 			require_once(e_HANDLER."language_class.php");
@@ -680,7 +689,7 @@ if ($pref['membersonly_enabled'] && !USER && e_SELF != SITEURL.e_SIGNUP && e_SEL
 	exit;
 }
 
-$sql->db_Delete("tmp", "tmp_time < '".(time() - 300)."' AND tmp_ip!='data' AND tmp_ip!='submitted_link'");
+$sql->db_Delete("tmp", "tmp_time < ".(time() - 300)." AND tmp_ip!='data' AND tmp_ip!='submitted_link'");
 
 
 
@@ -1039,11 +1048,11 @@ function get_user_data($uid, $extra = "")
 	$qry = "
 	SELECT u.*, ue.* FROM #user AS u
 	LEFT JOIN #user_extended AS ue ON ue.user_extended_id = u.user_id
-	WHERE u.user_id='{$uid}' {$extra}
+	WHERE u.user_id = {$uid} {$extra}
 	";
 	if (!$sql->db_Select_gen($qry))
 	{
-		$qry = "SELECT * FROM #user AS u WHERE u.user_id='{$uid}' {$extra}";
+		$qry = "SELECT * FROM #user AS u WHERE u.user_id = {$uid} {$extra}";
 		if(!$sql->db_Select_gen($qry))
 		{
 			return FALSE;
@@ -1199,7 +1208,7 @@ class e_online {
 				}
 			}
 
-			if (ADMIN || ($pref['autoban'] != 1 && $pref['autoban'] != 2)) // Auto-Ban is switched off. (0 or 3)
+		if (ADMIN || ($pref['autoban'] != 1 && $pref['autoban'] != 2) || (!isset($row['online_pagecount']))) // Auto-Ban is switched off. (0 or 3)
 			{
 				$row['online_pagecount'] = 1;
 			}
@@ -1512,12 +1521,16 @@ function include_lan($path, $force = false) {
 }
 
 if(!function_exists("print_a")) {
+	$charset = "utf-8";
+	if(defined("CHARSET")) {
+		$charset = CHARSET;
+	}
 	function print_a($var, $return = false) {
 		if(!$return){
-			echo '<pre>'.print_r($var, true).'</pre>';
+			echo '<pre>'.htmlspecialchars(print_r($var, true), ENT_QUOTES, $charset).'</pre>';
 			return true;
 		} else {
-			return '<pre>'.print_r($var, true).'</pre>';
+			return '<pre>'.htmlspecialchars(print_r($var, true), ENT_QUOTES, $charset).'</pre>';
 		}
 	}
 }
@@ -1525,11 +1538,11 @@ if(!function_exists("print_a")) {
 
 // Check that all required user fields (including extended fields) are valid.
 // Return TRUE if update required
-function force_userupdate() 
+function force_userupdate()
 {
 	global $sql,$pref,$currentUser;
 
-	if (e_PAGE == "usersettings.php" || strpos(e_SELF, ADMINDIR) == TRUE)
+	if (e_PAGE == "usersettings.php" || strpos(e_SELF, ADMINDIR) == TRUE || (defined("FORCE_USERUPDATE") && (FORCE_USERUPDATE == FALSE)))
 	{
 		return FALSE;
 	}

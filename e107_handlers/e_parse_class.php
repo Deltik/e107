@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/e_parse_class.php,v $
-|     $Revision: 1.196 $
-|     $Date: 2007/10/26 00:36:15 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.203 $
+|     $Date: 2007/12/30 09:49:42 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -126,7 +126,7 @@ class e_parse
 		if (is_array($data)) {
 			// recursively run toDB (for arrays)
 			foreach ($data as $key => $var) {
-				$ret[$key] = $this -> toDB($var, $nostrip, $no_encode);
+				$ret[$key] = $this -> toDB($var, $nostrip, $no_encode, $mod);
 			}
 		} else {
 			if (MAGIC_QUOTES_GPC == TRUE && $nostrip == false) {
@@ -149,7 +149,7 @@ class e_parse
 			//If user is not allowed to use [php] change to entities
 			if(!check_class($pref['php_bbcode']))
 			{
-				$ret = str_replace(array("[php", "[/php"), array("&#91;php", "&#91;/php"), $ret);
+				$ret = preg_replace("#\[(php)#i", "&#91;\\1", $ret);
 			}
 
 		}
@@ -223,7 +223,7 @@ class e_parse
 		//If user is not allowed to use [php] change to entities
 		if(!check_class($pref['php_bbcode']))
 		{
-			$text = str_replace(array("[php]", "[/php]"), array("&#91;php&#93;", "&#91;/php&#93;"), $text);
+			$text = preg_replace("#\[(php)#i", "&#91;\\1", $text);
 		}
 
 		return ($modifier ? $this->toHTML($text, true, $extra) : $text);
@@ -240,72 +240,124 @@ class e_parse
 		// End parse {XXX} codes
 	}
 
+
+
 	function htmlwrap($str, $width, $break = "\n", $nobreak = "", $nobr = "pre", $utf = false)
 	{
 		/*
-		* htmlwrap() function - v1.1
+		* Parts of code from  htmlwrap() function - v1.6
 		* Copyright (c) 2004 Brian Huisman AKA GreyWyvern
 		* http://www.greywyvern.com/code/php/htmlwrap_1.1.php.txt
 		*
 		* This program may be distributed under the terms of the GPL
 		*   - http://www.gnu.org/licenses/gpl.txt
+		*
+		* Other mods by steved
 		*/
 
-		$content = preg_split("/([<>])/", $str, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
-		$nobreak = explode(" ", $nobreak);
-		$nobr = explode(" ", $nobr);
-		$intag = false;
-		$innbk = array();
-		$innbr = array();
-		$drain = "";
-		$utf = ($utf || CHARSET == 'utf-8') ? "u" : "";
-		$lbrks = "/?!%)-}]\\\"':;";
-		if ($break == "\r")
+  // Transform protected element lists into arrays
+  $nobreak = explode(" ", strtolower($nobreak));
+
+  // Variable setup
+  $intag = false;
+  $innbk = array();
+  $drain = "";
+
+  // List of characters it is "safe" to insert line-breaks at
+  // It is not necessary to add < and > as they are automatically implied
+  $lbrks = "/?!%)-}]\\\"':;&";
+
+  // Is $str a UTF8 string?
+	$utf8 = ($utf || CHARSET == 'utf-8') ? "u" : "";
+
+
+// Start of the serious stuff - split into HTML tags and text between
+	  $content = preg_split('#(<.*?>)#mis', $str, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE );
+	  foreach($content as $value)
+	  {
+		if ($value[0] == "<")
+		{  // We are within an HTML tag
+          // Create a lowercase copy of this tag's contents
+          $lvalue = strtolower(substr($value,1,-1));
+		  if ($lvalue)
+		  {	// Tag of non-zero length
+			// If the first character is not a / then this is an opening tag
+            if ($lvalue[0] != "/") 
+			{            // Collect the tag name   
+              preg_match("/^(\w*?)(\s|$)/", $lvalue, $t);
+
+              // If this is a protected element, activate the associated protection flag
+              if (in_array($t[1], $nobreak)) array_unshift($innbk, $t[1]);
+            }
+		    else 
+		    {  // Otherwise this is a closing tag
+              // If this is a closing tag for a protected element, unset the flag
+              if (in_array(substr($lvalue, 1), $nobreak)) 
+			  {
+                reset($innbk);
+                while (list($key, $tag) = each($innbk)) 
+				{
+                  if (substr($lvalue, 1) == $tag) 
+				  {
+                    unset($innbk[$key]);
+                    break;
+                  }
+                }
+                $innbk = array_values($innbk);
+              }
+            }
+		  }
+		  else
+		  {
+		    $value = '';		// Eliminate any empty tags altogether
+		  }
+        // Else if we're outside any tags, and with non-zero length string...
+        } 
+		elseif ($value) 
 		{
-			$break = "\n";
-		}
-		while (list(, $value) = each($content))
-		{
-			switch ($value)
+          // If unprotected...
+          if (!count($innbk)) 
+		  {
+            // Use the ACK (006) ASCII symbol to replace all HTML entities temporarily
+            $value = str_replace("\x06", "", $value);
+            preg_match_all("/&([a-z\d]{2,7}|#\d{2,5});/i", $value, $ents);
+            $value = preg_replace("/&([a-z\d]{2,7}|#\d{2,5});/i", "\x06", $value);
+
+            // Enter the line-break loop
+            do 
 			{
-				case "<": $intag = true; break;
-				case ">": $intag = false; break;
-				default:
-				if ($intag)
+              $store = $value;
+
+              // Find the first stretch of characters over the $width limit
+              if (preg_match("/^(.*?\s)?(\S{".$width."})(?!(".preg_quote($break, "/")."|\s))(.*)$/s".(($utf8) ? "u" : ""), $value, $match)) 
+			  {
+                if (strlen($match[2])) 
 				{
-					if ($value{0} != "/")
-					{
-						preg_match('/^(.*?)(\s|$)/'.$utf, $value, $t);
-						if ((!count($innbk) && in_array($t[1], $nobreak)) || in_array($t[1], $innbk)) $innbk[] = $t[1];
-						if ((!count($innbr) && in_array($t[1], $nobr)) || in_array($t[1], $innbr)) $innbr[] = $t[1];
-					} else {
-						if (in_array(substr($value, 1), $innbk)) unset($innbk[count($innbk)]);
-						if (in_array(substr($value, 1), $innbr)) unset($innbr[count($innbr)]);
-					}
-				} else if ($value)
-				{
-					if (!count($innbr)) $value = str_replace("\n", "\r", str_replace("\r", "", $value));
-					if (!count($innbk))
-					{
-						do
-						{
-							$store = $value;
-							if (preg_match("/^(.*?\s|^)(([^\s&]|&(\w{2,5}|#\d{2,4});){".$width."})(?!(".preg_quote($break, "/").'|\s))(.*)$/s'.$utf, $value, $match))
-							{
-								for ($x = 0, $ledge = 0; $x < strlen($lbrks); $x++) $ledge = max($ledge, strrpos($match[2], $lbrks{$x}));
-								if (!$ledge) $ledge = strlen($match[2]) - 1;
-								$value = $match[1].substr($match[2], 0, $ledge + 1).$break.substr($match[2], $ledge + 1).$match[6];
-							}
-						}
-						while ($store != $value);
-					}
-					if (!count($innbr)) $value = str_replace("\r", E_NL, $value);
-				}
-			}
-			$drain .= $value;
-		}
-		return $drain;
+                  // Determine the last "safe line-break" character within this match
+                  for ($x = 0, $ledge = 0; $x < strlen($lbrks); $x++) $ledge = max($ledge, strrpos($match[2], $lbrks{$x}));
+                  if (!$ledge) $ledge = strlen($match[2]) - 1;
+
+                  // Insert the modified string
+                  $value = $match[1].substr($match[2], 0, $ledge + 1).$break.substr($match[2], $ledge + 1).$match[4];
+                }
+              }
+            // Loop while overlimit strings are still being found
+            } while ($store != $value);
+
+            // Put captured HTML entities back into the string
+            foreach ($ents[0] as $ent) $value = preg_replace("/\x06/", $ent, $value, 1);
+          }
+        }
+
+        // Send the modified segment down the drain
+        $drain .= $value;
+	  }
+
+	  // Return contents of the drain
+	  return $drain;
 	}
+
+
 
 	function html_truncate ($text, $len = 200, $more = "[more]")
 	{
@@ -511,11 +563,7 @@ class e_parse
 		}
 
 
-		// replace all {e_XXX} constants with their e107 value
-		if ($opts['constants'])
-		{
-			$text = $this->replaceConstants($text);
-		}
+
 
 		if ($opts['no_tags'])
 		{
@@ -543,8 +591,7 @@ class e_parse
 			{
               $_ext = ($pref['links_new_window'] ? " rel=\"external\"" : "");
               $text = preg_replace("#(^|[\n ])([\w]+?://[^ \"\n\r\t<]*)#is", "\\1<a href=\"\\2\" {$_ext}>".$pref['link_text']."</a>", $text);
-//                $text = preg_replace("#(^|[\n ])((www|ftp)\.[^ \"\t\n\r<]*)#is", "\\1<a href=\"http://\\2\" {$_ext}>".$pref['link_text']."</a>", $text);
-			  $text = preg_replace("#(^|[\n ])((www|ftp)\.[\w+-]+?\.[\w+\-.]*(?(?=/)(/.+?(?=\s|,\s))|(?=\W)))#is", "\\1<a href=\"http://\\2\" {$_ext}>".$pref['link_text']."</a>", $text);
+			  $text = preg_replace("#(^|[\n \]])((www|ftp)\.[\w+-]+?\.[\w+\-.]*(?(?=/)(/.+?(?=\s|,\s))|(?=\W)))#is", "\\1<a href=\"http://\\2\" {$_ext}>".$pref['link_text']."</a>", $text);
               if(CHARSET != "utf-8" && CHARSET != "UTF-8")
 			  {
                 $email_text = ($pref['email_text']) ? $this->replaceConstants($pref['email_text']) : "\\1\\2&copy;\\3";
@@ -558,8 +605,7 @@ class e_parse
 			else
 			{
               $text = preg_replace("#(^|[\n ])([\w]+?://[^ \"\n\r\t<,]*)#is", "\\1<a href=\"\\2\" rel=\"external\">\\2</a>", $text);
-//                $text = preg_replace("#(^|[\n ])((www|ftp)\.[^ \"\t\n\r<,]*)#is", "\\1<a href=\"http://\\2\" rel=\"external\">\\2</a>", $text);
-			  $text = preg_replace("#(^|[\n ])((www|ftp)\.[\w+-]+?\.[\w+\-.]*(?(?=/)(/.+?(?=\s|,\s))|(?=\W)))#is", "\\1<a href=\"http://\\2\" rel=\"external\">\\2</a>", $text);
+			  $text = preg_replace("#(^|[\n \]])((www|ftp)\.[\w+-]+?\.[\w+\-.]*(?(?=/)(/.+?(?=\s|,\s))|(?=\W)))#is", "\\1<a href=\"http://\\2\" rel=\"external\">\\2</a>", $text);
               $text = preg_replace("#([\n ])([a-z0-9\-_.]+?)@([\w\-]+\.([\w\-\.]+\.)*[\w]+)#i", "\\1<a rel='external' href='javascript:window.location=\"mai\"+\"lto:\"+\"\\2\"+\"@\"+\"\\3\";self.close();' onmouseover='window.status=\"mai\"+\"lto:\"+\"\\2\"+\"@\"+\"\\3\"; return true;' onmouseout='window.status=\"\";return true;'>".LAN_EMAIL_SUBS."</a>", $text);
             }
         }
@@ -600,6 +646,8 @@ class e_parse
 		}
 
 
+
+
         // Start parse [bb][/bb] codes
         if ($parseBB === TRUE)
 		{
@@ -611,6 +659,12 @@ class e_parse
         }
         // End parse [bb][/bb] codes
 
+
+		// replace all {e_XXX} constants with their e107 value AFTER the bbcodes have been parsed.
+		if ($opts['constants'])
+		{
+		   	$text = $this->replaceConstants($text);
+		}
 
 		// profanity filter
         if ($pref['profanity_filter']) {
@@ -748,9 +802,23 @@ class e_parse
 		if($nonrelative != "")
 		{
 			global $IMAGES_DIRECTORY, $PLUGINS_DIRECTORY, $FILES_DIRECTORY, $THEMES_DIRECTORY,$DOWNLOADS_DIRECTORY,$ADMIN_DIRECTORY;
-			$replace_relative = array("",$IMAGES_DIRECTORY,$PLUGINS_DIRECTORY,$FILES_DIRECTORY,$THEMES_DIRECTORY,$DOWNLOADS_DIRECTORY);
-			$replace_absolute = array(SITEURL,SITEURL.$IMAGES_DIRECTORY,SITEURL.$PLUGINS_DIRECTORY,SITEURL.$FILES_DIRECTORY,SITEURL.$THEMES_DIRECTORY,SITEURL.$DOWNLOADS_DIRECTORY);
-			$search = array("{e_BASE}","{e_IMAGE}","{e_PLUGIN}","{e_FILE}","{e_THEME}","{e_DOWNLOAD}");
+			$replace_relative = array("",
+									SITEURL.$IMAGES_DIRECTORY,
+									SITEURL.$THEMES_DIRECTORY,
+									$IMAGES_DIRECTORY,
+									$PLUGINS_DIRECTORY,
+									$FILES_DIRECTORY,
+									$THEMES_DIRECTORY,
+									$DOWNLOADS_DIRECTORY);
+			$replace_absolute = array(SITEURL,
+									SITEURL.$IMAGES_DIRECTORY,
+									SITEURL.$THEMES_DIRECTORY,
+									SITEURL.$IMAGES_DIRECTORY,
+									SITEURL.$PLUGINS_DIRECTORY,
+									SITEURL.$FILES_DIRECTORY,
+									SITEURL.$THEMES_DIRECTORY,
+									SITEURL.$DOWNLOADS_DIRECTORY);
+			$search = array("{e_BASE}","{e_IMAGE_ABS}","{e_THEME_ABS}","{e_IMAGE}","{e_PLUGIN}","{e_FILE}","{e_THEME}","{e_DOWNLOAD}");
 			if (ADMIN) {
 				$replace_relative[] = $ADMIN_DIRECTORY;
 				$replace_absolute[] = SITEURL.$ADMIN_DIRECTORY;
@@ -772,7 +840,8 @@ class e_parse
 			$replace = ((string)$nonrelative == "full" ) ? $replace_absolute : $replace_relative;
 			return str_replace($search,$replace,$text);
 		}
-		$pattern = ($all ? "#\{([A-Za-z_0-9]*)\}#s" : "#\{(e_[A-Z]*)\}#s");
+//		$pattern = ($all ? "#\{([A-Za-z_0-9]*)\}#s" : "#\{(e_[A-Z]*)\}#s");
+		$pattern = ($all ? "#\{([A-Za-z_0-9]*)\}#s" : "#\{(e_[A-Z]*(?:_ABS){0,1})\}#s");
 	 	$text = preg_replace_callback($pattern, array($this, 'doReplace'), $text);
 		$theme_path = (defined("THEME")) ? constant("THEME") : "";
 		$text = str_replace("{THEME}",$theme_path,$text);
@@ -845,7 +914,7 @@ class e_parse
 			$text = stripslashes($text);
 		}
 
-	  	$text = ($mods != "rawtext") ? $this->replaceConstants($text,"full") : $text;
+	  	$text = (strtolower($mods) != "rawtext") ? $this->replaceConstants($text,"full") : $text;
     	$text = $this->toHTML($text,TRUE,$mods);
         return $text;
 	}

@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/trackback/trackbackClass.php,v $
-|     $Revision: 1.10 $
-|     $Date: 2007/01/29 20:23:58 $
+|     $Revision: 1.13 $
+|     $Date: 2007/12/10 22:39:36 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -101,7 +101,7 @@ class trackbackClass
 
 	function respondTrackback ()
 	{
-		global $sql, $pref, $tp;
+		global $sql, $pref, $tp, $e107cache;
 		$errorMessage = "";
 		if(!$pref['trackbackEnabled'])
 		{
@@ -152,10 +152,14 @@ class trackbackClass
 
 		if(!$errorMessage)
 		{
-			if(!$sql -> db_Insert("trackback", "0, $pid, '$title', '$excerpt', '$permLink', '$blog_name' "))
-			{
-				$errorMessage = "Unable to enter your trackback information into the database -> 0, $pid, '$title', '$excerpt', '$permLink', '$blog_name'";
-			}
+		  if(!$sql -> db_Insert("trackback", "0, {$pid}, '{$title}', '{$excerpt}', '{$permLink}', '{$blog_name}' "))
+		  {
+			$errorMessage = "Unable to enter your trackback information into the database -> 0, {$pid}, '{$title}', '{$excerpt}', '{$permLink}', '{$blog_name}'";
+		  }
+		  else
+		  {
+			$e107cache->clear("comment.php?news.{$pid}");
+		  }
 		}
 
 		if($errorMessage)

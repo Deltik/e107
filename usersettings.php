@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/usersettings.php,v $
-|     $Revision: 1.95 $
-|     $Date: 2007/10/09 21:30:29 $
+|     $Revision: 1.98 $
+|     $Date: 2007/12/21 20:43:39 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -82,6 +82,26 @@ $photo_to_delete = '';
 $avatar_to_delete = '';
 
 require_once(HEADERF);
+
+
+// Given an array of user data, return a comma separated string which includes public, admin, member classes etc as appropriate.
+function addCommonClasses($udata)
+{
+  $tmp = array();
+  if ($udata['user_class'] != "") $tmp = explode(",", $udata['user_class']);
+  $tmp[] = e_UC_MEMBER;
+  $tmp[] = e_UC_READONLY;
+  $tmp[] = e_UC_PUBLIC;
+  if($udata['user_admin'] == 1)
+  {
+	$tmp[] = e_UC_ADMIN;
+  }
+  if (strpos($udata['user_perms'],'0') === 0)
+  {
+	$tmp[] = e_UC_MAINADMIN;
+  }
+  return implode(",", $tmp);
+}
 
 
 // Save user settings (whether or not changed)
@@ -256,6 +276,7 @@ if (isset($_POST['updatesettings']))
 					unset($message);
 					$error .= RESIZE_NOT_SUPPORTED."\\n";
 					@unlink(e_FILE."public/avatars/".$upload['name']);
+					$_POST['image'] = '';
 				}
 			}
 
@@ -268,6 +289,7 @@ if (isset($_POST['updatesettings']))
 					unset($message);
 					$error .= RESIZE_NOT_SUPPORTED."\\n";
 					@unlink(e_FILE."public/avatars/".$user_sess);
+					$user_sess = '';
 				}
 			}
 		  }
@@ -284,7 +306,7 @@ if (isset($_POST['updatesettings']))
 	elseif ($user_sess != "")
 	{	// Update DB with photo
 	  $sesschange = "user_sess = '".$tp->toDB($user_sess)."', ";
-	  if ($currentUser['user_sess'] == $sesschange)
+	  if ($currentUser['user_sess'] == $tp->toDB($user_sess))
 	  {
 		$sesschange = '';			// Same photo - do nothing
 //		echo "Photo not changed<br />";
@@ -292,7 +314,7 @@ if (isset($_POST['updatesettings']))
 	  else
 	  {
 		$photo_to_delete = $currentUser['user_sess'];
-//		echo "Delete old photo: {$photo_to_delete}<br />";
+//		echo "New photo: {$user_sess} Delete old photo: {$photo_to_delete}<br />";
 	  }
 	}
 
@@ -366,6 +388,7 @@ if (isset($_POST['updatesettings']))
 	  {
 		$udata = get_user_data($inp);				// Get all the user data, including any extended fields
 		$peer = ($inp == USERID ? false : true);
+		$udata['user_classlist'] = addCommonClasses($udata);
 
 		$loginname = strip_tags($_POST['loginname']);
 		if (!$loginname)
@@ -376,7 +399,7 @@ if (isset($_POST['updatesettings']))
 		}
 		else
 		{
-		  if(!check_class($pref['displayname_class'], $udata['user_class'], $peer))
+		  if(!check_class($pref['displayname_class'], $udata['user_classlist'], $peer))
 		  {
 			$new_username = "user_name = '{$loginname}', ";
 			$username = $loginname;
@@ -384,7 +407,7 @@ if (isset($_POST['updatesettings']))
 		}
 
 //			if (isset($_POST['username']) && check_class($pref['displayname_class']))
-		if (isset($_POST['username']) && check_class($pref['displayname_class'], $udata['user_class'], $peer))
+		if (isset($_POST['username']) && check_class($pref['displayname_class'], $udata['user_classlist'], $peer))
 		{	// Allow change of display name if in right class
 		  $username = strip_tags($_POST['username']);
 		  $username = $tp->toDB(substr($username, 0, $pref['displayname_maxlength']));
@@ -538,15 +561,7 @@ WHERE u.user_id='".intval($uuid)."'
 
 $sql->db_Select_gen($qry);
 $curVal=$sql->db_Fetch();
-$tmp = ($curVal['user_class'] != "" ? explode(",", $curVal['user_class']) : "");
-$tmp[] = e_UC_MEMBER;
-$tmp[] = e_UC_READONLY;
-$tmp[] = e_UC_PUBLIC;
-if($curVal['user_admin'] == 1)
-{
-	$tmp[] = e_UC_ADMIN;
-}
-$curVal['userclass_list'] = implode(",", $tmp);
+$curVal['userclass_list'] = addCommonClasses($curVal);
 
 if($_POST)
 {     // Fix for all the values being lost when an error occurred.
