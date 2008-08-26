@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/banner.php,v $
-|     $Revision: 1.14 $
-|     $Date: 2006/06/02 13:59:40 $
-|     $Author: lisa_ $
+|     $Revision: 1.16 $
+|     $Date: 2008/05/03 19:40:14 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
@@ -68,30 +68,33 @@ if (isset($_POST['clientsubmit'])) {
 			$BANNER_TABLE_STARTDATE = BANNERLAN_37." ".$start_date;
 			$BANNER_TABLE_ENDDATE = BANNERLAN_34." ".$end_date;
 			
-			if ($row['banner_ip']) {
+			if ($row['banner_ip']) 
+			{
 				$tmp = explode("^", $row['banner_ip']);
-				$BANNER_TABLE_IP_LAN = BANNERLAN_35.": ".(count($tmp)-1);
+				$BANNER_TABLE_IP_LAN = (count($tmp)-1);
 				for($a = 0; $a <= (count($tmp)-2); $a++) {
 					$BANNER_TABLE_IP .= $tmp[$a]."<br />";
 				}
 			}
 			 
-			if (!$BANNER_TABLE) {
+			if (!$BANNER_TABLE) 
+			{
 				if (file_exists(THEME."banner_template.php")) {
-					require_once(THEME."banner_template.php");
+					require(THEME."banner_template.php");
 				} else {
-					require_once(e_BASE.$THEMES_DIRECTORY."templates/banner_template.php");
+					require(e_BASE.$THEMES_DIRECTORY."templates/banner_template.php");
 				}
 			}
 			$textstring .= preg_replace("/\{(.*?)\}/e", '$\1', $BANNER_TABLE);
 		}
 	}
 	 
-	if (!$BANNER_TABLE) {
+	if (!$BANNER_TABLE) 
+	{
 		if (file_exists(THEME."banner_template.php")) {
-			require_once(THEME."banner_template.php");
+			require(THEME."banner_template.php");
 		} else {
-			require_once(e_BASE.$THEMES_DIRECTORY."templates/banner_template.php");
+			require(e_BASE.$THEMES_DIRECTORY."templates/banner_template.php");
 		}
 	}
 	$textstart = preg_replace("/\{(.*?)\}/e", '$\1', $BANNER_TABLE_START);

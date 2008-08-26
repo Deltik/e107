@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/e_parse_class.php,v $
-|     $Revision: 1.203 $
-|     $Date: 2007/12/30 09:49:42 $
+|     $Revision: 1.211 $
+|     $Date: 2008/07/17 19:17:54 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -90,7 +90,7 @@ class e_parse
 
 				'user_body' =>					// text is user-entered (i.e. untrusted)'body' or 'bulk' text (e.g. custom page body, content body)
 					array(
-						// no changes to default-on items
+						'constants'=>TRUE
 						),
 
 				'linktext' =>			// text is the 'content' of a link (A tag, etc)
@@ -245,15 +245,13 @@ class e_parse
 	function htmlwrap($str, $width, $break = "\n", $nobreak = "", $nobr = "pre", $utf = false)
 	{
 		/*
-		* Parts of code from  htmlwrap() function - v1.6
-		* Copyright (c) 2004 Brian Huisman AKA GreyWyvern
-		* http://www.greywyvern.com/code/php/htmlwrap_1.1.php.txt
-		*
-		* This program may be distributed under the terms of the GPL
-		*   - http://www.gnu.org/licenses/gpl.txt
-		*
-		* Other mods by steved
+		Pretty well complete rewrite to try and handle utf-8 properly.
+		Breaks a utf-8 string every $width characters max. If possible, breaks after 'safe' characters.
+		$break is the character inserted to flag the break.
 		*/
+
+  if (!ctype_digit($width)) return $str;		// Don't wrap if non-numeric width
+  if ($width < 6) return $str;					// Trap stupid wrap counts, as well
 
   // Transform protected element lists into arrays
   $nobreak = explode(" ", strtolower($nobreak));
@@ -268,8 +266,8 @@ class e_parse
   $lbrks = "/?!%)-}]\\\"':;&";
 
   // Is $str a UTF8 string?
-	$utf8 = ($utf || CHARSET == 'utf-8') ? "u" : "";
-
+	$utf8 = ($utf || strtolower(CHARSET) == 'utf-8') ? "u" : "";
+	
 
 // Start of the serious stuff - split into HTML tags and text between
 	  $content = preg_split('#(<.*?>)#mis', $str, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE );
@@ -314,48 +312,81 @@ class e_parse
         // Else if we're outside any tags, and with non-zero length string...
         } 
 		elseif ($value) 
-		{
-          // If unprotected...
+		{    // If unprotected...
           if (!count($innbk)) 
 		  {
             // Use the ACK (006) ASCII symbol to replace all HTML entities temporarily
             $value = str_replace("\x06", "", $value);
             preg_match_all("/&([a-z\d]{2,7}|#\d{2,5});/i", $value, $ents);
             $value = preg_replace("/&([a-z\d]{2,7}|#\d{2,5});/i", "\x06", $value);
-
-            // Enter the line-break loop
-            do 
+			$split = preg_split('#(\s)#'.$utf8, $value, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE );
+			$value = '';
+			foreach ($split as $sp)
 			{
-              $store = $value;
-
-              // Find the first stretch of characters over the $width limit
-              if (preg_match("/^(.*?\s)?(\S{".$width."})(?!(".preg_quote($break, "/")."|\s))(.*)$/s".(($utf8) ? "u" : ""), $value, $match)) 
-			  {
-                if (strlen($match[2])) 
+			  while (strlen($sp) > $width)
+			  {	// Enough characters that we may need to do something.
+				$pulled = '';
+				if ($utf8)
 				{
-                  // Determine the last "safe line-break" character within this match
-                  for ($x = 0, $ledge = 0; $x < strlen($lbrks); $x++) $ledge = max($ledge, strrpos($match[2], $lbrks{$x}));
-                  if (!$ledge) $ledge = strlen($match[2]) - 1;
+				  // Pull out a piece of the maximum permissible length
+				  preg_match('#^((?:[\x00-\x7F]|[\xC0-\xFF][\x80-\xBF]+){0,'.$width.'})(.{0,1}).*#s',$sp,$matches);
 
-                  // Insert the modified string
-                  $value = $match[1].substr($match[2], 0, $ledge + 1).$break.substr($match[2], $ledge + 1).$match[4];
-                }
-              }
-            // Loop while overlimit strings are still being found
-            } while ($store != $value);
-
+				  if (empty($matches[2]))
+				  {  // utf-8 length is less than specified - treat as a special case
+				    $value .= $sp;
+					$sp = '';
+				  }
+				  else
+				  {		// Need to find somewhere to break the string
+					for ($i = strlen($matches[1])-1; $i >= 0; $i--)
+					{
+					  if (strpos($lbrks,$matches[1][$i]) !== FALSE) break;
+					}
+					if ($i < 0)
+					{	// No 'special' break character found - break at the word boundary
+					  $pulled = $matches[1];
+					}
+					else
+					{
+					  $pulled = substr($sp,0,$i+1);
+					}
+				  }
+				}
+				else
+				{
+					for ($i = min($width,strlen($sp)); $i > 0; $i--)
+					{
+					  if (strpos($lbrks,$sp[$i-1]) !== FALSE) break;		// No speed advantage to defining match character
+					}
+					if ($i == 0)
+					{	// No 'special' break boundary character found - break at the word boundary
+					  $pulled = substr($sp,0,$width);
+					}
+					else
+					{
+					  $pulled = substr($sp,0,$i);
+					}
+				}
+				if ($pulled)
+				{
+				  $value .= $pulled.$break;
+				  $sp = substr($sp,strlen($pulled));			// Shorten $sp by whatever we've processed (will work even for utf-8)
+				}
+			  }
+			  $value .= $sp;		// Add in any residue
+			}
             // Put captured HTML entities back into the string
             foreach ($ents[0] as $ent) $value = preg_replace("/\x06/", $ent, $value, 1);
-          }
+          } 
         }
-
         // Send the modified segment down the drain
         $drain .= $value;
 	  }
-
 	  // Return contents of the drain
 	  return $drain;
 	}
+
+
 
 
 
@@ -430,15 +461,24 @@ class e_parse
 	function text_truncate($text, $len = 200, $more = "[more]") 
 	{
 	  if (strlen($text) <= $len) return $text; 		// Always valid
-	  if (CHARSET !== 'utf-8') return substr($text,0,$len).$more;	// Non-utf-8 - one byte per character - simple
-  
-	  // Its a utf-8 string here - don't know whether its longer than allowed length yet
-	  preg_match('#^(?:[\x00-\x7F]|[\xC0-\xFF][\x80-\xBF]+){0,0}'.
+	  if (strtolower(CHARSET) !== 'utf-8')
+	  {
+		$ret = substr($text,0,$len);	// Non-utf-8 - one byte per character - simple (unless there's an entity involved)
+	  }
+	  else
+	  {	  // Its a utf-8 string here - don't know whether its longer than allowed length yet
+		preg_match('#^(?:[\x00-\x7F]|[\xC0-\xFF][\x80-\xBF]+){0,0}'.
 				'((?:[\x00-\x7F]|[\xC0-\xFF][\x80-\xBF]+){0,'.$len.'})(.{0,1}).*#s',$text,$matches);
 
-	  $ret = $matches[1];
-	  if (!empty($matches[2])) $ret .= $more;
-	  return $ret;
+		if (empty($matches[2])) return $text;			// return if utf-8 length is less than max as well
+		$ret = $matches[1];
+	  }
+	  // search for possible broken html entities
+      // - if an & is in the last 8 chars, removing it and whatever follows shouldn't hurt
+      // it should work for any characters encoding
+      $leftAmp = strrpos(substr($ret,-8), '&');
+      if($leftAmp) $ret = substr($ret,0,strlen($ret)-8+$leftAmp);
+	  return $ret.$more;
 	}
 
 
@@ -590,7 +630,7 @@ class e_parse
             if ($pref['link_replace'] && !$opts['no_replace'])
 			{
               $_ext = ($pref['links_new_window'] ? " rel=\"external\"" : "");
-              $text = preg_replace("#(^|[\n ])([\w]+?://[^ \"\n\r\t<]*)#is", "\\1<a href=\"\\2\" {$_ext}>".$pref['link_text']."</a>", $text);
+              $text = preg_replace("#(^|[\n ])([\w]+?://[^ \"\n\r\t<,]*)#is", "\\1<a href=\"\\2\" {$_ext}>".$pref['link_text']."</a>", $text);
 			  $text = preg_replace("#(^|[\n \]])((www|ftp)\.[\w+-]+?\.[\w+\-.]*(?(?=/)(/.+?(?=\s|,\s))|(?=\W)))#is", "\\1<a href=\"http://\\2\" {$_ext}>".$pref['link_text']."</a>", $text);
               if(CHARSET != "utf-8" && CHARSET != "UTF-8")
 			  {

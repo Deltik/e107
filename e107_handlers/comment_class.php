@@ -12,8 +12,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/comment_class.php,v $
-|     $Revision: 1.71 $
-|     $Date: 2007/08/08 19:27:50 $
+|     $Revision: 1.75 $
+|     $Date: 2008/07/31 19:26:35 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -272,8 +272,8 @@ class comment {
 			$sub_query = "
 			SELECT c.*, u.*, ue.*
 			FROM #comments AS c
-			LEFT JOIN #user AS u ON c.comment_author = u.user_id
-			LEFT JOIN #user_extended AS ue ON c.comment_author = ue.user_extended_id
+			LEFT JOIN #user AS u ON SUBSTRING_INDEX(c.comment_author,'.',1) = u.user_id
+			LEFT JOIN #user_extended AS ue ON SUBSTRING_INDEX(c.comment_author,'.',1) = ue.user_extended_id
 			WHERE comment_item_id='".intval($thisid)."' AND comment_type='".$tp -> toDB($type, true)."' AND comment_pid='".intval($comrow['comment_id'])."'
 			ORDER BY comment_datestamp
 			";
@@ -478,13 +478,13 @@ class comment {
 
 		$query = $pref['nested_comments'] ?
 		"SELECT c.*, u.*, ue.* FROM #comments AS c
-		LEFT JOIN #user AS u ON c.comment_author = u.user_id
-		LEFT JOIN #user_extended AS ue ON c.comment_author = ue.user_extended_id
+		LEFT JOIN #user AS u ON SUBSTRING_INDEX(c.comment_author,'.',1) = u.user_id
+		LEFT JOIN #user_extended AS ue ON SUBSTRING_INDEX(c.comment_author,'.',1) = ue.user_extended_id
 		WHERE c.comment_item_id='".intval($id)."' AND c.comment_type='".$tp -> toDB($type, true)."' AND c.comment_pid='0' ORDER BY c.comment_datestamp"
 		:
 		"SELECT c.*, u.*, ue.* FROM #comments AS c
-		LEFT JOIN #user AS u ON c.comment_author = u.user_id
-		LEFT JOIN #user_extended AS ue ON c.comment_author = ue.user_extended_id
+		LEFT JOIN #user AS u ON SUBSTRING_INDEX(c.comment_author,'.',1) = u.user_id
+		LEFT JOIN #user_extended AS ue ON SUBSTRING_INDEX(c.comment_author,'.',1) = ue.user_extended_id
 		WHERE c.comment_item_id='".intval($id)."' AND c.comment_type='".$tp -> toDB($type, true)."' ORDER BY c.comment_datestamp";
 
 		$text = "";
@@ -553,25 +553,26 @@ class comment {
 
 	function recalc_user_comments($id)
 	{
-		global $sql;
+	  global $sql;
 	
-		if(is_array($id))
+	  if(is_array($id))
+	  {
+		foreach($id as $_id)
 		{
-			foreach($id as $_id)
-			{
-				$this->recalc_user_comments($_id);
-			}
+		  $this->recalc_user_comments($_id);
 		}
-		$qry = "
+		return;
+	  }
+	  $qry = "
 		SELECT COUNT(*) AS count
 		FROM #comments
 		WHERE SUBSTRING_INDEX(comment_author,'.',1) = '{$id}'
 		";
-		if($sql->db_Select_gen($qry))
-		{
-			$row = $sql->db_Fetch();
-			$sql->db_Update("user","user_comments = '{$row['count']}' WHERE user_id = '{$id}'");
-		}
+	  if($sql->db_Select_gen($qry))
+	  {
+		$row = $sql->db_Fetch();
+		$sql->db_Update("user","user_comments = '{$row['count']}' WHERE user_id = '{$id}'");
+	  }
 	}
 	
 	function get_author_list($id, $comment_type)
@@ -627,7 +628,8 @@ class comment {
 		$fl = new e_file;
 
 		$omit = array('^\.$','^\.\.$','^\/$','^CVS$','thumbs\.db','.*\._$','.bak$');
-		$files = $fl->get_files(e_PLUGIN, $fmask = 'e_comment.php', $omit, $recurse_level = 1, $current_level = 0);
+//		$files = $fl->get_files(e_PLUGIN, $fmask = 'e_comment.php', $omit, $recurse_level = 1, $current_level = 0);
+		$files = $fl->get_files(e_PLUGIN, 'e_comment.php', $omit, 1, 0);
 
 		foreach($files as $file){
 			unset($e_comment, $key);
@@ -685,24 +687,18 @@ class comment {
 		$qry1 = ($qry ? " AND ".$qry : "");
 
 		//get 'amount' of records from comment db
-		/*
-		$query = $pref['nested_comments'] ?
-		"SELECT c.*, u.*, ue.* FROM #comments AS c
-		LEFT JOIN #user AS u ON c.comment_author = u.user_id
-		LEFT JOIN #user_extended AS ue ON c.comment_author = ue.user_extended_id
-		WHERE c.comment_pid='0' ".$qry1." ORDER BY c.comment_datestamp DESC LIMIT ".intval($from1).",".intval($amount1)." "
-		:
-		"SELECT c.*, u.*, ue.* FROM #comments AS c
-		LEFT JOIN #user AS u ON c.comment_author = u.user_id
-		LEFT JOIN #user_extended AS ue ON c.comment_author = ue.user_extended_id
-		WHERE c.comment_id!='' ".$qry1." ORDER BY c.comment_datestamp DESC LIMIT ".intval($from1).",".intval($amount1)." ";
-		*/
 
+/*
 		$query = "
 		SELECT c.*, u.*, ue.* FROM #comments AS c
-		LEFT JOIN #user AS u ON c.comment_author = u.user_id
-		LEFT JOIN #user_extended AS ue ON c.comment_author = ue.user_extended_id
-		WHERE c.comment_id!='' ".$qry1." ORDER BY c.comment_datestamp DESC LIMIT ".intval($from1).",".intval($amount1)." ";
+		LEFT JOIN #user AS u ON SUBSTRING_INDEX(c.comment_author,'.',1) = u.user_id
+		LEFT JOIN #user_extended AS ue ON SUBSTRING_INDEX(c.comment_author,'.',1) = ue.user_extended_id
+		WHERE c.comment_id!='' AND c.comment_blocked = 0 ".$qry1." ORDER BY c.comment_datestamp DESC LIMIT ".intval($from1).",".intval($amount1)." ";
+//		WHERE c.comment_id!='' ".$qry1." ORDER BY c.comment_datestamp DESC LIMIT ".intval($from1).",".intval($amount1)." ";
+*/
+		$query = "
+		SELECT c.*  FROM #comments AS c
+		WHERE c.comment_id!='' AND c.comment_blocked = 0 ".$qry1." ORDER BY c.comment_datestamp DESC LIMIT ".intval($from1).",".intval($amount1)." ";
 
 		if ($comment_total = $sql->db_Select_gen($query))
 		{

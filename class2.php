@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/class2.php,v $
-|     $Revision: 1.355 $
-|     $Date: 2007/12/29 19:01:24 $
+|     $Revision: 1.364 $
+|     $Date: 2008/08/03 08:00:19 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -76,7 +76,8 @@ if(($pos = strpos($_SERVER['PHP_SELF'], ".php/")) !== false) // redirect bad URL
 {
 	$new_url = substr($_SERVER['PHP_SELF'], 0, $pos+4);
 	$new_loc = ($_SERVER['QUERY_STRING']) ? $new_url."?".$_SERVER['QUERY_STRING'] : $new_url;
-	Header("Location: ".$new_loc);
+	header("Location: ".$new_loc);
+	exit();
 }
 // If url contains a .php in it, PHP_SELF is set wrong (imho), affecting all paths.  We need to 'fix' it if it does.
 $_SERVER['PHP_SELF'] = (($pos = strpos($_SERVER['PHP_SELF'], ".php")) !== false ? substr($_SERVER['PHP_SELF'], 0, $pos+4) : $_SERVER['PHP_SELF']);
@@ -115,7 +116,7 @@ define("MAGIC_QUOTES_GPC", (ini_get('magic_quotes_gpc') ? TRUE : FALSE));
 if(is_numeric(str_replace(".","",$_SERVER['HTTP_HOST']))){
 	$srvtmp = "";  // Host is an IP address.
 }else{
-	$srvtmp = explode(".",$_SERVER['HTTP_HOST']);
+	$srvtmp = explode(".",str_replace("www.","",$_SERVER['HTTP_HOST']));
 }
 
 define("e_SUBDOMAIN", (count($srvtmp)>2 && $srvtmp[2] ? $srvtmp[0] : FALSE)); // needs to be available to e107_config.
@@ -143,9 +144,11 @@ unset($inc_path);
 // F: Grab e107_config, get directory paths and create $e107 object
 //
 @include_once(realpath(dirname(__FILE__).'/e107_config.php'));
-if(!isset($ADMIN_DIRECTORY)){
-	// e107_config.php is either empty, not valid or doesn't exist so redirect to installer..
-  	header("Location: install.php");
+if(!isset($ADMIN_DIRECTORY))
+{
+  // e107_config.php is either empty, not valid or doesn't exist so redirect to installer..
+  header("Location: install.php");
+  exit();
 }
 
 //
@@ -375,7 +378,7 @@ if(isset($pref['multilanguage_subdomain']) && $pref['multilanguage_subdomain'] &
 			e107_ini_set("session.cookie_domain",".".e_DOMAIN);
 			require_once(e_HANDLER."language_class.php");
 			$lng = new language;
-	        if(e_SUBDOMAIN == "www" || e_SUBDOMAIN === FALSE)
+	        if(!e_SUBDOMAIN)
 			{
 	        	$GLOBALS['elan'] = $pref['sitelanguage'];
 			}
@@ -403,33 +406,49 @@ define("e_SELF", ($pref['ssl_enabled'] == '1' ? "https://".$_SERVER['HTTP_HOST']
 // Now matches RFC 2616 (sec 3.2): case insensitive, https/:443 and http/:80 are equivalent.
 // And, this is robust against hack attacks. Malignant users can put **anything** in HTTP_HOST!
 if($pref['redirectsiteurl'] && $pref['siteurl']) {
-	// Find domain and port from user and from pref
-	list($urlbase,$urlport) = explode(':',$_SERVER['HTTP_HOST'].':');
-	if (!$urlport) { $urlport = $_SERVER['SERVER_PORT']; }
-	if (!$urlport) { $urlport = 80; }
-	$aPrefURL = explode('/',$pref['siteurl'],4);
-	if (count($aPrefURL) > 2) { // we can do this -- there's at least http[s]://dom.ain/whatever
-		$PrefRoot = $aPrefURL[2];
-		list($PrefSiteBase,$PrefSitePort) = explode(':',$PrefRoot.':');
-		if (!$PrefSitePort) {
-			$PrefSitePort = ( $aPrefURL[0] == "https:" ) ? 443 : 80;	// no port so set port based on 'scheme'
+
+	if(isset($pref['multilanguage_subdomain']) && $pref['multilanguage_subdomain'])
+	{
+   		if(substr(e_SELF,7,4)=="www." || substr(e_SELF,8,4)=="www.")
+		{
+			$self = e_SELF;
+			if(e_QUERY){ $self .= "?".e_QUERY; }
+			$location = str_replace("://www.","://",$self);
+			header("Location: {$location}", true, 301); // send 301 header, not 302
+			exit();
+		}
+	}
+    else
+	{
+		// Find domain and port from user and from pref
+		list($urlbase,$urlport) = explode(':',$_SERVER['HTTP_HOST'].':');
+		if (!$urlport) { $urlport = $_SERVER['SERVER_PORT']; }
+		if (!$urlport) { $urlport = 80; }
+		$aPrefURL = explode('/',$pref['siteurl'],4);
+		if (count($aPrefURL) > 2) { // we can do this -- there's at least http[s]://dom.ain/whatever
+			$PrefRoot = $aPrefURL[2];
+			list($PrefSiteBase,$PrefSitePort) = explode(':',$PrefRoot.':');
+			if (!$PrefSitePort) {
+				$PrefSitePort = ( $aPrefURL[0] == "https:" ) ? 443 : 80;	// no port so set port based on 'scheme'
+			}
+
+			// Redirect only if
+			// -- ports do not match (http <==> https)
+			// -- base domain does not match (case-insensitive)
+			// -- NOT admin area
+			if (($urlport != $PrefSitePort || stripos($PrefSiteBase, $urlbase) === FALSE) && strpos(e_SELF, ADMINDIR) === FALSE) 		{
+				$aeSELF = explode('/',e_SELF,4);
+				$aeSELF[0] = $aPrefURL[0];	// Swap in correct type of query (http, https)
+				$aeSELF[1] = '';						// Defensive code: ensure http:// not http:/<garbage>/
+				$aeSELF[2] = $aPrefURL[2];  // Swap in correct domain and possibly port
+				$location = implode('/',$aeSELF).(e_QUERY ? "?".e_QUERY : "");
+
+			header("Location: {$location}", true, 301); // send 301 header, not 302
+			exit();
 		}
 
-		// Redirect only if
-		// -- ports do not match (http <==> https)
-		// -- base domain does not match (case-insensitive)
-		// -- NOT admin area
-		if (($urlport != $PrefSitePort || stripos($PrefSiteBase, $urlbase) === FALSE) && strpos(e_SELF, ADMINDIR) === FALSE) 		{
-			$aeSELF = explode('/',e_SELF,4);
-			$aeSELF[0] = $aPrefURL[0];	// Swap in correct type of query (http, https)
-			$aeSELF[1] = '';						// Defensive code: ensure http:// not http:/<garbage>/
-			$aeSELF[2] = $aPrefURL[2];  // Swap in correct domain and possibly port
-			$location = implode('/',$aeSELF).(e_QUERY ? "?".e_QUERY : "");
-
-		header("Location: {$location}", true, 301); // send 301 header, not 302
-		exit();
+		}
 	}
-}
 }
 
 $page = substr(strrchr($_SERVER['PHP_SELF'], "/"), 1);
@@ -454,9 +473,11 @@ if (isset($_POST['setlanguage']) || isset($_GET['elan']) || isset($GLOBALS['elan
 	} else {
 		setcookie('e107language_'.$pref['cookie_name'], $_POST['sitelanguage'], time() + 86400, "/");
 		$_COOKIE['e107language_'.$pref['cookie_name']] = $_POST['sitelanguage'];
-		if (strpos(e_SELF, ADMINDIR) === FALSE) {
-			$locat = ((!$_GET['elan'] && e_QUERY) || (e_QUERY && e_LANCODE)) ? e_SELF."?".e_QUERY : e_SELF;
-		  	 	header("Location:".$locat);
+		if (strpos(e_SELF, ADMINDIR) === FALSE) 
+		{
+		  $locat = ((!$_GET['elan'] && e_QUERY) || (e_QUERY && e_LANCODE)) ? e_SELF."?".e_QUERY : e_SELF;
+		  header("Location:".$locat);
+		  exit();
 		}
 	}
 }
@@ -583,12 +604,15 @@ if(isset($pref['e_module_list']) && $pref['e_module_list']){
 $sql->db_Mark_Time('Start: Load Theme');
 
 //###########  Module redefinable functions ###############
-if (!function_exists('checkvalidtheme')) {
-	function checkvalidtheme($theme_check) {
-		// arg1 = theme to check
-		global $ADMIN_DIRECTORY, $tp, $e107;
+if (!function_exists('checkvalidtheme')) 
+{
+	// arg1 = theme to check
+	function checkvalidtheme($theme_check) 
+	{
+	  global $ADMIN_DIRECTORY, $tp, $e107;
 
-		if (ADMIN && strpos(e_QUERY, "themepreview") !== FALSE) {
+	  if (ADMIN && strpos(e_QUERY, "themepreview") !== FALSE) 
+	  {	// Theme preview
 			list($action, $id) = explode('.', e_QUERY);
 			require_once(e_HANDLER."theme_handler.php");
 			$themeArray = themeHandler :: getThemes("id");
@@ -597,34 +621,42 @@ if (!function_exists('checkvalidtheme')) {
 			define("THEME", e_THEME.$themeArray[$id]."/");
 			define("THEME_ABS", e_THEME_ABS.$themeArray[$id]."/");
 			return;
-		}
-		if (@fopen(e_THEME.$theme_check."/theme.php", "r")) {
-			define("THEME", e_THEME.$theme_check."/");
-			define("THEME_ABS", e_THEME_ABS.$theme_check."/");
-			$e107->site_theme = $theme_check;
-		} else {
-			function search_validtheme() {
-				global $e107;
-				$th=substr(e_THEME, 0, -1);
-				$handle=opendir($th);
-				while ($file = readdir($handle)) {
-					if (is_dir(e_THEME.$file) && is_readable(e_THEME.$file.'/theme.php')) {
-						closedir($handle);
-						$e107->site_theme = $file;
-						return $file;
-					}
-				}
-				closedir($handle);
+	  }
+	  if (@fopen(e_THEME.$theme_check."/theme.php", "r")) 
+	  {  // 'normal' theme load
+		define("THEME", e_THEME.$theme_check."/");
+		define("THEME_ABS", e_THEME_ABS.$theme_check."/");
+		$e107->site_theme = $theme_check;
+	  } 
+	  else 
+	  {
+		function search_validtheme() 
+		{
+		  global $e107;
+		  $th=substr(e_THEME, 0, -1);
+		  $handle=opendir($th);
+		  while ($file = readdir($handle)) 
+		  {
+			if (is_dir(e_THEME.$file) && is_readable(e_THEME.$file.'/theme.php')) 
+			{
+			  closedir($handle);
+			  $e107->site_theme = $file;
+			  return $file;
 			}
-			$e107tmp_theme = search_validtheme();
-			define("THEME", e_THEME.$e107tmp_theme."/");
-			define("THEME_ABS", e_THEME_ABS.$e107tmp_theme."/");
-			if (ADMIN && strpos(e_SELF, $ADMIN_DIRECTORY) === FALSE) {
-				echo '<script>alert("'.$tp->toJS(CORE_LAN1).'")</script>';
-			}
+		  }
+		  closedir($handle);
 		}
-		$themes_dir = $e107->e107_dirs["THEMES_DIRECTORY"];
-		$e107->http_theme_dir = "{$e107->server_path}{$themes_dir}{$e107->site_theme}/";
+
+		$e107tmp_theme = search_validtheme();
+		define("THEME", e_THEME.$e107tmp_theme."/");
+		define("THEME_ABS", e_THEME_ABS.$e107tmp_theme."/");
+		if (ADMIN && strpos(e_SELF, $ADMIN_DIRECTORY) === FALSE) 
+		{
+		  echo '<script>alert("'.$tp->toJS(CORE_LAN1).'")</script>';
+		}
+	  }
+	  $themes_dir = $e107->e107_dirs["THEMES_DIRECTORY"];
+	  $e107->http_theme_dir = "{$e107->server_path}{$themes_dir}{$e107->site_theme}/";
 	}
 }
 
@@ -673,10 +705,13 @@ $ns=new e107table;
 
 $e107->ban();
 
-if(varset($pref['force_userupdate']) && USER) {
-	if(force_userupdate()) {
-		header("Location: ".e_BASE."usersettings.php?update");
-	}
+if(varset($pref['force_userupdate']) && USER) 
+{
+  if(force_userupdate()) 
+  {
+	header("Location: ".e_BASE."usersettings.php?update");
+	exit();
+  }
 }
 
 $sql->db_Mark_Time('Start: Signup/splash/admin');
@@ -686,7 +721,7 @@ define("e_LOGIN", e_BASE.(file_exists(e_BASE."customlogin.php") ? "customlogin.p
 
 if ($pref['membersonly_enabled'] && !USER && e_SELF != SITEURL.e_SIGNUP && e_SELF != SITEURL."index.php" && e_SELF != SITEURL."fpw.php" && e_SELF != SITEURL.e_LOGIN && strpos(e_PAGE, "admin") === FALSE && e_SELF != SITEURL.'membersonly.php' && e_SELF != SITEURL.'sitedown.php') {
 	header("Location: ".e_HTTP."membersonly.php");
-	exit;
+	exit();
 }
 
 $sql->db_Delete("tmp", "tmp_time < ".(time() - 300)." AND tmp_ip!='data' AND tmp_ip!='submitted_link'");
@@ -695,7 +730,7 @@ $sql->db_Delete("tmp", "tmp_time < ".(time() - 300)." AND tmp_ip!='data' AND tmp
 
 if ($pref['maintainance_flag'] && ADMIN == FALSE && strpos(e_SELF, "admin.php") === FALSE && strpos(e_SELF, "sitedown.php") === FALSE) {
 	header("Location: ".SITEURL."sitedown.php");
-	exit;
+	exit();
 }
 
 $sql->db_Mark_Time('(Start: Login/logout/ban/tz)');
@@ -775,61 +810,86 @@ if(!is_array($menu_data)) {
 
 $sql->db_Mark_Time('(Start: Find/Load Theme)');
 
-if(!defined("THEME")){
-	// any plugin file starting with 'admin_' is assumed to use admin theme
-	// any plugin file in a folder called admin/ is assumed to use admin theme.
-	// any file that specifies $eplug_admin = TRUE;
-	// this test: (strpos(e_SELF,'/'.$PLUGINS_DIRECTORY) !== FALSE && strpos(e_PAGE,"admin_") === 0)
-	// alternate test: match ANY file starting with 'admin_'...
-	//   strpos(e_PAGE, "admin_") === 0
-	//
-	// here we TEST the theme (see below for deciding what theme to USE)
-	//
 
-	if((strpos(e_SELF, $ADMIN_DIRECTORY) !== FALSE || (strpos(e_SELF,'/'.$PLUGINS_DIRECTORY) !== FALSE && (strpos(e_PAGE,"admin_") === 0 || strpos(str_replace($e107->base_path, "", e_SELF), "admin/") !== FALSE)) || (isset($eplug_admin) && $eplug_admin == TRUE)) && $pref['admintheme']) {
-
-		if (strpos(e_SELF.'?'.e_QUERY, 'menus.php?configure') !== FALSE) {
-			checkvalidtheme($pref['sitetheme']);
-		} else if (strpos(e_SELF, "newspost.php") !== FALSE) {
-			define("MAINTHEME", e_THEME.$pref['sitetheme']."/");
-			checkvalidtheme($pref['admintheme']);
-		}
-		else {
-			checkvalidtheme($pref['admintheme']);
-		}
-	} else {
-		if (USERTHEME !== FALSE && USERTHEME != "USERTHEME") {
-			checkvalidtheme(USERTHEME);
-		} else {
-			checkvalidtheme($pref['sitetheme']);
-		}
-	}
+// Work out which theme to use
+//----------------------------
+// The following files are assumed to use admin theme:
+//	  1. Any file in the admin directory (check for non-plugin added to avoid mismatches)
+// 	  2. any plugin file starting with 'admin_' 
+// 	  3. any plugin file in a folder called admin/ 
+// 	  4. any file that specifies $eplug_admin = TRUE;
+//
+// e_SELF has the full HTML path
+$inAdminDir = FALSE;
+$isPluginDir = strpos(e_SELF,'/'.$PLUGINS_DIRECTORY) !== FALSE;		// True if we're in a plugin
+$e107Path = str_replace($e107->base_path, "", e_SELF);				// Knock off the initial bits
+if	( 
+		 (!$isPluginDir && strpos($e107Path, $ADMIN_DIRECTORY) === 0 ) 								// Core admin directory
+	  || ($isPluginDir && (strpos(e_PAGE,"admin_") === 0 || strpos($e107Path, "admin/") !== FALSE)) // Plugin admin file or directory
+	  || (varsettrue($eplug_admin))																	// Admin forced
+	)
+{
+  $inAdminDir = TRUE;
 }
 
+
+if(!defined("THEME"))
+{
+	if ($inAdminDir && varsettrue($pref['admintheme'])&& (strpos(e_SELF.'?'.e_QUERY, 'menus.php?configure') === FALSE))
+	{
+/*	  if (strpos(e_SELF, "newspost.php") !== FALSE) 
+	  {
+		define("MAINTHEME", e_THEME.$pref['sitetheme']."/");		MAINTHEME no longer used in core distribution
+	  }  */
+	  checkvalidtheme($pref['admintheme']);
+	} 
+	elseif (USERTHEME !== FALSE && USERTHEME != "USERTHEME") 
+	{
+	  checkvalidtheme(USERTHEME);
+	} 
+	else 
+	{
+	  checkvalidtheme($pref['sitetheme']);
+	}
+}
 
 
 // --------------------------------------------------------------
 
-	// here we USE the theme
-	if (strpos(e_SELF.'?'.e_QUERY, 'menus.php?configure') === FALSE && (strpos(e_SELF, $ADMIN_DIRECTORY) !== FALSE || (strpos(e_SELF,'/'.$PLUGINS_DIRECTORY) !== FALSE && strpos(e_PAGE,"admin_") === 0) || (isset($eplug_admin) && $eplug_admin == TRUE))) {
-	if (file_exists(THEME.'admin_theme.php')) {
-		require_once(THEME.'admin_theme.php');
-	} else {
-		require_once(THEME."theme.php");
-	}
-} else {
+
+// here we USE the theme
+if ($inAdminDir)
+{
+  if (file_exists(THEME.'admin_theme.php')) 
+  {
+	require_once(THEME.'admin_theme.php');
+  } 
+  else 
+  {
 	require_once(THEME."theme.php");
+  }
+} 
+else 
+{
+  require_once(THEME."theme.php");
 }
+
+
+
 
 $exclude_lan = array("lan_signup.php");  // required for multi-language.
 
-if (strpos(e_SELF, $ADMIN_DIRECTORY) !== FALSE || strpos(e_SELF, "admin.php") !== FALSE) {
-	e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_".e_PAGE);
-	e107_include_once(e_LANGUAGEDIR."English/admin/lan_".e_PAGE);
-} else if (!in_array("lan_".e_PAGE,$exclude_lan) && strpos(e_SELF, $PLUGINS_DIRECTORY) === FALSE) {
-	e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_".e_PAGE);
-	e107_include_once(e_LANGUAGEDIR."English/lan_".e_PAGE);
+if ($inAdminDir)
+{
+  e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_".e_PAGE);
+  e107_include_once(e_LANGUAGEDIR."English/admin/lan_".e_PAGE);
+} 
+elseif (!in_array("lan_".e_PAGE,$exclude_lan) && !$isPluginDir) 
+{
+  e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_".e_PAGE);
+  e107_include_once(e_LANGUAGEDIR."English/lan_".e_PAGE);
 }
+
 
 
 
@@ -1301,22 +1361,28 @@ function init_session() {
 	global $sql, $pref, $user_pref, $tp, $currentUser, $e107;
 
 	define('USERIP', $e107->getip());
-	if (!isset($_COOKIE[$pref['cookie_name']]) && !isset($_SESSION[$pref['cookie_name']])) {
+	if (!isset($_COOKIE[$pref['cookie_name']]) && !isset($_SESSION[$pref['cookie_name']])) 
+	{
 		define("USER", FALSE);
+		define('USERID', 0);
 		define("USERTHEME", FALSE);
 		define("ADMIN", FALSE);
 		define("GUEST", TRUE);
 		define('USERCLASS', '');
 		define('USEREMAIL', '');
-	} else {
+	} 
+	else 
+	{
 		list($uid, $upw)=(isset($_COOKIE[$pref['cookie_name']]) && $_COOKIE[$pref['cookie_name']] ? explode(".", $_COOKIE[$pref['cookie_name']]) : explode(".", $_SESSION[$pref['cookie_name']]));
 
-		if (empty($uid) || empty($upw)) {
+		if (empty($uid) || empty($upw)) 
+		{
 			cookie($pref['cookie_name'], "", (time() - 2592000));
 			$_SESSION[$pref['cookie_name']] = "";
 			session_destroy();
 			define("ADMIN", FALSE);
 			define("USER", FALSE);
+			define('USERID', 0);
 			define("USERCLASS", "");
 			define("LOGINMESSAGE",CORE_LAN10."<br /><br />");
 			return (FALSE);
@@ -1376,8 +1442,11 @@ function init_session() {
 			} else {
 				define("ADMIN", FALSE);
 			}
-		} else {
+		} 
+		else 
+		{
 			define("USER", FALSE);
+			define('USERID', 0);
 			define("USERTHEME", FALSE);
 			define("ADMIN", FALSE);
 			define("CORRUPT_COOKIE", TRUE);
@@ -1394,7 +1463,7 @@ if(isset($pref['track_online']) && $pref['track_online']) {
 	$e_online->online($pref['track_online'], $pref['flood_protect']);
 }
 
-function cookie($name, $value, $expire, $path = "/", $domain = "", $secure = 0) {
+function cookie($name, $value, $expire=0, $path = "/", $domain = "", $secure = 0) {
 	setcookie($name, $value, $expire, $path, $domain, $secure);
 }
 
@@ -1520,19 +1589,25 @@ function include_lan($path, $force = false) {
 	return (isset($ret)) ? $ret : "";
 }
 
-if(!function_exists("print_a")) {
+if(!function_exists("print_a")) 
+{
+  function print_a($var, $return = false) 
+  {
 	$charset = "utf-8";
-	if(defined("CHARSET")) {
-		$charset = CHARSET;
+	if(defined("CHARSET")) 
+	{
+	  $charset = CHARSET;
 	}
-	function print_a($var, $return = false) {
-		if(!$return){
-			echo '<pre>'.htmlspecialchars(print_r($var, true), ENT_QUOTES, $charset).'</pre>';
-			return true;
-		} else {
-			return '<pre>'.htmlspecialchars(print_r($var, true), ENT_QUOTES, $charset).'</pre>';
-		}
+	if(!$return)
+	{
+	  echo '<pre>'.htmlspecialchars(print_r($var, true), ENT_QUOTES, $charset).'</pre>';
+	  return true;
+	} 
+	else 
+	{
+	  return '<pre>'.htmlspecialchars(print_r($var, true), ENT_QUOTES, $charset).'</pre>';
 	}
+  }
 }
 
 
@@ -1559,19 +1634,17 @@ function force_userupdate()
 
 	if (!varset($pref['disable_emailcheck'],TRUE) && !trim($currentUser['user_email'])) return TRUE;
 
-	if($sql -> db_Select("user_extended_struct", "user_extended_struct_name", "user_extended_struct_required = '1'"))
+	if($sql -> db_Select("user_extended_struct", "user_extended_struct_name, user_extended_struct_type", "user_extended_struct_required = '1'"))
 	{
-		while($row = $sql -> db_Fetch())
+	  while($row = $sql -> db_Fetch())
+	  {
+		$user_extended_struct_name = "user_{$row['user_extended_struct_name']}";
+		if ((!$currentUser[$user_extended_struct_name]) || (($row['user_extended_struct_type'] == 7) && ($currentUser[$user_extended_struct_name] == '0000-00-00')))
 		{
-			$user_extended_struct_name = "user_{$row['user_extended_struct_name']}";
-
-			if(!$currentUser[$user_extended_struct_name])
-			{
-				return TRUE;
-			}
+		  return TRUE;
 		}
+	  }
 	}
-
 	return FALSE;
 }
 

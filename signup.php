@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     Â©Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/signup.php,v $
-|     $Revision: 1.114 $
-|     $Date: 2007/10/11 19:46:05 $
-|     $Author: e107steved $
+|     $Revision: 1.117 $
+|     $Date: 2008/07/16 22:12:24 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -338,6 +338,12 @@ if (isset($_POST['register']))
 		}
 	}
 
+	if($invalid = $e_event->trigger("usersup_veri", $_POST))
+	{
+    	$error_message .= $invalid."\\n";
+        $error = TRUE;
+	}
+
 	if($_POST['xupexist'])
 	{
 		require_once(e_HANDLER."xml_class.php");
@@ -522,6 +528,25 @@ global $db_debug;
 	}
 
 
+// Split up an email address to check for banned domains.
+// Return false if invalid address
+function make_email_query($email, $fieldname = 'banlist_ip')
+{
+  global $tp;
+  $tmp = strtolower($tp -> toDB(trim(substr($email, strrpos($email, "@")+1))));
+  if ($tmp == '') return FALSE;
+  if (strpos($tmp,'.') === FALSE) return FALSE;
+  $em = array_reverse(explode('.',$tmp));
+  $line = '';
+  $out = array();
+  foreach ($em as $e)
+  {
+    $line = '.'.$e.$line;
+	$out[] = $fieldname."='*{$line}'";
+  }
+  return implode(' OR ',$out);
+}
+
 	//--------------------------------------
 	// Email address checks
 	//--------------------------------------
@@ -534,8 +559,10 @@ global $db_debug;
 	}
 
 	// Check Email against banlist.
-	$wc = $tp -> toDB("*".trim(substr($_POST['email'], strpos($_POST['email'], "@"))));
-	if ($do_email_validate && $sql->db_Select("banlist", "*", "banlist_ip='".$_POST['email']."' OR banlist_ip='{$wc}'"))
+	$wc = make_email_query($_POST['email']);
+	if ($wc) $wc = ' OR '.$wc;
+	
+	if (($wc === FALSE) || ($do_email_validate && $sql->db_Select("banlist", "*", "banlist_ip='".$_POST['email']."'".$wc)))
 	{
 	  $email_address_OK = FALSE;
 	  $brow = $sql -> db_Fetch();
@@ -599,7 +626,7 @@ global $db_debug;
 		if(isset($_POST['ue']['user_'.$ext['user_extended_struct_name']]))
 		{
 			$newval = trim($_POST['ue']['user_'.$ext['user_extended_struct_name']]);
-			if($ext['user_extended_struct_required'] == 1 && $newval == "" )
+			if($ext['user_extended_struct_required'] == 1 && (($newval == "") || (($ext['user_extended_struct_type'] == 7) && ($newval == '0000-00-00')) ))
 			{
 				$_ftext = (defined($ext['user_extended_struct_text']) ? constant($ext['user_extended_struct_text']) : $ext['user_extended_struct_text']);
 				$error_message .= LAN_SIGNUP_6.$_ftext.LAN_SIGNUP_7."\\n";

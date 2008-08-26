@@ -12,8 +12,8 @@
 |        GNU General Public License (http://gnu.org).
 |
 |   $Source: /cvsroot/e107/e107_0.7/e107_handlers/upload_handler.php,v $
-|   $Revision: 1.32 $
-|   $Date: 2007/12/11 21:18:04 $
+|   $Revision: 1.34 $
+|   $Date: 2008/07/06 21:25:21 $
 |   $Author: e107steved $
 +---------------------------------------------------------------+
 */
@@ -451,13 +451,21 @@ function file_upload($uploaddir, $avatar = FALSE, $fileinfo = "", $overwrite = "
 	if($uploaddir == e_THEME) {$upload_storagetype = 1;}
 	$options['save_to_db'] = ($upload_storagetype == "2" && $avatar == FALSE);
 
+	if (strpos($avatar,'=') !== FALSE)
+	{
+	  list($avatar,$param) = explode('=',$avatar,2);
+	}
+	else
+	{
+	  $param = USERID;
+	}
 	switch ($avatar)
 	{
 	  case 'attachment' :
 	    $avatar = "attachment+".$fileinfo;
 		break;
 	  case 'avatar' :
-	    $avatar = 'prefix+ap_'.USERID.'_';				// Prefix unique to user
+	    $avatar = 'prefix+ap_'.$param.'_';				// Prefix unique to user
 		$options['overwrite'] = TRUE;			// Allow update of avatar with same file name
 		break;
 	}
@@ -612,7 +620,7 @@ function file_size_decode($source, $compare = 0, $action = '')
 {
   $source = trim($source);
   $mult = 1;
-  $nostrip = FALSE;
+  if (strlen($source) && (strtoupper(substr($source,-1,1)) == 'B')) $source = substr($source,0,-1);
   if (!$source || is_numeric($source))
   {
     $val = $source;

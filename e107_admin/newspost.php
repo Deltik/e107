@@ -11,8 +11,8 @@
 |        GNU General Public License (http://gnu.org).
 |
 |   $Source: /cvsroot/e107/e107_0.7/e107_admin/newspost.php,v $
-|   $Revision: 1.146 $
-|   $Date: 2007/10/26 21:50:57 $
+|   $Revision: 1.148 $
+|   $Date: 2008/06/15 20:20:28 $
 |   $Author: e107steved $
 +---------------------------------------------------------------+
 
@@ -85,6 +85,7 @@ if(isset($_POST['delete']))
 	list($delete, $del_id) = explode("_", $tmp[0]);
 }
 
+
 if ($delete == "main" && $del_id)
 {
 	if ($sql->db_Count('news','(*)',"WHERE news_id = '{$del_id}'"))
@@ -103,12 +104,14 @@ if ($delete == "main" && $del_id)
 	unset($delete, $del);
 }
 
+
 if ($delete == "category" && $del_id) {
 	if ($sql->db_Delete("news_category", "category_id='$del_id' ")) {
 		$newspost->show_message(NWSLAN_33." #".$del_id." ".NWSLAN_32);
 		unset($delete, $del_id);
 	}
 }
+
 
 if($delete == "sn" && $del_id)
 {
@@ -122,7 +125,9 @@ if($delete == "sn" && $del_id)
 	}
 }
 
-if (isset($_POST['submitupload'])) {
+
+if (isset($_POST['submitupload'])) 
+{
 	$pref['upload_storagetype'] = "1";
 	require_once(e_HANDLER."upload_handler.php");
 
@@ -144,15 +149,18 @@ if (isset($_POST['submitupload'])) {
 	}
 }
 
+
 // required.
-if (isset($_POST['preview'])) {
+if (isset($_POST['preview'])) 
+{
 	$_POST['news_title'] = $tp->toDB($_POST['news_title']);
 	$_POST['news_summary'] = $tp->toDB($_POST['news_summary']);
 	$newspost->preview_item($id);
 }
 
-if (isset($_POST['submit_news'])) {
 
+if (isset($_POST['submit_news'])) 
+{
 	$newspost->submit_item($sub_action, $id);
 	$e107cache->clear("news.php");
 	$e107cache->clear("othernews");
@@ -191,14 +199,11 @@ if (isset($_POST['update_category'])) {
 	$e107cache->clear("othernews2");
 }
 
-if (isset($_POST['save_prefs'])) {
+if (isset($_POST['save_prefs'])) 
+{
 	$pref['newsposts'] = $_POST['newsposts'];
-
-	// ##### ADDED FOR NEWS ARCHIVE --------------------------------------------------------------------
 	$pref['newsposts_archive'] = $_POST['newsposts_archive'];
 	$pref['newsposts_archive_title'] = $tp->toDB($_POST['newsposts_archive_title']);
-	// ##### END --------------------------------------------------------------------------------------
-
 	$pref['news_cats'] = $_POST['news_cats'];
 	$pref['nbr_cols'] = $_POST['nbr_cols'];
 	$pref['subnews_attach'] = $_POST['subnews_attach'];
@@ -207,10 +212,6 @@ if (isset($_POST['save_prefs'])) {
 	$pref['subnews_htmlarea'] = $_POST['subnews_htmlarea'];
 	$pref['subnews_hide_news'] = $_POST['subnews_hide_news'];
 	$pref['news_subheader'] = $tp->toDB($_POST['news_subheader']);
-	/*
-	changes by jalist 22/01/2005:
-	added pref to render new date header
-	*/
 	$pref['news_newdateheader'] = $_POST['news_newdateheader'];
 	$pref['news_unstemplate'] = $_POST['news_unstemplate'];
 
@@ -226,11 +227,14 @@ if (!e_QUERY || $action == "main")
   $newspost->show_existing_items($action, $sub_action, $sort_order, $from, $amount);
 }
 
-if ($action == "create") {
+if ($action == "create") 
+{
 	$preset = $pst->read_preset("admin_newspost");  //only works here because $_POST is used.
 
-	if ($sub_action == "edit" && !$_POST['preview'] && !$_POST['submit_news']) {
-		if ($sql->db_Select("news", "*", "news_id='$id' ")) {
+  if ($sub_action == "edit" && !$_POST['preview'] && !$_POST['submit_news']) 
+  {
+		if ($sql->db_Select("news", "*", "news_id='$id' "))
+		{
 			$row = $sql->db_Fetch();
 			extract($row);
 			$_POST['news_title'] = $news_title;
@@ -248,23 +252,32 @@ if ($action == "create") {
 			$_POST['comment_total'] = $sql->db_Count("comments", "(*)", " WHERE comment_item_id='$news_id' AND comment_type='0' ");
 			$_POST['news_rendertype'] = $news_render_type;
 			$_POST['news_thumbnail'] = $news_thumbnail;
-
 		}
 	}
 	$newspost->create_item($sub_action, $id);
 }
 
-if ($action == "cat") {
+
+
+if ($action == "cat") 
+{
 	$newspost->show_categories($sub_action, $id);
 }
 
-if ($action == "sn") {
+
+
+if ($action == "sn") 
+{
 	$newspost->submitted_news($sub_action, $id);
 }
 
-if ($action == "pref") {
+
+
+if ($action == "pref") 
+{
 	$newspost->show_news_prefs($sub_action, $id);
 }
+
 
 echo "
 <script type=\"text/javascript\">
@@ -276,6 +289,10 @@ function fclear() {
 
 require_once("footer.php");
 exit;
+
+
+
+
 
 class newspost 
 {
@@ -393,16 +410,19 @@ class newspost
 	function create_item($sub_action, $id)
 	{
 		global $cal;
-		// ##### Display creation form ---------------------------------------------------------------------------------------------------------
-		/* 08-08-2004 - unknown - fixed `Insert Image' display to use $IMAGES_DIRECTORY */
+	  // ##### Display creation form 
 		global $sql, $rs, $ns, $pref, $tp, $pst, $e107;
 
-		if ($sub_action == "sn" && !$_POST['preview']) {
-			if ($sql->db_Select("submitnews", "*", "submitnews_id=$id", TRUE)) {
+	  if ($sub_action == "sn" && !$_POST['preview']) 
+	  {
+		if ($sql->db_Select("submitnews", "*", "submitnews_id=$id", TRUE)) 
+		{
 				list($id, $submitnews_name, $submitnews_email, $_POST['news_title'], $submitnews_category, $_POST['data'], $submitnews_datestamp, $submitnews_ip, $submitnews_auth, $submitnews_file) = $sql->db_Fetch();
 
 				if (e_WYSIWYG)
 				{
+				  if (substr($_POST['data'],-7,7) == '[/html]') $_POST['data'] = substr($_POST['data'],0,-7);
+				  if (substr($_POST['data'],0,6) == '[html]') $_POST['data'] = substr($_POST['data'],6);
 					$_POST['data'] .= "<br /><b>".NWSLAN_49." ".$submitnews_name."</b>";
 					$_POST['data'] .= ($submitnews_file)? "<br /><br /><img src='{e_IMAGE}newspost_images/".$submitnews_file."' style='float:right; margin-left:5px;margin-right:5px;margin-top:5px;margin-bottom:5px; border:1px solid' />":	"";
 				}
@@ -415,7 +435,8 @@ class newspost
 			}
 		}
 
-		if ($sub_action == "upload" && !$_POST['preview']) {
+	  if ($sub_action == "upload" && !$_POST['preview']) 
+	  {
 			if ($sql->db_Select("upload", "*", "upload_id=$id")) {
 				$row = $sql->db_Fetch();
 				extract($row);
@@ -455,14 +476,14 @@ class newspost
 		<tr>
 		<td style='width:20%' class='forumheader3'>".NWSLAN_12.":</td>
 		<td style='width:80%' class='forumheader3'>
-		<input class='tbox' type='text' name='news_title' size='80' value='".$_POST['news_title']."' maxlength='200' style='width:95%'/>
+		<input class='tbox' type='text' name='news_title' size='80' value='".$tp->post_toForm($_POST['news_title'])."' maxlength='200' style='width:95%'/>
 		</td>
 		</tr>
 
 		<tr>
 		<td style='width:20%' class='forumheader3'>".LAN_NEWS_27.":</td>
 		<td style='width:80%' class='forumheader3'>
-		<input class='tbox' type='text' name='news_summary' size='80' value='".$tp->toForm($_POST['news_summary'])."' maxlength='250' style='width:95%'/>
+		<input class='tbox' type='text' name='news_summary' size='80' value='".$tp->post_toForm($_POST['news_summary'])."' maxlength='250' style='width:95%'/>
 		</td>
 		</tr>
 
@@ -1073,40 +1094,46 @@ class newspost
 
 
 
-	function submitted_news($sub_action, $id) {
+	function submitted_news($sub_action, $id) 
+	{
 		global $rs, $ns, $tp;
 		$sql2 = new db;
 		$text = "<div style='text-align: center'>";
-		if ($category_total = $sql2->db_Select("submitnews", "*", "submitnews_id !='' ORDER BY submitnews_id DESC")) {
-			$text .= "<table class='fborder' style='".ADMIN_WIDTH."'>
+		if ($category_total = $sql2->db_Select("submitnews", "*", "submitnews_id !='' ORDER BY submitnews_id DESC")) 
+		{
+		  $text .= "<table class='fborder' style='".ADMIN_WIDTH."'>
 			<tr>
 			<td style='width:5%' class='fcaption'>ID</td>
 			<td style='width:70%' class='fcaption'>".NWSLAN_57."</td>
 			<td style='width:25%; text-align:center' class='fcaption'>".LAN_OPTIONS."</td>
 			</tr>";
-			while ($row = $sql2->db_Fetch()) {
-				extract($row);
-				$text .= "<tr>
+		  while ($row = $sql2->db_Fetch()) 
+		  {
+			extract($row);
+			if (substr($submitnews_item,-7,7) == '[/html]') $submitnews_item = substr($submitnews_item,0,-7);
+			if (substr($submitnews_item,0,6) == '[html]') $submitnews_item = substr($submitnews_item,6);
+			$text .= "<tr>
 				<td style='width:5%; text-align:center; vertical-align:top' class='forumheader3'>$submitnews_id</td>
 				<td style='width:70%' class='forumheader3'>";
-				$text .= ($submitnews_auth == 0)? "<b>".$tp->toHTML($submitnews_title,FALSE,"emotes_off, no_make_clickable")."</b>": $tp->toHTML($submitnews_title,FALSE,"emotes_off, no_make_clickable");
-				$text .= " [ ".NWSLAN_104." ".$submitnews_name." ".NWSLAN_108." ".date("D dS M y, g:ia", $submitnews_datestamp)."]<br />".$tp->toHTML($submitnews_item)."</td>
+			$text .= ($submitnews_auth == 0)? "<b>".$tp->toHTML($submitnews_title,FALSE,"emotes_off, no_make_clickable")."</b>": $tp->toHTML($submitnews_title,FALSE,"emotes_off, no_make_clickable");
+			$text .= " [ ".NWSLAN_104." ".$submitnews_name." ".NWSLAN_108." ".date("D dS M y, g:ia", $submitnews_datestamp)."]<br />".$tp->toHTML($submitnews_item)."</td>
 				<td style='width:25%; text-align:right; vertical-align:top' class='forumheader3'>";
-				$buttext = ($submitnews_auth == 0)? NWSLAN_58 :	NWSLAN_103;
-				$text .= $rs->form_open("post", e_SELF."?sn", "myform__{$submitnews_id}", "", "", " onsubmit=\"return jsconfirm('".$tp->toJS(NWSLAN_38." [ID: $submitnews_id ]")."')\"   ")
+			$buttext = ($submitnews_auth == 0)? NWSLAN_58 :	NWSLAN_103;
+			$text .= $rs->form_open("post", e_SELF."?sn", "myform__{$submitnews_id}", "", "", " onsubmit=\"return jsconfirm('".$tp->toJS(NWSLAN_38." [ID: $submitnews_id ]")."')\"   ")
 				."<div>".$rs->form_button("button", "category_edit_{$submitnews_id}", $buttext, "onclick=\"document.location='".e_SELF."?create.sn.$submitnews_id'\"")."
 				".$rs->form_button("submit", "delete[sn_{$submitnews_id}]", LAN_DELETE)."
 				</div>".$rs->form_close()."
 				</td>
 				</tr>\n";
-			}
-			$text .= "</table>";
-			} else {
-			$text .= "<div style='text-align:center'>".NWSLAN_59."</div>";
+		  }
+		  $text .= "</table>";
+		}
+		else 
+		{
+		  $text .= "<div style='text-align:center'>".NWSLAN_59."</div>";
 		}
 		$text .= "</div>";
 		$ns->tablerender(NWSLAN_47, $text);
-
 	}
 
 }

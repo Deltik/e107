@@ -82,10 +82,12 @@ e107 has installed successfully and is now ready to accept content.<br />Your ad
 [b]Support[/b]
 e107 Homepage: [link=http://e107.org]http://e107.org[/link], you will find the FAQ and documentation here.
 Forums: [link=http://e107.org/e107_plugins/forum/forum.php]http://e107.org/e107_plugins/forum/forum.php[/link]
+Plugin Developer Community: [link=http://www.e107coders.org]http://e107coders.org[/link]
 
 [b]Downloads[/b]
-Plugins: [link=http://e107coders.org]http://e107coders.org[/link]
-Themes: [link=http://e107themes.org]http://e107themes.org[/link]
+Plugins: [link=http://plugins.e107.org]http://plugins.e107.org[/link]
+Themes: [link=http://themes.e107.org]http://themes.e107.org[/link]
+
 
 Thank you for trying e107, we hope it fulfils your website needs.
 (You can delete this message from your admin section.)");
@@ -143,6 +145,10 @@ define("LANINS_102", 'Date / Time');
 define("LANINS_103", 'Reviews');
 define("LANINS_104", 'Review Front Page ...');
 
-define("LANINS_105", '');
-define("LANINS_106", '');
+define("LANINS_105", 'A database name or prefix beginning with some digits followed by \'e\' or \'E\' is not acceptable');
+define("LANINS_106", 'WARNING - E107 cannot write to the directories and/or files listed. While this will not stop E107 installing, it will mean that certain features are not available. 
+				You will need to change the file permissions to use these features');
+define("LANINS_107", '');
+define("LANINS_108", '');
+
 ?>

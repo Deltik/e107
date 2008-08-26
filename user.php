@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/user.php,v $
-|     $Revision: 1.45 $
-|     $Date: 2007/12/19 20:34:28 $
+|     $Revision: 1.47 $
+|     $Date: 2008/06/05 19:57:52 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -87,7 +87,7 @@ else
 	{
 		if ($qs[0] == "id")
 		{
-			$id = $qs[1];
+			$id = intval($qs[1]);
 		}
 		else
 		{
@@ -160,7 +160,7 @@ else
 {
 	$userList = $sql->db_getList();
 
-	$text .= $tp->parseTemplate($USER_SHORT_TEMPLATE_START, TRUE, $user_shortcodes);
+	$text = $tp->parseTemplate($USER_SHORT_TEMPLATE_START, TRUE, $user_shortcodes);
 	foreach ($userList as $row)
 	{
 		$loop_uid = $row['user_id'];

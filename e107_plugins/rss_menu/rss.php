@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/rss_menu/rss.php,v $
-|     $Revision: 1.58 $
-|     $Date: 2007/05/30 19:25:13 $
+|     $Revision: 1.60 $
+|     $Date: 2008/08/06 19:10:46 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -401,7 +401,7 @@ class rssCreate {
 						echo "
 							<item>
 							<title>".$tp->toRss($value['title'])."</title>
-							<description>".$tp->toRss(substr($value['description'],0,150))."</description>
+							<description>".substr($tp->toRss($value['description']),0,150)."</description>
 							<author>".$value['author']."&lt;".$this->nospam($value['author_email'])."&gt;</author>
 							<link>".$link."</link>
 							</item>";
@@ -416,7 +416,6 @@ class rssCreate {
 				echo "<?xml version=\"1.0\" encoding=\"".CHARSET."\"?>
 				<!-- generator=\"e107\" -->
 				<!-- content type=\"".$this -> contentType."\" -->
-				<!-- test=\"".SITEDISCLAIMER."\" -->
 				<rss {$rss_namespace} version=\"2.0\">
 				<channel>
 				<title>".$tp->toRss($rss_title)."</title>

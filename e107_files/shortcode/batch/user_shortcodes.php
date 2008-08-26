@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/user_shortcodes.php,v $
-|     $Revision: 1.26 $
-|     $Date: 2007/12/19 20:34:28 $
+|     $Revision: 1.29 $
+|     $Date: 2008/04/01 19:58:16 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -87,7 +87,7 @@ if(!$chatposts = getcachedvars('total_chatposts'))
   }
   cachevars('total_chatposts', $chatposts);
 }
-return round(($user['user_chats']/$chatposts) * 100, 2);
+return ($chatposts!=0) ? round(($user['user_chats']/$chatposts) * 100, 2): 0;
 SC_END
 
 SC_BEGIN USER_COMMENTPER
@@ -97,17 +97,17 @@ if(!$commentposts = getcachedvars('total_commentposts'))
 	$commentposts = $sql->db_Count("comments");
 	cachevars('total_commentposts', $commentposts);
 }
-return round(($user['user_comments']/$commentposts) * 100, 2);
+return ($commentposts!=0) ? round(($user['user_comments']/$commentposts) * 100, 2): 0;
 SC_END
 
 SC_BEGIN USER_FORUMPER
 global $sql, $user;
 if(!$forumposts = getcachedvars('total_forumposts'))
 {
-	$forumposts = $sql->db_Count("forum_t");
-	cachevars('total_forumposts', $forumposts);
+  $forumposts = (isset($pref['plug_installed']['forum'])) ? $sql->db_Count("forum_t"): 0;
+  cachevars('total_forumposts', $forumposts);
 }
-return round(($user['user_forums']/$forumposts) * 100, 2);
+return ($forumposts!==0) ? round(($user['user_forums']/$forumposts) * 100, 2): 0;
 SC_END
 
 SC_BEGIN USER_LEVEL
@@ -333,24 +333,21 @@ global $sql, $user, $full_perms;
 if (!$full_perms) return;
 if(!$userjump = getcachedvars('userjump'))
 {
-	$sql->db_Select("user", "user_id, user_name", "ORDER BY user_id ASC", "no-where");
-	$c = 0;
-	while ($row = $sql->db_Fetch())
-	{
-		$array[$c]['id'] = $row['user_id'];
-		$array[$c]['name'] = $row['user_name'];
-		if ($row['user_id'] == $user['user_id'])
-		{
-			$userjump['prev']['id'] = $array[$c-1]['id'];
-			$userjump['prev']['name'] = $array[$c-1]['name'];
-			$row = $sql->db_Fetch();
-			$userjump['next']['id'] = $row['user_id'];
-			$userjump['next']['name'] = $row['user_name'];
-			break;
-		}
-		$c++;
-	}
-	cachevars('userjump', $userjump);
+//  $sql->db_Select("user", "user_id, user_name", "`user_id` > ".intval($user['user_id'])." AND `user_ban`=0 ORDER BY user_id ASC LIMIT 1 ");
+  $sql->db_Select_gen("SELECT user_id, user_name FROM `#user` FORCE INDEX (PRIMARY) WHERE `user_id` > ".intval($user['user_id'])." AND `user_ban`=0 ORDER BY user_id ASC LIMIT 1 ");
+  if ($row = $sql->db_Fetch())
+  {
+	$userjump['next']['id'] = $row['user_id'];
+	$userjump['next']['name'] = $row['user_name'];
+  }
+//  $sql->db_Select("user", "user_id, user_name", "`user_id` < ".intval($user['user_id'])." AND `user_ban`=0 ORDER BY user_id DESC LIMIT 1 ");
+  $sql->db_Select_gen("SELECT user_id, user_name FROM `#user` FORCE INDEX (PRIMARY) WHERE `user_id` < ".intval($user['user_id'])." AND `user_ban`=0 ORDER BY user_id DESC LIMIT 1 ");
+  if ($row = $sql->db_Fetch())
+  {
+	$userjump['prev']['id'] = $row['user_id'];
+	$userjump['prev']['name'] = $row['user_name'];
+  }
+  cachevars('userjump', $userjump);
 }
 if($parm == 'prev')
 {

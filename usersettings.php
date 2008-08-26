@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/usersettings.php,v $
-|     $Revision: 1.98 $
-|     $Date: 2007/12/21 20:43:39 $
+|     $Revision: 1.102 $
+|     $Date: 2008/06/10 19:30:03 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -130,6 +130,9 @@ if (isset($_POST['updatesettings']))
 	{	// Current user logged in - use their ID
 	  $inp = USERID;
 	}
+	$udata = get_user_data($inp);				// Get all the user data, including any extended fields
+	$peer = ($inp == USERID ? false : true);
+	$udata['user_classlist'] = addCommonClasses($udata);
 
 
 	// Check external avatar
@@ -198,12 +201,14 @@ if (isset($_POST['updatesettings']))
 
 	if(isset($pref['signup_disallow_text']))
 	{
-		$tmp = explode(",", $pref['signup_disallow_text']);
-		foreach($tmp as $disallow){
-			if(strstr($_POST['username'], $disallow)){
-				$error .= LAN_USET_11."\\n";
-			}
+	  $tmp = explode(",", $pref['signup_disallow_text']);
+	  foreach($tmp as $disallow)
+	  {
+		if (($disallow != '') && strstr($_POST['username'], $disallow))
+		{
+		  $error .= LAN_USET_11."\\n";
 		}
+	  }
 	}
 
 	if (strlen(trim($_POST['password1'])) < $pref['signup_pass_len'] && trim($_POST['password1']) != "") {
@@ -213,20 +218,55 @@ if (isset($_POST['updatesettings']))
 	}
 
 
-	if (isset($pref['disable_emailcheck']) && $pref['disable_emailcheck']==1)
+
+//--------------------------------------------
+//		Email address checks
+//--------------------------------------------
+// Split up an email address to check for banned domains.
+// Return false if invalid address
+function make_email_query($email, $fieldname = 'banlist_ip')
+{
+  global $tp;
+  $tmp = strtolower($tp -> toDB(trim(substr($email, strrpos($email, "@")+1))));
+  if ($tmp == '') return FALSE;
+  if (strpos($tmp,'.') === FALSE) return FALSE;
+  $em = array_reverse(explode('.',$tmp));
+  $line = '';
+  $out = array();
+  foreach ($em as $e)
+  {
+    $line = '.'.$e.$line;
+	$out[] = $fieldname."='*{$line}'";
+  }
+  return implode(' OR ',$out);
+}
+
+
+	// Always validate an email address if entered. If its blank, that's OK if checking disabled
+	$_POST['email'] = $tp->toDB(trim(varset($_POST['email'],'')));
+	$do_email_validate = !varset($pref['disable_emailcheck'],FALSE) || ($_POST['email'] !='');
+	if ($do_email_validate && !check_email($_POST['email']))
 	{
-	} else {
-		if (!check_email($_POST['email']))
-		{
-	  		$error .= LAN_106."\\n";
-		}
+	  $error .= LAN_106."\\n";
 	}
 
-	// Check for duplicate of email address
-	if ($sql->db_Select("user", "user_name, user_email", "user_email='".$tp -> toDB($_POST['email'])."' AND user_id !='".intval($inp)."' "))
+	// Check Email address against banlist.
+	$wc = make_email_query($_POST['email']);
+	if ($wc) $wc = ' OR '.$wc;
+	
+	if (($wc === FALSE) || ($do_email_validate && $sql->db_Select("banlist", "*", "banlist_ip='".$_POST['email']."'".$wc)))
 	{
-	  	$error .= LAN_408."\\n";
+	  $error .= LAN_106."\\n";
 	}
+
+
+	// Check for duplicate of email address (always)
+	if ($sql->db_Select("user", "user_name, user_email", "user_email='".$_POST['email']."' AND user_id !='".intval($inp)."' "))
+	{
+	  $error .= LAN_408."\\n";
+	}
+
+
 
 
 // Display name checks
@@ -258,7 +298,7 @@ if (isset($_POST['updatesettings']))
 		require_once(e_HANDLER."upload_handler.php");
 		require_once(e_HANDLER."resize_handler.php");
 
-		if ($uploaded = file_upload(e_FILE."public/avatars/", "avatar"))
+		if ($uploaded = file_upload(e_FILE."public/avatars/", "avatar=".$udata['user_id']))
 		{
 		  foreach ($uploaded as $upload)
 		  {	// Needs the latest upload handler (with legacy and 'future' interfaces) to work
@@ -266,9 +306,9 @@ if (isset($_POST['updatesettings']))
 			{
 				// avatar uploaded - give it a reference which identifies it as server-stored
 				$_POST['image'] = "-upload-".$upload['name'];
-				if ($_POST['image'] != $currentUser['user_image'])
+				if ($_POST['image'] != $udata['user_image'])
 				{
-				  $avatar_to_delete = str_replace("-upload-", "", $currentUser['user_image']);
+				  $avatar_to_delete = str_replace("-upload-", "", $udata['user_image']);
 //				  echo "Avatar change; deleting {$avatar_to_delete}<br />";
 				}
 				if (!resize_image(e_FILE."public/avatars/".$upload['name'], e_FILE."public/avatars/".$upload['name'], "avatar"))
@@ -299,21 +339,21 @@ if (isset($_POST['updatesettings']))
 // See if user just wants to delete existing photo
 	if (isset($_POST['user_delete_photo']))
 	{
-	  $photo_to_delete = $currentUser['user_sess'];
+	  $photo_to_delete = $udata['user_sess'];
 	  $sesschange = "user_sess = '', ";
 //	  echo "Just delete old photo: {$photo_to_delete}<br />";
 	}
 	elseif ($user_sess != "")
 	{	// Update DB with photo
 	  $sesschange = "user_sess = '".$tp->toDB($user_sess)."', ";
-	  if ($currentUser['user_sess'] == $tp->toDB($user_sess))
+	  if ($udata['user_sess'] == $tp->toDB($user_sess))
 	  {
 		$sesschange = '';			// Same photo - do nothing
 //		echo "Photo not changed<br />";
 	  }
 	  else
 	  {
-		$photo_to_delete = $currentUser['user_sess'];
+		$photo_to_delete = $udata['user_sess'];
 //		echo "New photo: {$user_sess} Delete old photo: {$photo_to_delete}<br />";
 	  }
 	}
@@ -322,40 +362,33 @@ if (isset($_POST['updatesettings']))
     // Validate Extended User Fields.
 	if($_POST['ue'])
 	{
-		if($sql->db_Select('user_extended_struct'))	{
-			while($row = $sql->db_Fetch())
-			{
-				$extList["user_".$row['user_extended_struct_name']] = $row;
-			}
+	  if($sql->db_Select('user_extended_struct'))	
+	  {
+		while($row = $sql->db_Fetch())
+		{
+		  $extList["user_".$row['user_extended_struct_name']] = $row;
 		}
+	  }
 
 		$ue_fields = "";
 		foreach($_POST['ue'] as $key => $val)
 		{
-			$err = false;
-			$parms = explode("^,^", $extList[$key]['user_extended_struct_parms']);
-			$regex = $tp->toText($parms[1]);
-			$regexfail = $tp->toText($parms[2]);
-    		if(defined($regexfail)) {$regexfail = constant($regexfail);}
-	  		if($val == '' && $extList[$key]['user_extended_struct_required'] == 1 && !$_uid)
-			{
-         		$error .= LAN_SIGNUP_6.($tp->toHtml($extList[$key]['user_extended_struct_text'],FALSE,"defs"))." ".LAN_SIGNUP_7."\\n";
-	    		$err = TRUE;
+			$err = $ue->user_extended_validate_entry($val,$extList[$key]);
+	  		if($err === TRUE && !$_uid)
+			{  // General error - usually empty field; could be unacceptable value, or regex fail and no error message defined
+         	  $error .= LAN_SIGNUP_6.($tp->toHtml($extList[$key]['user_extended_struct_text'],FALSE,"defs"))." ".LAN_SIGNUP_7."\\n";
 			}
-			if($regex != "" && $val != "")
-			{
-				if(!preg_match($regex, $val))
-				{
-               		$error .= $regexfail."\\n";
-         			$err = TRUE;
-	         	}
+			elseif ($err)
+			{	// Specific error message returned - usually regex fail
+			  $error .= $err."\\n";
+			  $err = TRUE;
 			}
 			if(!$err)
 			{
-				$val = $tp->toDB($val);
-				$ue_fields .= ($ue_fields) ? ", " : "";
-				$ue_fields .= $key."='".$val."'";
-				}
+			  $val = $tp->toDB($val);
+			  $ue_fields .= ($ue_fields) ? ", " : "";
+			  $ue_fields .= $key."='".$val."'";
+			}
 		}
     }
 
@@ -386,15 +419,9 @@ if (isset($_POST['updatesettings']))
 
 	  if ($ret == '')
 	  {
-		$udata = get_user_data($inp);				// Get all the user data, including any extended fields
-		$peer = ($inp == USERID ? false : true);
-		$udata['user_classlist'] = addCommonClasses($udata);
-
 		$loginname = strip_tags($_POST['loginname']);
 		if (!$loginname)
 		{
-//		  $sql->db_Select("user", "user_loginname", "user_id='".intval($inp)."'");
-//		  $row = $sql -> db_Fetch();
 		  $loginname = $udata['user_loginname'];
 		}
 		else
@@ -473,15 +500,10 @@ if (isset($_POST['updatesettings']))
 
 
 		// Update Userclass - only if its the user changing their own data (admins can do it another way)
-//		if (!$_uid && $sql->db_Select("userclass_classes", "*", "userclass_editclass IN (".USERCLASS_LIST.")"))
 		if (!$_uid && $sql->db_Select("userclass_classes", "userclass_id", "userclass_editclass IN (".USERCLASS_LIST.")"))
 		{
 		  $ucList = $sql->db_getList();			// List of classes which this user can edit
 		  if (US_DEBUG) $admin_log->e_log_event(10,debug_backtrace(),"DEBUG","Usersettings test","Read editable list. Current user classes: ".$udata['user_class'],FALSE,LOG_TO_ROLLING);
-//		  if ($sql->db_Select("user", "user_class", "user_id = '".intval($inp)."'"))
-//		  {
-//			$row = $sql->db_Fetch();
-//			$cur_classes = explode(",", $row['user_class']);
 			$cur_classes = explode(",", $udata['user_class']);			// Current class membership
 			$newclist = array_flip($cur_classes);						// Array keys are now the class IDs
 
@@ -505,7 +527,6 @@ if (isset($_POST['updatesettings']))
 			  if (US_DEBUG) $admin_log->e_log_event(10,debug_backtrace(),"DEBUG","Usersettings test","Write back classes; new list: ".$nid,FALSE,LOG_TO_ROLLING);
 			  $sql->db_Update("user", "user_class='".$nid."' WHERE user_id=".intval($inp));
 			}
-//		  }
 		}
 
 

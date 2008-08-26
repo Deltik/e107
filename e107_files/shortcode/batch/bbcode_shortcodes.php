@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/bbcode_shortcodes.php,v $
-|     $Revision: 1.13 $
-|     $Date: 2007/06/13 19:36:15 $
+|     $Revision: 1.15 $
+|     $Date: 2008/06/02 18:55:26 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -77,23 +77,29 @@ if(!isset($iconpath[$parm]))
 }
 
 
-foreach($register_bb as $key=>$val) // allow themes to plug in to it.
+if (!empty($register_bb))
 {
+  foreach($register_bb as $key=>$val) // allow themes to plug in to it.
+  {
 	if($val[0]=="")
 	{
     	$val[0] = $bbcode_func;
 	}
 	$bbcode[$key] = $val;
 	$iconpath[$key] = $val[3];
+  }
 }
 
 
-foreach($eplug_bb as $key=>$val)  // allow plugins to plug into it.
+if (!empty($eplug_bb))
 {
+  foreach($eplug_bb as $key=>$val)  // allow plugins to plug into it.
+  {
 	extract($val);
    //	echo "$onclick $onclick_var $helptext $icon <br />";
     $bbcode[$name] = array($onclick,$onclick_var,$helptext,$icon,$function,$function_var);
 	$iconpath[$name] = $icon;
+  }
 }
 
 
@@ -132,7 +138,7 @@ SC_BEGIN BB_HELP
 	global $bbcode_helpactive,$bbcode_helptag;
 	$bbcode_helptag = ($parm) ? $parm : "helpb";
 	$bbcode_helpactive = TRUE;
-	return "<input id='{$bbcode_helptag}' class='helpbox' type='text' name='{$bbcode_helptag}' size='100'  />\n";
+	return "<input id='{$bbcode_helptag}' class='helpbox' type='text' name='{$bbcode_helptag}' size='90' maxlength='100' />\n";
 SC_END
 
 

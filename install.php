@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/install_.php,v $
-|     $Revision: 1.61 $
-|     $Date: 2007/03/05 21:13:17 $
+|     $Revision: 1.65 $
+|     $Date: 2008/07/09 21:38:14 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -260,20 +260,25 @@ class e_install {
 		$this->template->SetTag("stage_content", $page_info.$e_forms->return_form());
 	}
 
-	function stage_3(){
+
+	function stage_3()
+	{
 		global $e_forms;
+		$success = true;
 		$this->stage = 3;
 		$this->get_lan_file();
 		$this->template->SetTag("installation_heading", LANINS_001);
 		$this->template->SetTag("stage_pre", LANINS_002);
 		$this->template->SetTag("stage_num", LANINS_036);
-		$this->previous_steps['mysql']['server'] = $_POST['server'];
-		$this->previous_steps['mysql']['user'] = $_POST['name'];
+		$this->previous_steps['mysql']['server'] = trim($_POST['server']);
+		$this->previous_steps['mysql']['user'] = trim($_POST['name']);
 		$this->previous_steps['mysql']['password'] = $_POST['password'];
-		$this->previous_steps['mysql']['db'] = $_POST['db'];
+		$this->previous_steps['mysql']['db'] = trim($_POST['db']);
 		$this->previous_steps['mysql']['createdb'] = (isset($_POST['createdb']) && $_POST['createdb'] == true ? true : false);
-		$this->previous_steps['mysql']['prefix'] = $_POST['prefix'];
-		if($this->previous_steps['mysql']['server'] == "" || $this->previous_steps['mysql']['user'] == "" | $this->previous_steps['mysql']['db'] == "") {
+		$this->previous_steps['mysql']['prefix'] = trim($_POST['prefix']);
+		$success = $this->check_name($this->previous_steps['mysql']['db'],FALSE) && $this->check_name($this->previous_steps['mysql']['prefix'],TRUE);
+		if(!$success || $this->previous_steps['mysql']['server'] == "" || $this->previous_steps['mysql']['user'] == "") 
+		{
 			$this->stage = 3;
 			$this->template->SetTag("stage_num", LANINS_021);
 			$e_forms->start_form("versions", $_SERVER['PHP_SELF'].($_SERVER['QUERY_STRING'] == "debug" ? "?debug" : ""));
@@ -307,42 +312,57 @@ class e_install {
 			      <td class='row-border'><label for='prefix'>".LANINS_029."</label></td>
 			      <td class='row-border'><input type='text' name='prefix' id='prefix' size='20' value='{$this->previous_steps['mysql']['prefix']}'  maxlength='100' /></td>
 				  <td class='row-border'>".LANINS_034."</td>
-			    </tr>
+			    </tr>";
+			if (!$success)
+			{
+			  $output .= "<tr><td class='row-border' colspan='3'>".LANINS_105."</td></tr>";
+			}
+			$output .= "
 			  </table>
 			</div>
 			<br /><br />\n";
 			$e_forms->add_plain_html($output);
 			$e_forms->add_button("submit", LANINS_035);
 			$this->template->SetTag("stage_title", LANINS_040);
-		} else {
-			$success = true;
-			$this->template->SetTag("stage_title", LANINS_037.($this->previous_steps['mysql']['createdb'] == 1 ? LANINS_038 : ""));
-			if (!@mysql_connect($this->previous_steps['mysql']['server'], $this->previous_steps['mysql']['user'], $this->previous_steps['mysql']['password'])) {
+		} 
+		else 
+		{
+		  $this->template->SetTag("stage_title", LANINS_037.($this->previous_steps['mysql']['createdb'] == 1 ? LANINS_038 : ""));
+		  if (!@mysql_connect($this->previous_steps['mysql']['server'], $this->previous_steps['mysql']['user'], $this->previous_steps['mysql']['password'])) 
+		  {
+			$success = false;
+			$page_content = LANINS_041.nl2br("\n\n<b>".LANINS_083."\n</b><i>".mysql_error()."</i>");
+		  } 
+		  else 
+		  {
+			$page_content = LANINS_042;
+			if($this->previous_steps['mysql']['createdb'] == 1) 
+			{
+			  if (!mysql_query("CREATE DATABASE ".$this->previous_steps['mysql']['db'])) 
+			  {
 				$success = false;
-				$page_content = LANINS_041.nl2br("\n\n<b>".LANINS_083."\n</b><i>".mysql_error()."</i>");
-			} else {
-				$page_content = LANINS_042;
-				if($this->previous_steps['mysql']['createdb'] == 1) {
-					if (!mysql_query("CREATE DATABASE ".$this->previous_steps['mysql']['db'])) {
-						$success = false;
-						$page_content .= "<br /><br />".LANINS_043.nl2br("\n\n<b>".LANINS_083."\n</b><i>".mysql_error()."</i>");
-					} else {
-						$page_content .= "<br /><br />".LANINS_044;
-					}
-				}
+				$page_content .= "<br /><br />".LANINS_043.nl2br("\n\n<b>".LANINS_083."\n</b><i>".mysql_error()."</i>");
+			  } 
+			  else 
+			  {
+				$page_content .= "<br /><br />".LANINS_044;
+			  }
 			}
-			if($success){
-				$e_forms->start_form("versions", $_SERVER['PHP_SELF'].($_SERVER['QUERY_STRING'] == "debug" ? "?debug" : ""));
-				$page_content .= "<br /><br />".LANINS_045."<br /><br />";
-				$e_forms->add_button("submit", LANINS_035);
-			}
-			$head = $page_content;
+		  }
+		  if($success)
+		  {
+			$e_forms->start_form("versions", $_SERVER['PHP_SELF'].($_SERVER['QUERY_STRING'] == "debug" ? "?debug" : ""));
+			$page_content .= "<br /><br />".LANINS_045."<br /><br />";
+			$e_forms->add_button("submit", LANINS_035);
+		  }
+		  $head = $page_content;
 		}
-		$this->finish_form();
+		if ($success) $this->finish_form(); else $this->finish_form(3);
 		$this->template->SetTag("stage_content", $head.$e_forms->return_form());
 	}
 
-	function stage_4(){
+	function stage_4()
+	{
 		global $e_forms;
 		$this->stage = 4;
 		$this->get_lan_file();
@@ -350,35 +370,57 @@ class e_install {
 		$this->template->SetTag("stage_pre", LANINS_002);
 		$this->template->SetTag("stage_num", LANINS_007);
 		$this->template->SetTag("stage_title", LANINS_008);
-		$not_writable = $this->check_writable_perms();
+		$not_writable = $this->check_writable_perms('must_write');		// Some directories MUST be writable
+		$opt_writable = $this->check_writable_perms('can_write');		// Some directories CAN optionally be writable
 		$version_fail = false;
 		$perms_errors = "";
-		if(count($not_writable)) {
-			$perms_pass = false;
-			foreach ($not_writable as $file) {
-				$perms_errors .= (substr($file, -1) == "/" ? LANINS_010a : LANINS_010)."...<br /><b>{$file}</b><br />\n";
-			}
-			$perms_notes = LANINS_018;
-		} else {
-			$perms_pass = true;
-			$perms_errors = "&nbsp;";
-			$perms_notes = LANINS_017;
+		if(count($not_writable)) 
+		{
+		  $perms_pass = false;
+		  foreach ($not_writable as $file) 
+		  {
+			$perms_errors .= (substr($file, -1) == "/" ? LANINS_010a : LANINS_010)."...<br /><b>{$file}</b><br />\n";
+		  }
+		  $perms_notes = LANINS_018;
+		} 
+		elseif (count($opt_writable))
+		{
+		  $perms_pass = true;
+		  foreach ($opt_writable as $file) 
+		  {
+			$perms_errors .= (substr($file, -1) == "/" ? LANINS_010a : LANINS_010)."...<br /><b>{$file}</b><br />\n";
+		  }
+		  $perms_notes = LANINS_106;
 		}
-		if(!function_exists("mysql_connect")) {
+		else
+		{
+		  $perms_pass = true;
+		  $perms_errors = "&nbsp;";
+		  $perms_notes = LANINS_017;
+		}
+
+		if(!function_exists("mysql_connect")) 
+		{
 			$version_fail = true;
 			$mysql_note = LANINS_011;
 			$mysql_help = LANINS_012;
-		} elseif (!@mysql_connect($this->previous_steps['mysql']['server'], $this->previous_steps['mysql']['user'], $this->previous_steps['mysql']['password'])) {
+		} elseif (!@mysql_connect($this->previous_steps['mysql']['server'], $this->previous_steps['mysql']['user'], $this->previous_steps['mysql']['password'])) 
+		{
 			$mysql_note = LANINS_011;
 			$mysql_help = LANINS_013;
-		} else {
+		} 
+		else 
+		{
 			$mysql_note = mysql_get_server_info();
 			$mysql_help = LANINS_017;
 		}
-		if(!function_exists("utf8_encode")) {
-			$xml_installed = false;
-		} else {
-			$xml_installed = true;
+		if(!function_exists("utf8_encode")) 
+		{
+		  $xml_installed = false;
+		} 
+		else 
+		{
+		  $xml_installed = true;
 		}
 
 		$php_version = phpversion();
@@ -585,6 +627,18 @@ This file has been generated by the installation script.
 		$this->template->SetTag("stage_content", $page.$e_forms->return_form());
 	}
 
+
+	// Check a DB name or table prefix - anything starting with a numeric followed by 'e' causes problems.
+	// Return TRUE if acceptable, FALSE if unacceptable
+	// Empty string returns the value of $blank_ok (caller should set TRUE for prefix, FALSE for DB name)
+	function check_name($str,$blank_ok = FALSE)
+	{
+	  if ($str == '') return $blank_ok;
+	  if (preg_match("#^\d+[e|E]#",$str)) return FALSE;
+	  return TRUE;
+	}
+
+
 	function get_lan_file(){
 		if(!isset($this->previous_steps['language'])) {
 			$this->previous_steps['language'] = "English";
@@ -620,19 +674,25 @@ This file has been generated by the installation script.
 		$e_forms->add_hidden_data("stage", ($force_stage ? $force_stage : ($this->stage + 1)));
 	}
 
-	function check_writable_perms(){
+	function check_writable_perms($list = 'must_write')
+	{
 		$bad_files = array();
-		$data = 'e107_config.php|{$FILES_DIRECTORY}cache/|{$FILES_DIRECTORY}public/|{$FILES_DIRECTORY}public/avatars/|{$PLUGINS_DIRECTORY}|{$THEMES_DIRECTORY}';
-		foreach ($this->e107->e107_dirs as $dir_name => $value) {
-			$find[] = "{\${$dir_name}}";
-			$replace[] = "./$value";
+		$data['must_write'] = 'e107_config.php';
+		$data['can_write'] = '{$FILES_DIRECTORY}cache/|{$FILES_DIRECTORY}public/|{$FILES_DIRECTORY}public/avatars/|{$PLUGINS_DIRECTORY}|{$THEMES_DIRECTORY}';
+		if (!isset($data[$list])) return $bad_files;
+		foreach ($this->e107->e107_dirs as $dir_name => $value) 
+		{
+		  $find[] = "{\${$dir_name}}";
+		  $replace[] = "./$value";
 		}
-		$data = str_replace($find, $replace, $data);
-		$files = explode("|", trim($data));
-		foreach ($files as $file) {
-			if(!is_writable($file)) {
-				$bad_files[] = str_replace("./", "", $file);
-			}
+		$data[$list] = str_replace($find, $replace, $data[$list]);
+		$files = explode("|", trim($data[$list]));
+		foreach ($files as $file) 
+		{
+		  if(!is_writable($file)) 
+		  {
+			$bad_files[] = str_replace("./", "", $file);
+		  }
 		}
 		return $bad_files;
 	}
@@ -746,7 +806,7 @@ This file has been generated by the installation script.
 		}
 		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}core VALUES ('search_prefs', '{$search_prefs}') ");
 
-		$notify_prefs = mysql_escape_string("array ('event' => array ('usersup' => array ('type' => 'off', 'class' => '254', 'email' => '',),'userveri' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'login' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'logout' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'flood' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'subnews' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'newspost' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'newsupd' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'newsdel' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), ), )");
+		$notify_prefs = mysql_real_escape_string("array ('event' => array ('usersup' => array ('type' => 'off', 'class' => '254', 'email' => '',),'userveri' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'login' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'logout' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'flood' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'subnews' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'newspost' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'newsupd' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'newsdel' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), ), )");
 		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}core VALUES ('notify_prefs', '{$notify_prefs}') ");
 
 		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}banner VALUES (0, 'e107', 'e107login', 'e107password', 'banner1.png', 'http://e107.org', 0, 0, 0, 0, 0, 0, '', 'campaign_one') ");
