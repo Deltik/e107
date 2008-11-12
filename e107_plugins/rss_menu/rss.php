@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/rss_menu/rss.php,v $
-|     $Revision: 1.61 $
-|     $Date: 2008/09/23 20:03:36 $
+|     $Revision: 1.64 $
+|     $Date: 2008/11/02 22:28:03 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -54,14 +54,21 @@ if (is_readable(THEME."rss_template.php")) {
 }
 
 //query handler
-list($content_type, $rss_type, $topic_id) = explode(".", e_QUERY);
+if (e_QUERY)
+{
+	$tmp = explode(".", e_QUERY);
+	$content_type = $tp->toDB($tmp[0]);
+	$rss_type = intval(varset($tmp[1],0));
+	$topic_id = $tp->toDB($tmp[2],'');
+}
 
 //list available rss feeds
-if (intval($rss_type) == false) {
+if (!$rss_type) 
+{
 	require_once(HEADERF);
  	require_once(e_PLUGIN."rss_menu/rss_template.php");
 
-	if(!$sql->db_Select("rss", "*", "rss_class='0' AND rss_limit>0 AND rss_topicid NOT REGEXP ('\\\*') ORDER BY rss_name"))
+	if(!$sql->db_Select("rss", "*", "`rss_class`='0' AND `rss_limit`>0 AND `rss_topicid` NOT REGEXP ('\\\*') ORDER BY `rss_name`"))
 	{
 		$ns->tablerender(LAN_ERROR, RSS_LAN_ERROR_4);
 	}
@@ -88,14 +95,17 @@ $conversion[12] = "download";
 //-------------------------------------
 
 //convert certain old urls so we can check the db entries ---------------------
-if($topic_id){
-	//rss.php?1.2.14 (news, rss-2, cat=14)
-	if(is_numeric($content_type) && isset($conversion[$content_type]) ){
+if($topic_id)
+{	//rss.php?1.2.14 (news, rss-2, cat=14)
+	if(is_numeric($content_type) && isset($conversion[$content_type]) )
+	{
 		$content_type = $conversion[$content_type];
 	}
-}else{
-	//rss.php?1.2 (news, rss-2) --> check = news (check conversion table)
-	if(is_numeric($content_type) && isset($conversion[$content_type]) ){
+}
+else
+{	//rss.php?1.2 (news, rss-2) --> check = news (check conversion table)
+	if(is_numeric($content_type) && isset($conversion[$content_type]) )
+	{
 		$content_type = $conversion[$content_type];
 	}
 }
@@ -112,10 +122,14 @@ if(!$sql -> db_Select("rss", "*", "rss_class!='2' AND rss_url='".$content_type."
 		$ns->tablerender("", RSS_LAN_ERROR_1);
 		require_once(FOOTERF);
 		exit;
-	}else{
+	}
+	else
+	{
 		$row = $sql->db_Fetch();
 	}
-}else{
+}
+else
+{
 	$row = $sql->db_Fetch();
 }
 
@@ -169,7 +183,7 @@ class rssCreate {
 		}
 
 		switch ($content_type) {
-			case news:
+			case 'news' :
 			case 1:
 				if($topic_id && is_numeric($topic_id)){
 					$topic = " AND news_category = ".intval($topic_id);
@@ -191,7 +205,8 @@ class rssCreate {
 				foreach($tmp as $value) {
 					$this -> rssItems[$loop]['title'] = $value['news_title'];
 					$this -> rssItems[$loop]['link'] = "http://".$_SERVER['HTTP_HOST'].e_HTTP."news.php?item.".$value['news_id'].".".$value['news_category'];
-                    if($value['news_summary']){
+                    if($value['news_summary'])
+                    {
                         	$this -> rssItems[$loop]['description'] = $value['news_summary'];
 					}else{
 						$this -> rssItems[$loop]['description'] = $value['news_body'];
@@ -220,7 +235,7 @@ class rssCreate {
 				$path='';
 				$this -> contentType = "content";
 				break;
-			case comments:
+			case 'comments' :
 			case 5:
 				$path='';
 				$this -> rssQuery = "SELECT * FROM `#comments` WHERE `comment_blocked` = 0 ORDER BY `comment_datestamp` DESC LIMIT 0,".$this -> limit;
@@ -228,14 +243,23 @@ class rssCreate {
 				$tmp = $sql->db_getList();
 				$this -> rssItems = array();
 				$loop=0;
-				foreach($tmp as $value) {
+				foreach($tmp as $value) 
+				{
 					$this -> rssItems[$loop]['title'] = $value['comment_subject'];
+					$this -> rssItems[$loop]['pubdate'] = $value['comment_datestamp'];
 
-					switch ($value['comment_type']) {
-						case 0:
+					switch ($value['comment_type']) 
+					{
+						case 0 :
+						case 'news' :
 							$this -> rssItems[$loop]['link'] = "http://".$_SERVER['HTTP_HOST'].e_HTTP."comment.php?comment.news.".$value['comment_item_id'];
 							break;
+						case 2 :
+						case 'download' :
+							$this -> rssItems[$loop]['link'] = "http://".$_SERVER['HTTP_HOST'].e_HTTP."comment.php?comment.download.".$value['comment_item_id'];
+							break;
 						case 4:
+						case 'poll' :
 							$this -> rssItems[$loop]['link'] = "http://".$_SERVER['HTTP_HOST'].e_HTTP."comment.php?comment.poll.".$value['comment_item_id'];
 							break;
 					}
