@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/news_shortcodes.php,v $
-|     $Revision: 1.37 $
-|     $Date: 2008/09/04 20:07:03 $
+|     $Revision: 1.39 $
+|     $Date: 2008/12/01 21:04:01 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -119,20 +119,31 @@ if($pref['comments_disabled'] == 1)
 }
 $news_item = getcachedvars('current_news_item');
 $param = getcachedvars('current_news_param');
-$news_item['news_comment_total'] = $sql->db_Select("comments", "*", "comment_item_id='".$news_item['news_id']."' AND comment_type='0' ");
-if ($news_item['news_comment_total']) {
-	$sql->db_Select("comments", "comment_datestamp", "comment_item_id='".intval($news_item['news_id'])."' AND comment_type='0' ORDER BY comment_datestamp DESC LIMIT 0,1");
+
+if (varsettrue($pref['multilanguage']))
+{	// Can have multilanguage news table, monlingual comment table. If the comment table is multilingual, it'll only count entries in the current language
+	$news_item['news_comment_total'] = $sql->db_Select("comments", "*", "comment_item_id='".$news_item['news_id']."' AND comment_type='0' ");
+}
+
+if ($pref['comments_icon'] && $news_item['news_comment_total'])
+{
+	$sql->db_Select('comments', 'comment_datestamp', "comment_item_id='".intval($news_item['news_id'])."' AND comment_type='0' ORDER BY comment_datestamp DESC LIMIT 0,1");
 	list($comments['comment_datestamp']) = $sql->db_Fetch();
 	$latest_comment = $comments['comment_datestamp'];
-	if ($latest_comment > USERLV ) {
+	if ($latest_comment > USERLV )
+	{
 		$NEWIMAGE = $param['image_new_small'];
-	} else {
+	}
+	else
+	{
 		$NEWIMAGE = $param['image_nonew_small'];
 	}
-} else {
+}
+else
+{
 	$NEWIMAGE = $param['image_nonew_small'];
 }
-return ($news_item['news_allow_comments'] ? $param['commentoffstring'] : "".($pref['comments_icon'] ? $NEWIMAGE : "")." <a href='".e_HTTP."comment.php?comment.news.".$news_item['news_id']."'>".$param['commentlink'].$news_item['news_comment_total']."</a>");
+return ($news_item['news_allow_comments'] ? $param['commentoffstring'] : ''.($pref['comments_icon'] ? $NEWIMAGE : '')." <a href='".e_HTTP."comment.php?comment.news.".$news_item['news_id']."'>".$param['commentlink'].$news_item['news_comment_total'].'</a>');
 SC_END
 
 SC_BEGIN NEWSCOMMENTLINK
