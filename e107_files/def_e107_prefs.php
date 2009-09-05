@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/def_e107_prefs.php,v $
-|     $Revision: 1.67 $
-|     $Date: 2008/10/31 21:10:39 $
-|     $Author: e107steved $
+|     $Revision: 1.70 $
+|     $Date: 2009/09/03 12:06:12 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -85,6 +85,8 @@ City, State, Country
   'meta_tag' => '',
   'email_notify' => '0',
   'resize_method' => 'gd2',
+  'image_post' => '1',
+  'image_post_class' => '0',
   'im_path' => '/usr/X11R6/bin/',
   'im_quality' => '80',
   'im_width' => '120',
@@ -162,7 +164,7 @@ City, State, Country
   'download_email' => '0',
   'comments_disabled' => '0',
   'memberlist_access' => '253',
-  'check_updates' => '0',
+  'check_updates' => '1',
   'user_tracking' => 'cookie',
   'cookie_name' => 'e107cookie'
 );

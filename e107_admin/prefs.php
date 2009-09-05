@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/prefs.php,v $
-|     $Revision: 1.104 $
-|     $Date: 2008/06/29 16:40:23 $
+|     $Revision: 1.106 $
+|     $Date: 2008/12/31 17:08:08 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -63,6 +63,8 @@ if (isset($_POST['updateprefs']))
 	  'displayname_maxlength' => array('min' => 5, 'max' => 30, 'default' => 15),
 	  'antiflood_timeout' => array('min' => 3, 'max' => 300, 'default' => 10)
 	);
+
+	$pref['post_html'] = intval($_POST['post_html']);			// This ensures the setting is reflected in set text
 
 	foreach($_POST as $key => $value)
 	{
@@ -530,7 +532,7 @@ $text .= "<div id='registration' style='display:none; text-align:center'><table 
 	<tr>
 	<td style='width:50%' class='forumheader3'>".PRFLAN_155.":</td>
 	<td class='forumheader3' style='width:50%;text-align:right' >
-	".r_userclass('displayname_class',$pref['displayname_class'],'off','nobody,public,admin,classes')."
+	".r_userclass('displayname_class',$pref['displayname_class'],'off','nobody,public,member,admin,classes')."
 	<input class='button' type='submit' name='submit_resetdisplaynames' value='".PRFLAN_156."' />
 	</td>
 	</tr>

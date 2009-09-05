@@ -9,13 +9,13 @@
 // ------------------------------------------------
 //                                   www.j-cons.com
 // ================================================
-// $Revision: 1.9 $Date: 2004/10/04
+// $Revision: 1.12 $Date: 2004/10/04
 // ================================================
 //
 // $Source: /cvsroot/e107/e107_0.7/e107_handlers/tiny_mce/plugins/ibrowser/ibrowser.php,v $
-// $Revision: 1.9 $
-// $Date: 2007/08/09 19:10:00 $
-// $Author: e107steved $
+// $Revision: 1.12 $
+// $Date: 2009/07/02 03:22:57 $
+// $Author: e107coders $
 // +----------------------------------------------------------------------------+
 // Major Re-work by CaMer0n
 
@@ -23,10 +23,14 @@
 // unset $tinyMCE_imglib_include
 require_once("../../../../class2.php");
 if (!defined('e107_INIT')) { exit; }
+
+
 unset($tinyMCE_imglib_include);
 
 // include image library config settings
+
 include 'config.php';
+
 
 $request_uri = urldecode(empty($_POST['request_uri'])?(empty($_GET['request_uri'])?'':$_GET['request_uri']):$_POST['request_uri']);
 
@@ -64,16 +68,36 @@ $img = isset($_POST['imglist'])? $_POST['imglist']:'';
 $preview = e_IMAGE."generic/blank.gif";
 
 $errors = array();
+if(is_readable("langs/".e_LANGUAGE.".php"))
+{
+	include_once("langs/".e_LANGUAGE.".php");
+}
+else
+{
+	include_once("langs/English.php");
+}
 
-?>
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+	$_root = e_BASE;
+	$d = @dir(e_BASE.$imglib);
+
+
+echo "
+<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">
+
 <html>
 <head>
-<title>{$lang_ibrowser_title}</title>
-<script type="text/javaScript" src="../../tiny_mce_popup.js"></script>
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Content-Type" content="text/html; charset=<?php echo CHARSET ?>" />
-<script type="text/javascript">
+<title>".$lang_ibrowser_title."</title>
+<script type=\"text/javascript\" src=\"../../tiny_mce_popup.js\"></script>
+<meta http-equiv=\"Pragma\" content=\"no-cache\" />
+<meta http-equiv=\"Content-Type\" content=\"text/html; charset=". CHARSET."\" />
+<script type=\"text/javascript\">
+
+   //<![CDATA[
+
+";
+
+
+ ?>
 	// click ok - select picture or save changes
 	function selectClick() {
 
@@ -112,8 +136,8 @@ $errors = array();
       	}
   //	}
 
-	// validate input values
-	function validateParams() {
+
+	function validateParams() {   	// validate input values
     	// check numeric values for attributes
     	if (isNaN(parseInt(document.getElementById("width").value)) && document.getElementById("width").value != '') {
  				alert(tinyMCE.getLang('lang_ibrowser_error')+ ' : '+ tinyMCE.getLang('lang_ibrowser_error_width_nan'));
@@ -144,8 +168,8 @@ $errors = array();
 
 	}
 
-	// delete image
-	function deleteClick()
+
+	function deleteClick()   // delete image
 	{
 		if (document.libbrowser.imglist.selectedIndex>=0)
 	  	{
@@ -157,76 +181,74 @@ $errors = array();
 	  	}
 	}
 
-// set picture attributes on change
-	function selectChange(obj)
+
+	function selectChange(obj)  // set picture attributes on change
 	{
 		var formObj = document.forms[0];
-//		formObj.src.value = '<?php echo $tinyMCE_base_url.$imglib?>'+obj.options[obj.selectedIndex].value;
-//		formObj.width.value = obj.options[obj.selectedIndex].img_width;
-//		formObj.height.value = obj.options[obj.selectedIndex].img_height;
-//		formObj.size.value = obj.options[obj.selectedIndex].f_size;
-//		formObj.alt.value = obj.options[obj.selectedIndex].value;
-		var splitvar = obj.options[obj.selectedIndex].value.split("|");
-		formObj.src.value = '<?php echo $tinyMCE_base_url.$imglib?>'+splitvar[3];
-		formObj.width.value = splitvar[0];
-		formObj.height.value = splitvar[1];
-		formObj.size.value = splitvar[2];
-		formObj.alt.value = splitvar[3];
+
+		var splitvar 			= obj.options[obj.selectedIndex].value.split("|");
+		formObj.src.value 		= '<?php echo $tinyMCE_base_url.$imglib?>'+splitvar[3];
+		formObj.width.value 	= splitvar[0];
+		formObj.height.value 	= splitvar[1];
+		formObj.size.value 		= splitvar[2];
+		formObj.alt.value 		= splitvar[3];
 
 		owidth = eval(formObj.width.value);
 		oheight = eval(formObj.height.value);
-		updateStyle()
+		updateStyle();
 	}
 
-	// init functions
-	function init()
-	{
-		// if existing image (image properties)
-		if (tinyMCE.getWindowArg('src') != '') {
 
-			var formObj = document.forms[0];
-			for (var i=0; i<document.forms[0].align.options.length; i++) {
-				if (document.forms[0].align.options[i].value == tinyMCE.imgElement.style.cssFloat)
+	function init()  // init functions
+	{
+		var formObj = document.forms[0], nl = formObj.elements, ed = tinyMCEPopup.editor, dom = ed.dom, n = ed.selection.getNode();
+
+		if (n.nodeName == 'IMG')  // if existing image (image properties)
+	  	{
+			for (var i=0; i<formObj.align.options.length; i++)
+			{
+				if (document.forms[0].align.options[i].value == n.style.cssFloat)
 				document.forms[0].align.options.selectedIndex = i;
 			}
 
-			formObj.src.value = tinyMCE.getWindowArg('src');
-			formObj.alt.value = tinyMCE.imgElement.alt;
-			formObj.border.value = tinyMCE.imgElement.style.borderLeftWidth.replace('px','');
-        	formObj.width.value = tinyMCE.imgElement.style.width.replace('px','');
-			formObj.height.value = tinyMCE.imgElement.style.height.replace('px','');
-			formObj.margin_left.value = tinyMCE.imgElement.style.marginLeft.replace('px','');
-			formObj.margin_right.value = tinyMCE.imgElement.style.marginRight.replace('px','');
-			formObj.margin_top.value = tinyMCE.imgElement.style.marginTop.replace('px','');
-			formObj.margin_bottom.value = tinyMCE.imgElement.style.marginBottom.replace('px','');
+			formObj.src.value 			= dom.getAttrib(n, 'src');
+			formObj.alt.value 			= dom.getAttrib(n, 'alt');
+			formObj.border.value 		= n.style.borderLeftWidth.replace('px','');
+         	formObj.width.value 		= n.style.width.replace('px','');
+			formObj.height.value 		= n.style.height.replace('px','');
+			formObj.margin_left.value 	= n.style.marginLeft.replace('px','');
+			formObj.margin_right.value 	= n.style.marginRight.replace('px','');
+			formObj.margin_top.value 	= n.style.marginTop.replace('px','');
+			formObj.margin_bottom.value = n.style.marginBottom.replace('px','');
 
 			formObj.size.value = 'n/a';
 			owidth = eval(formObj.width.value);
 			oheight = eval(formObj.height.value);
+			document.getElementById('imgpreview').src = '<?php echo $_root ?>' + formObj.src.value;
 
-			frameID = "imgpreview";
-			//document.all(frameID).src = tinyMCE.getWindowArg('src');
-			document.getElementById("imgpreview").src = tinyMCE.getWindowArg('src');
 			updateStyle();
 		}
 
-		window.focus();
+        window.focus();
 	}
 
-	// updates style settings
-	function updateStyle() {
-	 //	if (validateParams()) {
-		  //	alert('val=' + document.getElementById('wrap').style.marginLeft);
 
+	function updateStyle()  // updates style settings on preview
+	{
 
-			document.getElementById('wrap').style.marginLeft = document.libbrowser.margin_left.value;
-			document.getElementById('wrap').style.marginRight = document.libbrowser.margin_right.value;
-			document.getElementById('wrap').style.marginTop = document.libbrowser.margin_top.value;
-			document.getElementById('wrap').style.marginBottom = document.libbrowser.margin_bottom.value;
-            document.getElementById('wrap').style.cssFloat = document.libbrowser.align.value;
-			document.getElementById('wrap').style.borderWidth = document.libbrowser.border.value;
-			document.getElementById('wrap').alt = document.libbrowser.alt.value;
-	 //	}
+			document.getElementById('wrap').style.marginLeft 	= document.getElementById('margin_left').value + 'px';
+			document.getElementById('wrap').style.marginRight 	= document.getElementById('margin_right').value + 'px';
+			document.getElementById('wrap').style.marginTop 	= document.getElementById('margin_top').value + 'px';
+			document.getElementById('wrap').style.marginBottom 	= document.getElementById('margin_bottom').value + 'px';
+			document.getElementById('wrap').style.borderWidth 	= document.getElementById('border').value + 'px';
+			document.getElementById('wrap').alt 				= document.getElementById('alt').value;
+
+            var AlignBox = document.getElementById("align");
+
+		 	if(AlignBox.options[AlignBox.selectedIndex].value)
+			{
+	           	document.getElementById('wrap').style.cssFloat = AlignBox.options[AlignBox.selectedIndex].value;
+	  		}
 	}
 
 	// change picture dimensions
@@ -256,93 +278,98 @@ $errors = array();
 	  // 	alert('<?php echo $tinyMCE_base_url.$imglib?>' + formObj.src.value);
 		if (splitvar[3]) imgpreview.location.href = '<?php echo $tinyMCE_base_url.$imglib?>' + formObj.src.value;
 	}
+
+      // ]]>
+
 </script>
-</head>
-<body onLoad="init();">
-<script type="text/javascript">
+
+<?php
+
+echo "</head>
+<body onload='init();'>
+<script type='text/javascript'>
     window.name = 'imglibrary';
 </script>
-<form name="libbrowser" method="post" action="ibrowser.php?request_uri=<?php echo $_GET['request_uri']?>" enctype="multipart/form-data" target="imglibrary">
-  <input type="hidden" name="request_uri" value="<?php echo urlencode($request_uri)?>" />
-  <input type="hidden" name="lib_action" value="" />
-  <fieldset style= "padding: 5 5 5 5; margin-top: -5px;">
-  <legend>{$lang_ibrowser_img_sel}</legend>
-  <table width="440" border="0" cellspacing="0" cellpadding="0">
+
+<form id=\"libbrowser\" method=\"post\" action=\"ibrowser.php?request_uri=".$_GET['request_uri']."\" enctype=\"multipart/form-data\" target=\"imglibrary\">
+  <div>
+  <input type=\"hidden\" name=\"request_uri\" value=\"". urlencode($request_uri)."\" />
+  <input type=\"hidden\" name=\"lib_action\" value=\"\" />
+  <fieldset style= \"padding: 5px; margin-top: -5px;\">
+  <legend>".$lang_ibrowser_img_sel."</legend>
+  <table style='width:100%;border:0px' cellspacing=\"0\" cellpadding=\"0\">
     <tr>
-      <td><table width="100%"  border="0" cellpadding="2" cellspacing="0">
+      <td><table style='width:100%;border:0px' cellpadding=\"2\" cellspacing=\"0\">
           <tr>
-            <td width="210"><strong>{$lang_ibrowser_library}:</strong></td>
-            <td width="5">&nbsp;</td>
-            <td width="210"><strong>{$lang_ibrowser_preview}:</strong></td>
+            <td style='width:210px'><strong>".$lang_ibrowser_library.":</strong></td>
+            <td style='width:5px'>&nbsp;</td>
+            <td ><strong>".$lang_ibrowser_preview.":</strong></td>
           </tr>
           <tr>
-            <td><select name="lib" size="1" style="width: 100%;" onChange="libbrowser.submit();">
-                <?php echo $lib_options?>
+            <td><select name=\"lib\" size=\"1\" style=\"width: 100%;\" onchange=\"this.form.submit();\">
+                ".$lib_options."
               </select></td>
             <td>&nbsp;</td>
-            <td width="210" rowspan="3" align="left" valign="top"><iframe name="imgpreview" id="imgpreview" class="previewWindow" src="<?php echo $preview?>" style="width: 100%; height: 100%;" scrolling="Auto" marginheight="0" marginwidth="0" frameborder="0"></iframe>
+            <td style='border:0px;text-align:left;vertical-align:top' rowspan=\"3\"><iframe name=\"imgpreview\" id=\"imgpreview\" class=\"previewWindow\" src=\"".$preview."\" style=\"border:0px;width: 100%; height: 220px;overflow:auto\" ></iframe>
             </td>
           </tr>
           <tr>
-            <td><strong>{$lang_ibrowser_images}:</strong></td>
+            <td><strong>".$lang_ibrowser_images.":</strong></td>
             <td>&nbsp;</td>
           </tr>
           <tr>
-            <td><?php
-    if (!preg_match('#/$#', $_SERVER['DOCUMENT_ROOT'])){
-    //  $_root = $_SERVER['DOCUMENT_ROOT'].'/';
-		$_root = e_BASE;
-   } else {
-   //   $_root = $_SERVER['DOCUMENT_ROOT'];
-      $_root = e_BASE;
-	}
-  //  $d = @dir($_root.$imglib);
-  //	echo "<Br >dir=".$_root.$imglib;
-	$d = @dir(e_BASE.$imglib);
+            <td>
 
-  ?>
-          <select name="imglist" size="15" style="width: 100%;"
-    onChange="show_image(this);selectChange(this);" ondblclick="selectClick();">
-            <?php
-    	if ($d)
-    {
-	  $i = 0;
-      while (false !== ($entry = $d->read())) {
-        $ext = strtolower(substr(strrchr($entry,'.'), 1));
-        if (is_file($_root.$imglib.$entry) && in_array($ext,$tinyMCE_valid_imgs))
-        {
-			$arr_tinyMCE_image_files[$i][file_name] = $entry;
-			$i++;
-        }
-      }
-      $d->close();
-	  // sort the list of image filenames alphabetically.
-	  sort($arr_tinyMCE_image_files);
-	  for($k=0; $k<count($arr_tinyMCE_image_files); $k++){
-      $entry = $arr_tinyMCE_image_files[$k][file_name];
-	  $size = getimagesize($_root.$imglib.$entry);
-	  $fsize = filesize($_root.$imglib.$entry);
-   ?>
-            <option  value="<?php echo $size[0]; ?>|<?php echo $size[1]; ?>|<?php echo filesize_h($fsize,2); ?>|<?php echo $entry?>" <?php echo ($entry == $img)?'selected':''?>><?php echo $entry?></option>
-            <?php
-	  }
+
+ 	<select name=\"imglist\" size=\"15\" style=\"width: 100%;\"
+    onchange=\"show_image(this);selectChange(this);\" ondblclick=\"selectClick();\">\n";
+
+	if ($d)
+	{
+		  $i = 0;
+	      while (false !== ($entry = $d->read()))
+		  {
+	        $ext = strtolower(substr(strrchr($entry,'.'), 1));
+	        if (is_file($_root.$imglib.$entry) && in_array($ext,$tinyMCE_valid_imgs))
+	        {
+				$arr_tinyMCE_image_files[$i][file_name] = $entry;
+				$i++;
+	        }
+	      }
+	      $d->close();
+		  // sort the list of image filenames alphabetically.
+		  sort($arr_tinyMCE_image_files);
+		  for($k=0; $k<count($arr_tinyMCE_image_files); $k++)
+		  {
+		      	$entry = $arr_tinyMCE_image_files[$k][file_name];
+			  	$size = getimagesize($_root.$imglib.$entry);
+			  	$fsize = filesize($_root.$imglib.$entry);
+  			  	$sel =  ($entry == $img)? "selected='selected'" : "";
+
+				echo "<option  value='".$size[0]."|".$size[1]."|". filesize_h($fsize,2)."|". $entry."'  $sel >". $entry ."</option>\n";
+		  }
     }
     else
     {
       $errors[] = '{$lang_ibrowser_errornodir}';
     }
-  ?>
-          </select></td>
+
+ echo "  </select></td>
             <td>&nbsp;</td>
           </tr>
           <tr>
-            <td colspan="3"><table width="100%"  border="0" cellspacing="0" cellpadding="0">
+            <td colspan=\"3\"><table style='width:100%;border:0px' cellspacing=\"0\" cellpadding=\"0\">
                 <tr>
-                  <td width="40%"><?php if ($tinyMCE_img_delete_allowed) { ?>
-                    <input type="button" value="{$lang_ibrowser_delete}" class="bt" onClick="deleteClick();" />
-                    <?php } ?></td>
-                  <td align="right"><input type="button" name="selectbt" value="{$lang_ibrowser_select}" class="bt" onClick="selectClick();" />
-                    <input type="button" value="{$lang_ibrowser_cancel}" class="bt" onClick="window.close();" /></td>
+                  <td style='width:40%'>";
+
+					if ($tinyMCE_img_delete_allowed)
+					{
+				   		echo "<input type=\"button\" value=\"".$lang_ibrowser_delete."\" class=\"bt\" onclick=\"deleteClick();\" />";
+					}
+
+					echo "</td>
+                  <td align=\"right\"><input type=\"button\" name=\"selectbt\" value=\"{$lang_ibrowser_select}\" class=\"bt\" onclick=\"selectClick();\" />
+                    <input type=\"button\" value=\"".$lang_ibrowser_cancel."\" class=\"bt\" onclick=\"tinyMCEPopup.close();\" /></td>
                 </tr>
               </table></td>
           </tr>
@@ -350,30 +377,35 @@ $errors = array();
     </tr>
   </table>
   </fieldset>
-  <fieldset style= "padding: 5 5 5 5; margin-top: 10px;">
-  <legend>{$lang_ibrowser_img_info}</legend>
-  <table style='width:440px;border:0px' cellspacing="0" cellpadding="0">
+
+
+  <fieldset style= \"padding: 5px; margin-top: 10px;\">
+  <legend>".$lang_ibrowser_img_info."</legend>
+  <table style='width:440px;border:0px' cellspacing=\"0\" cellpadding=\"0\">
     <tr>
-      <td><table style='width:440px;border:0px' cellpadding="2" cellspacing="0">
+      <td><table style='width:440px;border:0px' cellpadding=\"2\" cellspacing=\"0\">
           <tr>
-            <td style='width:80px'>{$lang_ibrowser_src}:</td>
-            <td colspan="5"><input name="src" type="text" id="src" value="" style="width: 100%;" /></td>
+            <td style='width:80px'>".$lang_ibrowser_src.":</td>
+            <td colspan=\"5\"><input name=\"src\" type=\"text\" id=\"src\" value=\"\" style=\"width: 100%;\" /></td>
           </tr>
           <tr>
-            <td>{$lang_ibrowser_alt}:</td>
-            <td colspan="5"><input name="alt" type="text" id="alt" value="" style="width: 100%;" onChange="updateStyle()" /></td>
+            <td>".$lang_ibrowser_alt.":</td>
+            <td colspan=\"5\"><input name=\"alt\" type=\"text\" id=\"alt\" value=\"\" style=\"width: 100%;\" onchange=\"updateStyle()\" /></td>
           </tr>
           <tr>
-            <td>{$lang_ibrowser_align}:</td>
-            <td colspan="3"><select name="align" style="width: 100%;" onChange="updateStyle()">
-                <option value="">{$lang_insert_image_align_default}</option>
-                <option value="left">{$lang_insert_image_align_left}</option>
-                <option value="right">{$lang_insert_image_align_right}</option>
-              </select></td>
-            <td width="5">&nbsp;</td>
-            <td rowspan="8" align="left" valign="top" style='width:210px;overflow:hidden'>
-			<div id="stylepreview" style="padding:10px; width: 200px; height:100%; overflow:hidden; background-color:#ffffff; font-size:8px" class="previewWindow">
-                <p><img id="wrap" src="images/textflow.gif" width="45" height="45" alt="" style="border:0px; float:right; margin-left:0px; margin-right:0px; margin-top:0px; margin-bottom:0px" />Lorem
+            <td>".$lang_ibrowser_align.":</td>
+            <td colspan=\"3\">
+				<select id='align' name='align' style=\"width: 100%;\" onchange=\"updateStyle()\">
+                <option value=\"none\">".$lang_insert_image_align_default."</option>
+                <option value=\"left\">".$lang_insert_image_align_left."</option>
+                <option value=\"right\">".$lang_insert_image_align_right."</option>
+              	</select>
+			</td>
+
+            <td style='width:5%'>&nbsp;</td>
+            <td rowspan=\"8\" style='text-align:left;vertical-align:top;width:210px;overflow:hidden'>
+			<div id=\"stylepreview\" style=\"padding:10px; width: 200px; height:100%; overflow:hidden; background-color:#ffffff; font-size:8px\" class=\"previewWindow\">
+                <p><img id=\"wrap\" src=\"images/textflow.gif\" width=\"45\" height=\"45\" alt=\"\" style=\"border:0px solid black; float:none; margin-left:0px; margin-right:0px; margin-top:0px; margin-bottom:0px\" />Lorem
                   ipsum, Dolor sit amet, consectetuer adipiscing loreum ipsum
                   edipiscing elit, sed diam nonummy nibh euismod tincidunt ut
                   laoreet dolore magna aliquam erat volutpat.Loreum ipsum edipiscing
@@ -387,51 +419,55 @@ $errors = array();
 			</td>
           </tr>
           <tr>
-            <td>{$lang_ibrowser_size}:</td>
-            <td colspan="3"><input name="size" type="text" id="size" value="" readonly="true" style="width: 100%;" /></td>
+            <td>".$lang_ibrowser_size.":</td>
+            <td colspan=\"3\"><input name=\"size\" type=\"text\" id=\"size\" value=\"\" readonly=\"readonly\" style=\"width: 100%;\" /></td>
             <td>&nbsp;</td>
           </tr>
           <tr>
-            <td>{$lang_ibrowser_height}:</td>
-            <td width="40"><input name="height" type="text" id="height" value="" size="5" maxlength="4" style="text-align: right;" onChange="changeDim(0)" /></td>
-            <td width="25" rowspan="2" align="left" valign="middle"><a href="#" onClick="resetDim();" ><img src="images/constrain.gif" alt="{$lang_ibrowser_reset}" width="22" height="29" border="0"></a></td>
-            <td rowspan="2">&nbsp;</td>
+            <td>".$lang_ibrowser_height.":</td>
+            <td style='width:40%'><input name=\"height\" type=\"text\" id=\"height\" value=\"\" size=\"5\" maxlength=\"4\" style=\"text-align: right;\" onchange=\"changeDim(0)\" /></td>
+            <td style='width:25%' rowspan=\"2\" align=\"left\" valign=\"middle\">
+				<a href=\"#\" onclick=\"resetDim();\" >
+					<img src=\"images/constrain.gif\" alt=\"".$lang_ibrowser_reset."\" width=\"22\" height=\"29\" style='border:0px' />
+				</a>
+			</td>
+            <td rowspan=\"2\">&nbsp;</td>
             <td>&nbsp;</td>
           </tr>
           <tr>
-            <td>{$lang_ibrowser_width}:</td>
-            <td><input name="width" type="text" id="width" value="" size="5" maxlength="4" style="text-align: right;" onChange="changeDim(1)" /></td>
+            <td>".$lang_ibrowser_width.":</td>
+            <td><input name=\"width\" type=\"text\" id=\"width\" value=\"\" size=\"5\" maxlength=\"4\" style=\"text-align: right;\" onchange=\"changeDim(1)\" /></td>
             <td>&nbsp;</td>
           </tr>
           <tr>
-            <td>{$lang_ibrowser_border}:</td>
-            <td colspan="3">
-			<input name="border" type="text" id="border" value="0" size="5" maxlength="4" style="text-align: right;" onchange="updateStyle()" />px
+            <td>".$lang_ibrowser_border.":</td>
+            <td colspan=\"3\">
+			<input name=\"border\" type=\"text\" id=\"border\" value=\"0\" size=\"5\" maxlength=\"4\" style=\"text-align: right;\" onchange=\"updateStyle()\" />px
 			</td>
             <td>&nbsp;</td>
           </tr>
           <tr>
-            <td>Margin-left:</td>
-            <td colspan="3"><input name="margin_left" type="text" id="margin_left" value="0" size="5" maxlength="4" style="text-align: right;" onchange="updateStyle()" />px
+            <td>".$lang_ibrowser_marginl.":</td>
+            <td colspan=\"3\"><input name=\"margin_left\" type=\"text\" id=\"margin_left\" value=\"0\" size=\"5\" maxlength=\"4\" style=\"text-align: right;\" onchange=\"updateStyle()\" />px
 			</td>
             <td>&nbsp;</td>
           </tr>
           <tr>
-            <td>Margin-Right:</td>
-            <td colspan="3"><input name="margin_right" type="text" id="margin_right" value="0" size="5" maxlength="4" style="text-align: right;" onchange="updateStyle()" />px
+            <td>".$lang_ibrowser_marginr.":</td>
+            <td colspan=\"3\"><input name=\"margin_right\" type=\"text\" id=\"margin_right\" value=\"0\" size=\"5\" maxlength=\"4\" style=\"text-align: right;\" onchange=\"updateStyle()\" />px
 			</td>
             <td>&nbsp;</td>
           </tr>
 
           <tr>
-            <td>Margin-Top:</td>
-            <td colspan="3"><input name="margin_top" type="text" id="margin_top" value="0" size="5" maxlength="4" style="text-align: right;" onchange="updateStyle()" />px
+            <td>".$lang_ibrowser_margint.":</td>
+            <td colspan=\"3\"><input name=\"margin_top\" type=\"text\" id=\"margin_top\" value=\"0\" size=\"5\" maxlength=\"4\" style=\"text-align: right;\" onchange=\"updateStyle()\" />px
 			</td>
             <td>&nbsp;</td>
           </tr>
           <tr>
-            <td>Margin-Bottom:</td>
-            <td colspan="3"><input name="margin_bottom" type="text" id="margin_bottom" value="0" size="5" maxlength="4" style="text-align: right;" onchange="updateStyle()" />px
+            <td>".$lang_ibrowser_marginb.":</td>
+            <td colspan=\"3\"><input name=\"margin_bottom\" type=\"text\" id=\"margin_bottom\" value=\"0\" size=\"5\" maxlength=\"4\" style=\"text-align: right;\" onchange=\"updateStyle()\" />px
 			</td>
             <td>&nbsp;</td>
           </tr>
@@ -440,16 +476,18 @@ $errors = array();
     </tr>
   </table>
   </fieldset>
-
+</div>
 </form>
 </body>
-</html>
-<?php
+</html>";
+
+
 function liboptions($arr, $prefix = '', $sel = '')
 {
   $buf = '';
-  foreach($arr as $lib) {
-    $buf .= '<option value="'.$lib['value'].'"'.(($lib['value'] == $sel)?' selected':'').'>'.$prefix.$lib['text'].'</option>'."\n";
+  foreach($arr as $lib)
+  {
+    $buf .= '<option value="'.$lib['value'].'"'.(($lib['value'] == $sel)?' selected="selected"':'').'>'.$prefix.$lib['text'].'</option>'."\n";
   }
   return $buf;
 }

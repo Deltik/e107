@@ -39,7 +39,7 @@ td{
 body{
 	color: #4C4C4C;
 	font-size: 11px;
-	font-family: Trebuchet MS, "Lucida Sans Unicode", Arial, Lucida Sans, Tahoma, Sans-Serif;
+	font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Sans Unicode", Tahoma, sans-serif;
 	background: #123454 url(images/01_bg.gif) top repeat-x;
 	padding: 20px 0 20px 0;
 	text-align: center;
@@ -396,7 +396,6 @@ form p{
 /*Form's buttons*/
 .formbutton{
 	font-size: 11px;
-	font-family: Trebuchet MS, "Lucida Sans Unicode", Arial, Lucida Sans, Tahoma, Sans-Serif;
 	margin: 1px 0 0 0;
 	padding: 1px 10px;
 	color: #494949;
@@ -405,10 +404,6 @@ form p{
 	border-left: 1px solid #D4D2CF;
 	border-bottom: 1px solid #868686;
 	border-right: 1px solid #868686;
-}
-/* Don't show textarea scrollbar on IE */
-textarea{
-	overflow: hidden;
 }
 
 
@@ -500,7 +495,7 @@ ul{
 li{
 	padding: 0 0 0 9px;
 	margin: 0 0 2px 0;
-	background: url(images/01_arrow.gif) 0 6px no-repeat;
+	background: url(images/bullet2.gif) 0 6px no-repeat;
 }
 
 /*THE SEARCH HIGHLIGHT*/
@@ -686,7 +681,6 @@ div.nicetitle p span.accesskey {
 .tbox, .helpbox{
 	/* width: 80%; */
 	font-size: 11px;
-	font-family: Trebuchet MS, "Lucida Sans Unicode", Arial, Lucida Sans, Tahoma, Sans-Serif;
 	margin: 0 0 2px 0;
 	color: #494949;
 	border-top: 1px solid #868686;
@@ -696,7 +690,6 @@ div.nicetitle p span.accesskey {
 }
 .button{
 	font-size: 11px;
-	font-family: Trebuchet MS, "Lucida Sans Unicode", Arial, Lucida Sans, Tahoma, Sans-Serif;
 	margin: 1px 0 0 0;
 	padding: 1px 10px;
 	color: #494949;

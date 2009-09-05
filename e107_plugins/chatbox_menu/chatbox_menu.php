@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/chatbox_menu/chatbox_menu.php,v $
-|     $Revision: 1.79 $
-|     $Date: 2008/06/26 19:40:37 $
-|     $Author: e107steved $
+|     $Revision: 1.81 $
+|     $Date: 2009/08/23 10:39:52 $
+|     $Author: marj_nl_fr $
 +----------------------------------------------------------------------------+
 */
 
@@ -27,8 +27,7 @@ if(($pref['cb_layer']==2) || isset($_POST['chatbox_ajax']))
 
 		//Normally the menu.sc file will auto-load the language file, this is needed in case
 		//ajax is turned on and the menu is not loaded from the menu.sc
-		@include_lan(e_PLUGIN."chatbox_menu/languages/".e_LANGUAGE."/".e_LANGUAGE.".php");
-		@include_lan(e_PLUGIN."chatbox_menu/languages/English/English.php");
+		include_lan(e_PLUGIN."chatbox_menu/languages/".e_LANGUAGE."/".e_LANGUAGE.".php");
 	}
 	$footer_js[] = e_FILE_ABS.'e_ajax.js';
 }
@@ -204,9 +203,17 @@ if(!$text = $e107cache->retrieve("nq_chatbox"))
 			$cb_message = str_replace($search, $replace, $cb_message);
 
 			global $CHATBOXSTYLE;
-			if(!$CHATBOXSTYLE)
+			if( ! $CHATBOXSTYLE)
 			{
-				$bullet = (defined("BULLET") ? "<img src='".THEME_ABS."images/".BULLET."' alt='' style='vertical-align: middle;' />" : "<img src='".THEME_ABS."images/".(defined("BULLET") ? BULLET : "bullet2.gif")."' alt='' style='vertical-align: middle;' />");
+				$bullet = '';
+				if(defined('BULLET'))
+				{
+					$bullet = '<img src="'.THEME.'images/'.BULLET.'" alt="" style="vertical-align: middle;" />';
+				}
+				elseif(file_exists(THEME.'images/bullet2.gif'))
+				{
+					$bullet = '<img src="'.THEME.'images/bullet2.gif" alt="" style="vertical-align: middle;" />';
+				}
 				// default chatbox style
 				$CHATBOXSTYLE = "<!-- chatbox -->\n<div class='spacer'>
 				$bullet <b>{USERNAME}</b><br /><span class='smalltext'>{TIMEDATE}</span><br /><div class='smallblacktext'>{MESSAGE}</div></div><br />\n";

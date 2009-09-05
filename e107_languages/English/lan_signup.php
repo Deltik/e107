@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/lan_signup.php,v $
-|     $Revision: 1.30 $
-|     $Date: 2008/07/30 19:46:23 $
-|     $Author: e107steved $
+|     $Revision: 1.35 $
+|     $Date: 2009/07/06 07:49:12 $
+|     $Author: marj_nl_fr $
 +----------------------------------------------------------------------------+
 */
 define("PAGE_NAME", "Register");
@@ -66,10 +66,10 @@ define("LAN_SIGNUP_14", "here");
 define("LAN_SIGNUP_15", "Please contact the main site admin");
 define("LAN_SIGNUP_16", "if you require assistance.");
 define("LAN_SIGNUP_17", "Please certify you are 13 or over the age of 13.");
-define("LAN_SIGNUP_18", "Your registration has been received and created with the following login information ...");
-define("LAN_SIGNUP_19", "Username:");
-define("LAN_SIGNUP_20", "Password:");
-define("LAN_SIGNUP_21", "Your account is currently marked as being inactive, to activate your account please go to the following link ...");
+define("LAN_SIGNUP_18", "Your registration has been received and created with the following login information:");
+//define("LAN_SIGNUP_19", "Username:"); // now LAN_LOGINNAME
+//define("LAN_SIGNUP_20", "Password:"); // now LAN_PASSWORD
+define("LAN_SIGNUP_21", "Your account is currently marked as being inactive. To activate your account please go to the following link:");
 define("LAN_SIGNUP_22", "click here");
 define("LAN_SIGNUP_23", "to login.");
 define("LAN_SIGNUP_24", "Thank you for registering at");
@@ -119,6 +119,17 @@ define("LAN_SIGNUP_56", "That display name is too short. Please choose another")
 define("LAN_SIGNUP_57", "That login name is too long. Please choose another");
 define("LAN_SIGNUP_58", "Signup Preview");
 define("LAN_SIGNUP_59","**** If the link doesn't work, please check that part of it has not overflowed onto the next line. ****");
+define('LAN_SIGNUP_60', 'Error accessing external avatar');
+
+// 0.7.16
+
+define("LAN_SIGNUP_72", "Thanks for signing up on [sitename]! We just sent you a confirmation email to [email]. Please click on the confirmation link in the email to complete your sign up and activate your account.");  	// LAN_405
+
+define("LAN_SIGNUP_98", "Confirm Your Email Address");
+define("LAN_SIGNUP_99", "Problem Encountered");
+define("LAN_SIGNUP_100", "Admin Approval Pending");
+
+
 
 
 ?>

@@ -11,16 +11,15 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/forum/templates/forum_icons_template.php,v $
-|     $Revision: 1.10 $
-|     $Date: 2007/03/04 16:59:25 $
-|     $Author: e107steved $
+|     $Revision: 1.12 $
+|     $Date: 2009/08/15 11:54:31 $
+|     $Author: marj_nl_fr $
 +----------------------------------------------------------------------------+
 */
 	
 if (!defined('e107_INIT')) { exit; }
 
-@include_once(e_PLUGIN.'forum/languages/'.e_LANGUAGE.'/lan_forum_viewforum.php');
-@include_once(e_PLUGIN.'forum/languages/English/lan_forum_viewforum.php');
+include_lan(e_PLUGIN.'forum/languages/'.e_LANGUAGE.'/lan_forum_viewforum.php');
 
 define("IMAGE_e", "<img src='".img_path('e.png')."' alt='' title='' style='border:0' />");
 define("IMAGE_new", "<img src='".img_path('new.png')."' alt='".LAN_199."' title='".LAN_199."' style='border:0' />");
@@ -56,7 +55,7 @@ define("IMAGE_report", "<img src='".img_path('report.png')."' alt='".LAN_413."' 
 	
 define("IMAGE_admin_delete", "src='".img_path('admin_delete.png')."' alt='".LAN_435."' title='".LAN_435."' style='border:0' ");
 define("IMAGE_admin_unstick", "src='".img_path('admin_unstick.png')."' alt='".LAN_398."' title='".LAN_398."' style='border:0' ");
-define("IMAGE_admin_stick", "src='".img_path('sticky_small.png')."' alt='".LAN_401."' title='".LAN_401."' style='border:0' ");
+define("IMAGE_admin_stick", "src='".img_path('admin_stick.png')."' alt='".LAN_401."' title='".LAN_401."' style='border:0' ");
 define("IMAGE_admin_lock", "src='".img_path('admin_lock.png')."' alt='".LAN_399."' title='".LAN_399."' style='border:0' ");
 define("IMAGE_admin_unlock", "src='".img_path('admin_unlock.png')."' alt='".LAN_400."' title='".LAN_400."' style='border:0' ");
 	

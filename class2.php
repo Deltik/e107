@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/class2.php,v $
-|     $Revision: 1.365 $
-|     $Date: 2008/11/29 13:10:41 $
-|     $Author: e107steved $
+|     $Revision: 1.379 $
+|     $Date: 2009/08/15 11:54:29 $
+|     $Author: marj_nl_fr $
 +----------------------------------------------------------------------------+
 */
 //
@@ -178,9 +178,9 @@ if (preg_match("#\[(.*?)](.*)#", $_SERVER['QUERY_STRING'], $matches)) {
 	if(strlen(e_MENU) == 2) // language code ie. [fr]
 	{
         require_once(e_HANDLER."language_class.php");
-		$lng = new language;
+		$slng = new language;
 		define("e_LANCODE",TRUE);
-		$_GET['elan'] = $lng->convert(e_MENU);
+		$_GET['elan'] = $slng->convert(e_MENU);
 	}
 
 }else {
@@ -362,9 +362,12 @@ define("SITEURL", SITEURLBASE.e_HTTP);
 
 // let the subdomain determine the language (when enabled).
 
-if(isset($pref['multilanguage_subdomain']) && $pref['multilanguage_subdomain'] && ($pref['user_tracking'] == "session") && e_DOMAIN && MULTILANG_SUBDOMAIN !== FALSE){
+// Ensure $pref['sitelanguage'] is set if upgrading from 0.6
+$pref['sitelanguage'] = (isset($pref['sitelanguage']) ? $pref['sitelanguage'] : 'English');
 
-		$mtmp = explode("\n",$pref['multilanguage_subdomain']);
+if(varset($pref['multilanguage_subdomain']) && ($pref['user_tracking'] == "session") && e_DOMAIN && MULTILANG_SUBDOMAIN !== FALSE)
+{
+		$mtmp = explode("\n", $pref['multilanguage_subdomain']);
         foreach($mtmp as $val)
 		{
         	if(e_DOMAIN == trim($val))
@@ -375,14 +378,14 @@ if(isset($pref['multilanguage_subdomain']) && $pref['multilanguage_subdomain'] &
 
 		if($domain_active || ($pref['multilanguage_subdomain'] == "1"))
 		{
-			e107_ini_set("session.cookie_domain",".".e_DOMAIN);
+			e107_ini_set("session.cookie_domain", ".".e_DOMAIN);
 			require_once(e_HANDLER."language_class.php");
-			$lng = new language;
+			$slng = new language;
 	        if(!e_SUBDOMAIN)
 			{
 	        	$GLOBALS['elan'] = $pref['sitelanguage'];
 			}
-			elseif($eln = $lng->convert(e_SUBDOMAIN))
+			elseif($eln = $slng->convert(e_SUBDOMAIN))
 			{
 	          	$GLOBALS['elan'] = $eln;
 			}
@@ -396,7 +399,8 @@ if (!$pref['cookie_name']) {
 }
 
 // start a session if session based login is enabled
-if ($pref['user_tracking'] == "session") {
+if ($pref['user_tracking'] == "session")
+{
 	session_start();
 }
 
@@ -455,79 +459,123 @@ $page = substr(strrchr($_SERVER['PHP_SELF'], "/"), 1);
 define("e_PAGE", $page);
 
 // sort out the users language selection
-if (isset($_POST['setlanguage']) || isset($_GET['elan']) || isset($GLOBALS['elan'])) {
-	if($_GET['elan'])  // query support, for language selection splash pages. etc
+if (isset($_POST['setlanguage']) || isset($_GET['elan']) || isset($GLOBALS['elan']))
+{
+	// query support, for language selection splash pages. etc
+	if($_GET['elan'])
 	{
-		$_POST['sitelanguage'] = str_replace(array(".","/","%"),"",$_GET['elan']);
+		$_POST['sitelanguage'] = str_replace(array(".", "/", "%"), "", $_GET['elan']);
 	}
 	if($GLOBALS['elan'] && !isset($_POST['sitelanguage']))
 	{
-   		$_POST['sitelanguage'] = $GLOBALS['elan'];
+		$_POST['sitelanguage'] = $GLOBALS['elan'];
 	}
 
 	$sql->mySQLlanguage = $_POST['sitelanguage'];
-    $sql2->mySQLlanguage = $_POST['sitelanguage'];
+	$sql2->mySQLlanguage = $_POST['sitelanguage'];
 
-	if ($pref['user_tracking'] == "session") {
+	if ($pref['user_tracking'] == "session")
+	{
 		$_SESSION['e107language_'.$pref['cookie_name']] = $_POST['sitelanguage'];
-	} else {
+	}
+	else
+	{
 		setcookie('e107language_'.$pref['cookie_name'], $_POST['sitelanguage'], time() + 86400, "/");
 		$_COOKIE['e107language_'.$pref['cookie_name']] = $_POST['sitelanguage'];
 		if (strpos(e_SELF, ADMINDIR) === FALSE) 
 		{
-		  $locat = ((!$_GET['elan'] && e_QUERY) || (e_QUERY && e_LANCODE)) ? e_SELF."?".e_QUERY : e_SELF;
-		  header("Location:".$locat);
-		  exit();
+			$locat = ((!$_GET['elan'] && e_QUERY) || (e_QUERY && e_LANCODE)) ? e_SELF."?".e_QUERY : e_SELF;
+			header("Location:".$locat);
+			exit();
 		}
 	}
 }
 
-$user_language='';
 // Multi-language options.
-if (isset($pref['multilanguage']) && $pref['multilanguage']) {
 
-	if ($pref['user_tracking'] == "session") {
-		$user_language=(array_key_exists('e107language_'.$pref['cookie_name'], $_SESSION) ? $_SESSION['e107language_'.$pref['cookie_name']] : "");
-		$sql->mySQLlanguage=($user_language) ? $user_language : "";
-		$sql2->mySQLlanguage = $sql->mySQLlanguage;
-	} else {
-		$user_language= (isset($_COOKIE['e107language_'.$pref['cookie_name']])) ? $_COOKIE['e107language_'.$pref['cookie_name']] : "";
-		$sql->mySQLlanguage=($user_language) ? $user_language : "";
-		$sql2->mySQLlanguage = $sql->mySQLlanguage;
-	}
-
-
-}
-
-// Get Language List for rights checking.
-if(!$tmplan = getcachedvars("language-list")){
-	$handle=opendir(e_LANGUAGEDIR);
-	while ($file = readdir($handle)) {
-		if (is_dir(e_LANGUAGEDIR.$file) && $file !="." && $file !=".." && $file !="CVS") {
-				$lanlist[] = $file;
+// Get language list for rights checking.
+if( ! $tmplan = getcachedvars('language-list'))
+{
+	$handle = opendir(e_LANGUAGEDIR);
+	while ($file = readdir($handle))
+	{
+		// add only if e_LANGUAGEDIR.e_LANGUAGE/e_LANGUAGE
+		if ($file != '.' && $file != '..' && is_readable(e_LANGUAGEDIR.$file.'/'.$file.'.php'))
+		{
+			$lanlist[] = $file;
 		}
 	}
 	closedir($handle);
-	$tmplan = implode(",",$lanlist);
-	cachevars("language-list", $tmplan);
+	$tmplan = implode(',', $lanlist);
+	cachevars('language-list', $tmplan);
 }
+// Save language flat list
+define('e_LANLIST', $tmplan);
 
-define("e_LANLIST",(isset($tmplan) ? $tmplan : ""));
+// Set $language fallback to $pref['sitelanguage'] for the time being
+$language = $pref['sitelanguage'];
 
-$language=(isset($_COOKIE['e107language_'.$pref['cookie_name']]) ? $_COOKIE['e107language_'.$pref['cookie_name']] : ($pref['sitelanguage'] ? $pref['sitelanguage'] : "English"));
-$language = preg_replace("#\W#", "", $language);
-define("USERLAN", ($user_language && (strpos(e_SELF, $PLUGINS_DIRECTORY) !== FALSE || (strpos(e_SELF, $ADMIN_DIRECTORY) === FALSE && file_exists(e_LANGUAGEDIR.$user_language."/lan_".e_PAGE)) || (strpos(e_SELF, $ADMIN_DIRECTORY) !== FALSE && file_exists(e_LANGUAGEDIR.$user_language."/admin/lan_".e_PAGE)) || file_exists(dirname($_SERVER['SCRIPT_FILENAME'])."/languages/".$user_language."/lan_".e_PAGE)    || (    (strpos(e_SELF, $ADMIN_DIRECTORY) == FALSE) && (strpos(e_SELF, $PLUGINS_DIRECTORY) == FALSE) && file_exists(e_LANGUAGEDIR.$user_language."/".$user_language.".php")  )   ) ? $user_language : FALSE));
-define("e_LANGUAGE", (!USERLAN || !defined("USERLAN") ? $language : USERLAN));
+// Get user language choice
+/// Force no multilingual sites to keep there preset languages? if (varset($pref['multilanguage']))
+{
+	if ($pref['user_tracking'] == 'session')
+	{
+		$user_language = (array_key_exists('e107language_'.$pref['cookie_name'], $_SESSION) ? $_SESSION['e107language_'.$pref['cookie_name']] : '');
+	}
+	else
+	{
+		$user_language= (isset($_COOKIE['e107language_'.$pref['cookie_name']])) ? $_COOKIE['e107language_'.$pref['cookie_name']] : '';
+	}
+	// Strip $user_language
+	//TODO allow [a-z][A-Z][0-9]_
+	$user_language = preg_replace('#\W#', '', $user_language);
 
-e107_include(e_LANGUAGEDIR.e_LANGUAGE."/".e_LANGUAGE.".php");
-e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/".e_LANGUAGE."_custom.php");
+	// Is user language choice available?
+	if( ! in_array($user_language, $lanlist))
+	{
+		// Reset session
+		if(isset($_SESSION))
+		{
+			unset($_SESSION['e107language_'.$pref['cookie_name']]);
+		}
+		// Reset cookie
+		if(isset($_COOKIE['e107language_'.$pref['cookie_name']]))
+		{
+			unset($_COOKIE['e107language_'.$pref['cookie_name']]);
+		}
+		$user_language = '';
+	}
+	else
+	{
+		$language = $user_language;
+	}
 
-if($pref['sitelanguage'] != e_LANGUAGE && isset($pref['multilanguage']) && $pref['multilanguage'] && !$pref['multilanguage_subdomain']){
+	// Ensure db got the proper language - default is empty
+	if (varset($pref['multilanguage']))
+	{
+		$sql->mySQLlanguage  = $user_language;
+		$sql2->mySQLlanguage = $user_language;
+	}
+}
+// We should have the language by now
+define('e_LANGUAGE', $language);
+
+// Keep USERLAN for backward compatibility
+define('USERLAN', e_LANGUAGE);
+
+//TODO do it only once and with the proper function
+include_lan(e_LANGUAGEDIR.e_LANGUAGE."/".e_LANGUAGE.".php");
+include_lan(e_LANGUAGEDIR.e_LANGUAGE."/".e_LANGUAGE."_custom.php");
+
+if($pref['sitelanguage'] != e_LANGUAGE && varset($pref['multilanguage']) && !$pref['multilanguage_subdomain'])
+{
 	list($clc) = explode("_",CORE_LC);
 	define("e_LAN", strtolower($clc));
 	define("e_LANQRY", "[".e_LAN."]");
 	unset($clc);
-}else{
+}
+else
+{
     define("e_LAN", FALSE);
 	define("e_LANQRY", FALSE);
 }
@@ -666,8 +714,10 @@ if (!function_exists('checkvalidtheme'))
 $sql->db_Mark_Time('Start: Misc Setup');
 
 //------------------------------------------------------------------------------------------------------------------------------------//
-if (!class_exists('e107_table')) {
-	class e107table {
+if (!class_exists('e107table')) 
+{
+	class e107table 
+	{
 		function tablerender($caption, $text, $mode = "default", $return = false) {
 			/*
 			# Render style table
@@ -740,20 +790,22 @@ if (isset($_POST['userlogin']) || isset($_POST['userlogin_x'])) {
 	$usr = new userlogin($_POST['username'], $_POST['userpass'], $_POST['autologin']);
 }
 
-if (e_QUERY == 'logout') {
+if (e_QUERY == 'logout') 
+{
 	$ip = $e107->getip();
 	$udata=(USER === TRUE) ? USERID.".".USERNAME : "0";
 	$sql->db_Update("online", "online_user_id = '0', online_pagecount=online_pagecount+1 WHERE online_user_id = '{$udata}' LIMIT 1");
 
-	if ($pref['user_tracking'] == "session") {
+	if ($pref['user_tracking'] == 'session') 
+	{
 		session_destroy();
-		$_SESSION[$pref['cookie_name']]="";
+		$_SESSION[$pref['cookie_name']]='';
 	}
 
-	cookie($pref['cookie_name'], "", (time() - 2592000));
-	$e_event->trigger("logout");
-	echo "<script type='text/javascript'>document.location.href = '".SITEURL."index.php'</script>\n";
-	exit;
+	cookie($pref['cookie_name'], '', (time() - 2592000));
+	$e_event->trigger('logout');
+	header('location:'.e_BASE.'index.php');      
+	exit();
 }
 
 
@@ -829,7 +881,9 @@ if	(
 	  || (varsettrue($eplug_admin))																	// Admin forced
 	)
 {
-  $inAdminDir = TRUE;
+	$inAdminDir = TRUE;
+	// Load admin phrases ASAP
+	include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_admin.php');
 }
 
 
@@ -837,19 +891,19 @@ if(!defined("THEME"))
 {
 	if ($inAdminDir && varsettrue($pref['admintheme'])&& (strpos(e_SELF.'?'.e_QUERY, 'menus.php?configure') === FALSE))
 	{
-/*	  if (strpos(e_SELF, "newspost.php") !== FALSE) 
+/*	  if (strpos(e_SELF, "newspost.php") !== FALSE)
 	  {
 		define("MAINTHEME", e_THEME.$pref['sitetheme']."/");		MAINTHEME no longer used in core distribution
 	  }  */
-	  checkvalidtheme($pref['admintheme']);
+		checkvalidtheme($pref['admintheme']);
 	} 
-	elseif (USERTHEME !== FALSE && USERTHEME != "USERTHEME") 
+	elseif (USERTHEME !== FALSE && USERTHEME != "USERTHEME" && !$inAdminDir)
 	{
-	  checkvalidtheme(USERTHEME);
+		checkvalidtheme(USERTHEME);
 	} 
 	else 
 	{
-	  checkvalidtheme($pref['sitetheme']);
+		checkvalidtheme($pref['sitetheme']);
 	}
 }
 
@@ -879,15 +933,14 @@ else
 
 $exclude_lan = array("lan_signup.php");  // required for multi-language.
 
+//TODO remove autoload
 if ($inAdminDir)
 {
-  e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_".e_PAGE);
-  e107_include_once(e_LANGUAGEDIR."English/admin/lan_".e_PAGE);
+  include_lan(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_".e_PAGE);
 } 
 elseif (!in_array("lan_".e_PAGE,$exclude_lan) && !$isPluginDir) 
 {
-  e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_".e_PAGE);
-  e107_include_once(e_LANGUAGEDIR."English/lan_".e_PAGE);
+  include_lan(e_LANGUAGEDIR.e_LANGUAGE."/lan_".e_PAGE);
 }
 
 
@@ -1273,14 +1326,16 @@ class e_online {
 				$row['online_pagecount'] = 1;
 			}
 
-			if ($row['online_pagecount'] > $online_bancount && ($row['online_ip'] != "127.0.0.1")) {
-				$sql->db_Insert("banlist", "'{$ip}', '0', 'Hit count exceeded ({$row['online_pagecount']} requests within allotted time)' ");
+			if ($row['online_pagecount'] > $online_bancount && ($row['online_ip'] != "127.0.0.1")) 
+			{
+				include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_banlist.php');
+				$sql->db_Insert('banlist', "'{$ip}', '0', '".str_replace('--HITS--',$row['online_pagecount'],BANLAN_78)."' ");
 				$e_event->trigger("flood", $ip);
-				exit;
+				exit();
 			}
 			if ($row['online_pagecount'] >= $online_warncount && $row['online_ip'] != "127.0.0.1") {
 				echo "<div style='text-align:center; font: 11px verdana, tahoma, arial, helvetica, sans-serif;'><b>".LAN_WARNING."</b><br /><br />".CORE_LAN6."<br /></div>";
-				exit;
+				exit();
 			}
 
 			$sql->db_Delete("online", "`online_timestamp` < ".(time() - $online_timeout));
@@ -1384,6 +1439,7 @@ function init_session() {
 			define("USER", FALSE);
 			define('USERID', 0);
 			define("USERCLASS", "");
+			define('USERCLASS_LIST', class_list());
 			define("LOGINMESSAGE",CORE_LAN10."<br /><br />");
 			return (FALSE);
 		}
@@ -1391,7 +1447,6 @@ function init_session() {
 		$result = get_user_data($uid);
 		if(is_array($result) && md5($result['user_password']) == $upw)
 		{
-
 			define("USERID", $result['user_id']);
 			define("USERNAME", $result['user_name']);
 			define("USERURL", (isset($result['user_homepage']) ? $result['user_homepage'] : false));
@@ -1423,25 +1478,40 @@ function init_session() {
 
 			if ($result['user_ban'] == 1) { exit; }
 
+			if ($result['user_admin']) 
+			{
+				define('ADMIN', TRUE);
+				define('ADMINID', $result['user_id']);
+				define('ADMINNAME', $result['user_name']);
+				define('ADMINPERMS', $result['user_perms']);
+				define('ADMINEMAIL', $result['user_email']);
+				define('ADMINPWCHANGE', $result['user_pwchange']);
+			} 
+			else 
+			{
+				define('ADMIN', FALSE);
+			}
+
 			$user_pref = unserialize($result['user_prefs']);
 
-			if (isset($_POST['settheme'])) {
-				$user_pref['sitetheme'] = ($pref['sitetheme'] == $_POST['sitetheme'] ? "" : $_POST['sitetheme']);
-				save_prefs("user");
+			$tempClasses = class_list();
+			if (check_class(varset($pref['allow_theme_select'],FALSE), $tempClasses))
+			{	// User can set own theme
+				if (isset($_POST['settheme'])) 
+				{
+					$user_pref['sitetheme'] = ($pref['sitetheme'] == $_POST['sitetheme'] ? "" : $_POST['sitetheme']);
+					save_prefs('user');
+				}
 			}
+			elseif (isset($user_pref['sitetheme']))
+			{	// User obviously no longer allowed his own theme - clear it
+				unset($user_pref['sitetheme']);
+				save_prefs('user');
+			}
+			
 
 			define("USERTHEME", (isset($user_pref['sitetheme']) && file_exists(e_THEME.$user_pref['sitetheme']."/theme.php") ? $user_pref['sitetheme'] : FALSE));
-			global $ADMIN_DIRECTORY, $PLUGINS_DIRECTORY;
-			if ($result['user_admin']) {
-				define("ADMIN", TRUE);
-				define("ADMINID", $result['user_id']);
-				define("ADMINNAME", $result['user_name']);
-				define("ADMINPERMS", $result['user_perms']);
-				define("ADMINEMAIL", $result['user_email']);
-				define("ADMINPWCHANGE", $result['user_pwchange']);
-			} else {
-				define("ADMIN", FALSE);
-			}
+//			global $ADMIN_DIRECTORY, $PLUGINS_DIRECTORY;   Don't look very necessary
 		} 
 		else 
 		{
@@ -1581,12 +1651,14 @@ function e107_require($fname) {
 	return $ret;
 }
 
-function include_lan($path, $force = false) {
-	if (!is_readable($path)) {
+function include_lan($path, $force = false)
+{
+	if ( ! is_readable($path))
+	{
 		$path = str_replace(e_LANGUAGE, 'English', $path);
 	}
-	$ret = ($force) ? include($path) : include_once($path);
-	return (isset($ret)) ? $ret : "";
+	$ret = ($force) ? e107_include($path) : e107_include_once($path);
+	return (isset($ret)) ? $ret : '';
 }
 
 if(!function_exists("print_a")) 
@@ -1705,7 +1777,7 @@ class error_handler {
 
 	function return_errors() {
 		$index = 0; $colours[0] = "#C1C1C1"; $colours[1] = "#B6B6B6";
-		$ret = "<table class='fborder'>\n";
+		$ret = "" ;
 		if (E107_DBG_ERRBACKTRACE)
 		{
 			foreach ($this->errors as $key => $value) {
@@ -1719,8 +1791,8 @@ class error_handler {
 				$ret .= "<tr class='forumheader3'><td>{$value['short']}</td></tr>\n";
 			}
 		}
-		$ret .= "</table>";
-		return $ret;
+
+		return ($ret) ? "<table class='fborder'>\n".$ret."</table>" : "";
 	}
 
 	function trigger_error($information, $level) {

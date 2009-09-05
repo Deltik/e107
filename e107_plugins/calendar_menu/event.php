@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/calendar_menu/event.php,v $
-|     $Revision: 1.33 $
-|     $Date: 2008/09/17 19:56:14 $
+|     $Revision: 1.35 $
+|     $Date: 2009/09/01 19:28:34 $
 |     $Author: e107steved $
 |
 | 09.11.06 - Started next batch of mods
@@ -36,7 +36,7 @@ if (isset($_POST['subs']))
     Header("Location: ".e_PLUGIN."calendar_menu/subscribe.php");
 }
 
-@include_lan(e_PLUGIN."calendar_menu/languages/".e_LANGUAGE.".php");
+include_lan(e_PLUGIN."calendar_menu/languages/".e_LANGUAGE.".php");
 define("PAGE_NAME", EC_LAN_80);
 
 require_once(e_PLUGIN.'calendar_menu/ecal_class.php');
@@ -69,7 +69,7 @@ if (isset($_POST['ne_cat_create']))
 }
 */
 // Event to add or update
-if ((isset($_POST['ne_insert']) || isset($_POST['ne_update'])) && USER == true)
+if ((isset($_POST['ne_insert']) || isset($_POST['ne_update'])) && ($cal_super || check_class($pref['eventpost_admin'])))
 {  
   if (($_POST['ne_event'] == "") || !isset($_POST['qs']))
   {	// Problem - tell user to go away

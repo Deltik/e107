@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/lan_users.php,v $
-|     $Revision: 1.34 $
-|     $Date: 2008/08/28 19:57:55 $
-|     $Author: e107steved $
+|     $Revision: 1.36 $
+|     $Date: 2009/06/24 20:10:11 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 define("USRLAN_1", "Options Saved.");
@@ -79,7 +79,7 @@ define("USRLAN_70", "User created");
 define("USRLAN_71", "Users Front Page");
 define("USRLAN_72", "Quick Add User");
 define("USRLAN_73", "Prune Users");
-// define("USRLAN_75", "Options");
+define("USRLAN_75", "That login name already exists in the database, please choose a different login name");
 define("USRLAN_76", "User Options");
 define("USRLAN_77", "Existing Users");
 define("USRLAN_78", "User Name");
@@ -201,5 +201,7 @@ define("DUSRLAN_34", "Perms");
 define("DUSRLAN_35", "Tracked threads");
 define("DUSRLAN_36", "Password Change");
 define("DUSRLAN_37", "XUP");
+
+define('USRLAN_219', 'Older than 30 days');     
 
 ?>

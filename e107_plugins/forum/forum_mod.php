@@ -11,15 +11,14 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/forum/forum_mod.php,v $
-|     $Revision: 1.13 $
-|     $Date: 2007/11/11 23:45:34 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.15 $
+|     $Date: 2009/08/15 11:54:31 $
+|     $Author: marj_nl_fr $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
 
-@include_once e_PLUGIN.'forum/languages/'.e_LANGUAGE.'/lan_forum_admin.php';
-@include_once e_PLUGIN.'forum/languages/English/lan_forum_admin.php';
+include_lan(e_PLUGIN.'forum/languages/'.e_LANGUAGE.'/lan_forum_admin.php');
 
 function forum_thread_moderate($p)
 {
@@ -110,7 +109,7 @@ function forum_delete_thread($thread_id)
 			// delete the post itself
 			$sql->db_Delete("forum_t", "thread_id=".$thread_id);
 			// update thread/reply counts
-			$sql->db_Update("forum", "forum_threads = CAST(GREATEST(CAST(forum_threads AS SIGNED) - 1, 0) AS UNSIGNED), forum_threads = CAST(GREATEST(CAST(forum_replies AS SIGNED) - {$count}, 0) AS UNSIGNED) WHERE forum_id=".$row['thread_forum_id']);
+			$sql->db_Update("forum", "forum_threads = CAST(GREATEST(CAST(forum_threads AS SIGNED) - 1, 0) AS UNSIGNED), forum_replies = CAST(GREATEST(CAST(forum_replies AS SIGNED) - {$count}, 0) AS UNSIGNED) WHERE forum_id=".$row['thread_forum_id']);
 
 			// update lastpost info
 			$f->update_lastpost('forum', $row['thread_forum_id']);

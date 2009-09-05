@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/rss_menu/rss.php,v $
-|     $Revision: 1.64 $
-|     $Date: 2008/11/02 22:28:03 $
-|     $Author: e107steved $
+|     $Revision: 1.66 $
+|     $Date: 2009/06/29 06:26:34 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -185,19 +185,23 @@ class rssCreate {
 		switch ($content_type) {
 			case 'news' :
 			case 1:
-				if($topic_id && is_numeric($topic_id)){
+				if($topic_id && is_numeric($topic_id))
+				{
 					$topic = " AND news_category = ".intval($topic_id);
-				}else{
+				}
+				else
+				{
 					$topic = '';
 				}
 				$path='';
 				$render = ($pref['rss_othernews'] != 1) ? "AND n.news_render_type < 2" : "";
+				$nobody_regexp = "'(^|,)(".str_replace(",", "|", e_UC_NOBODY).")(,|$)'";
 
 				$this -> rssQuery = "
 				SELECT n.*, u.user_id, u.user_name, u.user_email, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
 				LEFT JOIN #user AS u ON n.news_author = u.user_id
 				LEFT JOIN #news_category AS nc ON n.news_category = nc.category_id
-				WHERE n.news_class IN (".USERCLASS_LIST.") AND n.news_start < ".time()." AND (n.news_end=0 || n.news_end>".time().") {$render} {$topic} ORDER BY news_datestamp DESC LIMIT 0,".$this -> limit;
+				WHERE n.news_class IN (".USERCLASS_LIST.") AND NOT (n.news_class REGEXP ".$nobody_regexp.") AND n.news_start < ".time()." AND (n.news_end=0 || n.news_end>".time().") {$render} {$topic} ORDER BY news_datestamp DESC LIMIT 0,".$this -> limit;
 				$sql->db_Select_gen($this -> rssQuery);
 				$tmp = $sql->db_getList();
 				$this -> rssItems = array();
@@ -396,7 +400,7 @@ class rssCreate {
 	}
 
 	function buildRss($rss_title) {
-		global $sql, $pref, $tp, $e107, $PLUGINS_DIRECTORY;
+		global $sql, $pref, $tp, $e107, $PLUGINS_DIRECTORY,$topic_id ;
 		header('Content-type: application/xml', TRUE);
 
 		$rss_title = $tp->toRss($pref['sitename']." : ".$rss_title);
@@ -450,32 +454,38 @@ class rssCreate {
 
 				echo "<language>".CORE_LC.(defined("CORE_LC2") ? "-".CORE_LC2 : "")."</language>
 				<copyright>".preg_replace("#\<br \/\>|\n|\r#si", "", SITEDISCLAIMER)."</copyright>
-				<managingEditor>".$pref['siteadmin']." - ".$this->nospam($pref['siteadminemail'])."</managingEditor>
-				<webMaster>".$this->nospam($pref['siteadminemail'])."</webMaster>
+				<managingEditor>".$this->nospam($pref['siteadminemail'])." (".$pref['siteadmin'].")</managingEditor>
+				<webMaster>".$this->nospam($pref['siteadminemail'])." (".$pref['siteadmin'].")</webMaster>
 				<pubDate>".date("r",($time + $this -> offset))."</pubDate>
 				<lastBuildDate>".date("r",($time + $this -> offset))."</lastBuildDate>
 				<docs>http://backend.userland.com/rss</docs>
 				<generator>e107 (http://e107.org)</generator>
 				<ttl>60</ttl>";
+
 				if (trim(SITEBUTTON))
 				{
-				echo "
-				<image>
-				<title>".$tp->toRss($rss_title)."</title>
-				<url>".(strstr(SITEBUTTON, "http:") ? SITEBUTTON : SITEURL.str_replace("../", "", e_IMAGE).SITEBUTTON)."</url>
-				<link>".$pref['siteurl']."</link>
-				<width>88</width>
-				<height>31</height>
-				<description>".$tp->toRss($pref['sitedescription'])."</description>
-				</image>";
+					echo "
+					<image>
+					<title>".$tp->toRss($rss_title)."</title>
+					<url>".(strstr(SITEBUTTON, "http:") ? SITEBUTTON : SITEURL.str_replace("../", "", e_IMAGE).SITEBUTTON)."</url>
+					<link>".$pref['siteurl']."</link>
+					<width>88</width>
+					<height>31</height>
+					<description>".$tp->toRss($pref['sitedescription'])."</description>
+					</image>";
 				}
-				echo "
+
+				// Generally Ignored by 99% of readers.
+               /*
+			   	echo "
 				<textInput>
 				<title>Search</title>
 				<description>Search ".$tp->toRss($pref['sitename'])."</description>
 				<name>query</name>
 				<link>".SITEURL.(substr(SITEURL, -1) == "/" ? "" : "/")."search.php</link>
 				</textInput>";
+				*/
+
 				foreach($this -> rssItems as $value)
 				{
                     // Multi-language rss links.
@@ -502,7 +512,7 @@ class rssCreate {
 					}
 
 					if($value['author']){
-						echo "<author>".$value['author']."&lt;".$this->nospam($value['author_email'])."&gt;</author>\n";
+						echo "<author>".$this->nospam($value['author_email'])." (".$value['author'].")</author>\n";
 					}
 
 					// enclosure support for podcasting etc.
@@ -518,6 +528,7 @@ class rssCreate {
 
 					echo "</item>";
 				}
+		   //		echo "<atom:link href=\"".e_SELF."?".($this -> contentType).".4.".$this -> topicId ."\" rel=\"self\" type=\"application/rss+xml\" />";
 				echo "
 				</channel>
 				</rss>";

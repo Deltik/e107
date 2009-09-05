@@ -9,14 +9,18 @@
 |
 |	Released under the terms and conditions of the
 |	GNU General Public License (http://gnu.org).
+|
+|     $Source: /cvsroot/e107/e107_0.7/e107_themes/lamb/theme.php,v $
+|     $Revision: 1.38 $
+|     $Date: 2009/07/18 15:53:42 $
+|     $Author: marj_nl_fr $
 +---------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
 
 // [multilanguage]
-@include_once(e_THEME."lamb/languages/".e_LANGUAGE.".php");
-@include_once(e_THEME."lamb/languages/English.php");
+include_lan(e_THEME."lamb/languages/".e_LANGUAGE.".php");
 
 // [theme]
 $themename = "lamb";
@@ -96,7 +100,7 @@ $NEWSSTYLE = "
 </div>
 <div style='text-align:right' class='smalltext'>
 {NEWSAUTHOR}
-on
+".LAN_THEME_6."
 {NEWSDATE}
 <br />
 <img src='".e_IMAGE_ABS."admin_images/userclass_16.png' alt='' style='vertical-align: middle;' />

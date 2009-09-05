@@ -12,9 +12,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/lan_prefs.php,v $
-|     $Revision: 1.67 $
-|     $Date: 2007/12/29 19:06:15 $
-|     $Author: e107steved $
+|     $Revision: 1.69 $
+|     $Date: 2009/03/08 18:38:38 $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -36,14 +36,14 @@ define("PRFLAN_15", "Display render time?");
 define("PRFLAN_16", "Display sql queries?");
 define("PRFLAN_17", "Compress Site Output Using gzip");
 define("PRFLAN_19", "Signup Page Options");
-define("PRFLAN_21", "Date display options");
+define("PRFLAN_21", "Date Display options");
 define("PRFLAN_22", "Short date format");
 define("PRFLAN_23", "Long date format");
 define("PRFLAN_24", "Forum date format");
 define("PRFLAN_25", "For more information on date formats see the");
 define("PRFLAN_26", "Time offset");
 define("PRFLAN_27", "Example, if you set this to +2, all times on your site will have two hours added to them");
-define("PRFLAN_28", "User registration/posting");
+define("PRFLAN_28", "User Registration/Posting");
 define("PRFLAN_29", "Activate user registration system?");
 define("PRFLAN_30", "allow users to register as members on your site");
 //define("PRFLAN_31", "Use email verification for signups?");
@@ -108,9 +108,9 @@ define("PRFLAN_95", "Display plugins info:");
 define("PRFLAN_96", "Will display info on all admin pages for each plugin supporting this type of feature");
 define("PRFLAN_97", "Unique 'Plugins info' menu:");
 define("PRFLAN_98", "If unchecked, each plugin will display its own info in an individual menu. If checked all info will be displayed in one menu.");
-define("PRFLAN_101", "Text rendering");
+define("PRFLAN_101", "Text Rendering");
 define("PRFLAN_102", "Replace clickable URLs");
-define("PRFLAN_103", "If ticked, and 'Make Clickable' (above) is also ticked, posted URLs are displayed as a hyperlink using text from the textbox below. This keeps very long URLs from breaking layout.");
+define("PRFLAN_103", "If ticked, and 'Make Clickable' (above) is also ticked, posted URLs or Email addresses are displayed as a hyperlink using text from the textboxes below. This keeps very long URLs/Emails from breaking layout.");
 define("PRFLAN_104", "URL replacement text");
 define("PRFLAN_105", "Replacement visible text for clickable URLs. Image can be used by using &lt;img&gt; tag, with full path to image");
 define("PRFLAN_106", "Core preferences saved to database.");
@@ -133,7 +133,7 @@ define("PRFLAN_124", "Use 'classic' nextprev look");
 define("PRFLAN_125", "Turning this on will show the nextprev pages as 1 2 3 ... 21 22 23, instead of the new look with the dropdown.");
 define("PRFLAN_126", "Text to display on signup page");
 define("PRFLAN_127", "Make URLs clickable");
-define("PRFLAN_128", "Turning this on will convert posted URLs to hyperlinks");
+define("PRFLAN_128", "Turning this on will convert posted URLs or Email addresses to hyperlinks");
 define("PRFLAN_129", "Disallow multiple logins");
 define("PRFLAN_130", "Activating this will prevent more than one person logging in with the same username/password (login detail sharing)");
 define("PRFLAN_131", "Activate use of [php] bbcode");

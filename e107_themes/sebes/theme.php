@@ -14,8 +14,7 @@
 if (!defined('e107_INIT')) { exit; }
 
 // [multilanguage]
-@include_once(e_THEME."sebes/languages/".e_LANGUAGE.".php");
-@include_once(e_THEME."sebes/languages/English.php");
+include_lan(e_THEME."sebes/languages/".e_LANGUAGE.".php");
 
 // [theme]
 $themename = "sebes";
@@ -95,7 +94,7 @@ define("BULLET", "arrow.png");
 
 $NEWSSTYLE = "
 <div class='captiontext'><img src='".THEME_ABS."images/marrow.png' alt='' /> {NEWSTITLE}</div>
-<div class='smalltext'>{NEWSAUTHOR} on {NEWSDATE} | {NEWSCOMMENTS}{TRACKBACK}
+<div class='smalltext'>{NEWSAUTHOR}".LAN_THEME_6."{NEWSDATE} | {NEWSCOMMENTS}{TRACKBACK}
 </div>
 {NEWSBODY}
 {EXTENDED}

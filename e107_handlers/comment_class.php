@@ -12,16 +12,16 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/comment_class.php,v $
-|     $Revision: 1.78 $
-|     $Date: 2008/10/22 21:31:02 $
-|     $Author: e107steved $
+|     $Revision: 1.81 $
+|     $Date: 2009/08/15 11:54:30 $
+|     $Author: marj_nl_fr $
 +----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
 
-@include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_comment.php");
-@include_once(e_LANGUAGEDIR."English/lan_comment.php");
+include_lan(e_LANGUAGEDIR.e_LANGUAGE."/lan_comment.php");
+
 global $comment_shortcodes;
 require_once(e_FILE."shortcode/batch/comment_shortcodes.php");
 
@@ -80,9 +80,9 @@ class comment {
 				$eaction = 'edit';
 				$id = $_GET['comment_id'];
 			}
-		  elseif (strstr(e_QUERY, "edit"))
+			elseif (strpos(e_QUERY, 'edit.') !== FALSE)
 			{
-				$eaction = "edit";
+				$eaction = 'edit';
 				$tmp = explode(".", e_QUERY);
 				$count = 0;
 
@@ -300,8 +300,7 @@ class comment {
 			  }
 			}
 		}		// End (nested comment handling)
-		//echo $text;
-		return stripslashes($text);
+		return $text;
 	}
 
 	/**

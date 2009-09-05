@@ -10,15 +10,14 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_plugins/newsfeed/help.php,v $
-|     $Revision: 1.3 $
-|     $Date: 2005/12/14 19:28:44 $
-|     $Author: sweetas $
+|     $Source: /cvsroot/e107/e107_0.7/e107_plugins/newsfeed/e_help.php,v $
+|     $Revision: 1.2 $
+|     $Date: 2009/08/15 11:54:32 $
+|     $Author: marj_nl_fr $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
 
-@include_once(e_PLUGIN."newsfeed/languages/".e_LANGUAGE.".php");
-@include_once(e_PLUGIN."newsfeed/languages/English.php");
+include_lan(e_PLUGIN."newsfeed/languages/".e_LANGUAGE.".php");
 $ns->tablerender(NFLAN_43, NFLAN_42);
 ?>

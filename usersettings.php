@@ -11,12 +11,11 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/usersettings.php,v $
-|     $Revision: 1.104 $
-|     $Date: 2008/11/22 10:19:58 $
+|     $Revision: 1.111 $
+|     $Date: 2009/07/14 19:26:24 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
-
 require_once("class2.php");
 require_once(e_HANDLER."ren_help.php");
 require_once(e_HANDLER."user_extended_class.php");
@@ -50,13 +49,35 @@ include_once(e_FILE."shortcode/batch/usersettings_shortcodes.php");
 
 require_once(e_HANDLER."calendar/calendar_class.php");
 $cal = new DHTML_Calendar(true);
-$_uid = is_numeric(e_QUERY) ? intval(e_QUERY) : "";
 $sesschange = '';						// Notice removal
 $photo_to_delete = '';
 $avatar_to_delete = '';
 
-require_once(HEADERF);
+$inp = USERID;
+$_uid = false;
+if(is_numeric(e_QUERY))
+{
+	if(ADMIN)
+	{
+		$inp = (int)e_QUERY;
+		$_uid = $inp;
+		$info = get_user_data($inp);
+		//Only site admin is able to change setting for other admins
+		if(!is_array($info) || ($info['user_admin'] == 1 && (!defined('ADMINPERMS') || ADMINPERMS !== '0')))
+		{
+			header('location:'.e_BASE.'index.php');
+  		exit;
+		}
+	}
+	else
+	{
+		//Non admin attempting to edit another user's ID
+		header('location:'.e_BASE.'index.php');
+	  exit;
+	}
+}
 
+require_once(HEADERF);
 
 // Given an array of user data, return a comma separated string which includes public, admin, member classes etc as appropriate.
 function addCommonClasses($udata)
@@ -95,6 +116,7 @@ if (isset($_POST['updatesettings']))
 		$_POST['password2'] = '';
 	}
 
+/*
 	if ($_uid && ADMIN)
 	{	// Admin logged in and editing another user's settings - so editing a different ID
 	  $inp = $_uid;
@@ -104,6 +126,9 @@ if (isset($_POST['updatesettings']))
 	{	// Current user logged in - use their ID
 	  $inp = USERID;
 	}
+*/
+
+//	echo "inp = $inp <br />";
 	$udata = get_user_data($inp);				// Get all the user data, including any extended fields
 	$peer = ($inp == USERID ? false : true);
 	$udata['user_classlist'] = addCommonClasses($udata);
@@ -227,7 +252,7 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 	// Check Email address against banlist.
 	$wc = make_email_query($_POST['email']);
 	if ($wc) $wc = ' OR '.$wc;
-	
+
 	if (($wc === FALSE) || ($do_email_validate && $sql->db_Select("banlist", "*", "banlist_ip='".$_POST['email']."'".$wc)))
 	{
 	  $error .= LAN_106."\\n";
@@ -334,17 +359,17 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 
 
     // Validate Extended User Fields.
+	$ue_fields = "";
 	if($_POST['ue'])
 	{
-	  if($sql->db_Select('user_extended_struct'))	
-	  {
-		while($row = $sql->db_Fetch())
+		if($sql->db_Select('user_extended_struct'))
 		{
-		  $extList["user_".$row['user_extended_struct_name']] = $row;
+			while($row = $sql->db_Fetch())
+			{
+			  $extList["user_".$row['user_extended_struct_name']] = $row;
+			}
 		}
-	  }
 
-		$ue_fields = "";
 		foreach($_POST['ue'] as $key => $val)
 		{
 			if (isset($extList[$key]))
@@ -367,6 +392,15 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 				}
 			}
 		}
+
+		$ueHide = array();
+		foreach (array_keys($_POST['hide']) as $key)
+		{
+			if (isset($extList[$key]))
+			{
+				$ueHide[] = $tp->toDB($key);
+			}
+		}
     }
 
 
@@ -378,8 +412,8 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 	{
 	  unset($_POST['password1']);
 	  unset($_POST['password2']);
-	  
-	  
+
+
       $_POST['user_id'] = intval($inp);
 
 
@@ -413,7 +447,7 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 //			if (isset($_POST['username']) && check_class($pref['displayname_class']))
 		if (isset($_POST['username']) && check_class($pref['displayname_class'], $udata['user_classlist'], $peer))
 		{	// Allow change of display name if in right class
-		  $username = strip_tags($_POST['username']);
+		  $username = trim(strip_tags($_POST['username']));
 		  $username = $tp->toDB(substr($username, 0, $pref['displayname_maxlength']));
 		  $new_username = "user_name = '{$username}', ";
 		}
@@ -425,19 +459,19 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 		$new_customtitle = "";
 		if(isset($_POST['customtitle']) && ($pref['forum_user_customtitle'] || ADMIN))
 		{
-		  $new_customtitle = ", user_customtitle = '".$tp->toDB($_POST['customtitle'])."' ";
+			$new_customtitle = ", user_customtitle = '".$tp->toDB($_POST['customtitle'])."' ";
 		}
 
 
 		// Extended fields - handle any hidden fields
 		if($ue_fields)
 		{
-		  $hidden_fields = implode("^", array_keys($_POST['hide']));
-		  if($hidden_fields != "")
-		  {
-			$hidden_fields = "^".$hidden_fields."^";
-		  }
-		  $ue_fields .= ", user_hidden_fields = '".$hidden_fields."'";
+			$hiddenFields = implode("^", $ueHide);
+			if($hiddenFields != "")
+			{
+				$hiddenFields = "^".$hiddenFields."^";
+			}
+			$ue_fields .= ", user_hidden_fields = '".$hiddenFields."'";
 		}
 
 
@@ -484,7 +518,7 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 			$cur_classes = explode(",", $udata['user_class']);			// Current class membership
 			$newclist = array_flip($cur_classes);						// Array keys are now the class IDs
 
-			// Update class list - we must take care to only change those classes a user can edit themselves 
+			// Update class list - we must take care to only change those classes a user can edit themselves
 			foreach ($ucList as $c)
 			{
 			  $cid = $c['userclass_id'];
@@ -516,14 +550,14 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 		$e_event->trigger("postuserset", $_POST);
 
 
-		if(e_QUERY == "update") 
+		if(e_QUERY == "update")
 		{
           header("Location: index.php");
 		}
 		$message = "<div style='text-align:center'>".LAN_150."</div>";
 		$caption = LAN_151;
-	  } 
-	  else 
+	  }
+	  else
 	  {	// Invalid data
 		$message = "<div style='text-align:center'>".$ret."</div>";
 		$caption = LAN_151;
@@ -561,15 +595,15 @@ $sql->db_Select_gen($qry);
 $curVal=$sql->db_Fetch();
 $curVal['userclass_list'] = addCommonClasses($curVal);
 
-if($_POST)
+if($_POST && $error)
 {     // Fix for all the values being lost when an error occurred.
 	foreach($_POST as $key => $val)
 	{
-		$curVal["user_".$key] = $val;
+		$curVal["user_".$key] = $tp->post_toForm($val);
 	}
 	foreach($_POST['ue'] as $key => $val)
 	{
-		$curVal[$key] = $val;
+		$curVal[$key] = $tp->post_toForm($val);
 	}
 }
 
@@ -593,7 +627,31 @@ $text .= "
 	";
 
 $ns->tablerender(LAN_155, $text);
+
+deleteExpired(ADMIN);			// This will clean up the user and user_extended databases
+
 require_once(FOOTERF);
+
+
+
+// Delete 'expired' user records, clean up user_extended DB
+function deleteExpired($force = FALSE)
+{
+	global $pref, $sql;
+	$temp1 = 0;
+	if (isset($pref['del_unv']) && $pref['del_unv'] && $pref['user_reg_veri'] != 2)
+	{
+		$threshold= intval(time() - ($pref['del_unv'] * 60));
+		if (($temp1 = $sql->db_Delete('user', 'user_ban = 2 AND user_join < '.$threshold)) > 0) { $force = TRUE; }
+	}
+	if ($force)
+	{	// Remove 'orphaned' extended user field records
+		$sql->db_Select_gen("DELETE `#user_extended` FROM `#user_extended` LEFT JOIN `#user` ON `#user_extended`.`user_extended_id`=`#user`.`user_id`
+				WHERE `#user`.`user_id` IS NULL");
+	}
+	return $temp1;
+}
+
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
@@ -617,12 +675,12 @@ function delete_file($fname, $dir = 'avatars/')
 {
   global $sql;
   if (!$fname) return FALSE;
-  
-  if (preg_match("#Binary (.*?)/#", $fname, $match)) 
+
+  if (preg_match("#Binary (.*?)/#", $fname, $match))
   {
 	return $sql -> db_Delete("rbinary", "binary_id='".$tp -> toDB($match[1])."'");
   }
-  elseif (file_exists(e_FILE."public/".$dir.$fname)) 
+  elseif (file_exists(e_FILE."public/".$dir.$fname))
   {
 	unlink(e_FILE."public/".$dir.$fname);
 	return TRUE;

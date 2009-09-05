@@ -10,8 +10,8 @@
 |	Released under the terms and conditions of the
 |	GNU General Public License (http://gnu.org).
 |
-|   $Revision: 1.22 $
-|   $Date: 2007/06/04 19:42:37 $
+|   $Revision: 1.24 $
+|   $Date: 2009/06/11 19:21:36 $
 |   $Author: e107steved $
 +---------------------------------------------------------------+
 */
@@ -20,8 +20,7 @@ if (!defined('e107_INIT')) { exit; }
 
 // [multilanguage]
 
-@include_once(e_THEME."kubrick/languages/".e_LANGUAGE.".php");
-@include_once(e_THEME."kubrick/languages/English.php");
+include_lan(e_THEME."kubrick/languages/".e_LANGUAGE.".php");
 
 // [theme]
 $themename = "kubrick";
@@ -38,8 +37,6 @@ define("IMODE", "lite");
 define("THEME_DISCLAIMER", "<br /><i>".LAN_THEME_1."</i>");
 
 if(!defined("e_THEME")){ exit; }
-$page=substr(strrchr($_SERVER['PHP_SELF'], "/"), 1);
-define("e_PAGE", $page);
 
 $register_sc[]= "UL";  // register shortcode ul.sc for inclusion.
 
@@ -94,7 +91,7 @@ $CUSTOMPAGES = "forum.php forum_post.php forum_viewforum.php forum_viewtopic.php
 
 $NEWSSTYLE = "
 <h2>{NEWSTITLE}</h2>
-<small>on {NEWSDATE} | by {NEWSAUTHOR}</small>
+<small>".LAN_THEME_6." {NEWSDATE} | ".LAN_THEME_7." {NEWSAUTHOR}</small>
 <div class='entry' style='text-align:left'>
 {NEWSBODY}
 {EXTENDED}

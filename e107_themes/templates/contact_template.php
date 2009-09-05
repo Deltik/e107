@@ -1,15 +1,16 @@
 <?php
-// $Id: contact_template.php,v 1.9 2007/12/06 21:36:02 e107steved Exp $
+// $Id: contact_template.php,v 1.11 2009/07/28 04:10:16 marj_nl_fr Exp $
 
 if (!defined('e107_INIT')) { exit; }
 if (!defined("USER_WIDTH")){ define("USER_WIDTH","width:97%"); }
 
 if(!isset($CONTACT_INFO))
 {
-  $CONTACT_INFO = "
+	$CONTACT_INFO = "
 	<table style='".USER_WIDTH."' cellpadding='1' cellspacing='7'>
 	<tr>
-		<td>{SITECONTACTINFO}
+		<td>
+		{SITECONTACTINFO}
 		<br />
 		</td>
 	</tr>

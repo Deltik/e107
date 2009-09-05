@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/cpage.php,v $
-|     $Revision: 1.42 $
-|     $Date: 2008/07/09 20:07:54 $
-|     $Author: e107steved $
+|     $Revision: 1.46 $
+|     $Date: 2009/08/03 18:36:04 $
+|     $Author: marj_nl_fr $
 +----------------------------------------------------------------------------+
 */
 
@@ -28,7 +28,6 @@ $page = new page;
 require_once("auth.php");
 // require_once(e_HANDLER."ren_help.php");
 require_once(e_HANDLER."userclass_class.php");
-$custpage_lang = ($sql->mySQLlanguage) ? $sql->mySQLlanguage : $pref['sitelanguage'];
 
 if (e_QUERY)
 {
@@ -267,7 +266,7 @@ class page
 
 			<tr>
 			<td style='width:25%' class='forumheader3'>".CUSLAN_18."</td>
-			<td style='width:75%' class='forumheader3'>".r_userclass("page_class", $page_class)."</td>
+			<td style='width:75%' class='forumheader3'>".r_userclass("page_class", $page_class, "off", "public,guest,nobody,member,main,admin,classes")."</td>
 			</tr>";
 		}
 
@@ -302,16 +301,21 @@ class page
 
 		if($mode)
 		{	// Don't think $_POST['page_ip_restrict'] is ever set.
-
-			$update = $sql -> db_Update("page", "page_title='$page_title', page_text='$page_text', page_author='$pauthor', page_rating_flag='".intval($_POST['page_rating_flag'])."', page_comment_flag='".intval($_POST['page_comment_flag'])."', page_password='".$_POST['page_password']."', page_class='".$_POST['page_class']."', page_ip_restrict='".varset($_POST['page_ip_restrict'],'')."' WHERE page_id='$mode'");
+			$update = $sql -> db_Update("page", "page_title='{$page_title}', page_text='{$page_text}', page_datestamp='".time()."', page_author='{$pauthor}', page_rating_flag='".intval($_POST['page_rating_flag'])."', page_comment_flag='".intval($_POST['page_comment_flag'])."', page_password='".$_POST['page_password']."', page_class='".$_POST['page_class']."', page_ip_restrict='".varset($_POST['page_ip_restrict'],'')."' WHERE page_id='{$mode}'");
 			$e107cache->clear("page_{$mode}");
 			$e107cache->clear("page-t_{$mode}");
 
-			if($type)
+			if($type)  // it's a menu.
 			{
 				$menu_name = $tp -> toDB($_POST['menu_name']); // not to be confused with menu-caption.
-				$sql -> db_Update("menus", "menu_name='$menu_name' WHERE menu_path='$mode' ");
-				$update++;
+				if($sql -> db_Update("menus", "menu_name='$menu_name' WHERE menu_path='$mode' "))
+				{
+				  	$update++;
+				}
+				else
+				{
+                  	$sql -> db_Insert("menus", "0, '$menu_name', '0', '0', '0', '', '".$mode."' ");
+				}
 			}
 
 			if ($_POST['page_link'])

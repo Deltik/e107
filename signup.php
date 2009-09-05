@@ -11,14 +11,15 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/signup.php,v $
-|     $Revision: 1.122 $
-|     $Date: 2008/12/04 21:32:40 $
-|     $Author: e107steved $
+|     $Revision: 1.133 $
+|     $Date: 2009/08/09 08:39:04 $
+|     $Author: marj_nl_fr $
 +----------------------------------------------------------------------------+
 */
 
 require_once("class2.php");
 $qs = explode(".", e_QUERY);
+//@TODO what fix?
 if($qs[0] != "activate"){   // multi-language fix.
 	e107_include_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_signup.php");
 	e107_include_once(e_LANGUAGEDIR."English/lan_signup.php");
@@ -195,22 +196,26 @@ if(ADMIN && (e_QUERY == "preview" || e_QUERY == "test"  || e_QUERY == "preview.a
 	if(e_QUERY == "preview.aftersignup")
 	{
 		require_once(HEADERF);
+		$srch = array("[sitename]","[email]");
+		$repl = array(SITENAME,"<b>example@email.com</b>");
+
 		if(trim($pref['signup_text_after']))
 		{
-			$text = $tp->toHTML($pref['signup_text_after'], TRUE, 'parse_sc,defs')."<br />";
+			$text = str_replace($srch,$repl,$tp->toHTML($pref['signup_text_after'], TRUE, 'parse_sc,defs'))."<br />"; 
 		}
 		else
 		{
-			if ($pref['user_reg_veri'] == 2)
-			{
-				$text = LAN_SIGNUP_37;
-			}
-			else
-			{
-				$text = LAN_405;
-			}
+            $LAN_AFTERSIGNUP = defined("LAN_SIGNUP_72") ? LAN_SIGNUP_72 : LAN_405;
+			$text = ($pref['user_reg_veri'] == 2) ? LAN_SIGNUP_37 : str_replace($srch,$repl,$LAN_AFTERSIGNUP);  // Admin Approval / Email Approval
 		}
-		$ns->tablerender(LAN_406, $text);
+
+		$caption_arr = array();
+		$caption_arr[0] = LAN_406; // Thank you!  (No Approval).
+		$caption_arr[1] = defined("LAN_SIGNUP_98") ? LAN_SIGNUP_98 : LAN_406; // Confirm Email (Email Confirmation)
+		$caption_arr[2] = defined("LAN_SIGNUP_100") ? LAN_SIGNUP_100 : LAN_406; // Approval Pending (Admin Approval)
+        $caption = $caption_arr[$pref['user_reg_veri']];
+
+		$ns->tablerender($caption, $text);
 		require_once(FOOTERF);
 		exit;
 	}
@@ -283,8 +288,8 @@ if (e_QUERY)
 		if($qs[3] && strlen($qs[3]) == 2 )
 		{
 			require_once(e_HANDLER."language_class.php");
-			$lng = new language;
-			$the_language = $lng->convert($qs[3]);
+			$slng = new language;
+			$the_language = $slng->convert($qs[3]);
 			if(is_readable(e_LANGUAGEDIR.$the_language."/lan_signup.php"))
 			{
 				include(e_LANGUAGEDIR.$the_language."/lan_signup.php");
@@ -325,7 +330,7 @@ if (e_QUERY)
 
 if (isset($_POST['register']))
 {
-  $_POST['xupexist'] = trim(varset($_POST['xupexist'],''));
+	$_POST['xupexist'] = trim(varset($_POST['xupexist'],''));
 	$e107cache->clear("online_menu_totals");
 	$error_message = "";
 	require_once(e_HANDLER."message_handler.php");
@@ -362,6 +367,7 @@ if (isset($_POST['register']))
 
 		$_POST['name'] = $xup['NICKNAME'];
 		$_POST['email'] = $xup['EMAIL'];
+		$_POST['email_confirm'] = $xup['EMAIL'];
 		$_POST['signature'] = $xup['SIG'];
 		$_POST['hideemail'] = $xup['EMAILHIDE'];
 		$_POST['timezone'] = $xup['TZ'];
@@ -461,6 +467,7 @@ global $db_debug;
 		$error = TRUE;
 	}
 
+
 	// check for multiple signups from the same IP address.
 	if($ipcount = $sql->db_Select("user", "*", "user_ip='".$e107->getip()."' and user_ban !='2' "))
 	{
@@ -551,32 +558,35 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 	// Email address checks
 	//--------------------------------------
 	// Email syntax validation.
-	if ($do_email_validate && (!$_POST['email'] || !check_email($_POST['email'])))
+	if ($do_email_validate)
 	{
-	  $error_message .= LAN_106."\\n";
-	  $error = TRUE;
-	  $email_address_OK = FALSE;
-	}
-	else
-	{
-		// Check Email against banlist.
-		$wc = make_email_query($_POST['email']);
-		if ($wc) $wc = ' OR '.$wc;
-
-		if (($wc === FALSE) || ($do_email_validate && $sql->db_Select("banlist", "*", "banlist_ip='".$_POST['email']."'".$wc)))
+		if (!$_POST['email'] || !check_email($_POST['email']))
 		{
-			$email_address_OK = FALSE;
-			$brow = $sql -> db_Fetch();
+			$error_message .= LAN_106."\\n";
 			$error = TRUE;
-			if($brow['banlist_reason'])
+			$email_address_OK = FALSE;
+		}
+		else
+		{
+			// Check Email against banlist.
+			$wc = make_email_query($_POST['email']);
+			if ($wc) $wc = ' OR '.$wc;
+	
+			if (($wc === FALSE) || ($do_email_validate && $sql->db_Select("banlist", "*", "banlist_ip='".$_POST['email']."'".$wc)))
 			{
-				$repl = array("\n","\r","<br />");
-				$error_message = str_replace($repl,"\\n",$tp->toHTML($brow['banlist_reason'],"","nobreak, defs"))."\\n";
-				$email = "";
-			}
-			else
-			{
-				exit;
+				$email_address_OK = FALSE;
+				$brow = $sql -> db_Fetch();
+				$error = TRUE;
+				if($brow['banlist_reason'])
+				{
+					$repl = array("\n","\r","<br />");
+					$error_message = str_replace($repl,"\\n",$tp->toHTML($brow['banlist_reason'],"","nobreak, defs"))."\\n";
+					$email = "";
+				}
+				else
+				{
+					exit;
+				}
 			}
 		}
 	}
@@ -620,37 +630,84 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 		}
 	}
 
+
+	// Avatar validation (already checked if compulsory field not filled in)
+	if ((varset($pref['signup_option_image'],0) > 0) && $_POST['image'])
+	{
+		$_POST['image'] = str_replace(array('\'', '"', '(', ')'), '', $_POST['image']);   // these are invalid anyway, so why allow them? (XSS Fix)
+		$avName = $tp -> toDB($_POST['image']);
+		if ($size = getimagesize($avName))
+		{
+			$avwidth = $size[0];
+			$avheight = $size[1];
+			$avmsg = "";
+	
+			$pref['im_width'] = varset($pref['im_width'], 120);
+			$pref['im_height'] = varset($pref['im_height'], 100);
+			if ($avwidth > $pref['im_width']) 
+			{
+				$avmsg .= LAN_USET_1." ({$avwidth})<br />".LAN_USET_2.": {$pref['im_width']}<br /><br />";
+			}
+			if ($avheight > $pref['im_height']) 
+			{
+				$avmsg .= LAN_USET_3." ({$avheight})<br />".LAN_USET_4.": {$pref['im_height']}";
+			}
+		}
+		else
+		{
+			$avmsg = LAN_SIGNUP_60;			// Error accessing avatar
+		}
+		if ($avmsg) 
+		{
+			$_POST['image'] = "";
+			$error_message .= $avmsg;
+			$error = TRUE;
+		}
+	}
+	else
+	{
+		$_POST['image'] = "";
+	}
+
+
 	// Extended Field validation
 	$extList = $usere->user_extended_get_fieldList();
+	$eufVals = array();
 
 	foreach($extList as $ext)
 	{
-		if(isset($_POST['ue']['user_'.$ext['user_extended_struct_name']]))
+		$eufName = 'user_'.$ext['user_extended_struct_name'];
+		if(isset($_POST['ue'][$eufName]) || ($ext['user_extended_struct_required'] == 1))
 		{
-			$newval = trim($_POST['ue']['user_'.$ext['user_extended_struct_name']]);
+			$newval = trim(varset($_POST['ue'][$eufName],''));
+//			echo "Vetting field ".'user_'.$ext['user_extended_struct_name'].": {$newval} = ".trim($_POST['ue']['user_'.$ext['user_extended_struct_name']])."<br />";
 			if($ext['user_extended_struct_required'] == 1 && (($newval == "") || (($ext['user_extended_struct_type'] == 7) && ($newval == '0000-00-00')) ))
-			{
+			{	// Required field not present
 				$_ftext = (defined($ext['user_extended_struct_text']) ? constant($ext['user_extended_struct_text']) : $ext['user_extended_struct_text']);
 				$error_message .= LAN_SIGNUP_6.$_ftext.LAN_SIGNUP_7."\\n";
 				$error = TRUE;
 			}
-			$parms = explode("^,^", $ext['user_extended_struct_parms']);
-			$regex = (isset($parms[1]) ? $tp->toText($parms[1]) : "");
-			$regexfail = (isset($parms[2]) ? trim($tp->toText($parms[2])) : "");
-
-			if($regexfail == "")
+			else
 			{
-				$regexfail = $ext['user_extended_struct_name']." ".LAN_SIGNUP_53;
-			}
+				$parms = explode("^,^", $ext['user_extended_struct_parms']);
+				$regex = (isset($parms[1]) ? $tp->toText($parms[1]) : "");
+				$regexfail = (isset($parms[2]) ? trim($tp->toText($parms[2])) : "");
 
-			if(defined($regexfail)) {$regexfail = constant($regexfail);}
+				if($regexfail == "")
+				{
+					$regexfail = $ext['user_extended_struct_name']." ".LAN_SIGNUP_53;
+				}
 
-			if($regex != "" && $newval != "")
-			{
-				if(!preg_match($regex, $newval))
+				if(defined($regexfail)) {$regexfail = constant($regexfail);}
+
+				if($regex != "" && $newval != "" && !preg_match($regex, $newval))
 				{
 					$error_message .= $regexfail."\\n";
 					$error = TRUE;
+				}
+				else
+				{
+					$eufVals[$eufName] = $newval;
 				}
 			}
 		}
@@ -659,8 +716,9 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 
 	if($error_message)
 	{
-	  message_handler("P_ALERT", $error_message);
-	  $error_message = '';
+		require_once(HEADERF);
+		message_handler("P_ALERT", $error_message);
+		$error_message = '';
 	}
 
 	// ========== End of verification.. ====================================================
@@ -685,10 +743,10 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 		$ip = $e107->getip();
 
 		$ue_fields = "";
-		foreach($_POST['ue'] as $key => $val)
+		if (count($eufVals))
 		{
-			if (isset($extList[$key]))
-			{	// Only allow valid keys
+			foreach($eufVals as $key => $val)	// We've already ensured only valid keys here
+			{
 				$key = $tp->toDB($key);
 				$val = $tp->toDB($val);
 				$ue_fields .= ($ue_fields) ? ", " : "";
@@ -746,26 +804,33 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 			$e_event->trigger("usersup", $_POST);  // send everything in the template, including extended fields.
 
 			require_once(HEADERF);
-			if($pref['signup_text_after'])
+
+            $srch = array("[sitename]","[email]");
+			$repl = array(SITENAME,"<b>".$_POST['email']."</b>");
+
+			if(trim($pref['signup_text_after']))
 			{
-				$text = $tp->toHTML($pref['signup_text_after'], TRUE, 'parse_sc,defs')."<br />";
+				$text = str_replace($srch,$repl,$tp->toHTML($pref['signup_text_after'], TRUE, 'parse_sc,defs'))."<br />";
 			}
 			else
 			{
-				if ($pref['user_reg_veri'] == 2)
-				{
-					$text = LAN_SIGNUP_37;
-				}
-				else
-				{
-					$text = LAN_405;
-				}
+	            $LAN_AFTERSIGNUP = defined("LAN_SIGNUP_72") ? LAN_SIGNUP_72 : LAN_405;
+				$text = ($pref['user_reg_veri'] == 2) ? LAN_SIGNUP_37 : str_replace($srch,$repl,$LAN_AFTERSIGNUP);  // Admin Approval / Email Approval
 			}
+
+			$caption_arr = array();
+			$caption_arr[0] = LAN_406; // Thank you!  (No Approval).
+			$caption_arr[1] = defined("LAN_SIGNUP_98") ? LAN_SIGNUP_98 : LAN_406; // Confirm Email (Email Confirmation)
+			$caption_arr[2] = defined("LAN_SIGNUP_100") ? LAN_SIGNUP_100 : LAN_406; // Approval Pending (Admin Approval)
+	        $caption = $caption_arr[$pref['user_reg_veri']];
+
 			if($error_message)
 			{
 				$text = "<br /><b>".$error_message."</b><br />";	// Just display the error message
+                $caption = defined("LAN_SIGNUP_99") ? LAN_SIGNUP_99 : LAN_406; // Problem Detected  // Default for backwards compat.
 			}
-			$ns->tablerender(LAN_406, $text);
+
+			$ns->tablerender($caption, $text);
 			require_once(FOOTERF);
 			exit;
 		}

@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/users.php,v $
-|     $Revision: 1.95 $
-|     $Date: 2008/08/28 19:57:46 $
-|     $Author: e107steved $
+|     $Revision: 1.100 $
+|     $Date: 2009/07/18 15:53:42 $
+|     $Author: marj_nl_fr $
 +----------------------------------------------------------------------------+
 */
 require_once("../class2.php");
@@ -159,14 +159,19 @@ if (isset($_POST['prune']))
 	$e107cache->clear("online_menu_totals");
 	$text = USRLAN_56." ";
 	$bantype = $_POST['prune_type'];
-	if ($sql->db_Select("user", "user_id, user_name", "user_ban= {$bantype}"))
+	if($bantype == 30) // older than 30 days.
+	{
+    	$bantype = 2;
+		$ins = " AND user_join < ".strtotime("-30 days");
+	}
+	if ($sql->db_Select("user", "user_id, user_name", "user_ban= {$bantype}".$ins))
 	{
 		$uList = $sql->db_getList();
 		foreach($uList as $u)
 		{
 			$text .= $u['user_name']." ";
 			$sql->db_Delete("user", "user_id='{$u['user_id']}' ");
-			$sql->db_Delete("user_extended", "user_extended_id='{$u['user_id']}' ");
+		 	$sql->db_Delete("user_extended", "user_extended_id='{$u['user_id']}' ");
 		}
 	}
 	$ns->tablerender(USRLAN_57, "<div style='text-align:center'><b>".$text."</b></div>");
@@ -200,13 +205,18 @@ if (isset($_POST['adduser']))
 		message_handler("P_ALERT", USRLAN_66);
 		$error = TRUE;
 	}
+	if ($sql->db_Select("user", "user_loginname", "user_loginname='".$_POST['loginname']."' ")) 
+	{    
+		message_handler("P_ALERT", USRLAN_75 );   
+		$error = TRUE; 
+	}
 	if ($_POST['password1'] != $_POST['password2']) 
 	{
 		message_handler("P_ALERT", USRLAN_67);
 		$error = TRUE;
 	}
 
-	if ($_POST['name'] == "" || $_POST['password1'] == "" || $_POST['password2'] = "") 
+	if ($_POST['name'] == "" || $_POST['password1'] == "" || $_POST['password2'] == "") 
 	{
 		message_handler("P_ALERT", USRLAN_68);
 		$error = TRUE;
@@ -845,15 +855,15 @@ class users
 
 
 
-	function show_options($action) 
+	function show_options($action)
 	{
 		global $unverified;
-		// ##### Display options 
-		if ($action == "") 
+		// ##### Display options
+		if ($action == "")
 		{
 			$action = "main";
 		}
-		// ##### Display options 
+		// ##### Display options
 		$var['main']['text'] = USRLAN_71;
 		$var['main']['link'] = e_SELF;
 
@@ -966,14 +976,19 @@ class users
 
 		$unactive = $sql->db_Select("user", "*", "user_ban=2");
 		$bounced = $sql->db_Select("user", "*", "user_ban=3");
+		$older30 = $sql->db_Count("user", "(*)", "WHERE user_ban=2 AND (user_join < ".strtotime("-30 days").")");
+
 		$text = "<div style='text-align:center'><br /><br />
 			<form method='post' action='".e_SELF."'>
 			<table style='".ADMIN_WIDTH."' class='fborder'>
 			<tr>
 			<td class='forumheader3' style='text-align:center'><br />".LAN_DELETE.":&nbsp;
 			<select class='tbox' name='prune_type'>";
-            $prune_type = array(2=>USRLAN_138." [".$unactive."]",3=>USRLAN_145." [".$bounced."]");
-			foreach($prune_type as $key=>$val){
+
+			$prune_type = array(2=>USRLAN_138." [".$unactive."]",'30'=>USRLAN_138." (".USRLAN_219.") [".$older30."]", 3=>USRLAN_145." [".$bounced."]");
+
+			foreach($prune_type as $key=>$val)
+			{
             	$text .= "<option value='$key'>{$val}</option>\n";
 			}
 
@@ -991,20 +1006,20 @@ class users
 	}
 
 	function add_user() {
-		global $rs, $ns;
+		global $rs, $ns, $pref;
 		$text = "<div style='text-align:center'>". $rs->form_open("post", e_SELF.'?create', "adduserform")."
 			<table style='".ADMIN_WIDTH."' class='fborder'>
 			<tr>
 			<td style='width:30%' class='forumheader3'>".USRLAN_61."</td>
 			<td style='width:70%' class='forumheader3'>
-			".$rs->form_text("name", 40, "", 30)."
+			".$rs->form_text("name", 40, "", varset($pref['displayname_maxlength'],15))."
 			</td>
 			</tr>
 
 			<tr>
 			<td style='width:30%' class='forumheader3'>".USRLAN_128."</td>
 			<td style='width:70%' class='forumheader3'>
-			".$rs->form_text("loginname", 40, "", 30)."
+			".$rs->form_text("loginname", 40, "", varset($pref['loginname_maxlength'],30))."
 			</td>
 			</tr>
 
@@ -1067,7 +1082,7 @@ class users
 	function resend($id,$key,$name,$email,$lfile=''){
         global $sql,$mailheader_e107id;
 
-
+        //@FIXME multilanguage
     	// Check for a Language field, and if present, send the email in the user's language.
         if($lfile == ""){
 			if($sql -> db_Select("user_extended", "user_language", "user_extended_id = '$id'")){
@@ -1079,13 +1094,13 @@ class users
 			require_once($lfile);
 		}else{
 			$row['user_language'] = e_LANGUAGE;
-    		require_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_signup.php");
+    		@require_once(e_LANGUAGEDIR.e_LANGUAGE."/lan_signup.php");
 		}
 
 
 		$return_address = (substr(SITEURL, -1) == "/") ? SITEURL."signup.php?activate.".$id.".".$key : SITEURL."/signup.php?activate.".$id.".".$key;
 
-		$message = LAN_EMAIL_01." ".$name."\n\n".LAN_SIGNUP_24." ".SITENAME.".\n".LAN_SIGNUP_21."...\n\n";
+		$message = LAN_EMAIL_01." ".$name."\n\n".LAN_SIGNUP_24." ".SITENAME.".\n".LAN_SIGNUP_21."\n\n";
 		$message .= $return_address . "\n\n".SITENAME."\n".SITEURL;
 
         $mailheader_e107id = $id;

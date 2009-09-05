@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/pm/pm_shortcodes.php,v $
-|     $Revision: 1.20 $
-|     $Date: 2007/09/22 17:41:29 $
-|     $Author: e107steved $
+|     $Revision: 1.22 $
+|     $Date: 2009/08/24 22:01:49 $
+|     $Author: bugrain $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -48,7 +48,7 @@ if($pm_info['from_name'])
 {
 	return "";
 }
-if($pm_prefs['allow_userclass'])
+if($pm_prefs['allow_userclass'] && check_class($pm_prefs['multi_class']))
 {
 	$ret = "<input type='checkbox' name='to_userclass' value='1' />".LAN_PM_4." ";
 	require_once(e_HANDLER."userclass_class.php");
@@ -262,7 +262,7 @@ SC_END
 
 SC_BEGIN PM_SELECT
 global $pm_info;
-return "<input type='checkbox' name='selected_pm[{$pm_info['pm_id']}]' value='1' />";
+return "<input type='checkbox' name='selected_pm[{$pm_info['pm_id']}]' id='selected_pm[{$pm_info['pm_id']}]' value='1' />";
 SC_END
 
 SC_BEGIN PM_READ_ICON
@@ -297,7 +297,7 @@ SC_END
 SC_BEGIN PM_DELETE
 global $pm_info;
 if($parm != "")
-{ 
+{
   $extra = '.'.$parm;
 }
 else
@@ -368,13 +368,18 @@ if($pm_prefs['animate'])
 		return NEWPM_ANIMATION;
 	}
 }
-return "";
+return '';
 SC_END
 
 SC_BEGIN PM_NEXTPREV
 global $pmlist, $tp, $pm_start, $pm_prefs, $pmlist;
 return $tp->parseTemplate("{NEXTPREV={$pmlist['total_messages']},{$pm_prefs['perpage']},{$pm_start},".e_SELF."?{$parm}.[FROM]}");
 SC_END
+
+SC_BEGIN PM_CHECK_ALL_NONE
+return "<input type='checkbox' id='pm_check_all_none' class='tbox' onclick='setCheckboxes(\"pm_list_form\", document.getElementById(\"pm_check_all_none\").checked)'/>";
+SC_END
+
 
 */
 ?>

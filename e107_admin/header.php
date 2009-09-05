@@ -12,9 +12,9 @@
 |        GNU General Public License (http://gnu.org).
 |
 |   $Source: /cvsroot/e107/e107_0.7/e107_admin/header.php,v $
-|   $Revision: 1.62 $
-|   $Date: 2008/05/23 21:14:30 $
-|   $Author: e107steved $
+|   $Revision: 1.65 $
+|   $Date: 2009/07/23 08:14:26 $
+|   $Author: marj_nl_fr $
 +---------------------------------------------------------------+
 */
 
@@ -72,17 +72,11 @@ echo (defined("STANDARDS_MODE") ? "" : "<?xml version='1.0' encoding='".CHARSET.
 // B.2: Include admin LAN defines
 //
 
-if (file_exists(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_header.php')) {
-	@include_once(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_header.php");
-} else {
-	@include_once(e_LANGUAGEDIR."English/admin/lan_header.php");
-}
-if (file_exists(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_footer.php')) {
-	@include_once(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_footer.php');
-} else {
-	@include_once(e_LANGUAGEDIR.'English/admin/lan_footer.php');
-}
-if (!defined('ADMIN_WIDTH')) {
+include_lan(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_header.php");
+include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_footer.php');
+
+if (!defined('ADMIN_WIDTH'))
+{
 	define('ADMIN_WIDTH', 'width: 95%');
 }
 
@@ -118,8 +112,12 @@ if (!defined('ADMIN_DELETE_ICON'))
 //
 
 echo "<html xmlns='http://www.w3.org/1999/xhtml'".(defined("TEXTDIRECTION") ? " dir='".TEXTDIRECTION."'" : "").(defined("CORE_LC") ? " xml:lang=\"".CORE_LC."\"" : "").">
-	<head>
-	<title>".SITENAME." : ".LAN_head_4."</title>\n";
+<head>
+<meta http-equiv='content-type' content='text/html; charset=".CHARSET."' />
+<meta http-equiv='content-style-type' content='text/css' />
+";
+echo (defined("CORE_LC")) ? "<meta http-equiv='content-language' content='".CORE_LC."' />\n" : "";
+echo "<title>".SITENAME." : ".LAN_head_4."</title>\n";
 
 //
 // D: Send JS
@@ -146,9 +144,8 @@ if (isset($eplug_js) && $eplug_js) {
 	echo "\n<!-- eplug_js -->\n";
 	echo "<script type='text/javascript' src='{$eplug_js}'></script>\n";
 }
-if (isset($htmlarea_js) && $htmlarea_js) {
-	echo $htmlarea_js;
-}
+
+
 if ((strpos(e_SELF, 'fileinspector.php') === FALSE) && getperms("0")) 
 {
 echo "<script type='text/javascript'>
@@ -201,11 +198,6 @@ if (!isset($no_core_css) || !$no_core_css) {
 // F: Send Meta Tags and Icon links
 //
 echo "<!-- *META* -->\n";
-
-// Multi-Language meta-tags with merge and override option.
-
-echo "<meta http-equiv='content-type' content='text/html; charset=".CHARSET."' />
-<meta http-equiv='content-style-type' content='text/css' />\n";
 
 // --- Load plugin Meta files and eplug_ before others --------
 if (is_array($pref['e_meta_list']))
