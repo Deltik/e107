@@ -11,19 +11,24 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/email.php,v $
-|     $Revision: 1.21 $
-|     $Date: 2007/01/07 15:24:48 $
+|     $Revision: 1.24 $
+|     $Date: 2009/11/03 22:08:03 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
-require_once("class2.php");
+require_once('class2.php');
+if (!check_class(varset($pref['email_item_class'],e_UC_MEMBER)))
+{
+	header('Location: '.e_BASE.'index.php');
+	exit();
+}
 require_once(HEADERF);
 
 $use_imagecode = FALSE;
-$imgtypes = array("jpeg", "png", "gif");
+$imgtypes = array('jpeg', 'png', 'gif');
 foreach($imgtypes as $t)
 {
-	if(function_exists("imagecreatefrom".$t))
+	if(function_exists('imagecreatefrom'.$t))
 	{
 		$use_imagecode = TRUE;
 	}
@@ -31,24 +36,31 @@ foreach($imgtypes as $t)
 
 if ($use_imagecode)
 {
-	require_once(e_HANDLER."secure_img_handler.php");
+	require_once(e_HANDLER.'secure_img_handler.php');
 	$sec_img = new secure_image;
 }
 
-$qs = explode(".", e_QUERY, 2);
-if ($qs[0] == "")
+if (e_QUERY)
 {
-	header("location:".e_BASE."index.php");
+	$qs = explode('.', e_QUERY, 2);
+}
+else
+{
+	header('location:'.e_BASE.'index.php');
 	exit;
 }
 $source = $qs[0];
-$parms = $qs[1];
+$parms = varset($qs[1], '');
+unset($qs);
+$error = '';
+$message = '';
 
-$emailurl = ($source == "referer") ? $_SERVER['HTTP_REFERER'] : SITEURL;
+$referrer = strip_tags(urldecode(html_entity_decode(varset($_SERVER['HTTP_REFERER'],''), ENT_QUOTES)));
+$emailurl = ($source == 'referer') ? $referrer : SITEURL;
 
-$comments = $tp->post_toHTML($_POST['comment'], TRUE, 'retain_nl, emotes_off, no_make_clickable');
-$author = $tp->post_toHTML($_POST['author_name'],FALSE,"emotes_off, no_make_clickable");
-$email_send = check_email($_POST['email_send']);
+$comments = $tp->post_toHTML(varset($_POST['comment'],''), TRUE, 'retain_nl, emotes_off, no_make_clickable');
+$author = $tp->post_toHTML(varset($_POST['author_name'],''),FALSE,'emotes_off, no_make_clickable');
+$email_send = check_email(varset($_POST['email_send'],''));
 
 
 if (isset($_POST['emailsubmit']))
@@ -62,19 +74,19 @@ if (isset($_POST['emailsubmit']))
 	{
 		if(!isset($_POST['code_verify']) || !isset($_POST['rand_num']))
 		{
-			header("location:".e_BASE."index.php");
+			header('location:'.e_BASE.'index.php');
 			exit;
 		}
 		if (!$sec_img->verify_code($_POST['rand_num'], $_POST['code_verify']))
 		{
-			header("location:".e_BASE."index.php");
+			header('location:'.e_BASE.'index.php');
 			exit;
 		}
 	}
 
-	if ($comments == "")
+	if ($comments == '')
 	{
-		$message = LAN_EMAIL_188." ".SITENAME." (".SITEURL.")";
+		$message = LAN_EMAIL_188.' '.SITENAME.' ('.SITEURL.')';
 		if (USER == TRUE)
 		{
 			$message .= "\n\n".LAN_EMAIL_1." ".USERNAME;
@@ -86,44 +98,44 @@ if (isset($_POST['emailsubmit']))
 	}
 	else
 	{
-		$message .= $comments;
+		$message .= $comments."\n";
 	}
 	$ip = $e107->getip();
 	$message .= "\n\n".LAN_EMAIL_2." ".$ip."\n\n";
 
-	if(strpos($source,'plugin:') !== FALSE)
+	if (substr($source,0,7) == 'plugin:')
 	{
 		$plugin = substr($source,7);
-		$text = "";
-		if(file_exists(e_PLUGIN.$plugin."/e_emailprint.php"))
+		$text = '';
+		if(file_exists(e_PLUGIN.$plugin.'/e_emailprint.php'))
 		{
-			include_once(e_PLUGIN.$plugin."/e_emailprint.php");
+			include_once(e_PLUGIN.$plugin.'/e_emailprint.php');
 			$text = email_item($parms);
 			$emailurl = SITEURL;
 		}
-		if($text == "")
+		if($text == '')
 		{
-			header("location:".e_BASE."index.php");
+			header('location:'.e_BASE.'index.php');
 			exit;
 		}
 		$message .= $text;
 	}
-	elseif($source == "referer")
+	elseif($source == 'referer')
 	{
 		if(!isset($_POST['referer']) || $_POST['referer'] == '')
 		{
-			header("location:".e_BASE."index.php");
+			header('location:'.e_BASE.'index.php');
 			exit;
 		}
-		$message .= $_POST['referer'];
-		$emailurl = $_POST['referer'];
+		$message .= strip_tags($_POST['referer']);
+		$emailurl = strip_tags($_POST['referer']);
 	}
 	else
 	{
-
-		$emailurl = $_POST['referer'];
-        $message = "";
-        if($sql->db_Select("news", "*", "news_id='".intval($parms)."'"))
+		$emailurl = strip_tags($_POST['referer']);
+        $message = '';
+		$parms = intval($parms);
+        if($sql->db_Select('news', '*', 'news_id='.$parms))
         {
             list($news_id, $news_title, $news_body, $news_extended, $news_datestamp, $news_author, $news_source, $news_url, $news_category, $news_allow_comments) = $sql->db_Fetch();
 			$message = "<h3 class='email_heading'>".$news_title."</h3><br />".$news_body."<br />".$news_extended."<br /><br /><a href='{e_BASE}news.php?extend.".$parms."'>{e_BASE}news.php?extend.".$parms."</a><br />";
@@ -131,20 +143,19 @@ if (isset($_POST['emailsubmit']))
 
         }
 
-		if($message == "")
+		if($message == '')
 		{
-			header("location:".e_BASE."index.php");
+			header('location:'.e_BASE.'index.php');
 			exit;
 		}
 	}
 
-	if ($error == "")
+	if ($error == '')
 	{
-
 	    // Load Mail Handler and Email Template.
-		require_once(e_HANDLER."mail.php");
+		require_once(e_HANDLER.'mail.php');
 	    $email_body = $EMAIL_HEADER;
-		$email_body .= (trim($comments) != "") ? $tp->toEmail($comments)."<hr />" : "";
+		$email_body .= (trim($comments) != '') ? $tp->toEmail($comments).'<hr />' : '';
 		$email_body .= $tp->toEmail($message).$EMAIL_FOOTER;
 
 		if (sendemail($email_send, LAN_EMAIL_3.SITENAME,$email_body))
@@ -205,20 +216,20 @@ $text .= "</textarea>
 	</tr>
 	";
 
-	if($use_imagecode)
-	{
-		$text .= "<tr><td>".LAN_EMAIL_190."</td><td>";
-		$text .= $sec_img->r_image();
-		$text .= " <input class='tbox' type='text' name='code_verify' size='15' maxlength='20' />
-			<input type='hidden' name='rand_num' value='".$sec_img->random_number."' /></td></tr>";
-	}
+if($use_imagecode)
+{
+	$text .= "<tr><td>".LAN_EMAIL_190."</td><td>";
+	$text .= $sec_img->r_image();
+	$text .= " <input class='tbox' type='text' name='code_verify' size='15' maxlength='20' />
+		<input type='hidden' name='rand_num' value='".$sec_img->random_number."' /></td></tr>";
+}
 
 $text .= "
 	<tr style='vertical-align:top'>
 	<td style='width:25%'></td>
 	<td style='width:75%'>
 	<input class='button' type='submit' name='emailsubmit' value='".LAN_EMAIL_4."' />
-	<input type='hidden' name='referer' value='".$_SERVER['HTTP_REFERER']."' />
+	<input type='hidden' name='referer' value='".$referrer."' />
 </td>
 	</tr>
 	</table>

@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/download.php,v $
-|     $Revision: 1.107 $
-|     $Date: 2009/05/19 22:22:39 $
-|     $Author: bugrain $
+|     $Revision: 1.110 $
+|     $Date: 2010/01/02 22:10:35 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -62,14 +62,17 @@ $pst->save_preset("admin_downloads");  // unique name for the preset
 */
 
 $rs = new form;
+$action = '';
 $sub_action = '';
+$id = 0;
+$delete = '';
 if (e_QUERY)
 {
-	$tmp = explode(".", e_QUERY);
+	$tmp = explode('.', e_QUERY);
 	$action = $tmp[0];
-  $sub_action = varset($tmp[1],'');
-  $id = varset($tmp[2],'');
-  $from = varset($tmp[3], 0);
+	$sub_action = varset($tmp[1],'');
+	$id = varset($tmp[2],'');
+	$from = varset($tmp[3], 0);
 	unset($tmp);
 }
 
@@ -80,7 +83,7 @@ if(isset($_POST['delete']))
 	unset($_POST['searchquery']);
 }
 
-$from = ($from ? $from : 0);
+$from = varset($from, 0);
 $amount = 50;
 
 
@@ -656,11 +659,16 @@ class download
 		$text .= "<div style='cursor:pointer' onclick=\"expandit('sdisp')\">".LAN_DISPLAYOPT."</div>";
 		$text .= "<div id='sdisp' style='padding-top:4px;display:none;text-align:center;margin-left:auto;margin-right:auto'>
 		<table class='forumheader3' style='width:95%'><tr>";
+
+/*
 		$fields = mysql_list_fields($mySQLdefaultdb, MPREFIX."download");
-		$columns = mysql_num_fields($fields);
+		$columns = mysql_num_fields($fields);			// Bug in PHP5.3 using mysql_num_fields() with mysql_list_fields()
 		for ($i = 0; $i < $columns; $i++) {
 			$fname[] = mysql_field_name($fields, $i);
 		}
+*/
+		$fname = $sql->db_FieldList('download', '', FALSE);
+
         $m = 0;
 		$replacechar = array("download_","_");
 	foreach($fname as $fcol)
@@ -848,7 +856,7 @@ class download
 		}
 
 		$dt = 'display:none';
-		if (preg_match("/http:|ftp:/", $download_url))
+		if (preg_match("/http:|https:|ftp:/", $download_url))
 		{
 			$download_url_external = $download_url;
 			$download_url = '';

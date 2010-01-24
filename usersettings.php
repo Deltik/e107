@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/usersettings.php,v $
-|     $Revision: 1.111 $
-|     $Date: 2009/07/14 19:26:24 $
+|     $Revision: 1.118 $
+|     $Date: 2009/11/23 21:04:06 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -105,6 +105,12 @@ $error = "";
 
 if (isset($_POST['updatesettings']))
 {
+	if(!varset($_POST['__referer']))
+	{
+		header('location:'.e_BASE.'index.php');
+  		exit;
+	}
+	
 	if(!varsettrue($pref['auth_method']) || $pref['auth_method'] == '>e107')
 	{
 		$pref['auth_method'] = 'e107';
@@ -231,7 +237,7 @@ function make_email_query($email, $fieldname = 'banlist_ip')
   if (strpos($tmp,'.') === FALSE) return FALSE;
   $em = array_reverse(explode('.',$tmp));
   $line = '';
-  $out = array();
+  $out = array('*@'.$tmp);		// First element looks for domain as email address
   foreach ($em as $e)
   {
     $line = '.'.$e.$line;
@@ -243,26 +249,29 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 
 	// Always validate an email address if entered. If its blank, that's OK if checking disabled
 	$_POST['email'] = $tp->toDB(trim(varset($_POST['email'],'')));
-	$do_email_validate = !varset($pref['disable_emailcheck'],FALSE) || ($_POST['email'] !='');
-	if ($do_email_validate && !check_email($_POST['email']))
+	$do_email_validate = (!varset($pref['disable_emailcheck'],FALSE)) || ($_POST['email'] !='');
+	if ($do_email_validate)
 	{
-	  $error .= LAN_106."\\n";
-	}
+		if  (!check_email($_POST['email']))
+		{
+			$error .= LAN_106."\\n";
+		}
 
-	// Check Email address against banlist.
-	$wc = make_email_query($_POST['email']);
-	if ($wc) $wc = ' OR '.$wc;
+		// Check Email address against banlist.
+		$wc = make_email_query($_POST['email']);
+		if ($wc) $wc = ' OR '.$wc;
 
-	if (($wc === FALSE) || ($do_email_validate && $sql->db_Select("banlist", "*", "banlist_ip='".$_POST['email']."'".$wc)))
-	{
-	  $error .= LAN_106."\\n";
-	}
+		if (($wc === FALSE) || ($do_email_validate && $sql->db_Select("banlist", "*", "banlist_ip='".$_POST['email']."'".$wc)))
+		{
+			$error .= LAN_106."\\n";
+		}
 
 
-	// Check for duplicate of email address (always)
-	if ($sql->db_Select("user", "user_name, user_email", "user_email='".$_POST['email']."' AND user_id !='".intval($inp)."' "))
-	{
-	  $error .= LAN_408."\\n";
+		// Check for duplicate of email address (always)
+		if ($sql->db_Select("user", "user_name, user_email", "user_email='".$_POST['email']."' AND user_id !='".intval($inp)."' "))
+		{
+			$error .= LAN_408."\\n";
+		}
 	}
 
 
@@ -370,26 +379,28 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 			}
 		}
 
-		foreach($_POST['ue'] as $key => $val)
+		foreach ($extList as $key => $settings)
 		{
-			if (isset($extList[$key]))
-			{	// Only allow valid keys
-				$err = $ue->user_extended_validate_entry($val,$extList[$key]);
-				if($err === TRUE && !$_uid)
-				{  // General error - usually empty field; could be unacceptable value, or regex fail and no error message defined
-					$error .= LAN_SIGNUP_6.($tp->toHtml($extList[$key]['user_extended_struct_text'],FALSE,"defs"))." ".LAN_SIGNUP_7."\\n";
-				}
-				elseif ($err)
-				{	// Specific error message returned - usually regex fail
-					$error .= $err."\\n";
-					$err = TRUE;
-				}
-				if(!$err)
-				{
-					$val = $tp->toDB($val);
-					$ue_fields .= ($ue_fields) ? ", " : "";
-					$ue_fields .= $key."='".$val."'";
-				}
+			if ($settings['user_extended_struct_applicable'] != e_UC_NOBODY)
+			{
+			$val = '';
+			if (isset($_POST['ue'][$key])) $val = $_POST['ue'][$key]; 
+			$err = $ue->user_extended_validate_entry($val,$settings);
+			if($err === TRUE && !$_uid)
+			{  // General error - usually empty field; could be unacceptable value, or regex fail and no error message defined
+				$error .= LAN_SIGNUP_6.($tp->toHtml($settings['user_extended_struct_text'],FALSE,'defs')).' '.LAN_SIGNUP_7."\\n";
+			}
+			elseif ($err)
+			{	// Specific error message returned - usually regex fail
+				$error .= $err."\\n";
+				$err = TRUE;
+			}
+			if(!$err)
+			{
+				$val = $tp->toDB($val);
+				$ue_fields .= ($ue_fields) ? ", " : "";
+				$ue_fields .= $key."='".$val."'";
+			}
 			}
 		}
 
@@ -622,6 +633,7 @@ $text .= "<div>";
 
 $text .= "
 	<input type='hidden' name='_uid' value='{$uuid}' />
+	<input type='hidden' name='__referer' value='".POST_REFERER."' />
 	</div>
 	</form>
 	";
@@ -646,7 +658,7 @@ function deleteExpired($force = FALSE)
 	}
 	if ($force)
 	{	// Remove 'orphaned' extended user field records
-		$sql->db_Select_gen("DELETE `#user_extended` FROM `#user_extended` LEFT JOIN `#user` ON `#user_extended`.`user_extended_id`=`#user`.`user_id`
+		$sql->db_Select_gen("DELETE `#user_extended` FROM `#user_extended` LEFT JOIN `#user` ON `#user_extended`.`user_extended_id` = `#user`.`user_id`
 				WHERE `#user`.`user_id` IS NULL");
 	}
 	return $temp1;

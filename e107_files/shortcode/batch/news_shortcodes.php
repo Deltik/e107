@@ -11,15 +11,15 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/news_shortcodes.php,v $
-|     $Revision: 1.40 $
-|     $Date: 2009/03/29 21:41:15 $
+|     $Revision: 1.44 $
+|     $Date: 2010/01/02 17:04:33 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
 include_once(e_HANDLER.'shortcode_handler.php');
 $news_shortcodes = $tp -> e_sc -> parse_scbatch(__FILE__);
-if(!$GLOBALS['NEWS_CSSMODE']){ $GLOBALS['NEWS_CSSMODE'] = "news"; }
+if(!isset($GLOBALS['NEWS_CSSMODE'])){ $GLOBALS['NEWS_CSSMODE'] = "news"; }
 /*
 SC_BEGIN NEWSTITLE
 global $tp;
@@ -33,7 +33,7 @@ global $tp;
 $news_item = getcachedvars('current_news_item');
 $param = getcachedvars('current_news_param');
 $news_body = $tp -> toHTML($news_item['news_body'], TRUE, 'BODY, fromadmin', $news_item['news_author']);
-if($news_item['news_extended'] && (isset($_POST['preview']) || strpos(e_QUERY, 'extend') !== FALSE) && $parm != "noextend") 
+if($news_item['news_extended'] && (isset($_POST['preview']) || strpos(e_QUERY, 'extend') !== FALSE) && $parm != "noextend")
 {
     $news_extended = $tp -> toHTML($news_item['news_extended'], TRUE, 'BODY, fromadmin', $news_item['news_author']);
     $news_body .= "<br /><br />".$news_extended;
@@ -66,7 +66,7 @@ SC_BEGIN NEWSCATEGORY
 global $tp;
 $news_item = getcachedvars('current_news_item');
 $param = getcachedvars('current_news_param');
-$category_name = $tp -> toHTML($news_item['category_name'],FALSE,"defs");
+$category_name = $tp -> toHTML($news_item['category_name'],FALSE,'TITLE');
 return "<a class='".$GLOBALS['NEWS_CSSMODE']."_category' style='".(isset($param['catlink']) ? $param['catlink'] : "#")."' href='".e_HTTP."news.php?cat.".$news_item['news_category']."'>".$category_name."</a>";
 SC_END
 
@@ -90,25 +90,26 @@ SC_END
 SC_BEGIN NEWSDATE
 $news_item = getcachedvars('current_news_item');
 $param = getcachedvars('current_news_param');
+$date = ($news_item['news_start'] > 0) ? $news_item['news_start'] : $news_item['news_datestamp'];
 $con = new convert;
-if($parm == "")
+if($parm == '')
 {
-	return  $con -> convert_date($news_item['news_datestamp'], 'long');
+	return  $con->convert_date($date, 'long');
 }
 switch($parm)
 {
 	case 'long':
-		return  $con -> convert_date($news_item['news_datestamp'], 'long');
-		break;
+	return  $con->convert_date($date, 'long');
+	break;
 	case 'short':
-		return  $con -> convert_date($news_item['news_datestamp'], 'short');
-		break;
+	return  $con->convert_date($date, 'short');
+	break;
 	case 'forum':
-		return  $con -> convert_date($news_item['news_datestamp'], 'forum');
-		break;
+	return  $con->convert_date($date, 'forum');
+	break;
 	default :
-		return date($parm, $news_item['news_datestamp']);
-		break;
+	return date($parm, $date);
+	break;
 }
 SC_END
 
@@ -144,7 +145,7 @@ else
 {
 	$NEWIMAGE = $param['image_nonew_small'];
 }
-return ($news_item['news_allow_comments'] ? $param['commentoffstring'] 
+return ($news_item['news_allow_comments'] ? $param['commentoffstring']
 :
  ''.($pref['comments_icon'] ? $NEWIMAGE : '')." <a href='".e_HTTP."comment.php?comment.news.".$news_item['news_id']."'>".$param['commentlink'].$news_item['news_comment_total'].'</a>');
 SC_END
@@ -164,6 +165,10 @@ SC_END
 
 
 SC_BEGIN EMAILICON
+if (!check_class(varset($pref['email_item_class'],e_UC_MEMBER)))
+{
+	return '';
+}
 $news_item = getcachedvars('current_news_item');
 $param = getcachedvars('current_news_param');
 require_once(e_HANDLER.'emailprint_class.php');
@@ -205,26 +210,26 @@ SC_BEGIN EXTENDED
 global $tp;
 $news_item = getcachedvars('current_news_item');
 $param = getcachedvars('current_news_param');
-if ($news_item['news_extended'] && (strpos(e_QUERY, 'extend') === FALSE || $parm == "force")) 
+if ($news_item['news_extended'] && (strpos(e_QUERY, 'extend') === FALSE || $parm == "force"))
 {
-	if (defined("PRE_EXTENDEDSTRING")) 
+	if (defined("PRE_EXTENDEDSTRING"))
 	{
 		$es1 = PRE_EXTENDEDSTRING;
 	}
-	if (defined("POST_EXTENDEDSTRING")) 
+	if (defined("POST_EXTENDEDSTRING"))
 	{
 		$es2 = POST_EXTENDEDSTRING;
 	}
-	if (isset($_POST['preview'])) 
+	if (isset($_POST['preview']))
 	{
 		return $es1.EXTENDEDSTRING.$es2."<br />".$tp->toHTML($news_item['news_extended'], TRUE, 'BODY, fromadmin', $news_item['news_author']);
-	} 
-	else 
+	}
+	else
 	{
 		return $es1."<a class='".$GLOBALS['NEWS_CSSMODE']."_extendstring' href='".e_HTTP."news.php?extend.".$news_item['news_id']."'>".EXTENDEDSTRING."</a>".$es2;
 	}
-} 
-else 
+}
+else
 {
 	return "";
 }
@@ -234,7 +239,7 @@ SC_BEGIN CAPTIONCLASS
 global $tp;
 $news_item = getcachedvars('current_news_item');
 $param = getcachedvars('current_news_param');
-$news_title = $tp -> toHTML($news_item['news_title'], TRUE,'no_hook,emotes_off, no_make_clickable');
+$news_title = $tp -> toHTML($news_item['news_title'], TRUE,'TITLE');
 return "<div class='category".$news_item['news_category']."'>".($news_item['news_render_type'] == 1 ? "<a href='".e_HTTP."comment.php?comment.news.".$news_item['news_id']."'>".$news_title."</a>" : $news_title)."</div>";
 SC_END
 
@@ -242,7 +247,7 @@ SC_BEGIN ADMINCAPTION
 global $tp;
 $news_item = getcachedvars('current_news_item');
 $param = getcachedvars('current_news_param');
-$news_title = $tp -> toHTML($news_item['news_title'], TRUE,'no_hook,emotes_off, no_make_clickable');
+$news_title = $tp -> toHTML($news_item['news_title'], TRUE,'TITLE');
 return "<div class='".(defined(ADMINNAME) ? ADMINNAME : "null")."'>".($news_item['news_render_type'] == 1 ? "<a href='".e_HTTP."comment.php?comment.news.".$news_item['news_id']."'>".$news_title."</a>" : $news_title)."</div>";
 SC_END
 

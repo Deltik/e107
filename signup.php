@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/signup.php,v $
-|     $Revision: 1.133 $
-|     $Date: 2009/08/09 08:39:04 $
-|     $Author: marj_nl_fr $
+|     $Revision: 1.137 $
+|     $Date: 2010/01/15 20:02:29 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -349,7 +349,7 @@ if (isset($_POST['register']))
         $error = TRUE;
 	}
 
-	if($_POST['xupexist'])
+	if(varsettrue($pref['xup_enabled']) && $_POST['xupexist'])
 	{
 		require_once(e_HANDLER."xml_class.php");
 		$xml = new parseXml;
@@ -545,7 +545,7 @@ function make_email_query($email, $fieldname = 'banlist_ip')
   if (strpos($tmp,'.') === FALSE) return FALSE;
   $em = array_reverse(explode('.',$tmp));
   $line = '';
-  $out = array();
+  $out = array('*@'.$tmp);		// First element looks for domain as email address
   foreach ($em as $e)
   {
     $line = '.'.$e.$line;
@@ -635,7 +635,7 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 	if ((varset($pref['signup_option_image'],0) > 0) && $_POST['image'])
 	{
 		$_POST['image'] = str_replace(array('\'', '"', '(', ')'), '', $_POST['image']);   // these are invalid anyway, so why allow them? (XSS Fix)
-		$avName = $tp -> toDB($_POST['image']);
+		$avName = e_IMAGE.'avatars/'.$tp -> toDB($_POST['image']);
 		if ($size = getimagesize($avName))
 		{
 			$avwidth = $size[0];

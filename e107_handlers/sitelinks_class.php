@@ -12,9 +12,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/sitelinks_class.php,v $
-|     $Revision: 1.121 $
-|     $Date: 2009/08/15 11:54:30 $
-|     $Author: marj_nl_fr $
+|     $Revision: 1.123 $
+|     $Date: 2010/01/02 21:43:51 $
+|     $Author: e107steved $
 +---------------------------------------------------------------+
 */
 
@@ -97,7 +97,7 @@ class sitelinks
     // Sublink styles.- replacing the tree-menu.
         if(isset($style['sublinkdisplay']) || isset($style['subindent']) || isset($style['sublinkclass']) || isset($style['sublinkstart']) || isset($style['sublinkend']) || isset($style['subpostlink'])){
             foreach($style as $key=>$val){
-                $aSubStyle[$key] = ($style["sub".$key]) ? $style["sub".$key] : $style[$key];
+                $aSubStyle[$key] = (isset($style["sub".$key])) ? $style["sub".$key] : $style[$key];
             }
         }else{
                 $style['subindent'] = "&nbsp;&nbsp;";
@@ -306,7 +306,7 @@ function hilite($link,$enabled=''){
     if (isset($pref['frontpage']['all']))
     {
       list($fp,$fp_q) = explode("?",$pref['frontpage']['all']."?");
-      if (strpos(e_SELF,"/".$pref['frontpage']['all'])!== FALSE && $fp_q == $tmp[1] && $link == e_HTTP."index.php")
+      if (strpos(e_SELF,"/".$pref['frontpage']['all'])!== FALSE && $fp_q == varset($tmp[1],'') && $link == e_HTTP."index.php")
       {
         return TRUE;
       }

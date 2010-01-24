@@ -4,9 +4,9 @@
 |     e107 website system - Tiny MCE controller file.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_handlers/tiny_mce/wysiwyg.php,v $
-|     $Revision: 1.39 $
-|     $Date: 2009/09/01 00:04:05 $
-|     $Author: e107coders $
+|     $Revision: 1.43 $
+|     $Date: 2010/01/15 21:23:58 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -36,33 +36,74 @@ $tinylang = array(
 	"Swedish" 	=> "sv"
 );
 
-if(!$tinylang[$lang]){
+if(!$tinylang[$lang])
+{
  $tinylang[$lang] = "en";
 }
 
-$thescript = (strpos($_SERVER['SERVER_SOFTWARE'],"mod_gzip")) ? "tiny_mce_gzip.php" : "tiny_mce.js";
+$mce_plugins = array();
+$mce_plugins[0]	= "table";
+$mce_plugins[1]	= "contextmenu";
+$mce_plugins[2]	= ($pref['smiley_activate']) ? ",emoticons" : "";
+$mce_plugins[4]	= (ADMIN) ? "ibrowser" : "image";
+$mce_plugins[5]	= "contextmenu";
+$mce_plugins[6]	= "iespell";
+$mce_plugins[7]	= "zoom";
+$mce_plugins[8]	= "media";
+$mce_plugins[9]	= "compat2x";
 
-$text = "<script type='text/javascript' src='".e_HANDLER."tiny_mce/".$thescript."'></script>\n";
 
-$text .= "<script type='text/javascript'>\n	tinyMCE.init({\n";
+if(strstr(varset($_SERVER["HTTP_ACCEPT_ENCODING"],""), "gzip") && (ini_get("zlib.output_compression") == false) && file_exists(e_HANDLER."tiny_mce/tiny_mce_gzip.php"))
+{
+	unset($mce_plugins[7]); // 'zoom' causes an error with the gzip version. 
+	$text = "<script type='text/javascript' src='".e_HANDLER_ABS."tiny_mce/tiny_mce_gzip.js'></script>
 
-$text .= "language : '".$tinylang[$lang]."',\n";
-$text .= "mode : 'exact',\n";
-$text .= "elements : '".$formids."',\n";
-$text .= "theme : 'advanced'\n";
-$text .= ",plugins : 'table,contextmenu";
+	<script type='text/javascript'>
+	tinyMCE_GZ.init({
+		plugins : '".implode(",",$mce_plugins)."',
+		themes : 'advanced',
+		languages : '".$tinylang[$lang]."',
+		disk_cache : false,
+		debug : false
+	});
+	</script>
+	";
+}
+else
+{
+	$text = "<script type='text/javascript' src='".e_HANDLER."tiny_mce/tiny_mce.js'></script>\n";	
+}
+
+
+
+$text .= "
+	<script type='text/javascript'>
+	tinyMCE.init({
+		language : '".$tinylang[$lang]."',
+		mode : 'exact',
+		elements : '".$formids."',
+		theme : 'advanced',
+		plugins : '".implode(",",$mce_plugins)."'\n";
+
+
+/*$text .= ",plugins : 'table,contextmenu";
 
 $text .= ($pref['smiley_activate']) ? ",emoticons" : "";
 $text .= (ADMIN) ? ",ibrowser" : ",image";
 $text .= ",iespell,zoom,media,compat2x";
 $text .= "'\n"; // end of plugins list.
+*/
+
+
+
+
 
 $text .= ",theme_advanced_buttons1 : 'fontsizeselect,separator,bold,italic,underline,separator,justifyleft,justifycenter,justifyright,justifyfull,separator,bullist,numlist,outdent, indent,separator, forecolor,cut,copy,paste'";
 
 $text .= ",theme_advanced_buttons2   : 'tablecontrols,separator,undo,redo,separator,link,unlink";
 $text .= ($pref['smiley_activate']) ? ",emoticons" : "";
 $text .= ",charmap,iespell,media";
-$text .= (ADMIN) ? ",ibrowser," : ",image";
+$text .= (ADMIN) ? ",ibrowser" : ",image";
 $text .= (ADMIN) ? ",code" : "";
 $text .= "'"; // end of buttons 2
 
@@ -75,7 +116,8 @@ $text .= ",convert_fonts_to_spans : true\n";
 $text .= ",trim_span_elements: true\n";
 $text .= ",inline_styles: true\n";
 $text .= ",debug: false\n";
-$text .= ",force_br_newlines: true\n";
+$text .= ",force_br_newlines: false\n";
+$text .= ",forced_root_block : ''\n";
 $text .= ",force_p_newlines: false\n";
 $text .= ",entity_encoding: \"raw\" \n";
 $text .= ",convert_fonts_to_styles: true\n";
@@ -83,7 +125,7 @@ $text .= ",remove_script_host : true\n";
 $text .= ",relative_urls: true\n";
 $text .= ",document_base_url: '".SITEURL."'\n";
 $text .= ",theme_advanced_styles: 'border=border;fborder=fborder;tbox=tbox;caption=caption;fcaption=fcaption;forumheader=forumheader;forumheader3=forumheader3'\n";
-$text .= ",popup_css: '".THEME."style.css'\n";
+//$text .= ",popup_css: '".THEME_ABS."style.css'\n";
 $text .= ",verify_css_classes : false\n";
 $text .= ",cleanup_callback : \"tinymce_html_bbcode_control\" \n";
 $text .= (ADMIN) ? "\n, external_link_list_url: '../".$HANDLERS_DIRECTORY."tiny_mce/filelist.php'\n" : "";

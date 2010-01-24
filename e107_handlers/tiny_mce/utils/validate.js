@@ -1,5 +1,5 @@
 /**
- * $Id: validate.js,v 1.7 2009/07/01 00:37:14 e107coders Exp $
+ * $Id: validate.js,v 1.9 2009/10/02 18:45:35 e107coders Exp $
  *
  * Various form validation methods.
  *

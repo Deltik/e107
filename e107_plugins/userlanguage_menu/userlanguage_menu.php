@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/userlanguage_menu/userlanguage_menu.php,v $
-|     $Revision: 1.14 $
-|     $Date: 2009/08/14 11:32:34 $
-|     $Author: marj_nl_fr $
+|     $Revision: 1.16 $
+|     $Date: 2010/01/19 22:17:41 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -37,8 +37,6 @@ if(varset($pref['multilanguage_subdomain']))
 		$selected = ($languageFolder == e_LANGUAGE) ? ' selected="selected"' : '';
 		$urlval   = $slng->subdomainUrl($languageFolder);
 		$text .= '
-				<option value="'.$urlval.'" $selected>$languageFolder</option>';
-		$text .= '
 				<option value="'.$urlval.'"'.$selected.'>'.$languageFolder.'</option>';
 	}
 	$text .= '
@@ -51,6 +49,7 @@ else
 	//FIXME may not work with session
 	$action = (e_QUERY && ! $_GET['elan']) ? e_SELF.'?'.e_QUERY : e_SELF;
 	$text = '
+	<form method="post" action="'.$action.'">
 		<div style="text-align:center">
 			<select name="sitelanguage" class="tbox">';
 	foreach($languageList as $languageFolder)
@@ -66,7 +65,8 @@ else
 			<br />
 			<button class="button" type="submit" name="setlanguage"><span>'.UTHEME_MENU_L1.'</span></button>';
 	$text .= '
-		</div>';
+		</div>
+	</form>';
 }
 
 $ns->tablerender(UTHEME_MENU_L2, $text, 'user_lan');

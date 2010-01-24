@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     (C)Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/calendar_menu/plugin.php,v $
-|     $Revision: 1.21 $ - with mods to hopefully trigger upgrade to new version
-|     $Date: 2008/09/02 21:12:08 $
-|     $Author: e107steved $
+|     $Revision: 1.23 $ - with mods to hopefully trigger upgrade to new version
+|     $Date: 2009/11/19 11:45:49 $
+|     $Author: marj_nl_fr $
 |
 | 22.07.06 - Mods for V3.6 upgrade, including log directory
 | 02.08.06 - Support for category icon display added
@@ -28,8 +28,8 @@
 if (!defined('e107_INIT')) { exit; }
 
 // Plugin info -------------------------------------------------------------------------------------------------------
-$lan_file = e_PLUGIN."calendar_menu/languages/".e_LANGUAGE.".php";
-@require_once(file_exists($lan_file) ? $lan_file : e_PLUGIN."calendar_menu/languages/English.php");
+include_lan(e_PLUGIN."calendar_menu/languages/".e_LANGUAGE.".php");
+
 $eplug_name = 'EC_ADLAN_1';
 $eplug_version = "3.6";
 $eplug_author = "jalist / cameron / McFly / Barry / Lisa_ / steved";
@@ -62,12 +62,12 @@ $ecalVer = preg_replace("/[a-zA-z\s]/", '', $ecalVer);
 
 // List of preferences -----------------------------------------------------------------------------------------------
 $eplug_prefs = array(
-"eventpost_admin" => 0,
+"eventpost_admin" => 254,			// Admin
 "eventpost_adminlog" => 0,
 "eventpost_showeventcount" => 1,
 "eventpost_forum" => 1,
 "eventpost_recentshow" => 0,
-"eventpost_super" => 0,
+"eventpost_super" => 254,			// Admin
 "eventpost_menulink" => 0,
 "eventpost_dateformat" => 1,
 "eventpost_fivemins" => 0,

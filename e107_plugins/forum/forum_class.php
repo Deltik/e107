@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/forum/forum_class.php,v $
-|     $Revision: 1.73 $
-|     $Date: 2009/08/16 15:53:00 $
+|     $Revision: 1.76 $
+|     $Date: 2009/12/20 22:08:15 $
 |     $Author: e107steved $	   ** Amended by Marj to re-order list line 818 - 851
 +----------------------------------------------------------------------------+
 */
@@ -701,7 +701,7 @@ class e107forum
 			return -1;
 		}
 
-		$post_user = $thread_poster['post_userid'].".".$thread_poster['post_user_name'];
+		$post_user = $thread_poster['post_userid'].".".$tp->toDB($thread_poster['post_user_name']);
 		$thread_post_user = $post_user;
 		if($thread_poster['post_userid'] == 0)
 		{
@@ -739,6 +739,7 @@ class e107forum
 			$parent_thread = $this->thread_get_postinfo($thread_parent);
 			global $PLUGINS_DIRECTORY;
 			$thread_name = $tp->toText($parent_thread[0]['thread_name']);
+			$thread_name = str_replace('&quot;', '"', $thread_name);		// This not picked up by toText();
 			$datestamp = $gen->convert_date($post_time, "long");
 			$email_post = $tp->toHTML($thread_thread, TRUE);
 			$mail_link = "<a href='".SITEURL.$PLUGINS_DIRECTORY."forum/forum_viewtopic.php?".$thread_parent.".last'>".SITEURL.$PLUGINS_DIRECTORY."forum/forum_viewtopic.php?".$thread_parent.".last</a>";
@@ -1055,7 +1056,7 @@ function img_path($filename)
 
 		if(file_exists(THEME.'forum/'.$filename) || is_readable(THEME.'forum/'.e_LANGUAGE."_".$filename))
 		{
-			$image = ($ML && is_readable(THEME.'forum/'.e_LANGUAGE."_".$filename)) ? THEME.'forum/'.e_LANGUAGE."_".$filename :  THEME.'forum/'.$filename;
+			$image = ($ML && is_readable(THEME.'forum/'.e_LANGUAGE."_".$filename)) ? THEME_ABS.'forum/'.e_LANGUAGE."_".$filename :  THEME_ABS.'forum/'.$filename;
 		}
 		else
 		{
@@ -1063,22 +1064,22 @@ function img_path($filename)
 			{
 				if($ML)
 				{
-                	$image = (is_readable(e_PLUGIN."forum/images/".IMODE."/".e_LANGUAGE."_".$filename)) ? e_PLUGIN."forum/images/".IMODE."/".e_LANGUAGE."_".$filename : e_PLUGIN."forum/images/".IMODE."/English_".$filename;
+                	$image = (is_readable(e_PLUGIN."forum/images/".IMODE."/".e_LANGUAGE."_".$filename)) ? e_PLUGIN_ABS."forum/images/".IMODE."/".e_LANGUAGE."_".$filename : e_PLUGIN_ABS."forum/images/".IMODE."/English_".$filename;
 				}
 				else
 				{
-                	$image = e_PLUGIN."forum/images/".IMODE."/".$filename;
+                	$image = e_PLUGIN_ABS."forum/images/".IMODE."/".$filename;
 				}
 			}
 			else
 			{
 				if($ML)
 				{
-					$image = (is_readable(e_PLUGIN."forum/images/lite/".e_LANGUAGE."_".$filename)) ? e_PLUGIN."forum/images/lite/".e_LANGUAGE."_".$filename : e_PLUGIN."forum/images/lite/English_".$filename;
+					$image = (is_readable(e_PLUGIN."forum/images/lite/".e_LANGUAGE."_".$filename)) ? e_PLUGIN_ABS."forum/images/lite/".e_LANGUAGE."_".$filename : e_PLUGIN_ABS."forum/images/lite/English_".$filename;
 				}
 				else
                 {
-           			$image = e_PLUGIN."forum/images/lite/".$filename;
+           			$image = e_PLUGIN_ABS."forum/images/lite/".$filename;
 				}
 
 			}

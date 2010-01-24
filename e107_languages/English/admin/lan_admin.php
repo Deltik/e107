@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/lan_admin.php,v $
-|     $Revision: 1.61 $
-|     $Date: 2009/07/18 15:53:42 $
-|     $Author: marj_nl_fr $
+|     $Revision: 1.63 $
+|     $Date: 2010/01/22 13:53:53 $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 define("ADLAN_0", "News");
@@ -173,7 +173,7 @@ define("ADLAN_151", "Main");
 define("ADLAN_152", "Enter Code");
 
 define("ADLAN_153", "Administration Area");
-define('ADLAN_154', "Error contacting Sourceforge to check for new version");
+define('ADLAN_154', "Error contacting e107.org to check for new version");
 
 define('ADLAN_CL_1', 'Settings');
 define('ADLAN_CL_2', 'Users');
@@ -273,6 +273,6 @@ define("LAN_BACK","Back");
 
 define("LAN_CREDITS","Credits");
 define("LAN_NEWVERSION","New Version Available");
-
-
+define("LAN_NEWVERSION_MORE","learn more");
+define("LAN_NEWVERSION_DLD","Download %s from SF.net");
 ?>

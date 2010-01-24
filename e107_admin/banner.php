@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     (C)Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_admin/banner.php,v $
-|     $Revision: 1.35 $
-|     $Date: 2009/08/15 11:54:30 $
+|     $Revision: 1.37 $
+|     $Date: 2009/11/19 11:45:48 $
 |     $Author: marj_nl_fr $
 +----------------------------------------------------------------------------+
 */
@@ -20,8 +20,9 @@ require_once("../class2.php");
 if (!getperms("D")) 
 {
 	header("location:".e_BASE."index.php");
-	exit;
+	exit();
 }
+
 $e_sub_cat = 'banner';
 require_once("auth.php");
 require_once(e_HANDLER."form_handler.php");
@@ -30,7 +31,7 @@ require_once(e_HANDLER."userclass_class.php");
 require_once(e_HANDLER."file_class.php");
 $fl = new e_file;
 
-//@FIXME mix up in banner language files
+//FIXME mix up in banner language files
 include_lan(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_menus.php");
 include_lan(e_PLUGIN."banner_menu/languages/".e_LANGUAGE.".php");
 
@@ -210,6 +211,12 @@ if (!$action) {
 }
 
 if ($action == "create") {
+	if(isset($pref['install_date'])) { 
+		$_startYear = date('Y', $pref['install_date']);
+	} else {
+		$_startYear = date('Y') - 5;
+	}
+	$_endYear = date('Y') + 5;
 
 	if ($sub_action == "edit" && $id) {
 		if (!$sql->db_Select("banner", "*", "banner_id = '".$id."' " )) {
@@ -405,7 +412,7 @@ if ($action == "create") {
 		$text .= ($a == $_POST['startmonth'] ? "<option selected='selected'>".$a."</option>" : "<option>".$a."</option>");
 	}
 	$text .= "</select> <select name='startyear' class='tbox'><option selected='selected'> </option>";
-	for($a = 2003; $a <= 2010; $a++) {
+	for($a = $_startYear; $a <= $_endYear; $a++) {
 		$text .= ($a == $_POST['startyear'] ? "<option selected='selected'>".$a."</option>" : "<option>".$a."</option>");
 	}
 	$text .= "</select> ".BNRLAN_38."
@@ -423,7 +430,7 @@ if ($action == "create") {
 		$text .= ($a == $_POST['endmonth'] ? "<option selected='selected'>".$a."</option>" : "<option>".$a."</option>");
 	}
 	$text .= "</select> <select name='endyear' class='tbox'><option selected='selected'> </option>";
-	for($a = 2003; $a <= 2010; $a++) {
+	for($a = $_startYear; $a <= $_endYear; $a++) {
 		$text .= ($a == $_POST['endyear'] ? "<option selected='selected'>".$a."</option>" : "<option>".$a."</option>");
 	}
 	$text .= "</select> ".BNRLAN_38."

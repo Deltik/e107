@@ -6,9 +6,9 @@
 |     Released under the terms and conditions of the GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_themes/templates/header_default.php,v $
-|     $Revision: 1.112 $
-|     $Date: 2009/07/13 10:17:41 $
-|     $Author: marj_nl_fr $
+|     $Revision: 1.114 $
+|     $Date: 2010/01/09 00:01:47 $
+|     $Author: e107coders $
 +-----------------------------------------------------------------------------------------------+
 */
 
@@ -83,7 +83,7 @@ echo (defined("STANDARDS_MODE") ? "" : "<?xml version='1.0' encoding='".CHARSET.
 //
 // C: Send start of HTML
 //
-echo "<html xmlns='http://www.w3.org/1999/xhtml'".(defined("TEXTDIRECTION") ? " dir='".TEXTDIRECTION."'" : "").(defined("CORE_LC") ? " xml:lang=\"".CORE_LC."\"" : "").">
+echo "<html xmlns='http://www.w3.org/1999/xhtml'".(defined("TEXTDIRECTION") ? " dir='".TEXTDIRECTION."'" : "").(defined("XMLNS") ? " ".XMLNS." " : "").(defined("CORE_LC") ? " xml:lang=\"".CORE_LC."\"" : "").">
 <head>
 <meta http-equiv='content-type' content='text/html; charset=".CHARSET."' />
 <meta http-equiv='content-style-type' content='text/css' />
@@ -391,27 +391,36 @@ if ($e107_popup != 1) {
 		$custompage['no_array'] = array();
 	}
 
-	$ph = FALSE;
-	if (e_PAGE == 'news.php' && isset($NEWSHEADER)) {
+	$e107ParseHeaderFlag = FALSE;				// Deliberately choose a distinct Name! (Its got to reach the footer)
+	if (e_PAGE == 'news.php' && isset($NEWSHEADER)) 
+	{
 		parseheader($NEWSHEADER);
-	} else {
+	} 
+	else 
+	{
 		$full_query = e_SELF."?".e_QUERY."!";
-		foreach ($custompage as $key_extract => $cust_extract) {
-			foreach ($cust_extract as $key => $kpage) {
-				if ($kpage && (strstr(e_SELF, $kpage) || strstr($full_query,$kpage))) {
-					$ph = TRUE;
-					if ($key_extract=='no_array') {
+		foreach ($custompage as $key_extract => $cust_extract) 
+		{
+			foreach ($cust_extract as $key => $kpage) 
+			{
+				if ($kpage && (strstr(e_SELF, $kpage) || strstr($full_query,$kpage))) 
+				{
+					$e107ParseHeaderFlag = TRUE;
+					if ($key_extract=='no_array') 
+					{
 						$cust_header = $CUSTOMHEADER ? $CUSTOMHEADER : $HEADER;
-						$cust_footer = $CUSTOMFOOTER ? $CUSTOMFOOTER : $FOOTER;
-					} else {
+						$e107CustomFooter = $CUSTOMFOOTER ? $CUSTOMFOOTER : $FOOTER;
+					} 
+					else 
+					{
 						$cust_header = $CUSTOMHEADER[$key_extract] ? $CUSTOMHEADER[$key_extract] : $HEADER;
-						$cust_footer = $CUSTOMFOOTER[$key_extract] ? $CUSTOMFOOTER[$key_extract] : $FOOTER;
+						$e107CustomFooter = $CUSTOMFOOTER[$key_extract] ? $CUSTOMFOOTER[$key_extract] : $FOOTER;	// Another intentionally distinct name
 					}
 					break;
 				}
 			}
 		}
-		parseheader(($ph ? $cust_header : $HEADER));
+		parseheader(($e107ParseHeaderFlag ? $cust_header : $HEADER));
 	}
 
 

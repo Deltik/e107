@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_themes/templates/admin_template.php,v $
-|     $Revision: 1.16 $
-|     $Date: 2009/08/03 19:40:44 $
-|     $Author: marj_nl_fr $
+|     $Revision: 1.18 $
+|     $Date: 2010/01/22 13:50:27 $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 
@@ -28,6 +28,7 @@ $ADMIN_HEADER = "<div style='text-align:center'>
 <table style='width:100%' cellspacing='10' cellpadding='10'>
 <tr>
 <td style='width:17%; vertical-align: top;'>
+".(e_PAGE != 'admin.php' ? '{ADMIN_UPDATE} ' : '')."
 {ADMIN_NAV}
 {ADMIN_LANG}
 {ADMIN_PWORD}
@@ -45,7 +46,7 @@ $ADMIN_FOOTER = "</td>
 <td style='width:17%; vertical-align:top'>
 {ADMIN_MENU}
 {ADMIN_PRESET}
-{ADMIN_UPDATE}
+
 {ADMIN_SITEINFO}
 {ADMIN_DOCS}
 </td>
