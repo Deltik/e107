@@ -1,3 +1,4 @@
+// $Id: link.bb,v 1.29 2010/01/29 16:29:41 secretr Exp $
 global $pref;
 
 /*
@@ -30,8 +31,13 @@ global $pref;
 		return "<a class='bbcode' rel='external' href='javascript:window.location=\"mai\"+\"lto:\"+\"$p1\"+\"@\"+\"$p2\";self.close();' onmouseover='window.status=\"mai\"+\"lto:\"+\"$p1\"+\"@\"+\"$p2\"; return true;' onmouseout='window.status=\"\";return true;'>".$code_text."</a>";
 	}
 
-	list($link,$extras) = explode(" ",$parm);
+	if (substr($code_text,0,1) == ']')
+	{	// Special fix for E107 urls including a language
+		$code_text = substr($code_text,1);
+		$parm .= ']';
+	}
 
+	list($link,$extras) = explode(" ",$parm);
 	if(!$parm) $link = $code_text;
 
 	if($link == "external" && $extras == "")
@@ -46,7 +52,7 @@ global $pref;
 	}
 	else
 	{
-    	$insert = ($pref['links_new_window'] && strpos($link,"{e_")===FALSE && substr($link,0,1) != "#" && strpos($extras,"rel=internal")===FALSE) ? "rel='external' " : "";
+    	$insert = ($pref['links_new_window'] && strpos($link,"{e_")===FALSE && substr($link,0,1) != "#" && substr($link,0,1) != "/" && strpos($extras,"rel=internal")===FALSE) ? "rel='external' " : "";
     }
 	if (strtolower(substr($link,0,11)) == 'javascript:') return '';
 	return "<a class='bbcode' href='".$tp -> toAttribute($link)."' ".$insert.">".$code_text."</a>";

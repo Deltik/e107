@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/usersettings.php,v $
-|     $Revision: 1.118 $
-|     $Date: 2009/11/23 21:04:06 $
+|     $Revision: 1.120 $
+|     $Date: 2010/01/31 22:20:31 $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -82,20 +82,20 @@ require_once(HEADERF);
 // Given an array of user data, return a comma separated string which includes public, admin, member classes etc as appropriate.
 function addCommonClasses($udata)
 {
-  $tmp = array();
-  if ($udata['user_class'] != "") $tmp = explode(",", $udata['user_class']);
-  $tmp[] = e_UC_MEMBER;
-  $tmp[] = e_UC_READONLY;
-  $tmp[] = e_UC_PUBLIC;
-  if($udata['user_admin'] == 1)
-  {
-	$tmp[] = e_UC_ADMIN;
-  }
-  if (strpos($udata['user_perms'],'0') === 0)
-  {
-	$tmp[] = e_UC_MAINADMIN;
-  }
-  return implode(",", $tmp);
+	$tmp = array();
+	if ($udata['user_class'] != "") $tmp = explode(",", $udata['user_class']);
+	$tmp[] = e_UC_MEMBER;
+	$tmp[] = e_UC_READONLY;
+	$tmp[] = e_UC_PUBLIC;
+	if (($udata['user_admin'] == 1) || ADMIN)
+	{
+		$tmp[] = e_UC_ADMIN;
+	}
+	if ((strpos($udata['user_perms'],'0') === 0) || getperms('0'))
+	{
+		$tmp[] = e_UC_MAINADMIN;
+	}
+	return implode(",", $tmp);
 }
 
 
@@ -237,7 +237,7 @@ function make_email_query($email, $fieldname = 'banlist_ip')
   if (strpos($tmp,'.') === FALSE) return FALSE;
   $em = array_reverse(explode('.',$tmp));
   $line = '';
-  $out = array('*@'.$tmp);		// First element looks for domain as email address
+  $out = array("='*@.{$tmp}'");		// First element looks for domain as email address
   foreach ($em as $e)
   {
     $line = '.'.$e.$line;
@@ -371,7 +371,7 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 	$ue_fields = "";
 	if($_POST['ue'])
 	{
-		if($sql->db_Select('user_extended_struct'))
+		if ($sql->db_Select('user_extended_struct', '*', 'user_extended_struct_type != 0'))		// Get field definitions, but not categories
 		{
 			while($row = $sql->db_Fetch())
 			{

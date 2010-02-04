@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|    	Steve Dunstan 2001-2002
+|	  Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/class2.php,v $
-|     $Revision: 1.389 $
-|     $Date: 2010/01/21 03:57:43 $
-|     $Author: mcfly_e107 $
+|     $Revision: 1.393 $
+|     $Date: 2010/02/02 22:29:35 $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 //
@@ -196,10 +196,19 @@ if (preg_match("#\[(.*?)](.*)#", $_SERVER['QUERY_STRING'], $matches)) {
 e107_require_once(e_HANDLER.'e_parse_class.php');
 $tp = new e_parse;
 
-//define("e_QUERY", $matches[2]);
-//define("e_QUERY", $_SERVER['QUERY_STRING']);
-$e_QUERY = str_replace("&","&amp;",$tp->post_toForm($e_QUERY));
-define("e_QUERY", str_replace(array('{', '}'), '', $e_QUERY));
+$e_QUERY = str_replace(array('{', '}', '%7B', '%7b', '%7D', '%7d'), '', rawurldecode($e_QUERY));
+$e_QUERY = str_replace('&', '&amp;', $tp->post_toForm($e_QUERY));
+
+/**
+ * e_QUERY notes:
+ * It seems _GET / _POST / _COOKIE are doing pre-urldecode on their data. 
+ * There is no official documentation/php.ini setting to confirm this.
+ * We could add rawurlencode() after the replacement above if problems are reported.
+ * 
+ * @var string
+ */
+define('e_QUERY', $e_QUERY);
+
 //$e_QUERY = e_QUERY;
 
 define("e_TBQS", $_SERVER['QUERY_STRING']);
@@ -246,8 +255,8 @@ define("MPREFIX", $mySQLprefix);
 
 e107_require_once(e_HANDLER."mysql_class.php");
 
-$sql =& new db;
-$sql2 =& new db;
+$sql = new db;
+$sql2 = new db;
 
 $sql->db_SetErrorReporting(FALSE);
 
