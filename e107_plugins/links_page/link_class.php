@@ -10,10 +10,10 @@
 |    Released   under the   terms and   conditions of the
 |    GNU    General Public  License (http://gnu.org).
 |
-|    $Source: /cvsroot/e107/e107_0.7/e107_plugins/links_page/link_class.php,v $
-|    $Revision: 1.47 $
-|    $Date: 2009/01/30 22:02:45 $
-|    $Author: lisa_ $
+|    $Source: /cvs_backup/e107_0.7/e107_plugins/links_page/link_class.php,v $
+|    $Revision: 11346 $
+|    $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|    $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 

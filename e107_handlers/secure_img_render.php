@@ -10,10 +10,10 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_handlers/secure_img_render.php,v $
-|     $Revision: 1.20 $
-|     $Date: 2009/10/28 14:23:40 $
-|     $Author: marj_nl_fr $
+|     $Source: /cvs_backup/e107_0.7/e107_handlers/secure_img_render.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 

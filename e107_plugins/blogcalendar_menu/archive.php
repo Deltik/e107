@@ -10,10 +10,10 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_plugins/blogcalendar_menu/archive.php,v $
-|     $Revision: 1.8 $
-|     $Date: 2010/01/09 12:01:37 $
-|     $Author: e107steved $
+|     $Source: /cvs_backup/e107_0.7/e107_plugins/blogcalendar_menu/archive.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 | Based on code by: Thomas Bouve (crahan@gmx.net)
 */

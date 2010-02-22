@@ -10,9 +10,9 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_themes/jayya/admin_template.php,v $
-|     $Revision: 1.23 $
-|     $Date: 2010/01/22 13:50:28 $
+|     $Source: /cvs_backup/e107_0.7/e107_themes/jayya/admin_template.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
 |     $Author: secretr $
 +----------------------------------------------------------------------------+
 */

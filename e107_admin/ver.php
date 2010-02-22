@@ -1,24 +1,13 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     ©Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $Source: /cvsroot/e107/e107_0.7/e107_admin/ver.php,v $
-|     $Revision: 1.30 $
-|     $Date: 2010/02/04 21:09:35 $
-|     $Author: mcfly_e107 $
-+----------------------------------------------------------------------------+
+* Copyright e107 Inc e107.org, Licensed under GNU GPL (http://www.gnu.org/licenses/gpl.txt)
+* $URL: https://e107.svn.sourceforge.net/svnroot/e107/tags/e107_v07_19_release/e107_admin/ver.php $
+* $Id: ver.php 11356 2010-02-22 20:44:31Z mcfly_e107 $
+*
+* Version file
 */
 
 if (!defined('e107_INIT')) { exit; }
 
-$e107info['e107_version'] = "0.7.18";
-
+$e107info['e107_version'] = "0.7.19";
 ?>

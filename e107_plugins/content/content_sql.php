@@ -10,10 +10,10 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_plugins/content/content_sql.php,v $
-|     $Revision: 1.3 $
-|     $Date: 2005/06/26 07:51:02 $
-|     $Author: lisa_ $
+|     $Source: /cvs_backup/e107_0.7/e107_plugins/content/content_sql.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 header("location:../index.php");

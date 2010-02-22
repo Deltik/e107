@@ -1,6 +1,6 @@
 /*
  * e107 website system (c) 2001-2008 Steve Dunstan (e107.org)
- * $Id: pdf.sc,v 1.3 2008/09/04 20:07:17 e107steved Exp $
+ * $Id: pdf.sc 11346 2010-02-17 18:56:14Z secretr $
 */
 
 if (defined("ICONPRINTPDF") && file_exists(THEME."images/".ICONPRINTPDF)) 

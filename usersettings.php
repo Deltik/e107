@@ -10,9 +10,9 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/usersettings.php,v $
-|     $Revision: 1.120 $
-|     $Date: 2010/01/31 22:20:31 $
+|     $Source: /cvs_backup/e107_0.7/usersettings.php,v $
+|     $Revision: 11352 $
+|     $Date: 2010-02-21 11:04:39 -0500 (Sun, 21 Feb 2010) $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -237,7 +237,7 @@ function make_email_query($email, $fieldname = 'banlist_ip')
   if (strpos($tmp,'.') === FALSE) return FALSE;
   $em = array_reverse(explode('.',$tmp));
   $line = '';
-  $out = array("='*@.{$tmp}'");		// First element looks for domain as email address
+  $out = array($fieldname."='*@{$tmp}'");		// First element looks for domain as email address
   foreach ($em as $e)
   {
     $line = '.'.$e.$line;

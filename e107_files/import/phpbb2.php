@@ -10,10 +10,10 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_files/import/phpbb2.php,v $
-|     $Revision: 1.10 $
-|     $Date: 2008/07/20 17:08:20 $
-|     $Author: e107steved $
+|     $Source: /cvs_backup/e107_0.7/e107_files/import/phpbb2.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 |
 |     31/1/2006  Changes by Albert Drent
 |                Aducom Software

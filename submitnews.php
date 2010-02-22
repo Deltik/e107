@@ -10,10 +10,10 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/submitnews.php,v $
-|     $Revision: 1.27 $
-|     $Date: 2009/12/19 14:52:55 $
-|     $Author: e107steved $
+|     $Source: /cvs_backup/e107_0.7/submitnews.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 

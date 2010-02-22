@@ -11,10 +11,10 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_handlers/comment_class.php,v $
-|     $Revision: 1.82 $
-|     $Date: 2009/11/01 20:21:22 $
-|     $Author: e107steved $
+|     $Source: /cvs_backup/e107_0.7/e107_handlers/comment_class.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 
@@ -146,19 +146,18 @@ class comment {
 			{
 				$text = $ns->tablerender($caption, $text, '', TRUE);
 			}
-
-			if($return)
-			{
-				return $text;
-			}
-			else
-			{
-				echo $text;
-			}
 		}
 		else
 		{  // Comment entry not allowed - point to signup link
-			echo "<br /><div style='text-align:center'><b>".COMLAN_6." <a href='".e_SIGNUP."'>".COMLAN_321."</a> ".COMLAN_322."</b></div>";
+			$text = "<br /><div style='text-align:center'><b>".COMLAN_6." <a href='".e_SIGNUP."'>".COMLAN_321."</a> ".COMLAN_322."</b></div>";
+		}
+		if($return)
+		{
+			return $text;
+		}
+		else
+		{
+			echo $text;
 		}
 	}
 

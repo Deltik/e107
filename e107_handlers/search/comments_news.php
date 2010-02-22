@@ -10,10 +10,10 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_handlers/search/comments_news.php,v $
-|     $Revision: 1.6 $
-|     $Date: 2007/04/24 20:19:55 $
-|     $Author: e107steved $
+|     $Source: /cvs_backup/e107_0.7/e107_handlers/search/comments_news.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 

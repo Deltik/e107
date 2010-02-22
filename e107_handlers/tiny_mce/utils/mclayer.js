@@ -1,5 +1,5 @@
 /**
- * $Id: mclayer.js,v 1.4 2006/10/27 22:36:57 e107coders Exp $
+ * $Id: mclayer.js 11346 2010-02-17 18:56:14Z secretr $
  *
  * Moxiecode floating layer script.
  *

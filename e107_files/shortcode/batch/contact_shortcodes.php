@@ -7,10 +7,10 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_files/shortcode/batch/contact_shortcodes.php,v $
-|     $Revision: 1.5 $
-|     $Date: 2006/10/24 13:38:46 $
-|     $Author: mrpete $
+|     $Source: /cvs_backup/e107_0.7/e107_files/shortcode/batch/contact_shortcodes.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }

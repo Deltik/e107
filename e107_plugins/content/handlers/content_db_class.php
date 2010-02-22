@@ -11,10 +11,10 @@
 |        Released under the terms and conditions of the
 |        GNU General Public License (http://gnu.org).
 |
-|		$Source: /cvsroot/e107/e107_0.7/e107_plugins/content/handlers/content_db_class.php,v $
-|		$Revision: 1.59 $
-|		$Date: 2008/11/10 20:12:39 $
-|		$Author: e107steved $
+|		$Source: /cvs_backup/e107_0.7/e107_plugins/content/handlers/content_db_class.php,v $
+|		$Revision: 11346 $
+|		$Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|		$Author: secretr $
 +---------------------------------------------------------------+
 */
 

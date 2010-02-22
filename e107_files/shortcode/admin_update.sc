@@ -1,4 +1,4 @@
-// $Id: admin_update.sc,v 1.10 2010/01/22 13:50:28 secretr Exp $
+// $Id: admin_update.sc 11346 2010-02-17 18:56:14Z secretr $
 global $tp;
 	if (!ADMIN) return "";
 

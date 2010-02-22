@@ -1,5 +1,5 @@
 <?php
-/* $Id: content_defines.php,v 1.10 2009/11/19 11:45:50 marj_nl_fr Exp $ */
+/* $Id: content_defines.php 11346 2010-02-17 18:56:14Z secretr $ */
 if (!defined('e107_INIT')) { exit; }
 
 global $plugindir;

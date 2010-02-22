@@ -1,5 +1,5 @@
 <?php
-// $Id: rss_shortcodes.php,v 1.7 2008/07/28 20:15:59 e107steved Exp $
+// $Id: rss_shortcodes.php 11346 2010-02-17 18:56:14Z secretr $
 if (!defined('e107_INIT')) { exit; }   
 
 include_once(e_HANDLER.'shortcode_handler.php');

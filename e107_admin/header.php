@@ -11,10 +11,10 @@
 |        Released under the terms and conditions of the
 |        GNU General Public License (http://gnu.org).
 |
-|   $Source: /cvsroot/e107/e107_0.7/e107_admin/header.php,v $
-|   $Revision: 1.65 $
-|   $Date: 2009/07/23 08:14:26 $
-|   $Author: marj_nl_fr $
+|   $Source: /cvs_backup/e107_0.7/e107_admin/header.php,v $
+|   $Revision: 11346 $
+|   $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|   $Author: secretr $
 +---------------------------------------------------------------+
 */
 

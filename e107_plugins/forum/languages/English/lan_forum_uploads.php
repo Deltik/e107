@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_plugins/forum/languages/English/lan_forum_uploads.php,v $
-|     $Revision: 1.1 $
-|     $Date: 2005/02/24 20:43:34 $
-|     $Author: mcfly_e107 $
+|     $Source: /cvs_backup/e107_0.7/e107_plugins/forum/languages/English/lan_forum_uploads.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 define("PAGE_NAME", "Forum Uploads");

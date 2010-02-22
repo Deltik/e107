@@ -1,5 +1,5 @@
 <?php
-/* $Id: e_emailprint.php,v 1.28 2009/11/19 11:45:49 marj_nl_fr Exp $ */
+/* $Id: e_emailprint.php 11346 2010-02-17 18:56:14Z secretr $ */
 
 if (!defined('e107_INIT')) { exit; }
 

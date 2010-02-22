@@ -10,9 +10,9 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/signup.php,v $
-|     $Revision: 1.138 $
-|     $Date: 2010/01/30 21:27:31 $
+|     $Source: /cvs_backup/e107_0.7/signup.php,v $
+|     $Revision: 11352 $
+|     $Date: 2010-02-21 11:04:39 -0500 (Sun, 21 Feb 2010) $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -141,15 +141,12 @@ if(e_QUERY == "resend" && !USER && ($pref['user_reg_veri'] == 1))
 		</tr>
 		<tr>
 			<td class='forumheader3' style='text-align:right;width:30%'>".LAN_SIGNUP_50."</td>
-			<td class='forumheader3'><input type='text' name='resend_newemail' class='tbox' size='50' style='max-width:80%' value='' maxlength='80' />
+			<td class='forumheader3'><input type='text' name='resend_newemail' class='tbox' size='50' style='max-width:80%' value='' maxlength='80' /></td>
 		</tr>
 		<tr>
 			<td class='forumheader3' style='text-align:right'>".LAN_SIGNUP_51."</td>
-			<td class='forumheader3'><input type='text' name='resend_password' class='tbox' size='50' style='max-width:80%' value='' maxlength='80' />
-
-		</td>
+			<td class='forumheader3'><input type='text' name='resend_password' class='tbox' size='50' style='max-width:80%' value='' maxlength='80' /></td>
 		</tr>
-
 		";
 
 		$text .="<tr style='vertical-align:top'>
@@ -545,7 +542,7 @@ function make_email_query($email, $fieldname = 'banlist_ip')
   if (strpos($tmp,'.') === FALSE) return FALSE;
   $em = array_reverse(explode('.',$tmp));
   $line = '';
-  $out = array('*@'.$tmp);		// First element looks for domain as email address
+  $out = array($fieldname."='*@{$tmp}'");		// First element looks for domain as email address
   foreach ($em as $e)
   {
     $line = '.'.$e.$line;

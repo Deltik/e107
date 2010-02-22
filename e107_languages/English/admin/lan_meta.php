@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/lan_meta.php,v $
-|     $Revision: 1.5 $
-|     $Date: 2006/06/07 05:04:58 $
-|     $Author: e107coders $
+|     $Source: /cvs_backup/e107_0.7/e107_languages/English/admin/lan_meta.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 define("METLAN_1", "Meta tags updated in database");

@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/lan_theme.php,v $
-|     $Revision: 1.10 $
-|     $Date: 2007/02/04 21:42:33 $
-|     $Author: e107steved $
+|     $Source: /cvs_backup/e107_0.7/e107_languages/English/admin/lan_theme.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 define("TPVLAN_1", "You are looking at a preview of the <b>'".PREVIEWTHEMENAME."'</b> theme. It has not been set as the main theme for your site, it has been activated to provide a preview of how the theme looks.<br />To set this theme as your site theme, <a href='".e_ADMIN."theme.php'>return to your theme manager</a> and select 'Set As Site Theme'.<br />To preview more themes please <a href='".e_ADMIN."theme.php'>click here</a>");

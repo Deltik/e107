@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/lan_contact.php,v $
-|     $Revision: 1.5 $
-|     $Date: 2009/07/18 17:00:49 $
-|     $Author: marj_nl_fr $
+|     $Source: /cvs_backup/e107_0.7/e107_languages/English/lan_contact.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 

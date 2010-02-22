@@ -1,4 +1,4 @@
-// $Id: uploadfile.sc,v 1.5 2006/11/08 20:45:00 e107coders Exp $
+// $Id: uploadfile.sc 11346 2010-02-17 18:56:14Z secretr $
 
 // Your <form> tag must include: enctype='multipart/form-data' - in order to work.
 // parm is the path to the upload folder.

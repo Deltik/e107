@@ -11,10 +11,10 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_handlers/cache_handler.php,v $
-|     $Revision: 1.36 $
-|     $Date: 2007/12/09 00:10:43 $
-|     $Author: e107coders $
+|     $Source: /cvs_backup/e107_0.7/e107_handlers/cache_handler.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 
@@ -24,8 +24,8 @@ if (!defined('e107_INIT')) { exit; }
 * Class to cache data as files, improving site speed and throughput.
 *
 * @package     e107
-* @version     $Revision: 1.36 $
-* @author      $Author: e107coders $
+* @version     $Revision: 11346 $
+* @author      $Author: secretr $
 */
 class ecache {
 

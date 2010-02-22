@@ -10,9 +10,9 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_admin/userclass.php,v $
-|     $Revision: 1.13 $
-|     $Date: 2008/04/04 21:03:51 $
+|     $Source: /cvs_backup/e107_0.7/e107_admin/userclass.php,v $
+|     $Revision: 11349 $
+|     $Date: 2010-02-19 15:47:33 -0500 (Fri, 19 Feb 2010) $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -103,8 +103,12 @@ for($a = 0; $a <= (count($class)-1); $a++) {
 	}
 	$text .= "</td><td style='width:70%' class='forumheader3'> ".$class[$a][2]."</td></tr>";
 }
- 
-$adminreturn = e_ADMIN."users.php?cu".($qs[2] ? ".{$qs[2]}.{$qs[3]}.{$qs[4]}" : "");
+
+$adminreturn = e_ADMIN.'users.php?cu';
+if (isset($qs[1]))
+{
+	$adminreturn .= '.'.$qs[1].(isset($qs[2]) ? ".{$qs[2]}.{$qs[3]}.{$qs[4]}" : "");
+}
 
 $text .= "	<tr><td class='forumheader' colspan='2' style='text-align:center'>
 			<input type='hidden' name='adminreturn' value='$adminreturn' />

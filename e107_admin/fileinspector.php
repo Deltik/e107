@@ -10,10 +10,10 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_admin/fileinspector.php,v $
-|     $Revision: 1.39 $
-|     $Date: 2010/02/04 20:45:33 $
-|     $Author: mcfly_e107 $
+|     $Source: /cvs_backup/e107_0.7/e107_admin/fileinspector.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 require_once('../class2.php');
@@ -29,7 +29,11 @@ require_once(e_HANDLER.'form_handler.php');
 $rs = new form;
 $fi = new file_inspector;
 
-$DOCS_DIRECTORY = str_replace('help/', '', $HELP_DIRECTORY);
+$DOCS_DIRECTORY = $HELP_DIRECTORY;		// Give a sensible, albeit probably invalid, value
+if (substr($HELP_DIRECTORY,-5,5) == 'help/')
+{
+	$DOCS_DIRECTORY = substr($HELP_DIRECTORY,0,-5);		// Whatever $HELP_DIRECTORY is set to, assume docs are in a subdirectory called 'help' off it
+}
 $maindirs = array('admin' => $ADMIN_DIRECTORY, 'files' => $FILES_DIRECTORY, 'images' => $IMAGES_DIRECTORY, 'themes' => $THEMES_DIRECTORY, 'plugins' => $PLUGINS_DIRECTORY, 'handlers' => $HANDLERS_DIRECTORY, 'languages' => $LANGUAGES_DIRECTORY, 'downloads' => $DOWNLOADS_DIRECTORY, 'docs' => $DOCS_DIRECTORY);
 foreach ($maindirs as $maindirs_key => $maindirs_value) {
 	$coredir[$maindirs_key] = substr($maindirs_value, 0, -1);
@@ -700,10 +704,10 @@ class file_inspector {
 		$data .= "|     Released under the terms and conditions of the\n";
 		$data .= "|     GNU General Public License (http://gnu.org).\n";
 		$data .= "|\n";
-		$data .= "|     \$Source: /cvsroot/e107/e107_0.7/e107_admin/fileinspector.php,v $\n";
-		$data .= "|     \$Revision: 1.39 $\n";
-		$data .= "|     \$Date: 2010/02/04 20:45:33 $\n";
-		$data .= "|     \$Author: mcfly_e107 $\n";
+		$data .= "|     \$Source: /cvs_backup/e107_0.7/e107_admin/fileinspector.php,v $\n";
+		$data .= "|     \$Revision: 11346 $\n";
+		$data .= "|     \$Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $\n";
+		$data .= "|     \$Author: secretr $\n";
 		$data .= "+----------------------------------------------------------------------------+\n";
 		$data .= "*/\n\n";
 		$data .= "if (!defined('e107_INIT')) { exit; }\n\n";

@@ -10,10 +10,10 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/comment.php,v $
-|     $Revision: 1.61 $
-|     $Date: 2010/01/15 21:10:18 $
-|     $Author: e107steved $
+|     $Source: /cvs_backup/e107_0.7/comment.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");

@@ -1,5 +1,5 @@
 <?php
-/* $Id: e_help.php,v 1.3 2009/11/19 15:52:22 marj_nl_fr Exp $ */
+/* $Id: e_help.php 11346 2010-02-17 18:56:14Z secretr $ */
 if (!defined('e107_INIT')) { exit; }
 
 include_lan(e_PLUGIN.'links_page/languages/'.e_LANGUAGE.'.php');

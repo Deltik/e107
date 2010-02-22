@@ -1,5 +1,5 @@
 <?php
-// $Id: contact_template.php,v 1.11 2009/07/28 04:10:16 marj_nl_fr Exp $
+// $Id: contact_template.php 11346 2010-02-17 18:56:14Z secretr $
 
 if (!defined('e107_INIT')) { exit; }
 if (!defined("USER_WIDTH")){ define("USER_WIDTH","width:97%"); }

@@ -1,4 +1,4 @@
-// $Id: wmessage.sc,v 1.20 2007/01/20 05:11:40 mrpete Exp $
+// $Id: wmessage.sc 11346 2010-02-17 18:56:14Z secretr $
 $prefwmsc = isset($pref['wmessage_sc']) && $pref['wmessage_sc'];
 if (($prefwmsc && $parm == "header") || (!$prefwmsc && ($parm !='header')) ){
 	return;

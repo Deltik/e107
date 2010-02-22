@@ -1,4 +1,4 @@
-/* $Id: menu.sc,v 1.30 2009/02/05 11:49:46 secretr Exp $ */
+/* $Id: menu.sc 11346 2010-02-17 18:56:14Z secretr $ */
 global $sql;
 global $ns;
 global $eMenuList;

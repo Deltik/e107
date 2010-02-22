@@ -10,10 +10,10 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_plugins/calendar_menu/admin_config.php,v $
-|     $Revision: 1.18 $
-|     $Date: 2009/05/04 19:41:31 $
-|     $Author: bugrain $
+|     $Source: /cvs_backup/e107_0.7/e107_plugins/calendar_menu/admin_config.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 |
 | 02.11.06 - Cache clear option added
 | 10.11.06 - Support for updated templates etc

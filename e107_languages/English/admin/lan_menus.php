@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_languages/English/admin/lan_menus.php,v $
-|     $Revision: 1.10 $
-|     $Date: 2006/04/28 01:08:57 $
-|     $Author: mcfly_e107 $
+|     $Source: /cvs_backup/e107_0.7/e107_languages/English/admin/lan_menus.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 define("MENLAN_1", "Visible to all");

@@ -5,10 +5,10 @@
 |     Steve Dunstan 2001-2002 : jalist@e107.org
 |     Released under the terms and conditions of the GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvsroot/e107/e107_0.7/e107_themes/templates/header_default.php,v $
-|     $Revision: 1.114 $
-|     $Date: 2010/01/09 00:01:47 $
-|     $Author: e107coders $
+|     $Source: /cvs_backup/e107_0.7/e107_themes/templates/header_default.php,v $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 +-----------------------------------------------------------------------------------------------+
 */
 

@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvsroot/e107/e107_0.7/e107_plugins/calendar_menu/calendar_menu.php,v $
-|     $Revision: 1.28 $
-|     $Date: 2007/11/27 21:41:56 $
-|     $Author: e107steved $
+|     $Revision: 11346 $
+|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Author: secretr $
 |
 | 22.10.06 steved - Various tidying up, additional options supported
 | 24.10.06 steved - templated, various cleaning up
@@ -202,9 +202,9 @@ for($cal_c = 1; $cal_c <= $numberdays; $cal_c++)
         $cal_linkut = mktime(0 , 0 , 0 , $cal_dayarray['mon'], $cal_c, $cal_datearray['year']).".one";  // ALways need "one"
         if (array_key_exists($cal_c, $cal_events))
         {
-            $cal_event_icon = e_PLUGIN . "calendar_menu/images/" . $cal_events[$cal_c]['0'];
+            $cal_event_icon = "calendar_menu/images/" . $cal_events[$cal_c]['0'];
             $cal_event_count = count($cal_events[$cal_c]);		// See how many events today
-            if (!empty($cal_events[$cal_c]) && is_file($cal_event_icon))
+            if (!empty($cal_events[$cal_c]) && is_readable(e_PLUGIN.$cal_event_icon))
             {   // Show icon if it exists
 			  $cal_css += 2;		// Gives 3 for today, 4 for other day
 			  if ($cal_event_count == 1)
@@ -215,7 +215,7 @@ for($cal_c = 1; $cal_c <= $numberdays; $cal_c++)
 			  {
                 $title = " title='{$cal_event_count} " . EC_LAN_106 . "' ";
 			  }
-              $cal_img = "<img style='border:0' src='{$cal_event_icon}' alt='' />";
+              $cal_img = "<img style='border:0' src='".e_PLUGIN_ABS.$cal_event_icon."' alt='' />";
 				//height='10' width='10'
 			  if (isset($cal_events[$cal_c]['is_recent']) && $cal_events[$cal_c]['is_recent'])
 			  {
@@ -223,7 +223,7 @@ for($cal_c = 1; $cal_c <= $numberdays; $cal_c++)
 			  }
             }
 		}
-        $cal_text .= $CALENDAR_MENU_DAY_START[$cal_css]."<a {$title} href='" . e_PLUGIN . "calendar_menu/event.php?{$cal_linkut}'>{$cal_img}</a>";
+        $cal_text .= $CALENDAR_MENU_DAY_START[$cal_css]."<a {$title} href='" . e_PLUGIN_ABS."calendar_menu/event.php?{$cal_linkut}'>{$cal_img}</a>";
         $cal_text .= $CALENDAR_MENU_DAY_END[$cal_css];
         $cal_loop++;
         if ($cal_loop == 7)
