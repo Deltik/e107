@@ -10,7 +10,7 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/tags/e107_v07_19_release/e107_plugins/forum/forum_viewtopic.php $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/tags/e107_v07_20_release/e107_plugins/forum/forum_viewtopic.php $
 |     $Id: forum_viewtopic.php 11350 2010-02-20 15:33:53Z mcfly_e107 $
 +----------------------------------------------------------------------------+
 */

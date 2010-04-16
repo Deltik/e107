@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_admin/prefs.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11384 $
+|     $Date: 2010-03-06 18:49:08 -0500 (Sat, 06 Mar 2010) $
+|     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */
 require_once("../class2.php");
@@ -78,7 +78,7 @@ if (isset($_POST['updateprefs']))
 		else
 		{
 		  $value = $pref_limits[$key]['default'];
-		} 
+		}
 	    $pref[$key] = $value;
 	  }
 	  else
@@ -491,7 +491,7 @@ $text .= "<div id='registration' style='display:none; text-align:center'><table 
 	</tr>
 
 	<tr>
-	<td style='width:50%' class='forumheader3'>".PRFLAN_45."<br /><span class='smalltext'>".PRFLAN_46." <a href='http://www.cdt.org/legislation/105th/privacy/coppa.html'>".PRFLAN_94."</a></span></td>
+	<td style='width:50%' class='forumheader3'>".PRFLAN_45."<br /><span class='smalltext'>".PRFLAN_46." <a href='http://www.ftc.gov/privacy/coppafaqs.shtm'>".PRFLAN_94."</a></span></td>
 	<td style='width:50%; text-align:right' class='forumheader3'>
 	<input type='radio' name='use_coppa' value='1'".($pref['use_coppa'] ? " checked='checked'" : "")." /> ".PRFLAN_112."&nbsp;&nbsp;
 	<input type='radio' name='use_coppa' value='0'".(!$pref['use_coppa'] ? " checked='checked'" : "")." /> ".PRFLAN_113."

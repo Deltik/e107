@@ -12,13 +12,18 @@
 |        GNU General Public License (http://gnu.org).
 |
 |		$Source: /cvs_backup/e107_0.7/e107_plugins/content/handlers/content_class.php,v $
-|		$Revision: 11346 $
-|		$Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|		$Author: secretr $
+|		$Revision: 11464 $
+|		$Date: 2010-04-07 16:09:05 -0400 (Wed, 07 Apr 2010) $
+|		$Author: e107steved $
 +---------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
+if (!isset($pref['plug_installed']['content']))
+{
+	header('location:'.e_BASE.'index.php');
+	exit;
+}
 
 global $plugindir, $plugintable, $datequery;
 $plugindir		= e_PLUGIN."content/";
@@ -342,9 +347,9 @@ class content{
 			$content_pref['content_inherit'] = '0';							//inherit options from default preferences
 
 			//CONTENT MANAGER
-			$content_pref['content_manager_approve'] = '0';					//class for managers who can approve submitted items
-			$content_pref['content_manager_personal'] = '0';				//class for managers who can manage personal items
-			$content_pref['content_manager_category'] = '0';				//class for managers who can manage all items in a category
+			$content_pref['content_manager_approve'] = e_UC_NOBODY;					//class for managers who can approve submitted items
+			$content_pref['content_manager_personal'] = e_UC_NOBODY;				//class for managers who can manage personal items
+			$content_pref['content_manager_category'] = e_UC_NOBODY;				//class for managers who can manage all items in a category
 
 			//PAGE RESTRICTION (NOT YET IN USE)
 			$content_pref['content_restrict_managecontent'] = '0';
@@ -1528,6 +1533,36 @@ class content{
 				}
 			}
 			return $message;
+		}
+		
+		
+		function checkPersonalManager()
+		{
+			global $sql, $plugintable, $eArrayStorage;
+			$array = $this->getCategoryTree("", "", TRUE);
+			$catarray = array_keys($array);
+			$qry = "";
+			foreach($catarray as $catid)
+			{
+				$qry .= " content_id='".$catid."' || ";
+			}
+			$qry = substr($qry,0,-3);
+			if($sql -> db_Select($plugintable, "content_id, content_heading, content_pref", $qry))
+			{
+				while($row = $sql -> db_Fetch(MYSQL_ASSOC))
+				{
+					if(isset($row['content_pref']) && $row['content_pref'])
+					{
+						$content_pref = $eArrayStorage->ReadArray($row['content_pref']);
+					}
+					if( (isset($content_pref["content_manager_approve"]) && ($content_pref["content_manager_approve"] != e_UC_PUBLIC) && check_class($content_pref["content_manager_approve"])) 
+					|| (isset($content_pref["content_manager_personal"]) && ($content_pref["content_manager_personal"] != e_UC_PUBLIC) && check_class($content_pref["content_manager_personal"])) 
+					|| (isset($content_pref["content_manager_category"]) && ($content_pref["content_manager_category"] != e_UC_PUBLIC) && check_class($content_pref["content_manager_category"])) )
+					{
+						return TRUE;
+					}
+				}
+			}
 		}
 }	//close class
 

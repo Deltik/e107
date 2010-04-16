@@ -12,9 +12,9 @@
 |        GNU General Public License (http://gnu.org).
 |
 |   $Source: /cvs_backup/e107_0.7/e107_handlers/upload_handler.php,v $
-|   $Revision: 11346 $
-|   $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|   $Author: secretr $
+|   $Revision: 11467 $
+|   $Date: 2010-04-07 17:12:56 -0400 (Wed, 07 Apr 2010) $
+|   $Author: e107steved $
 +---------------------------------------------------------------+
 */
 
@@ -245,16 +245,15 @@ function process_uploaded_files($uploaddir, $fileinfo = FALSE, $options = NULL)
  
 	  if (!$first_error)
 	  {
-		$tpos = strrchr($files['name'][$key], ".");		// Require uploaded files to have an extension
+		$tpos = strrchr($name, '.');		// Require uploaded files to have an extension
 		if ($tpos !== FALSE) 
 		{
-		  $fileext = strtolower($tpos);
-		  $tpos = (($file_status = vet_file($uploadfile, $name, $allowed_filetypes, varset($options['extra_file_types'],FALSE))) === TRUE);
+			$tpos = (($file_status = vet_file($uploadfile, $name, $allowed_filetypes, varset($options['extra_file_types'],FALSE))) === TRUE);
 		}
 		if ($tpos === FALSE)
 		{
 			// File type upload not permitted - error message and abort
-		  $first_error = 251;			// Invent our own error number - file type not permitted
+			$first_error = 251;			// Invent our own error number - file type not permitted
 		}
 	  }
 
@@ -607,14 +606,10 @@ function get_allowed_filetypes($def_file = FALSE, $file_mask = '')
 	$a_filetypes = trim(file_get_contents(e_ADMIN.$def_file));
 	$a_filetypes = explode(',', $a_filetypes);
   }
-  else
-  { // Its an 'override' array
-	$a_filetypes = explode(',', $def_file);
-  }
   foreach ($a_filetypes as $ftype) 
   {
 	$ftype = strtolower(trim(str_replace('.', '', $ftype)));
-	if (!$file_mask || in_array($ftype, $file_array))
+	if ($ftype && (!$file_mask || in_array($ftype, $file_array)))
 	{
 	  $ret[] = $ftype;
 	}

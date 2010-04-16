@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_plugins/log/stats.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11422 $
+|     $Date: 2010-03-13 17:13:55 -0500 (Sat, 13 Mar 2010) $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 require_once("../../class2.php");
@@ -1208,7 +1208,8 @@ class siteStats {
 
 	/* -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
-	function renderMonthly() {
+	function renderMonthly() 
+	{
 		global $sql;
 
 		if(!$entries = $sql -> db_Select("logstats", "*", "log_id REGEXP('^[[:digit:]]+\-[[:digit:]]+$') ORDER BY CONCAT(LEFT(log_id,4), RIGHT(log_id,2)) DESC")) {
@@ -1220,16 +1221,28 @@ class siteStats {
 		$monthTotal = array();
 		$mtotal = 0;
 		$utotal = 0;
-		foreach($array as $info) {
+		foreach($array as $info) 
+		{
 			$date = $info['log_id'];
 			$stats = unserialize($info['log_data']);
 
-			foreach($stats as $key => $total) {
+			/*
+			Used to have to calculate monthly stats by adding the individual page access fields
+			foreach($stats as $key => $total) 
+			{
+				if (!isset($monthTotal[$date]['totalv'])) $monthTotal[$date]['totalv'] = 0;
+				if (!isset($monthTotal[$date]['uniquev'])) $monthTotal[$date]['uniquev'] = 0;
 				$monthTotal[$date]['totalv'] += $total['ttlv'];
 				$monthTotal[$date]['uniquev'] += $total['unqv'];
 				$mtotal += $total['ttlv'];
 				$utotal += $total['unqv'];
 			}
+			*/
+			// Now we store a total, so just use that
+			$monthTotal[$date]['totalv'] = varset($stats['TOTAL']['ttlv'], 0);
+			$monthTotal[$date]['uniquev'] = varset($stats['TOTAL']['unqv'], 0);
+			$mtotal += $monthTotal[$date]['totalv'];
+			$utotal += $monthTotal[$date]['uniquev'];
 		}
 
 		$tmpArray = $this -> arraySort($monthTotal, "totalv");

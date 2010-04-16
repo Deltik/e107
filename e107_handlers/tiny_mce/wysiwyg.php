@@ -4,9 +4,9 @@
 |     e107 website system - Tiny MCE controller file.
 |
 |     $Source: /cvs_backup/e107_0.7/e107_handlers/tiny_mce/wysiwyg.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11387 $
+|     $Date: 2010-03-07 16:04:25 -0500 (Sun, 07 Mar 2010) $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -44,7 +44,7 @@ if(!$tinylang[$lang])
 $mce_plugins = array();
 $mce_plugins[0]	= "table";
 $mce_plugins[1]	= "contextmenu";
-$mce_plugins[2]	= ($pref['smiley_activate']) ? ",emoticons" : "";
+$mce_plugins[2]	= ($pref['smiley_activate']) ? "emoticons" : "";
 $mce_plugins[4]	= (ADMIN) ? "ibrowser" : "image";
 $mce_plugins[5]	= "contextmenu";
 $mce_plugins[6]	= "iespell";

@@ -12,13 +12,18 @@
 |        GNU General Public License (http://gnu.org).
 |
 |		$Source: /cvs_backup/e107_0.7/e107_plugins/content/content_submit.php,v $
-|		$Revision: 11346 $
-|		$Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|		$Author: secretr $
+|		$Revision: 11464 $
+|		$Date: 2010-04-07 16:09:05 -0400 (Wed, 07 Apr 2010) $
+|		$Author: e107steved $
 +---------------------------------------------------------------+
 */
 
 require_once("../../class2.php");
+if (!isset($pref['plug_installed']['content']))
+{
+	header('location:'.e_BASE.'index.php');
+	exit;
+}
 
 $plugindir = e_PLUGIN."content/";
 

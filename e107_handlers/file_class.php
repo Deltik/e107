@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_handlers/file_class.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11410 $
+|     $Date: 2010-03-10 17:19:53 -0500 (Wed, 10 Mar 2010) $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -39,7 +39,7 @@ class e_file
 		}
 		if($omit == 'standard')
 		{
-			$rejectArray = array('^\.$','^\.\.$','^\/$','^CVS$','thumbs\.db','.*\._$','^\.htaccess$','index\.html','null\.txt');
+			$rejectArray = array('^\.$','^\.\.$','^\/$','^CVS$','^\.svn','thumbs\.db','.*\._$','^\.htaccess$','index\.html','null\.txt');
 		}
 		else
 		{
@@ -56,7 +56,7 @@ class e_file
 		{
 			if(is_dir($path.'/'.$file))
 			{
-				if($file != '.' && $file != '..' && $file != 'CVS' && $recurse_level > 0 && $current_level < $recurse_level)
+				if($file != '.' && $file != '..' && $file != 'CVS' && ($file != '.svn') && $recurse_level > 0 && $current_level < $recurse_level)
 				{
 					$xx = $this->get_files($path.'/'.$file, $fmask, $omit, $recurse_level, $current_level+1);
 					$ret = array_merge($ret,$xx);

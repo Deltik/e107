@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/news.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11461 $
+|     $Date: 2010-04-05 17:34:57 -0400 (Mon, 05 Apr 2010) $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
@@ -186,7 +186,7 @@ if ($action == 'cat' || $action == 'all')
 	{
     	$NEWSLISTTITLE = str_replace("{NEWSCATEGORY}",$tp->toHTML($category_name,FALSE,'TITLE'),$NEWSLISTTITLE);
 	}
-	$text .= "<div style='text-align:center;'><a href='".e_SELF."' alt=''>".LAN_NEWS_84."</a></div>";
+	$text .= "<div style='text-align:center;'><a href='".e_SELF."'>".LAN_NEWS_84."</a></div>";
 	ob_start();
 	$ns->tablerender($NEWSLISTTITLE, $text);
 	$cache_data = ob_get_flush();
