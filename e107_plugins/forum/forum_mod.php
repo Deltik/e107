@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_plugins/forum/forum_mod.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11499 $
+|     $Date: 2010-04-25 16:17:51 -0400 (Sun, 25 Apr 2010) $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -65,7 +65,7 @@ function forum_delete_thread($thread_id)
 	global $sql;
 	$thread_id = (int)$thread_id;
 	require_once(e_PLUGIN.'forum/forum_class.php');
-	$f =& new e107forum;
+	$f = new e107forum;
 	$qry = "
 	SELECT t.thread_forum_id, t.thread_parent, t.thread_user, f.forum_sub
 	FROM #forum_t AS t

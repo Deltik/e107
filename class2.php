@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/class2.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11518 $
+|     $Date: 2010-05-03 17:31:18 -0400 (Mon, 03 May 2010) $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 //
@@ -1254,6 +1254,7 @@ function get_user_data($uid, $extra = "")
 			}
 		}
 	}
+	if ($var['user_perms'] == '0.') $var['user_perms'] = '0';		// Handle some legacy situations
 	cachevars("userdata_{$uid}", $var);
 	return $var;
 }

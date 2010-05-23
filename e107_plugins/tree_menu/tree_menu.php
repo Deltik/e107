@@ -1,21 +1,16 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|     /tree_menu.php
-|
-|     ©Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $Source: /cvs_backup/e107_0.7/e107_plugins/tree_menu/tree_menu.php,v $
-|     $Revision: 11470 $
-|     $Date: 2010-04-11 17:50:58 -0400 (Sun, 11 Apr 2010) $
-|     $Author: e107steved $
-+----------------------------------------------------------------------------+
+* e107 website system
+*
+* Copyright (C) 2008-2010 e107 Inc (e107.org)
+* Released under the terms and conditions of the
+* GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+*
+* Tree menu
+*
+* $URL: https://e107.svn.sourceforge.net/svnroot/e107/tags/e107_v07_21_release/e107_plugins/tree_menu/tree_menu.php $
+* $Id: tree_menu.php 11510 2010-05-01 20:46:06Z e107steved $
+*
 */
 
 if (!defined('e107_INIT')) { exit; }
@@ -155,7 +150,7 @@ function setlink($link_name, $link_url, $link_open, $link_description)
 		$link_append = '';
 	}
 
-	$link = "<a style='text-decoration:none' title='".$link_description."'{$link_append}{$href}')\">".$link_name."</a>\n";
+	$link = "<a style='text-decoration:none' title='".$link_description."'{$link_append}{$href} >".$link_name."</a>\n";
 	return $link;
 }
 

@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_plugins/pm/pm_update.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11499 $
+|     $Date: 2010-04-25 16:17:51 -0400 (Sun, 25 Apr 2010) $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -62,7 +62,7 @@ pm_convert();
 function pm_convert()
 {
 	global $sql, $uinfo;
-	$sql2 =& new db;
+	$sql2 = new db;
 	$count = 0;
 	if($sql->db_Select("pm_messages","*"))
 	{
@@ -84,7 +84,7 @@ function pm_convert()
 function pm_convert_uid($name)
 {
 	global $uinfo, $tp;
-	$sqlu =& new db;
+	$sqlu = new db;
 	$name = trim($name);
 	if(!array_key_exists($uinfo[$name]))
 	{

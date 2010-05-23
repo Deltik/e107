@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_handlers/e_parse_class.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11543 $
+|     $Date: 2010-05-20 16:38:06 -0400 (Thu, 20 May 2010) $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -153,11 +153,11 @@ class e_parse
 			{
 				$ret = preg_replace("#\[(php)#i", "&#91;\\1", $ret);
 			}
-
 		}
-
 		return $ret;
 	}
+
+
 
 	function toForm($text, $single_quotes = FALSE, $convert_lt_gt = false)
 	{
@@ -178,16 +178,26 @@ class e_parse
 	}
 
 
-	function post_toForm($text) {
-		if (defined("MAGIC_QUOTES_GPC") && (MAGIC_QUOTES_GPC == TRUE)) {
+
+	function post_toForm($text) 
+	{
+		if (defined("MAGIC_QUOTES_GPC") && (MAGIC_QUOTES_GPC == TRUE)) 
+		{
 			$text = stripslashes($text);
+		}
+		//If user is not allowed to use [php] change to entities
+		if(!check_class($pref['php_bbcode']))
+		{
+			$ret = preg_replace("#\[(php)#i", "&#91;\\1", $ret);
 		}
 		// ensure apostrophes are properly converted, or else the form item could break
 		return str_replace(array( "'", '"'), array("&#039;", "&quot;"), $text);
 	}
 
 
-	function post_toHTML($text, $modifier = true, $extra = '') {
+
+	function post_toHTML($text, $modifier = true, $extra = '') 
+	{
 		/*
 		changes by jalist 30/01/2005:
 		description had to add modifier to /not/ send formatted text on to this->toHTML at end of method, this was causing problems when MAGIC_QUOTES_GPC == TRUE.
@@ -195,11 +205,13 @@ class e_parse
 		global $pref;
 
 		$no_encode = FALSE;
-		if(isset($pref['post_html']) && check_class($pref['post_html'])) {
+		if(isset($pref['post_html']) && check_class($pref['post_html'])) 
+		{
 			$no_encode = true;
 		}
 
-		if (ADMIN === true || $no_encode === true) {
+		if (ADMIN === true || $no_encode === true) 
+		{
 			$search = array('$', '"', "'", '\\', "'&#092;'");
 			$replace = array('&#036;','&quot;','&#039;','&#092;','&#039;');
 			$text = str_replace($search, $replace, $text);
@@ -212,9 +224,11 @@ class e_parse
 				$replace = array('&#092;&#092;','&#039;', '&quot;');
 				$text = str_replace($search, $replace, $text);
 			}
-		} else {
-
-			if (MAGIC_QUOTES_GPC) {
+		} 
+		else 
+		{
+			if (MAGIC_QUOTES_GPC) 
+			{
 				$text = stripslashes($text);
 			}
 		  	$text = htmlentities($text, ENT_QUOTES, CHARSET);
@@ -231,7 +245,10 @@ class e_parse
 		return ($modifier ? $this->toHTML($text, true, $extra) : $text);
 	}
 
-	function parseTemplate($text, $parseSCFiles = TRUE, $extraCodes = "") {
+
+
+	function parseTemplate($text, $parseSCFiles = TRUE, $extraCodes = "") 
+	{
 		// Start parse {XXX} codes
 		if (!is_object($this->e_sc))
 		{
@@ -241,7 +258,8 @@ class e_parse
 		return $this->e_sc->parseCodes($text, $parseSCFiles, $extraCodes);
 		// End parse {XXX} codes
 	}
-	
+
+
 	function simpleParse(&$template, $vars=false, $replaceUnset=true)
 	{
 		if($vars==false)
@@ -1020,11 +1038,15 @@ class e_parse
 	}
 
 
-    function toEmail($text,$posted="",$mods="parse_sc, no_make_clickable")
+    function toEmail($text, $posted = TRUE, $mods="parse_sc, no_make_clickable")
 	{
-		if ($posted === TRUE && MAGIC_QUOTES_GPC)
+		if ($posted === TRUE)
 		{
-			$text = stripslashes($text);
+			if (MAGIC_QUOTES_GPC)
+			{
+				$text = stripslashes($text);
+			}
+			$text = preg_replace("#\[(php)#i", "&#91;\\1", $text);
 		}
 
 	  	$text = (strtolower($mods) != "rawtext") ? $this->replaceConstants($text,"full") : $text;

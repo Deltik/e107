@@ -4,21 +4,21 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvs_backup/e107_0.7/e107_languages/English/lan_user.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11520 $
+|     $Date: 2010-05-04 15:04:37 -0400 (Tue, 04 May 2010) $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 define("PAGE_NAME", "Members");
 
 define("LAN_20", "Error");
 define("LAN_112", "Email Address");
-define("LAN_115", "ICQ Number");
-define("LAN_116", "AIM Address");
-define("LAN_117", "MSN Messenger");
-define("LAN_118", "Birthday");
-define("LAN_119", "Location");
-define("LAN_120", "Signature");
+//define("LAN_115", "ICQ Number");
+//define("LAN_116", "AIM Address");
+//define("LAN_117", "MSN Messenger");
+//define("LAN_118", "Birthday");
+//define("LAN_119", "Location");
+//define("LAN_120", "Signature");
 define("LAN_137", "There is no information for that user as they are not registered at");
 define("LAN_138", "Registered members: ");
 define("LAN_139", "Order: ");
@@ -26,7 +26,7 @@ define("LAN_140", "Registered members");
 define("LAN_141", "No registered members yet.");
 define("LAN_142", "Member");
 define("LAN_143", "[hidden by request]");
-define("LAN_144", "Website URL");
+//define("LAN_144", "Website URL");
 define("LAN_145", "Joined");
 define("LAN_146", "Visits to site since registration");
 define("LAN_147", "Chatbox posts");

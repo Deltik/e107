@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvs_backup/e107_0.7/e107_languages/English/lan_usersettings.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11520 $
+|     $Date: 2010-05-04 15:04:37 -0400 (Tue, 04 May 2010) $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 define("PAGE_NAME", "User Settings");
@@ -23,15 +23,15 @@ define("LAN_106", "That doesn't appear to be a valid email address");
 define("LAN_112", "Email Address: ");
 define("LAN_113", "Hide email address?: ");
 define("LAN_114", "This will prevent your email address from being displayed on site");
-define("LAN_115", "ICQ Number: ");
-define("LAN_116", "AIM Address: ");
-define("LAN_117", "MSN Messenger: ");
-define("LAN_118", "Birthday: ");
-define("LAN_119", "Location: ");
-define("LAN_120", "Signature: ");
-define("LAN_121", "Avatar: ");
-define("LAN_122", "Timezone:");
-define("LAN_144", "Website URL: ");
+//define("LAN_115", "ICQ Number: ");
+//define("LAN_116", "AIM Address: ");
+//define("LAN_117", "MSN Messenger: ");
+//define("LAN_118", "Birthday: ");
+//define("LAN_119", "Location: ");
+//define("LAN_120", "Signature: ");
+//define("LAN_121", "Avatar: ");
+//define("LAN_122", "Timezone:");
+//define("LAN_144", "Website URL: ");
 define("LAN_150", "Settings updated and saved into database.");
 define("LAN_151", "OK");
 define("LAN_152", "New Password: ");
@@ -64,12 +64,12 @@ define("LAN_423", "Please type full address to image");
 define("LAN_424", "Click button to see avatars stored on this site");
 define("LAN_425", "Photograph");
 define("LAN_426", "This will be shown on your profile page");
-define("LAN_427", "Submit ...");
-define("LAN_428", "News Item");
-define("LAN_429", "Link");
-define("LAN_430", "Download");
-define("LAN_431", "Article");
-define("LAN_432", "Review");
+//define("LAN_427", "Submit ...");
+//define("LAN_428", "News Item");
+//define("LAN_429", "Link");
+//define("LAN_430", "Download");
+//define("LAN_431", "Article");
+//define("LAN_432", "Review");
 
 define("LAN_433", "URL to your XUP file");
 define("LAN_434", "what's this?");

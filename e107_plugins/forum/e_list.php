@@ -6,7 +6,7 @@
 * Released under the terms and conditions of the
 * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
 *
-* $URL: https://e107.svn.sourceforge.net/svnroot/e107/tags/e107_v07_20_release/e107_plugins/forum/e_list.php $
+* $URL: https://e107.svn.sourceforge.net/svnroot/e107/tags/e107_v07_21_release/e107_plugins/forum/e_list.php $
 * $Id: e_list.php 11479 2010-04-16 02:35:56Z mcfly_e107 $
 *
 */

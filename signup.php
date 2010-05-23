@@ -3,17 +3,15 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/signup.php,v $
-|     $Revision: 11352 $
-|     $Date: 2010-02-21 11:04:39 -0500 (Sun, 21 Feb 2010) $
-|     $Author: e107steved $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/tags/e107_v07_21_release/signup.php $
+|     $Id: signup.php 11541 2010-05-19 22:01:19Z secretr $
 +----------------------------------------------------------------------------+
 */
 
@@ -385,8 +383,9 @@ if (isset($_POST['register']))
 	if($_POST['password1xup']) $_POST['password1'] = $_POST['password1xup'];
 	if($_POST['password2xup']) $_POST['password2'] = $_POST['password2xup'];
 
-//	Strip most invalid characters now
-	$temp_name = trim(preg_replace('/&nbsp;|\#|\=|\$/', "", strip_tags($_POST['loginname'])));
+//	Strip most invalid characters now %*|/|&nbsp;|\#|\=|\$%
+// another option would be /[^\w\pL\.]/u (non latin words)
+	$temp_name = trim(preg_replace('#[^a-z0-9_\.]#i', "", strip_tags($_POST['loginname'])));
 	if ($temp_name != $_POST['loginname'])
 	{
 		$error_message .= LAN_409."\\n";

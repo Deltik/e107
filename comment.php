@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/comment.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11499 $
+|     $Date: 2010-04-25 16:17:51 -0400 (Sun, 25 Apr 2010) $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
@@ -27,7 +27,7 @@ if (!e_QUERY)
 	exit;
 }
 
-$cobj =& new comment;
+$cobj = new comment;
 
 $temp_query = explode(".", e_QUERY);
 $action = $temp_query[0];			// Usually says 'comment' - may say 'reply'

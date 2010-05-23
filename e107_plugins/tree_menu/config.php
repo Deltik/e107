@@ -1,20 +1,16 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     ©Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $Source: /cvs_backup/e107_0.7/e107_plugins/tree_menu/config.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
-+----------------------------------------------------------------------------+
+* e107 website system
+*
+* Copyright (C) 2008-2010 e107 Inc (e107.org)
+* Released under the terms and conditions of the
+* GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+*
+* Tree menu configuration
+*
+* $URL: https://e107.svn.sourceforge.net/svnroot/e107/tags/e107_v07_21_release/e107_plugins/tree_menu/config.php $
+* $Id: config.php 11510 2010-05-01 20:46:06Z e107steved $
+*
 */
 $eplug_admin = TRUE;
 require_once("../../class2.php");

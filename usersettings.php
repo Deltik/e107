@@ -1,21 +1,18 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $Source: /cvs_backup/e107_0.7/usersettings.php,v $
-|     $Revision: 11409 $
-|     $Date: 2010-03-10 16:38:30 -0500 (Wed, 10 Mar 2010) $
-|     $Author: e107steved $
-+----------------------------------------------------------------------------+
+* e107 website system
+*
+* Copyright (C) 2008-2010 e107 Inc (e107.org)
+* Released under the terms and conditions of the
+* GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+*
+* User settings editing
+*
+* $URL: https://e107.svn.sourceforge.net/svnroot/e107/tags/e107_v07_21_release/usersettings.php $
+* $Id: usersettings.php 11541 2010-05-19 22:01:19Z secretr $
+*
 */
+
 require_once("class2.php");
 require_once(e_HANDLER."ren_help.php");
 require_once(e_HANDLER."user_extended_class.php");
@@ -30,7 +27,8 @@ if (!USER) {
     exit;
 }
 
-if (!ADMIN && e_QUERY && e_QUERY != "update") {
+if ((!ADMIN || !getperms('4')) && e_QUERY && e_QUERY != 'update' )
+{
     header("location:".e_BASE."usersettings.php");
     exit;
 }
@@ -176,18 +174,19 @@ if (isset($_POST['updatesettings']))
 
 // Login Name checks
 	if (isset($_POST['loginname']))
-	{  // Only check if its been edited
-	  $temp_name = trim(preg_replace('/&nbsp;|\#|\=|\$/', "", strip_tags($_POST['loginname'])));
-	  if ($temp_name != $_POST['loginname'])
-	  {
-		$error .= LAN_USET_13."\\n";
-	  }
-	  // Check if login name exceeds maximum allowed length
-	  if (strlen($temp_name) > varset($pref['loginname_maxlength'],30))
-	  {
-	    $error .= LAN_USET_14."\\n";
-	}
-	  $_POST['loginname'] = $temp_name;
+	{  // Only check if its been edited %*|/|&nbsp;|\#|\=|\$%
+		// another option would be /[^\w\pL\.]/u (non latin words)
+		$temp_name = trim(preg_replace('#[^a-z0-9_\.]#i', "", strip_tags($_POST['loginname'])));
+		if ($temp_name != $_POST['loginname'])
+		{
+			$error .= LAN_USET_13."\\n";
+		}
+		// Check if login name exceeds maximum allowed length
+		if (strlen($temp_name) > varset($pref['loginname_maxlength'],30))
+		{
+			$error .= LAN_USET_14."\\n";
+		}
+		$_POST['loginname'] = $temp_name;
 	}
 
 
