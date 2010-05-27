@@ -8,7 +8,7 @@
 *
 * Language file - Theme manager admin
 *
-* $URL: https://e107.svn.sourceforge.net/svnroot/e107/tags/e107_v07_21_release/e107_languages/English/admin/lan_theme.php $
+* $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_theme.php $
 * $Id: lan_theme.php 11512 2010-05-01 20:59:21Z e107steved $
 *
 */define("TPVLAN_1", "You are looking at a preview of the <b>'".PREVIEWTHEMENAME."'</b> theme. It has not been set as the main theme for your site, it has been activated to provide a preview of how the theme looks.<br />To set this theme as your site theme, <a href='".e_ADMIN."theme.php'>return to your theme manager</a> and select 'Set As Site Theme'.<br />To preview more themes please <a href='".e_ADMIN."theme.php'>click here</a>");

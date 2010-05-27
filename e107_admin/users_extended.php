@@ -1,22 +1,23 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     ©Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $Source: /cvs_backup/e107_0.7/e107_admin/users_extended.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
-+----------------------------------------------------------------------------+
+* e107 website system
+*
+* Copyright (C) 2008-2010 e107 Inc (e107.org)
+* Released under the terms and conditions of the
+* GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+*
+* Extended user field management
+*
+* $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/users_extended.php $
+* $Id: users_extended.php 11551 2010-05-24 19:58:43Z mcfly_e107 $
+*
 */
 require_once("../class2.php");
+if(varset($_POST['eu_action']) && !varset($_POST['__referer']))
+{
+	header('location:'.e_BASE.'index.php');
+	exit;
+}
 if (!getperms("4")) {
 	header("location:".e_BASE."index.php");
 	exit;
@@ -109,7 +110,7 @@ if (isset($_POST['add_field']))
 	}
 	$new_values = make_delimited($_POST['user_values']);
 	$new_parms = $tp->toDB($_POST['user_include']."^,^".$_POST['user_regex']."^,^".$_POST['user_regexfail']."^,^".$_POST['user_hide']);
-	
+
 // Check to see if its a reserved field name before adding to database
 	if($ue->user_extended_reserved($ue_field_name))
 	{  // Reserved field name
@@ -131,7 +132,7 @@ if (isset($_POST['add_field']))
 }
 
 
-if (isset($_POST['update_field'])) 
+if (isset($_POST['update_field']))
 {
 	if($_POST['user_type']==4){
     	$_POST['user_values'] = array($_POST['table_db'],$_POST['field_id'],$_POST['field_value'],$_POST['field_order']);
@@ -299,7 +300,7 @@ class users_ext
 		  $i=0;
 		  if(count($extendedList))
 		  {	//	Show current extended fields
-			foreach($extendedList[$cn] as $ext)	
+			foreach($extendedList[$cn] as $ext)
 			{
 			  $fname = "user_".$ext['user_extended_struct_name'];
 			  $uVal = str_replace(chr(1), "", $ext['user_extended_struct_default']);		// Is this right?
@@ -331,6 +332,7 @@ class users_ext
 					<td class='forumheader3' style='width:50px;text-align:center;'>
 					<form method='post' action='".e_SELF."?extended' onsubmit='return confirm(\"".EXTLAN_27."\")'>
 					<a style='text-decoration:none' href='".e_SELF."?editext.{$ext['user_extended_struct_id']}'>".ADMIN_EDIT_ICON."</a>
+					<input type='hidden' name='__referer' value='".POST_REFERER."' />
 					<input type='hidden' name='eu_action' value='delext' />
 					<input type='hidden' name='key' value='{$ext['user_extended_struct_id']},{$ext['user_extended_struct_name']}' />
 					<input type='image' title='".LAN_DELETE."' name='eudel' src='".ADMIN_DELETE_ICON_PATH."' />
@@ -792,9 +794,9 @@ class users_ext
 	}
 
 
-	function show_options($action) 
+	function show_options($action)
 	{
-		if ($action == "") 
+		if ($action == "")
 		{
 			$action = "main";
 		}

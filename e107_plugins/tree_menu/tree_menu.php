@@ -8,7 +8,7 @@
 *
 * Tree menu
 *
-* $URL: https://e107.svn.sourceforge.net/svnroot/e107/tags/e107_v07_21_release/e107_plugins/tree_menu/tree_menu.php $
+* $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/tree_menu/tree_menu.php $
 * $Id: tree_menu.php 11510 2010-05-01 20:46:06Z e107steved $
 *
 */

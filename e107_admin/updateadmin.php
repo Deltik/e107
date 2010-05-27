@@ -1,26 +1,27 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     ©Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $Source: /cvs_backup/e107_0.7/e107_admin/updateadmin.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
-+----------------------------------------------------------------------------+
+* e107 website system
+*
+* Copyright (C) 2008-2010 e107 Inc (e107.org)
+* Released under the terms and conditions of the
+* GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+*
+* Admin password changing
+*
+* $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/updateadmin.php $
+* $Id: updateadmin.php 11551 2010-05-24 19:58:43Z mcfly_e107 $
+*
 */
 require_once('../class2.php');
 $e_sub_cat = 'admin_pass';
 require_once('auth.php');
 
 if (isset($_POST['update_settings'])) {
+	if(!varset($_POST['__referer']))
+	{
+		header('location:'.e_BASE.'index.php');
+		exit;
+	}
 	if ($_POST['ac'] == md5(ADMINPWCHANGE)) {
 		if ($_POST['a_password'] != "" && $_POST['a_password2'] != "" && ($_POST['a_password'] == $_POST['a_password2'])) {
 			if (admin_update($sql -> db_Update("user", "user_password='".md5($_POST['a_password'])."', user_pwchange='".time()."' WHERE user_name='".ADMINNAME."'"), 'update', UDALAN_3." ".ADMINNAME)) {
@@ -56,6 +57,7 @@ if (isset($_POST['update_settings'])) {
 
 	<tr>
 	<td colspan='2' style ='text-align:center'  class='forumheader'>
+	<input type='hidden' name='__referer' value='".POST_REFERER."' />
 	<input class='button' type='submit' name='update_settings' value='".UDALAN_7."' />
 	<input type='hidden' name='ac' value='".md5(ADMINPWCHANGE)."' />
 	</td>

@@ -1,21 +1,18 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     ?Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $Source: /cvs_backup/e107_0.7/e107_admin/prefs.php,v $
-|     $Revision: 11384 $
-|     $Date: 2010-03-06 18:49:08 -0500 (Sat, 06 Mar 2010) $
-|     $Author: mcfly_e107 $
-+----------------------------------------------------------------------------+
+* e107 website system
+*
+* Copyright (C) 2008-2010 e107 Inc (e107.org)
+* Released under the terms and conditions of the
+* GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+*
+* Site preferences editing
+*
+* $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/prefs.php $
+* $Id: prefs.php 11551 2010-05-24 19:58:43Z mcfly_e107 $
+*
 */
+
 require_once("../class2.php");
 include_once(e_HANDLER."userclass_class.php");
 include_once(e_HANDLER."user_extended_class.php");
@@ -46,6 +43,12 @@ if ($_POST['submit_resetdisplaynames'])
 
 if (isset($_POST['updateprefs']))
 {
+	if(!varset($_POST['__referer']))
+	{
+		header('location:'.e_BASE.'index.php');
+		exit;
+	}
+
 	unset($_POST['updateprefs'],$_POST['sitelanguage']);
 
 	$_POST['cookie_name'] = str_replace(array(" ","."), "_", $_POST['cookie_name']);
@@ -157,6 +160,7 @@ $text = "<script type=\"text/javascript\">
 	<div style='text-align:center'>
 	<div style='text-align:center; ".ADMIN_WIDTH."; margin-left: auto; margin-right: auto'>
 	<form method='post' action='".e_SELF."'>
+	<input type='hidden' name='__referer' value='".POST_REFERER."' />
 	<div id='main' style='text-align:center'>
 	<table style='width:100%' class='fborder'>
 	<colgroup>

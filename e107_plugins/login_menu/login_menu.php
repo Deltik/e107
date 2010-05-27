@@ -6,7 +6,7 @@
 * Released under the terms and conditions of the
 * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
 *
-* $URL: https://e107.svn.sourceforge.net/svnroot/e107/tags/e107_v07_21_release/e107_plugins/login_menu/login_menu.php $
+* $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/login_menu/login_menu.php $
 * $Id: login_menu.php 11483 2010-04-17 02:16:51Z mcfly_e107 $
 *
 */

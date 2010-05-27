@@ -8,7 +8,7 @@
 *
 * Private Messenger plugin - main user interface
 *
-* $URL: https://e107.svn.sourceforge.net/svnroot/e107/tags/e107_v07_21_release/e107_plugins/pm/pm.php $
+* $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/pm/pm.php $
 * $Id: pm.php 11495 2010-04-25 07:28:59Z e107steved $
 *
 */

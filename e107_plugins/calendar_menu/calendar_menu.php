@@ -8,7 +8,7 @@
 *
 * Event calendar plugin - calendar menu display
 *
-* $URL: https://e107.svn.sourceforge.net/svnroot/e107/tags/e107_v07_21_release/e107_plugins/calendar_menu/calendar_menu.php $
+* $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/calendar_menu/calendar_menu.php $
 * $Id: calendar_menu.php 11523 2010-05-05 20:04:43Z e107steved $
 *
 */

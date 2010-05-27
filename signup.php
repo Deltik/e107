@@ -10,7 +10,7 @@
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/tags/e107_v07_21_release/signup.php $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/signup.php $
 |     $Id: signup.php 11541 2010-05-19 22:01:19Z secretr $
 +----------------------------------------------------------------------------+
 */

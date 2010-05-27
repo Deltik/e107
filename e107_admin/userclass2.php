@@ -1,22 +1,23 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     ©Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $Source: /cvs_backup/e107_0.7/e107_admin/userclass2.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
-+----------------------------------------------------------------------------+
+* e107 website system
+*
+* Copyright (C) 2008-2010 e107 Inc (e107.org)
+* Released under the terms and conditions of the
+* GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+*
+* Userclass management
+*
+* $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/userclass2.php $
+* $Id: userclass2.php 11551 2010-05-24 19:58:43Z mcfly_e107 $
+*
 */
 require_once("../class2.php");
+if(count($_POST) && !varset($_POST['__referer']))
+{
+	header('location:'.e_BASE.'index.php');
+	exit;
+}
 if (!getperms("4")) {
 	header("location:".e_BASE."index.php");
 	 exit;
@@ -85,9 +86,14 @@ elseif(e_QUERY)
 
 if (isset($_POST['delete']))
 {
+	if(isset($_POST['useraction']) && !varset($_POST['__referer']))
+	{
+		header('location:'.e_BASE.'index.php');
+		exit;
+	}
 	$class_id = intval($_POST['existing']);
 	check_allowed($class_id);
-	if ($_POST['confirm']) 
+	if ($_POST['confirm'])
 	{
 		$sql->db_Delete('userclass_classes', "userclass_id=".$class_id);
 		if ($sql->db_Select('user', 'user_id, user_class', "user_class = '{$class_id}' OR user_class REGEXP('^{$class_id},') OR user_class REGEXP(',{$class_id},') OR user_class REGEXP(',{$class_id}$')"))
@@ -139,7 +145,7 @@ if (isset($_POST['createclass']))
 		$_POST['userclass_description'] = $tp->toDB($_POST['userclass_description']);
 
 		$editclass = intval(varset($_POST['userclass_editclass'], 0));
-		if ($editclass && (getperms('0') || check_class($editclass))) 
+		if ($editclass && (getperms('0') || check_class($editclass)))
 		{
 			$i = 1;
 			while ($sql->db_Select('userclass_classes', '*', "userclass_id='".$i."' ") && $i < 255)
@@ -194,6 +200,7 @@ else
 		}
 	}
 	$text .= "</select>
+		<input type='hidden' name='__referer' value='".POST_REFERER."' />
 		<input class='button' type='submit' name='edit' value='".LAN_EDIT."' />
 		<input class='button' type='submit' name='delete' value='".LAN_DELETE."' />
 		<input type='checkbox' name='confirm' value='1' /><span class='smalltext'> ".UCSLAN_11."</span>
@@ -244,7 +251,10 @@ else
 	";
 }
 
-$text .= "</td></tr></table>";
+$text .= "
+<input type='hidden' name='__referer' value='".POST_REFERER."' />
+</td></tr></table>
+";
 
 if(isset($_POST['edit']))
 {
@@ -330,7 +340,7 @@ $text .= "
 	<td class='fcaption'>".UCSLAN_13."</td>
 	</tr>
 	";
-	
+
 if ($class_total == "0")
 {
 	$text .= "<tr><td colspan='3'>".UCSLAN_7."</td></tr>";

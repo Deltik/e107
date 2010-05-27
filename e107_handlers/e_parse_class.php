@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_handlers/e_parse_class.php,v $
-|     $Revision: 11543 $
-|     $Date: 2010-05-20 16:38:06 -0400 (Thu, 20 May 2010) $
+|     $Revision: 11549 $
+|     $Date: 2010-05-23 17:41:48 -0400 (Sun, 23 May 2010) $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -181,14 +181,15 @@ class e_parse
 
 	function post_toForm($text) 
 	{
+		global $pref;
 		if (defined("MAGIC_QUOTES_GPC") && (MAGIC_QUOTES_GPC == TRUE)) 
 		{
 			$text = stripslashes($text);
 		}
 		//If user is not allowed to use [php] change to entities
-		if(!check_class($pref['php_bbcode']))
+		if ((!defined('USERCLASS')) ||(!check_class($pref['php_bbcode'])))
 		{
-			$ret = preg_replace("#\[(php)#i", "&#91;\\1", $ret);
+			$text = preg_replace("#\[(php)#i", "&#91;\\1", $text);
 		}
 		// ensure apostrophes are properly converted, or else the form item could break
 		return str_replace(array( "'", '"'), array("&#039;", "&quot;"), $text);
