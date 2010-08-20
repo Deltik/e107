@@ -5,7 +5,7 @@
 |
 |     $Source: /cvs_backup/e107_0.7/e107_languages/English/lan_usersettings.php,v $
 |     $Revision: 11553 $
-|     $Date: 2010-05-25 15:30:34 -0400 (Tue, 25 May 2010) $
+|     $Date: 2010-05-25 14:30:34 -0500 (Tue, 25 May 2010) $
 |     $Author: mcfly_e107 $
 +----------------------------------------------------------------------------+
 */

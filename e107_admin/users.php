@@ -9,9 +9,17 @@
 * User settings editing
 *
 * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/users.php $
-* $Id: users.php 11551 2010-05-24 19:58:43Z mcfly_e107 $
+* $Id: users.php 11644 2010-08-01 12:41:17Z e107coders $
 *
 */
+
+// Experimental e-token
+if(isset($_POST['useraction']) || isset($_POST['adduser']) && !isset($_POST['e-token']))
+{
+	// set e-token so it can be processed by class2
+	unset($_POST['e-token']);
+}
+
 require_once("../class2.php");
 
 if (!getperms("4"))
@@ -38,12 +46,6 @@ if (isset($_POST['useraction']) && $_POST['useraction'] == 'usersettings')
 if (isset($_POST['useraction']) && $_POST['useraction'] == 'userclass')
 {
 	header('location:'.e_ADMIN."userclass.php?".$tp -> toDB($_POST['userid'].".".e_QUERY));
-	exit;
-}
-
-if(isset($_POST['useraction']) && !varset($_POST['__referer']))
-{
-	header('location:'.e_BASE.'index.php');
 	exit;
 }
 
@@ -373,23 +375,28 @@ if (isset($_POST['useraction']) && $_POST['useraction'] == 'test')
 }
 
 // ------- Delete User --------------
-if (isset($_POST['useraction']) && $_POST['useraction'] == 'deluser') {
-	if ($_POST['confirm']) {
-		if ($sql->db_Delete("user", "user_id='".$_POST['userid']."' AND user_perms != '0' AND user_perms != '0.'")) {
+if (isset($_POST['useraction']) && $_POST['useraction'] == 'deluser') 
+{
+	if ($_POST['confirm']) 
+	{
+		if ($sql->db_Delete("user", "user_id='".$_POST['userid']."' AND user_perms != '0' AND user_perms != '0.'")) 
+		{
 		   $sql->db_Delete("user_extended", "user_extended_id='".$_POST['userid']."' ");
 		   $e_event->trigger('userdel', intval($_POST['userid']));
 			$user->show_message(USRLAN_10);
 		}
 		if(!$sub_action){ $sub_action = "user_id"; }
 		if(!$id){ $id = "DESC"; }
-  }
-  else
-  {	// Put up confirmation
-		if ($sql->db_Select("user", "*", "user_id='".$_POST['userid']."' ")) {
+	}
+	else
+	{	// Put up confirmation
+		if ($sql->db_Select("user", "*", "user_id='".$_POST['userid']."' ")) 
+		{
 			$row = $sql->db_Fetch();
 			$qry = (e_QUERY) ? "?".e_QUERY : "";
 			$text .= "<form method='post' action='".e_SELF.$qry."'><div style='text-align:center'>\n";
 			$text .= "<div>
+				<input type='hidden' name='e-token' value='".e_TOKEN."' />
 				<input type='hidden' name='useraction' value='deluser' />
 				<input type='hidden' name='userid' value='{$row['user_id']}' /></div>". USRLAN_13."
 				<br /><br /><span class='indent'>#{$row['user_id']} : {$row['user_name']}</span>
@@ -735,7 +742,7 @@ class users
 					<form method='post' action='".e_SELF.$qry."'>
 					<div>
 
-					<input type='hidden' name='__referer' value='".POST_REFERER."'>
+					<input type='hidden' name='e-token' value='".e_TOKEN."' />
 					<input type='hidden' name='userid' value='{$user_id}' />
 					<input type='hidden' name='userip' value='{$user_ip}' />
 					<select name='useraction' onchange='this.form.submit()' class='tbox' style='width:75%'>
@@ -1086,6 +1093,7 @@ class users
 			<tr style='vertical-align:top'>
 			<td colspan='2' style='text-align:center' class='forumheader'>
 			<input class='button' type='submit' name='adduser' value='".USRLAN_60."' />
+			<input type='hidden' name='e-token' value='".e_TOKEN."' />
 			<input type='hidden' name='ac' value='".md5(ADMINPWCHANGE)."' />
 			</td>
 			</tr>

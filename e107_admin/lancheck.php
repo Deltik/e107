@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     ï¿½Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_admin/lancheck.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11613 $
+|     $Date: 2010-07-22 21:53:27 -0500 (Thu, 22 Jul 2010) $
+|     $Author: e107coders $
 |	  With code from Izydor and Lolo.
 +----------------------------------------------------------------------------+
 */
@@ -197,7 +197,7 @@ if(isset($_POST['language_sel']) && isset($_POST['language'])){
 	<td class='fcaption'>".LAN_PLUGIN."</td>
 	<td class='fcaption'>".LAN_CHECK_16."</td>
 	<td class='fcaption'>".$_POST['language']."</td>
-	<td class='fcaption'>".LAN_OPTIONS."</tr>";
+	<td class='fcaption'>".LAN_OPTIONS."</td></tr>";
 
 	foreach($core_plugins as $plugs)
 	{
@@ -214,7 +214,7 @@ if(isset($_POST['language_sel']) && isset($_POST['language'])){
 	<td class='fcaption'>Theme</td>
 	<td class='fcaption'>".LAN_CHECK_16."</td>
 	<td class='fcaption'>".$_POST['language']."</td>
-	<td class='fcaption'>".LAN_OPTIONS."</tr>";
+	<td class='fcaption'>".LAN_OPTIONS."</td></tr>";
 	foreach($core_themes as $them)
 	{
 		if(is_readable(e_THEME.$them))
@@ -240,7 +240,7 @@ function check_core_lanfiles($checklan,$subdir=''){
 	<tr>
 	<td class='fcaption'>".LAN_CHECK_16."</td>
 	<td class='fcaption'>".$_POST['language']." File</td>
-	<td class='fcaption'>".LAN_OPTIONS."</tr>";
+	<td class='fcaption'>".LAN_OPTIONS."</td></tr>";
 
 	$keys = array_keys($English);
 
@@ -285,7 +285,7 @@ function check_core_lanfiles($checklan,$subdir=''){
 				$style = ($er) ? "forumheader2" : "forumheader3";
 				$text .= "<td class='{$style}' style='width:50%'><div class='smalltext'>";
 				$text .= $bom_error . $utf_error;
-				$text .= (!$er && !$bom_error && !$utf_error) ? LAN_OK : $er."<br />";
+				$text .= (!$er && !$bom_error && !$utf_error) ? "<img src='".e_IMAGE."fileinspector/integrity_pass.png' alt='".LAN_OK."' />" : $er."<br />";
 				$text .= "</div></td>";
 			}
 			else
@@ -337,6 +337,8 @@ function get_lan_file_phrases($dir1,$dir2,$file1,$file2){
 			$ret['bom'][$key] = $fname;
 		}
 	}
+	
+
 	return $ret;
 }
 
@@ -357,13 +359,37 @@ function get_comp_lan_phrases($comp_dir,$lang,$depth=0)
 	{
 		if(preg_match($regexp,$f['path'].$f['fname']) && is_file($f['path'].$f['fname']))
 		{
-			$data = file($f['path'].$f['fname']);
+			$allData = file_get_contents($f['path'].$f['fname']);
+			$data = explode("\n",$allData);
+			// $data = file($f['path'].$f['fname']);
 			$relpath = str_replace($comp_dir,"",$f['path']);
+			
+			$key = str_replace(".php","",$relpath.$f['fname']);
+			
 			if(substr($data[0],0,5) != "<?php")
 			{
-				$key = str_replace(".php","",$relpath.$f['fname']);
+				
 				$ret['bom'][$key] = $f['fname'];
 			}
+					
+			$end_of_file = 0;
+						
+			foreach($data as $line)
+			{
+				if($end_of_file == 1)
+				{
+					$ret['bom'][$key] = $f['fname'];
+				}
+										
+				$line = trim($line);
+				if($line == "?>")
+				{
+					$end_of_file = 1;  	
+				}
+			}
+				
+		
+			
 			if($f['path'].$f['fname'] == e_LANGUAGEDIR.$lang."/".$lang.".php")
 			{
 				$f['fname'] = "English.php";  // change the key for the main language file.
@@ -400,6 +426,12 @@ function check_lanfiles($mode,$comp_name,$base_lan="English",$target_lan){
 
 	foreach($keys as $k)
 	{
+		
+		if($k == 'bom')
+		{
+			continue;
+		}
+		
 		$lnk = $k;
 		//echo "klucz ".$k."<br />";
 		$k_check = str_replace("English",$target_lan,$k);
@@ -433,7 +465,7 @@ function check_lanfiles($mode,$comp_name,$base_lan="English",$target_lan){
 			$style = ($er) ? "forumheader2" : "forumheader3";
 			$text .= "<td class='{$style}' style='width:50%'><div class='smalltext'>";
 			$text .= $bom_error . $utf_error;
-			$text .= (!$er && !$bom_error && !$utf_error) ? LAN_OK : $er."<br />";
+			$text .= (!$er && !$bom_error && !$utf_error) ? "<img src='".e_IMAGE."fileinspector/integrity_pass.png' alt='".LAN_OK."' />" : $er."<br />";
 			$text .= "</div></td>";
 		}
 		else
@@ -558,6 +590,9 @@ function fill_phrases_array($data,$type) {
 	$retloc = array();
 
 	foreach($data as $line){
+		
+		$line = str_replace('define (',"define(",$line);
+		
 		//echo "line--> ".$line."<br />";
 		if (strpos($line,"define(") !== FALSE && strpos($line,");") === FALSE)
 		{

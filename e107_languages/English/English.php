@@ -4,8 +4,8 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvs_backup/e107_0.7/e107_languages/English/English.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Revision: 11660 $
+|     $Date: 2010-08-16 11:41:35 -0500 (Mon, 16 Aug 2010) $
 |     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
@@ -55,4 +55,6 @@ define("LAN_ERROR", "Error");
 define("LAN_ANONYMOUS", "Anonymous");
 define("LAN_EMAIL_SUBS", "-email-");
 
+// 0.7.23
+define("LAN_SANITISED", "SANITISED");
 ?>

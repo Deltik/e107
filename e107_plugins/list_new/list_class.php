@@ -12,7 +12,7 @@
 |
 |		$Source: /cvs_backup/e107_0.7/e107_plugins/list_new/list_class.php,v $
 |		$Revision: 11478 $
-|		$Date: 2010-04-15 15:45:56 -0400 (Thu, 15 Apr 2010) $
+|		$Date: 2010-04-15 14:45:56 -0500 (Thu, 15 Apr 2010) $
 |		$Author: e107steved $
 +---------------------------------------------------------------+
 */

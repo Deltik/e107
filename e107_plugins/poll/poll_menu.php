@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_plugins/poll/poll_menu.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11606 $
+|     $Date: 2010-07-19 04:22:39 -0500 (Mon, 19 Jul 2010) $
+|     $Author: nlstart $
 +----------------------------------------------------------------------------+
 */
 
@@ -59,6 +59,7 @@ WHERE  p.poll_type=1{$poll_to_show}
 ORDER BY p.poll_datestamp DESC LIMIT 0,1
 ";
 
-$poll->render_poll($query, $pollType, $pollMode);
+$poll->remove_poll_cookies();
 
+$poll->render_poll($query, $pollType, $pollMode);
 ?>

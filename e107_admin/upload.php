@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     ï¿½Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_admin/upload.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11641 $
+|     $Date: 2010-07-31 03:45:29 -0500 (Sat, 31 Jul 2010) $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 require_once("../class2.php");
@@ -291,7 +291,7 @@ $text = "<div style='text-align:center'>
 	<tr>
 	<td style='width:70%' class='forumheader3'>".UPLLAN_37."<br />
 	<span class='smalltext'>".UPLLAN_38."</span></td>
-	<td style='width:30%' class='forumheader3'>".r_userclass("upload_class", $pref['upload_class'],"off","nobody,public,guest,member,admin,classes")."
+	<td style='width:30%' class='forumheader3'>".r_userclass("upload_class", $pref['upload_class'],"off","nobody,public,guest,member,admin,main,classes")."
 
 	</td>
 	</tr>

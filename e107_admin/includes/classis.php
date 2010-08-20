@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_admin/includes/classis.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11599 $
+|     $Date: 2010-07-16 16:29:06 -0500 (Fri, 16 Jul 2010) $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -52,9 +52,14 @@ if ($sql->db_Select("plugin", "*", "plugin_installflag=1")) {
 	}
 }
 
-ksort($plugin_array, SORT_STRING);
-foreach ($plugin_array as $plug_key => $plug_value) {
+
+if (is_array($plugin_array))
+{
+	ksort($plugin_array, SORT_STRING);
+	foreach ($plugin_array as $plug_key => $plug_value) 
+	{
 	$text .= render_links($plug_value['link'], $plug_value['title'], $plug_value['caption'], $plug_value['perms'], $plug_value['icon'], 'classis');
+	}
 }
 
 $text .= render_clean();

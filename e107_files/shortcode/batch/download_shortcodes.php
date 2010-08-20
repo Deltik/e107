@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_files/shortcode/batch/download_shortcodes.php,v $
-|     $Revision: 11473 $
-|     $Date: 2010-04-13 02:48:55 -0400 (Tue, 13 Apr 2010) $
+|     $Revision: 11573 $
+|     $Date: 2010-06-05 02:47:26 -0500 (Sat, 05 Jun 2010) $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -125,6 +125,10 @@ SC_END
 
 SC_BEGIN DOWNLOAD_LIST_LINK
 global $tp,$row,$pref;
+if($parm == "view")
+{
+	return "<a href='".e_BASE."download.php?view.".$row['download_id']."'>";	
+}
 $agreetext = $tp->toJS($tp->toHTML($pref['agree_text'],FALSE,"parse_sc, defs"));
 	if($row['download_mirror_type']){
 		return ($pref['agree_flag'] ? "<a href='".e_BASE."download.php?mirror.".$row['download_id']."' onclick= \"return confirm('{$agreetext}');\">" : "<a href='".e_BASE."download.php?mirror.".$row['download_id']."' >");

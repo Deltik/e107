@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_plugins/calendar_menu/calendar.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11598 $
+|     $Date: 2010-07-13 17:04:29 -0500 (Tue, 13 Jul 2010) $
+|     $Author: e107steved $
 |
 | 11.11.06 - steved - mods for next CVS release
 |
@@ -25,15 +25,18 @@ require_once("../../class2.php");
 require_once(e_PLUGIN."calendar_menu/calendar_shortcodes.php");
 if (isset($_POST['viewallevents']))
 {
-    Header("Location: " . e_PLUGIN . "calendar_menu/event.php?" . $_POST['enter_new_val']);
+    header("Location: " . e_PLUGIN . "calendar_menu/event.php?" . $_POST['enter_new_val']);
+	exit;
 } 
 if (isset($_POST['doit']))
 {
-    Header("Location: " . e_PLUGIN . "calendar_menu/event.php?ne." . $_POST['enter_new_val']);
+    header("Location: " . e_PLUGIN . "calendar_menu/event.php?ne." . $_POST['enter_new_val']);
+	exit;
 }
 if (isset($_POST['subs']))
 {
-    Header("Location: " . e_PLUGIN . "calendar_menu/subscribe.php");
+    header("Location: " . e_PLUGIN . "calendar_menu/subscribe.php");
+	exit;
 } 
 
 include_lan(e_PLUGIN."calendar_menu/languages/".e_LANGUAGE.".php");

@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,11 +11,19 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_admin/wmessage.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Revision: 11643 $
+|     $Date: 2010-07-31 09:58:45 -0500 (Sat, 31 Jul 2010) $
 |     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
+
+// Experimental e-token
+if(!empty($_POST) && !isset($_POST['e-token']))
+{
+	// set e-token so it can be processed by class2
+	$_POST['e-token'] = '';
+}
+
 require_once("../class2.php");
 if (!getperms("M")) {
 	header("location:".e_BASE."index.php");
@@ -106,7 +114,7 @@ if ($action == "main" || $action == "") {
 		}
 
 		$text .= "</table></div>";
-		$text .= $rs->form_close();
+		$text .= "<input type='hidden' name='e-token' value='".e_TOKEN."' />".$rs->form_close();
 	} else {
 		$text .= "<div style='text-align:center'>".WMLAN_09."</div>";
 	}
@@ -156,7 +164,7 @@ if ($action == "create" || $action == "edit")
 		</td>
 		</tr>
 		<tr><td class='forumheader3'>".WMLAN_03."</td>
-		<td class='forumheader3'>".r_userclass("wm_active", $row['gen_intdata'], "off", "public,guest,nobody,member,admin,classes")."</td></tr>";
+		<td class='forumheader3'>".r_userclass("wm_active", $row['gen_intdata'], "off", "public,guest,nobody,member,admin,main,classes")."</td></tr>";
 
 	$text .= "
 		<tr style='vertical-align:top'>
@@ -164,7 +172,8 @@ if ($action == "create" || $action == "edit")
 
 	$text .= ($sub_action == "edit") ? "<input class='button' type='submit' name='wm_update' value='".LAN_UPDATE."' />" :
 	 "<input class='button' type='submit' name='wm_insert' value='".LAN_CREATE."' />" ;
-	$text .= "<input type='hidden' name='wm_id' value='".$id."' />";
+	$text .= "<input type='hidden' name='wm_id' value='".$id."' />
+	<input type='hidden' name='e-token' value='".e_TOKEN."' />";
 	$text .= "</td>
 		</tr>
 		</table>
@@ -200,6 +209,7 @@ if ($action == "opt") {
 		<tr style='vertical-align:top'>
 		<td colspan='2'  style='text-align:center' class='forumheader'>
 		<input class='button' type='submit' name='updateoptions' value='".LAN_SAVE."' />
+		<input type='hidden' name='e-token' value='".e_TOKEN."' />
 		</td>
 		</tr>
 

@@ -5,7 +5,7 @@
 |
 |     $Source: /cvs_backup/e107_0.7/e107_languages/English/admin/lan_admin.php,v $
 |     $Revision: 11461 $
-|     $Date: 2010-04-05 17:34:57 -0400 (Mon, 05 Apr 2010) $
+|     $Date: 2010-04-05 16:34:57 -0500 (Mon, 05 Apr 2010) $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */

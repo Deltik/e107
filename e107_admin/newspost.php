@@ -3,7 +3,7 @@
 +---------------------------------------------------------------+
 |        e107 website system
 |
-|        ©Steve Dunstan 2001-2002
+|        ï¿½Steve Dunstan 2001-2002
 |        http://e107.org
 |        jalist@e107.org
 |
@@ -11,9 +11,9 @@
 |        GNU General Public License (http://gnu.org).
 |
 |   $Source: /cvs_backup/e107_0.7/e107_admin/newspost.php,v $
-|   $Revision: 11346 $
-|   $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|   $Author: secretr $
+|   $Revision: 11655 $
+|   $Date: 2010-08-13 15:51:40 -0500 (Fri, 13 Aug 2010) $
+|   $Author: e107steved $
 +---------------------------------------------------------------+
 
 */
@@ -450,10 +450,10 @@ class newspost
 	  // ##### Display creation form 
 		global $sql, $rs, $ns, $pref, $tp, $pst, $e107;
 
-	  if ($sub_action == "sn" && !$_POST['preview']) 
-	  {
-		if ($sql->db_Select("submitnews", "*", "submitnews_id=$id", TRUE)) 
+		if ($sub_action == "sn" && !$_POST['preview']) 
 		{
+			if ($sql->db_Select("submitnews", "*", "submitnews_id=$id", TRUE)) 
+			{
 				list($id, $submitnews_name, $submitnews_email, $_POST['news_title'], $submitnews_category, $_POST['data'], $submitnews_datestamp, $submitnews_ip, $submitnews_auth, $submitnews_file) = $sql->db_Fetch();
 
 				if (e_WYSIWYG)
@@ -469,6 +469,8 @@ class newspost
 					$_POST['data'] .= ($submitnews_file)?"\n\n[img]{e_IMAGE}newspost_images/".$submitnews_file."[/img]": "";
 				}
 				$_POST['cat_id'] = $submitnews_category;
+				$_POST['data'] = $tp->dataFilter($_POST['data']);		// Filter any nasties
+				$_POST['news_title'] = $tp->dataFilter($_POST['news_title']);
 			}
 		}
 
@@ -725,7 +727,7 @@ class newspost
 
 		<a style='cursor: pointer' onclick='expandit(this);'>".NWSLAN_84."</a>
 		<div style='display: none;'>
-		".r_userclass_check("news_userclass", $_POST['news_class'], "nobody,public,guest,member,admin,classes,language")."
+		".r_userclass_check("news_userclass", $_POST['news_class'], "nobody,public,guest,member,admin,main,classes,language")."
 		</div>
 		</td></tr>
 
@@ -1077,7 +1079,7 @@ class newspost
 		$text .= " <tr>
 		<td class='forumheader3' style='width:60%'><span class='defaulttext'>".NWSLAN_106."</span></td>
 		<td class='forumheader3' style='width:40%'>
-		".r_userclass("subnews_class", $pref['subnews_class'],"off","nobody,public,guest,member,admin,classes"). "</td></tr>";
+		".r_userclass("subnews_class", $pref['subnews_class'],"off","nobody,public,guest,member,admin,main,classes"). "</td></tr>";
 
 
 		$text .= "
@@ -1179,11 +1181,13 @@ class newspost
 			extract($row);
 			if (substr($submitnews_item,-7,7) == '[/html]') $submitnews_item = substr($submitnews_item,0,-7);
 			if (substr($submitnews_item,0,6) == '[html]') $submitnews_item = substr($submitnews_item,6);
+			$submitnews_item = $tp->dataFilter($submitnews_item);		// Remove any nasties
+			$submitnews_title = $tp->dataFilter($submitnews_title);
 			$text .= "<tr>
 				<td style='width:5%; text-align:center; vertical-align:top' class='forumheader3'>$submitnews_id</td>
 				<td style='width:70%' class='forumheader3'>";
 			$text .= ($submitnews_auth == 0)? "<b>".$tp->toHTML($submitnews_title,FALSE,"emotes_off, no_make_clickable")."</b>": $tp->toHTML($submitnews_title,FALSE,"emotes_off, no_make_clickable");
-			$text .= " [ ".NWSLAN_104." ".$submitnews_name." ".NWSLAN_108." ".date("D dS M y, g:ia", $submitnews_datestamp)."]<br />".$tp->toHTML($submitnews_item)."</td>
+			$text .= " [ ".NWSLAN_104." ".$submitnews_name." ".NWSLAN_108." ".date("D dS M y, g:ia", $submitnews_datestamp)."]<br />".$tp->toHTML($submitnews_item, TRUE, 'USER_BODY')."</td>
 				<td style='width:25%; text-align:right; vertical-align:top' class='forumheader3'>";
 			$buttext = ($submitnews_auth == 0)? NWSLAN_58 :	NWSLAN_103;
 			$text .= $rs->form_open("post", e_SELF."?sn", "myform__{$submitnews_id}", "", "", " onsubmit=\"return jsconfirm('".$tp->toJS(NWSLAN_38." [ID: $submitnews_id ]")."')\"   ")

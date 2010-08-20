@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_plugins/pm/pm_class.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11576 $
+|     $Date: 2010-06-12 16:45:26 -0500 (Sat, 12 Jun 2010) $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -333,17 +333,29 @@ class private_message
 		}
 	}
 
+
 	function pm_getuid($var)
 	{
 		global $sql, $tp;
 		$var = trim($var);
-		if($sql->db_Select("user", "user_id, user_name, user_class, user_email", "user_name LIKE '".$sql -> escape(trim($var), TRUE)."'"))
+		$result = $sql->db_Select("user", "user_id, user_name, user_class, user_email", "user_name LIKE '".$sql -> escape($var, TRUE)."'");
+		if ($result === FALSE) return FALSE;
+		$firstRow = $sql->db_Fetch();
+		if (($result == 1) || ($firstRow['user_name'] == $var))
 		{
-			$row = $sql->db_Fetch();
-			return $row;
+			return $firstRow;		// Finished if exact match, or only one entry found
 		}
-		return FALSE;
+		while ($row = $sql->db_Fetch())
+		{
+			if ($row['user_name'] == $var)
+			{
+				return $row;		// Finished on exact match
+			}
+		}
+		
+		return $firstRow;		// Return the first record returned, for BC
 	}
+
 
 	function get_users_inclass($class)
 	{

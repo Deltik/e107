@@ -9,19 +9,23 @@
 * Admin password changing
 *
 * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/updateadmin.php $
-* $Id: updateadmin.php 11551 2010-05-24 19:58:43Z mcfly_e107 $
+* $Id: updateadmin.php 11643 2010-07-31 14:58:45Z secretr $
 *
 */
+
+// Experimental e-token
+if(!empty($_POST) && !isset($_POST['e-token']))
+{
+	// set e-token so it can be processed by class2
+	$_POST['e-token'] = '';
+}
+
 require_once('../class2.php');
 $e_sub_cat = 'admin_pass';
 require_once('auth.php');
 
-if (isset($_POST['update_settings'])) {
-	if(!varset($_POST['__referer']))
-	{
-		header('location:'.e_BASE.'index.php');
-		exit;
-	}
+if (isset($_POST['update_settings']))
+{
 	if ($_POST['ac'] == md5(ADMINPWCHANGE)) {
 		if ($_POST['a_password'] != "" && $_POST['a_password2'] != "" && ($_POST['a_password'] == $_POST['a_password2'])) {
 			if (admin_update($sql -> db_Update("user", "user_password='".md5($_POST['a_password'])."', user_pwchange='".time()."' WHERE user_name='".ADMINNAME."'"), 'update', UDALAN_3." ".ADMINNAME)) {
@@ -57,7 +61,7 @@ if (isset($_POST['update_settings'])) {
 
 	<tr>
 	<td colspan='2' style ='text-align:center'  class='forumheader'>
-	<input type='hidden' name='__referer' value='".POST_REFERER."' />
+	<input type='hidden' name='e-token' value='".e_TOKEN."' />
 	<input class='button' type='submit' name='update_settings' value='".UDALAN_7."' />
 	<input type='hidden' name='ac' value='".md5(ADMINPWCHANGE)."' />
 	</td>
@@ -70,6 +74,6 @@ if (isset($_POST['update_settings'])) {
 	$ns->tablerender(UDALAN_8." ".ADMINNAME, $text);
 }
 
-require_once('footer.php');
+require_once(e_ADMIN.'footer.php');
 
 ?>

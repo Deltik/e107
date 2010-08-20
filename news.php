@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/news.php,v $
-|     $Revision: 11461 $
-|     $Date: 2010-04-05 17:34:57 -0400 (Mon, 05 Apr 2010) $
+|     $Revision: 11640 $
+|     $Date: 2010-07-31 03:39:19 -0500 (Sat, 31 Jul 2010) $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -362,7 +362,7 @@ switch ($action)
 		AND n.news_render_type<2 AND n.news_datestamp > {$startdate} AND n.news_datestamp < {$enddate} 
 		ORDER BY ".$order." DESC LIMIT ".intval($newsfrom).",".ITEMVIEW;
 
-	$news_total = $sql->db_Count("news", "(*)", "WHERE n.news_class REGEXP '".e_CLASS_REGEXP."' AND NOT (n.news_class REGEXP ".$nobody_regexp.") 
+	$news_total = $sql->db_Count("news AS n", "(*)", "WHERE n.news_class REGEXP '".e_CLASS_REGEXP."' AND NOT (n.news_class REGEXP ".$nobody_regexp.") 
 		AND n.news_start < ".time()." AND (n.news_end=0 || n.news_end>".time().") 
 		AND n.news_render_type<2 AND n.news_datestamp > {$startdate} AND n.news_datestamp < {$enddate}");
 	break;

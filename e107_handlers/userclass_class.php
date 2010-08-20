@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     ï¿½Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_handlers/userclass_class.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11671 $
+|     $Date: 2010-08-20 14:17:07 -0500 (Fri, 20 Aug 2010) $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -157,6 +157,14 @@ function r_userclass_check($fieldname, $curval = '', $optlist = "")
 		$c = (in_array(e_UC_ADMIN, $curArray)) ? " checked='checked' " : "";
 		$ret .= "<label><input type='checkbox' name='{$fieldname}[".e_UC_ADMIN."]' value='1' {$c} /> ".UC_LAN_5."</label><br />";
 	}
+
+	if (strpos($optlist, "main") !== FALSE)
+	{
+		$c = (in_array(e_UC_MAINADMIN, $curArray)) ? " checked='checked' " : "";
+		$ret .= "<label><input type='checkbox' name='{$fieldname}[".e_UC_MAINADMIN."]' value='1' {$c} /> ".UC_LAN_6."</label><br />";
+	}	
+	
+	
 
 	if (!$optlist || strpos($optlist, "readonly") !== FALSE)
 	{

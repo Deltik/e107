@@ -1,4 +1,4 @@
-//<? $Id: languagelinks.sc 11346 2010-02-17 18:56:14Z secretr $
+//<? $Id: languagelinks.sc 11579 2010-06-18 18:17:07Z e107coders $
 global $pref;
 if( ! defined('LANGLINKS_SEPARATOR'))
 {
@@ -32,7 +32,7 @@ foreach($languageList as $languageFolder)
 
 	if(varset($pref['multilanguage_subdomain']))
 	{
-		$code = ($languageFolder == $pref['sitelanguage']) ? 'www.' : $code;
+		$code = ($languageFolder == $pref['sitelanguage']) ? 'www' : $code;
 		$link = (e_QUERY)
 		        ? str_replace($_SERVER['HTTP_HOST'], $code.'.'.e_DOMAIN, e_SELF).'?'.e_QUERY
 		        : str_replace($_SERVER['HTTP_HOST'], $code.'.'.e_DOMAIN, e_SELF);

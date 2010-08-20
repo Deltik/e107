@@ -11,11 +11,18 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_plugins/forum/forum_post.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Revision: 11643 $
+|     $Date: 2010-07-31 09:58:45 -0500 (Sat, 31 Jul 2010) $
 |     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
+
+// Experimental e-token
+if(isset($_POST['userlogin']) && !isset($_POST['e-token']))
+{
+	// set e-token so it can be processed by class2
+	$_POST['e-token'] = '';
+}
 
 require_once("../../class2.php");
 $e_wysiwyg = "post";
@@ -549,7 +556,7 @@ function loginf() {
 		<input class='button' type='submit' name='userlogin' value='".LAN_10."' />\n
 		<br />
 		<input type='checkbox' name='autologin' value='1' /> ".LAN_11."
-		<br /><br />
+		<input type='hidden' name='e-token' value='".e_TOKEN."' /><br /><br />
 		[ <a href='".e_SIGNUP."'>".LAN_174."</a> ]<br />[ <a href='".e_BASE."fpw.php'>".LAN_212."</a> ]
 		</p>
 		</form>

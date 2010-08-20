@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     ï¿½Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_admin/links.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11617 $
+|     $Date: 2010-07-23 18:16:29 -0500 (Fri, 23 Jul 2010) $
+|     $Author: e107coders $
 |
 | links.php?debug shows stored data for each link after name (before constant conversion)
 +----------------------------------------------------------------------------+
@@ -189,7 +189,7 @@ if($action == "sublinks"){
   $linkpost->show_sublink_generator();
 }
 
-require_once('footer.php');
+require_once(e_ADMIN.'footer.php');
 exit;
 
 // End ---------------------------------------------------------------------------------------------------------------------------------------------------------------------

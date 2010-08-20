@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_handlers/user_select_class.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11642 $
+|     $Date: 2010-07-31 04:27:53 -0500 (Sat, 31 Jul 2010) $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -182,7 +182,9 @@ class user_select {
 			<table style='width:100%' class='fborder'>
 			<tr>
 			<td class='forumheader3' style='text-align: center'><input type='text' name='srch' class='tbox' value='".$tp -> post_toForm($_POST['srch'])."' size='40'>
-			<input class='button' type='submit' name='dosrch' class='tbox' value='".US_LAN_6."' /></td>
+			<input class='button' type='submit' name='dosrch' class='tbox' value='".US_LAN_6."' />
+			<input type='hidden' name='e-token' value='".e_TOKEN."' />
+			</td>
 			</tr>
 			</table>
 			</form>

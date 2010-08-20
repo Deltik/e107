@@ -9,15 +9,19 @@
 * Extended user field management
 *
 * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/users_extended.php $
-* $Id: users_extended.php 11551 2010-05-24 19:58:43Z mcfly_e107 $
+* $Id: users_extended.php 11643 2010-07-31 14:58:45Z secretr $
 *
 */
-require_once("../class2.php");
-if(varset($_POST['eu_action']) && !varset($_POST['__referer']))
+
+// Experimental e-token
+if(isset($_POST['eu_action']) && !isset($_POST['e-token']))
 {
-	header('location:'.e_BASE.'index.php');
-	exit;
+	// set e-token so it can be processed by class2
+	$_POST['e-token'] = '';
 }
+
+require_once("../class2.php");
+
 if (!getperms("4")) {
 	header("location:".e_BASE."index.php");
 	exit;
@@ -332,7 +336,7 @@ class users_ext
 					<td class='forumheader3' style='width:50px;text-align:center;'>
 					<form method='post' action='".e_SELF."?extended' onsubmit='return confirm(\"".EXTLAN_27."\")'>
 					<a style='text-decoration:none' href='".e_SELF."?editext.{$ext['user_extended_struct_id']}'>".ADMIN_EDIT_ICON."</a>
-					<input type='hidden' name='__referer' value='".POST_REFERER."' />
+					<input type='hidden' name='e-token' value='".e_TOKEN."' />
 					<input type='hidden' name='eu_action' value='delext' />
 					<input type='hidden' name='key' value='{$ext['user_extended_struct_id']},{$ext['user_extended_struct_name']}' />
 					<input type='image' title='".LAN_DELETE."' name='eudel' src='".ADMIN_DELETE_ICON_PATH."' />
@@ -905,7 +909,7 @@ function show_predefined()
 	}
 	$txt .= "</table></form>";
 	$ns->tablerender(EXTLAN_56, $txt);
-	require_once('footer.php');
+	require_once(e_ADMIN.'footer.php');
 	exit;
 }
 

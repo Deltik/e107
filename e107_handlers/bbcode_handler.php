@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_handlers/bbcode_handler.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Revision: 11660 $
+|     $Date: 2010-08-16 11:41:35 -0500 (Mon, 16 Aug 2010) $
 |     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
@@ -34,7 +34,7 @@ class e_bbcode
 		'url', 'quote', 'left', 'right',
 		'b', 'justify', 'file', 'stream',
 		'textarea', 'list', 'php', 'time',
-		'spoiler', 'hide'
+		'spoiler', 'hide', 'youtube', 'sanitised'
 		);
 
 		foreach($core_bb as $c)

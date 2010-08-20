@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_plugins/poll/poll_class.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11606 $
+|     $Date: 2010-07-19 04:22:39 -0500 (Mon, 19 Jul 2010) $
+|     $Author: nlstart $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -29,6 +29,27 @@ class poll
 
 	var $pollRow;
 	var $pollmode;
+
+	function remove_poll_cookies()
+	{	// Remove unused poll cookies. See: http://krijnhoetmer.nl/stuff/javascript/maximum-cookies/ Thanks Fanat1k - bugtracker #4983
+		$arr_polls_cookies = array();
+		foreach($_COOKIE as $cookie_name => $cookie_val)
+		{	// Collect poll cookies
+			list($str, $int) = explode('_', $cookie_name);
+			if (($str == 'poll') && is_numeric($int)) 
+			{	// Yes, its poll's cookie
+				$arr_polls_cookies[] = $int;
+			}
+		}
+		if (count($arr_polls_cookies) > 1) 
+		{	// Remove all except first (assumption: there is always only one active poll)
+			rsort($arr_polls_cookies);
+			for($i = 1; $i < count($arr_polls_cookies); $i++)
+			{
+				cookie("poll_{$arr_polls_cookies[$i]}", "", (time() - 2592000));
+			}
+		}
+	}
 
 	function delete_poll($existing)
 	{

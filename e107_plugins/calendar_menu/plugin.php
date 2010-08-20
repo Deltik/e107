@@ -12,7 +12,7 @@
 |
 |     $Source: /cvs_backup/e107_0.7/e107_plugins/calendar_menu/plugin.php,v $
 |     $Revision: 11346 $ - with mods to hopefully trigger upgrade to new version
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Date: 2010-02-17 12:56:14 -0600 (Wed, 17 Feb 2010) $
 |     $Author: secretr $
 |
 | 22.07.06 - Mods for V3.6 upgrade, including log directory

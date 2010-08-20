@@ -4,8 +4,8 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvs_backup/e107_0.7/e107_languages/English/lan_news.php,v $
-|     $Revision: 11465 $
-|     $Date: 2010-04-07 16:36:23 -0400 (Wed, 07 Apr 2010) $
+|     $Revision: 11560 $
+|     $Date: 2010-05-31 16:04:50 -0500 (Mon, 31 May 2010) $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -38,8 +38,8 @@ define('LAN_NEWS_87', 'Newer News');
 define("LAN_NEWS_462", "No news items for specified month");
 
 // Following used by alt_news
-define("LAN_99", 'Comments');
-define("LAN_100", 'On');
-define("LAN_307", 'Total posts in this category: ');
+define('LAN_NEWS_99', 'Comments');
+define('LAN_NEWS_100', 'On');
+define('LAN_NEWS_307', 'Total posts in this category: ');
 
 ?>

@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     ï¿½Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_admin/frontpage.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11641 $
+|     $Date: 2010-07-31 03:45:29 -0500 (Sat, 31 Jul 2010) $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -108,7 +108,7 @@ class frontpage {
 		<td style='width: 50%' class='forumheader3'>
 		".$rs -> form_radio('type', 'all_users', (isset($pref['frontpage']['all']) ? TRUE : FALSE))." ".FRTLAN_31."&nbsp;
 		".$rs -> form_radio('type', 'user_class', (isset($pref['frontpage']['all']) ? FALSE : TRUE))." ".FRTLAN_32.":
-		".r_userclass('class', '', 'off', 'guest,member,admin,classes')."</td>
+		".r_userclass('class', '', 'off', 'guest,member,admin, main, classes')."</td>
 		</tr>";
 
 		$text .= "<tr style='vertical-align:top'>
@@ -261,6 +261,6 @@ class frontpage {
 	}
 }
 
-require_once('footer.php');
+require_once(e_ADMIN.'footer.php');
 
 ?>

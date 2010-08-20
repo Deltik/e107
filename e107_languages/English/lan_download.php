@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvs_backup/e107_0.7/e107_languages/English/lan_download.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11661 $
+|     $Date: 2010-08-16 16:26:28 -0500 (Mon, 16 Aug 2010) $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 define("PAGE_NAME", "Downloads");
@@ -98,6 +98,12 @@ define("LAN_dl_75", "no image available ");
 define("LAN_dl_76", "Go to page");
 define("LAN_dl_77", "Downloads");		// Intentional duplicate - some languages need it to be different. This is for number of downloads
 
-define('LAN_dl_78', 'That download has been disabled or discontinued. Please check in the --LINK--downloads</a> area for a more recent version.'); 
+//0.7.23
+define("LAN_dl_78", "That download has been disabled or discontinued. Please check in the [downloads] area for a more recent version."); 
+define("LAN_dl_79", "Please wait a few moments before [downloading again].");
+define("LAN_dl_80", "Please enable cookies and [try again].");
+define("LAN_dl_81", "Cookies Required");
+define("LAN_dl_82", "Please Wait");
+
 
 ?>

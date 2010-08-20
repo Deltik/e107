@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $Source: /cvs_backup/e107_0.7/e107_languages/English/admin/lan_language.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11613 $
+|     $Date: 2010-07-22 21:53:27 -0500 (Thu, 22 Jul 2010) $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -33,6 +33,9 @@ define("LANG_LAN_20", "Enter one domain per line. eg. mydomain.com etc. or leave
 
 define("LANG_LAN_21", "Language Tools");
 
+define("LANG_LAN_23", "Create Language-Pack (zip)");
+define("LANG_LAN_24", "Generate");
 
-
+define("LANG_LAN_AGR", "Note: By using these tools you agree to share your language pack(s) with the e107 community.");
+define("LANG_LAN_EML", "Please email your language pack to:");
 ?>

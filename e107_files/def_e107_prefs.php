@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_files/def_e107_prefs.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11656 $
+|     $Date: 2010-08-14 03:16:51 -0500 (Sat, 14 Aug 2010) $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -134,7 +134,7 @@ City, State, Country
   'make_clickable' => '0',
   'track_online' => '1',
   'emotepack' => 'default',
-  'xup_enabled' => '1',
+  'xup_enabled' => '0',
   'mailer' => 'php',
   'ue_upgrade' => '1',
   'search_highlight' => '1',
@@ -144,6 +144,7 @@ City, State, Country
   'plug_sc' => ':featurebox',
   'auth_method' => '',
   'post_html' => '254',
+  'post_script' => '254',
   'redirectsiteurl' => '0',
   'admin_alerts_uniquemenu' => '0',
   'null' => '',

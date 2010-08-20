@@ -4,21 +4,22 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     Copyright (c) e107 Inc. 2008-2010
 |     http://e107.org
-|     jalist@e107.org
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/request.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11661 $
+|     $Date: 2010-08-16 16:26:28 -0500 (Mon, 16 Aug 2010) $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
 // ********************************** SEE HIGHLIGHTED AND NUMBERED QUERIES *****************************
+
+
 
 require_once("class2.php");
 include_lan(e_LANGUAGEDIR.e_LANGUAGE."/lan_download.php");
@@ -28,6 +29,41 @@ if (!e_QUERY || isset($_POST['userlogin']))
 	header("location: {$e107->base_path}");
 	exit();
 }
+
+// ---------------------- Experimental ----------
+
+$req_cookie = 'e-request_'.md5($_SERVER['SERVER_ADDR']);
+
+if(isset($_COOKIE[$req_cookie]))
+{
+	require_once(HEADERF);
+	$srch = array("[", "]");
+	$repl = array("<a href='".$_SERVER['REQUEST_URI']."'>", "</a>");
+	$text = str_replace($srch,$repl,LAN_dl_79);
+	
+	$ns->tablerender(LAN_dl_82,$text);
+	require_once(FOOTERF);
+	exit();
+}
+
+if(varset($pref['download_nomultiple'])==1)
+{
+	if(!setcookie($req_cookie, 1, time() + 60, "/"))
+	{
+		require_once(HEADERF);
+		$srch = array("[", "]");
+		$repl = array("<a href='".$_SERVER['REQUEST_URI']."'>", "</a>");
+		$text = str_replace($srch,$repl,LAN_dl_80);
+		$ns->tablerender(LAN_dl_81, $text);
+		require_once(FOOTERF);
+		exit();
+	}
+}
+
+// ----------------------
+
+
+
 
 $id = FALSE;
 if (!is_numeric(e_QUERY)) 
@@ -142,7 +178,11 @@ if ($type == "file")
 			if ($row['download_active'] == 0)
 			{  // Inactive download - don't allow
 				require_once(HEADERF);
-				$ns -> tablerender(LAN_dl_61, "<div style='text-align:center'>".str_replace('--LINK--',"<a href='".e_HTTP.'download.php'."'>",LAN_dl_78).'</div>');
+				
+				$srch = array('--LINK--','[',']');
+				$repl = array("<a href='".e_HTTP.'download.php'."'>","<a href='".e_HTTP.'download.php'."'>","</a>");
+								
+				$ns -> tablerender(LAN_dl_61, "<div style='text-align:center'>".str_replace($srch,$repl,LAN_dl_78).'</div>');
 				require_once(FOOTERF);
 				exit();
 			}

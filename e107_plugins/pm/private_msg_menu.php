@@ -11,14 +11,20 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_plugins/pm/private_msg_menu.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11598 $
+|     $Date: 2010-07-13 17:04:29 -0500 (Tue, 13 Jul 2010) $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
 
 global $sysprefs, $pref, $pm_prefs;
+if (!isset($pref['plug_installed']['pm']))
+{
+	header('location:'.e_BASE.'index.php');
+	exit;
+}
+
 if(!isset($pm_prefs['perpage']))
 {
 	$pm_prefs = $sysprefs->getArray('pm_prefs');

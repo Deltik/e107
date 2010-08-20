@@ -3,17 +3,17 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|	  Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|	  Steve Dunstan 2001-2002 (jalist@e107.org)
+|
+|	  Copyright (C) 2008-2010 e107 Inc. (e107.org)
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/class2.php,v $
-|     $Revision: 11518 $
-|     $Date: 2010-05-03 17:31:18 -0400 (Mon, 03 May 2010) $
-|     $Author: e107steved $
+|     $Revision: 11668 $
+|     $Date: 2010-08-20 04:20:48 -0500 (Fri, 20 Aug 2010) $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 //
@@ -44,6 +44,12 @@
 //
 $eTimingStart = microtime();					// preserve these when destroying globals in step C
 $oblev_before_start = ob_get_level();
+
+// Filter common bad agents / queries. 
+if(strpos($_SERVER['QUERY_STRING'],"=http")!==FALSE || strpos($_SERVER["HTTP_USER_AGENT"],"libwww-perl")!==FALSE)
+{
+	exit();
+}
 
 //
 // B: Remove all output buffering
@@ -144,6 +150,13 @@ unset($inc_path);
 // F: Grab e107_config, get directory paths and create $e107 object
 //
 @include_once(realpath(dirname(__FILE__).'/e107_config.php'));
+
+if(isset($CLASS2_INCLUDE) && ($CLASS2_INCLUDE!=''))
+{ 
+	 require_once(realpath(dirname(__FILE__).'/'.$CLASS2_INCLUDE)); 
+}
+
+
 if(!isset($ADMIN_DIRECTORY))
 {
   // e107_config.php is either empty, not valid or doesn't exist so redirect to installer..
@@ -166,6 +179,27 @@ if (strpos($_SERVER['PHP_SELF'], "trackback") === false) {
 		}
 	}
 }
+
+// Experimental Code Below.
+// e-Token START
+
+session_start();
+session_regenerate_id(true); // true don't work on php4 - so time to move on people!	
+
+
+
+$token_name = 'e107_token_'.md5($_SERVER['HTTP_HOST'].e_HTTP);
+if(isset($_POST['e-token']) && ($_POST['e-token'] != $_SESSION[$token_name]) && $_POST['ajax_used']!=1)
+{
+	// echo "<br />Session token=".$_SESSION[$token_name];
+	// prevent dead loop, save server resources
+	// echo "<pre>".print_r($_POST,TRUE)."</pre>";
+	die('Access denied');
+}	
+	
+define('e_TOKEN', uniqid(md5(rand()),true));
+$_SESSION[$token_name] = e_TOKEN;
+// e-Token END
 
 //
 // G: Retrieve Query data from URI
@@ -408,10 +442,10 @@ if (!$pref['cookie_name']) {
 }
 
 // start a session if session based login is enabled
-if ($pref['user_tracking'] == "session")
-{
-	session_start();
-}
+// if ($pref['user_tracking'] == "session")
+//{
+//	session_start(); // start the session, even if it won't be used for login-tracking. 
+//}
 
 define("e_SELF", ($pref['ssl_enabled'] == '1' ? "https://".$_SERVER['HTTP_HOST'] : "http://".$_SERVER['HTTP_HOST']) . ($_SERVER['PHP_SELF'] ? $_SERVER['PHP_SELF'] : $_SERVER['SCRIPT_FILENAME']));
 
@@ -811,10 +845,10 @@ if (e_QUERY == 'logout')
 	$udata=(USER === TRUE) ? USERID.".".USERNAME : "0";
 	$sql->db_Update("online", "online_user_id = '0', online_pagecount=online_pagecount+1 WHERE online_user_id = '{$udata}' LIMIT 1");
 
-	if ($pref['user_tracking'] == 'session')
+	//if ($pref['user_tracking'] == 'session')
 	{
-		session_destroy();
 		$_SESSION[$pref['cookie_name']]='';
+		session_destroy();
 	}
 
 	cookie($pref['cookie_name'], '', (time() - 2592000));
@@ -1577,20 +1611,19 @@ function init_session() {
 
 	define('USERCLASS_LIST', class_list());
 	define('e_CLASS_REGEXP', "(^|,)(".str_replace(",", "|", USERCLASS_LIST).")(,|$)");
-
-	if(USER)
-	{
-		define('POST_REFERER', md5($currentUser['user_password'].$currentUser['user_lastvisit'].USERCLASS_LIST));
-	}
-	else
-	{
-		define('POST_REFERER', '');
-	}
-	if(isset($_POST['__referer']) && $_POST['__referer'] != POST_REFERER) {
-		header('location:'.e_BASE.'index.php');
-		exit;
-	}
-
+//
+//	if(USER)
+//	{
+//		define('POST_REFERER', md5($currentUser['user_password'].$currentUser['user_lastvisit'].USERCLASS_LIST));
+//	}
+//	else
+//	{
+//		define('POST_REFERER', '');
+//	}
+//	if(isset($_POST['__referer']) && $_POST['__referer'] != POST_REFERER) {
+//		header('location:'.e_BASE.'index.php');
+//		exit;
+//	}
 }
 
 $sql->db_Mark_Time('Start: Go online');

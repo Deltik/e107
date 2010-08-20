@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/fpw.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11570 $
+|     $Date: 2010-06-04 13:16:58 -0500 (Fri, 04 Jun 2010) $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
@@ -52,7 +52,7 @@ if ($pref['membersonly_enabled'])
 		} 
 		else 
 		{
-			require_once(e_BASE.$THEMES_DIRECTORY."templates/fpw_template.php");
+			require_once(e_THEME."templates/fpw_template.php");
 		}
 	}
 	$HEADER = preg_replace("/\{(.*?)\}/e", '$\1', $FPW_TABLE_HEADER);
@@ -206,7 +206,7 @@ if (!$FPW_TABLE)
 	} 
 	else 
 	{
-		require_once(e_BASE.$THEMES_DIRECTORY."templates/fpw_template.php");
+		require_once(e_THEME."templates/fpw_template.php");
 	}
 }
 $text = preg_replace("/\{(.*?)\}/e", '$\1', $FPW_TABLE);

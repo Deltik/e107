@@ -11,11 +11,19 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_plugins/forum/forum_uploads.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Revision: 11643 $
+|     $Date: 2010-07-31 09:58:45 -0500 (Sat, 31 Jul 2010) $
 |     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
+
+// Experimental e-token
+if(!empty($_POST) && !isset($_POST['e-token']))
+{
+	// set e-token so it can be processed by class2
+	$_POST['e-token'] = '';
+}
+
 require_once("../../class2.php");
 
 if(!USER)
@@ -102,7 +110,9 @@ if(is_array($fileList))
 			}
 			else
 			{
-				$txt .= "<td class='forumheader3'>".FRMUP_8." <input class='button' type='submit' name='delete[{$finfo['fname']}]' value='".FRMUP_10."' /></td>";
+				$txt .= "<td class='forumheader3'>".FRMUP_8." <input class='button' type='submit' name='delete[{$finfo['fname']}]' value='".FRMUP_10."' />
+				<input type='hidden' name='e-token' value='".e_TOKEN."' />
+				</td>";
 			}
 			$txt .= "</tr>";
 		}

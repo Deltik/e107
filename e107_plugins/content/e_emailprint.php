@@ -1,11 +1,11 @@
 <?php
-/* $Id: e_emailprint.php 11346 2010-02-17 18:56:14Z secretr $ */
+/* $Id: e_emailprint.php 11581 2010-06-20 20:05:23Z e107steved $ */
 
 if (!defined('e107_INIT')) { exit; }
 
 function print_item($id)
 {
-		global $tp;
+		global $tp, $pref;
 		global $content_pref, $mainparent, $aa, $row, $content_image_path;
 		$con = new convert;
 
@@ -76,7 +76,7 @@ function email_item($id)
 
 
 function print_item_pdf($id){
-	global $tp, $content_shortcodes;
+	global $tp, $pref, $content_shortcodes;
 	global $CONTENT_PRINT_IMAGES, $row, $content_image_path, $content_pref, $mainparent, $eArrayStorage;
 
 	//in this section you decide what to needs to be output to the pdf file

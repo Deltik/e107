@@ -13,7 +13,7 @@
 |
 |		$Source: /cvs_backup/e107_0.7/e107_plugins/content/handlers/content_db_class.php,v $
 |		$Revision: 11464 $
-|		$Date: 2010-04-07 16:09:05 -0400 (Wed, 07 Apr 2010) $
+|		$Date: 2010-04-07 15:09:05 -0500 (Wed, 07 Apr 2010) $
 |		$Author: e107steved $
 +---------------------------------------------------------------+
 */

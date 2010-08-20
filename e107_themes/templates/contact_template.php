@@ -1,5 +1,5 @@
 <?php
-// $Id: contact_template.php 11346 2010-02-17 18:56:14Z secretr $
+// $Id: contact_template.php 11633 2010-07-30 09:28:28Z e107coders $
 
 if (!defined('e107_INIT')) { exit; }
 if (!defined("USER_WIDTH")){ define("USER_WIDTH","width:97%"); }
@@ -55,6 +55,7 @@ if(!isset($CONTACT_FORM))
 	{CONTACT_IMAGECODE_INPUT}
 	<tr><td>
 	<input type='submit' name='send-contactus' value=\"".LANCONTACT_08."\" class='button' />
+	<input type='hidden' name='e-token' value=\"".e_TOKEN."\" />
 	</td></tr>
 	</table>
 	</form>";

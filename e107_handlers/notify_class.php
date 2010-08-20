@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     ï¿½Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_handlers/notify_class.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11619 $
+|     $Date: 2010-07-23 18:36:40 -0500 (Fri, 23 Jul 2010) $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -36,7 +36,7 @@ class notify {
 		include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/lan_notify.php');
 	}
 
-	function send($id, $subject, $message)
+	function send($id, $subject, $message) 
 	{
 		global $sql, $tp;
 		e107_require_once(e_HANDLER.'mail.php');
@@ -132,12 +132,24 @@ function notify_subnews($data) {
 
 function notify_newspost($data) {
 	global $nt, $tp;
+	
+	if(varset($data['news_userclass'][255])) // No notification when set to 'Nobody'. 
+	{
+		return;
+	}
+	
 	$message = $tp->toDB('<b>'.$data['news_title'].'</b><br /><br />'.$data['news_summary'].'<br /><br />'.$data['data'].'<br /><br />'.$data['news_extended']);
 	$nt -> send('newspost', $data['news_title'], $message);
 }
 
 function notify_newsupd($data) {
 	global $nt, $tp;
+
+	if(varset($data['news_userclass'][255])) // No notification when set to 'Nobody'. 
+	{
+		return;
+	}
+
 	$message = $tp->toDB('<b>'.$data['news_title'].'</b><br /><br />'.$data['news_summary'].'<br /><br />'.$data['data'].'<br /><br />'.$data['news_extended']);
 	$nt -> send('newsupd', NT_LAN_NU_1.': '.$data['news_title'], $message);
 }

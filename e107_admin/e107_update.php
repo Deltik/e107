@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_admin/e107_update.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11598 $
+|     $Date: 2010-07-13 17:04:29 -0500 (Tue, 13 Jul 2010) $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 require_once("../class2.php");
@@ -70,24 +70,28 @@ function show_updates($dbupdate, $additional = false) {
 	$ns->tablerender(($additional ? (defined("LAN_UPDATE_11") ? LAN_UPDATE_11 : '.617 to .7 Update Continued') : LAN_UPDATE_10), $text);
 }
 
-if ($_POST) {
+if ($_POST) 
+{
 	$message = run_updates($dbupdate);
 }
 
-if($sql->db_Select("plugin", "plugin_version", "plugin_path = 'forum' AND plugin_installflag='1' ")) {
+if (isset($pref['plug_installed']['forum']))
+{
 	if(file_exists(e_PLUGIN.'forum/forum_update_check.php'))
 	{
 		include_once(e_PLUGIN.'forum/forum_update_check.php');
 	}
 }
-if ($sql -> db_Query("SHOW COLUMNS FROM ".MPREFIX."stat_info") && $sql -> db_Select("plugin", "*", "plugin_path = 'log' AND plugin_installflag='1'")) {
+
+if ($sql -> db_Query("SHOW COLUMNS FROM ".MPREFIX."stat_info") && (isset($pref['plug_installed']['log']))) 
+{
 	if(file_exists(e_PLUGIN.'log/log_update_check.php'))
 	{
 		include_once(e_PLUGIN.'log/log_update_check.php');
 	}
 }
 
-if($sql->db_Select("plugin", "plugin_version", "plugin_path = 'content' AND plugin_installflag='1' "))
+if (isset($pref['plug_installed']['content']))
 {
 	if(file_exists(e_PLUGIN.'content/content_update_check.php'))
 	{
@@ -95,7 +99,7 @@ if($sql->db_Select("plugin", "plugin_version", "plugin_path = 'content' AND plug
 	}
 }
 
-if ($sql->db_Select("plugin", "plugin_version", "plugin_path = 'pm' AND plugin_installflag='1' "))
+if (isset($pref['plug_installed']['pm']))
 {
 	if(file_exists(e_PLUGIN.'pm/pm_update_check.php'))
 	{

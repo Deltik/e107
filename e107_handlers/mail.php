@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_handlers/mail.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11650 $
+|     $Date: 2010-08-07 05:46:04 -0500 (Sat, 07 Aug 2010) $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -176,11 +176,16 @@ function sendemail($send_to, $subject, $message, $to_name, $send_from='', $from_
 
 	if (isset($returnpath) && ($returnpath != ""))
 	{  // Passed parameter overrides any system default
-	$mail->Sender = $returnpath;
+		$mail->Sender = $returnpath;
 	}
-	elseif($pref['mail_bounce_email'] !=''){
+	elseif($pref['mail_bounce_email'] !='')
+	{
 		$mail->Sender = $pref['mail_bounce_email'];
     }
+	else
+	{
+		$mail->Sender = $send_from; 
+	}
 
 	if (!$mail->Send()) {
 		// echo "There has been a mail error sending to " . $row["email"] . "<br>";

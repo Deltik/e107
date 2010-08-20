@@ -4,7 +4,7 @@
 |        e107 website system
 |        /e107_admin/header.php
 |
-|        ©Steve Dunstan 2001-2002
+|        ï¿½Steve Dunstan 2001-2002
 |        http://e107.org
 |        jalist@e107.org
 |
@@ -12,9 +12,9 @@
 |        GNU General Public License (http://gnu.org).
 |
 |   $Source: /cvs_backup/e107_0.7/e107_admin/header.php,v $
-|   $Revision: 11346 $
-|   $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|   $Author: secretr $
+|   $Revision: 11615 $
+|   $Date: 2010-07-23 17:10:16 -0500 (Fri, 23 Jul 2010) $
+|   $Author: e107coders $
 +---------------------------------------------------------------+
 */
 
@@ -140,9 +140,21 @@ if (strpos(e_SELF.'?'.e_QUERY, 'menus.php?configure') === FALSE) {
 	if (file_exists(THEME.'theme.js')) { echo "<script type='text/javascript' src='".THEME_ABS."theme.js'></script>\n"; }
 	if (is_readable(e_FILE.'user.js') && filesize(e_FILE.'user.js')) { echo "<script type='text/javascript' src='".e_FILE_ABS."user.js'></script>\n"; }
 
-if (isset($eplug_js) && $eplug_js) {
+if (isset($eplug_js) && $eplug_js) 
+{
 	echo "\n<!-- eplug_js -->\n";
-	echo "<script type='text/javascript' src='{$eplug_js}'></script>\n";
+	if(is_array($eplug_js))
+	{
+    	foreach($eplug_js as $kjs)
+		{
+        	echo "<script type='text/javascript' src='{$kjs}'></script>\n";
+		}
+	}
+	else
+	{
+		echo "<script type='text/javascript' src='{$eplug_js}'></script>\n";
+	}
+
 }
 
 
@@ -170,7 +182,18 @@ echo "<!-- *CSS* -->\n";
 
 if (isset($eplug_css) && $eplug_css) {
 	echo "\n<!-- eplug_css -->\n";
-	echo "<link rel='stylesheet' href='{$eplug_css}' type='text/css' />\n";
+    if(is_array($eplug_css))
+	{
+      foreach($eplug_css as $kcss)
+	  {	// Allow inline style definition - but only if $eplug_css is an array (maybe require an array later)
+        if ('<style' == substr($kcss,0,6)) echo $kcss; else echo "<link rel='stylesheet' href='{$kcss}' type='text/css' />\n";
+	  }
+	}
+	else
+	{
+		echo "<link rel='stylesheet' href='{$eplug_css}' type='text/css' />\n";
+	}
+
 }
 
 echo "<!-- Theme css -->\n";

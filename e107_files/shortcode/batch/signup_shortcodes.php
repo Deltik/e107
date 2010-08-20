@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_files/shortcode/batch/signup_shortcodes.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Revision: 11648 $
+|     $Date: 2010-08-04 06:37:28 -0500 (Wed, 04 Aug 2010) $
 |     $Author: secretr $
 |
 | Mods to show extended field categories
@@ -37,6 +37,7 @@ else
 <input type='radio' name='coppa' value='1' /> ".LAN_201."<br />
 <br />
 <input class='button' type='submit' name='newver' value=\"".LAN_399."\" />
+<input type='hidden' name='e-token' value='".e_TOKEN."' />
 </div></form>
 ";
 }
@@ -44,7 +45,7 @@ SC_END
 
 SC_BEGIN SIGNUP_FORM_OPEN
 global $rs;
-return $rs->form_open("post", e_SELF, "signupform");
+return $rs->form_open("post", e_SELF, "signupform")."<input type='hidden' name='e-token' value='".e_TOKEN."' />";
 SC_END
 
 SC_BEGIN SIGNUP_SIGNUP_TEXT

@@ -1,25 +1,29 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     �Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $Source: /cvs_backup/e107_0.7/e107_plugins/forum/forum_class.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $	   ** Amended by Marj to re-order list line 818 - 851
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) 2002-2010 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * Forum plugin - thread classes
+ *
+ * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/forum/forum_class.php $
+ * $Id: forum_class.php 11670 2010-08-20 12:59:41Z e107steved $
+ */
 if (!defined('e107_INIT')) { exit; }
 
 class e107forum
 {
+	var $filterNasties = TRUE;
+
+	
+	function e107forum()
+	{
+		global $pref;
+		if (isset($pref['filter_script']) && ($pref['filter_script'] == 0)) $this->filterNasties = FALSE;
+	}
+
 
 	function thread_postnum($thread_id)
 	{
@@ -535,7 +539,7 @@ class e107forum
 	function thread_get($thread_id, $start = 0, $limit = 10)
 	{
 		$thread_id = intval($thread_id);
-		global $sql;
+		global $sql, $tp;
 		$ftab = MPREFIX.'forum_t';
 		$utab = MPREFIX.'user';
 
@@ -571,6 +575,11 @@ class e107forum
 			$i = $array_start;
 			while ($row = $sql->db_Fetch())
 			{
+				if ($this->filterNasties)
+				{
+					$row['thread_name'] = $tp->dataFilter($row['thread_name']);
+					$row['thread_thread'] = $tp->dataFilter($row['thread_thread']);
+				}
 				$ret[$i] = $row;
 				$i++;
 			}
@@ -590,6 +599,11 @@ class e107forum
 			$ret['head'] = $row;
 			if (!array_key_exists(0, $ret))
 			{
+				if ($this->filterNasties)
+				{
+					$row['thread_name'] = $tp->dataFilter($row['thread_name']);
+					$row['thread_thread'] = $tp->dataFilter($row['thread_thread']);
+				}
 				$ret[0] = $row;
 			}
 		}

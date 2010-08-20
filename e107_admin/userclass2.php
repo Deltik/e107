@@ -9,15 +9,19 @@
 * Userclass management
 *
 * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/userclass2.php $
-* $Id: userclass2.php 11551 2010-05-24 19:58:43Z mcfly_e107 $
+* $Id: userclass2.php 11643 2010-07-31 14:58:45Z secretr $
 *
 */
-require_once("../class2.php");
-if(count($_POST) && !varset($_POST['__referer']))
+
+// Experimental e-token
+if(!empty($_POST) && !isset($_POST['e-token']))
 {
-	header('location:'.e_BASE.'index.php');
-	exit;
+	// set e-token so it can be processed by class2
+	$_POST['e-token'] = '';
 }
+
+require_once("../class2.php");
+
 if (!getperms("4")) {
 	header("location:".e_BASE."index.php");
 	 exit;
@@ -84,9 +88,9 @@ elseif(e_QUERY)
 	}
 }
 
-if (isset($_POST['delete']))
+if (isset($_POST['delete']) && varset($_POST['e-token']))
 {
-	if(isset($_POST['useraction']) && !varset($_POST['__referer']))
+	if(isset($_POST['useraction']))
 	{
 		header('location:'.e_BASE.'index.php');
 		exit;
@@ -200,7 +204,7 @@ else
 		}
 	}
 	$text .= "</select>
-		<input type='hidden' name='__referer' value='".POST_REFERER."' />
+		<input type='hidden' name='e-token' value='".e_TOKEN."' />
 		<input class='button' type='submit' name='edit' value='".LAN_EDIT."' />
 		<input class='button' type='submit' name='delete' value='".LAN_DELETE."' />
 		<input type='checkbox' name='confirm' value='1' /><span class='smalltext'> ".UCSLAN_11."</span>
@@ -252,7 +256,7 @@ else
 }
 
 $text .= "
-<input type='hidden' name='__referer' value='".POST_REFERER."' />
+<input type='hidden' name='e-token' value='".e_TOKEN."' />
 </td></tr></table>
 ";
 

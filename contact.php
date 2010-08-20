@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,29 +11,48 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/contact.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Revision: 11643 $
+|     $Date: 2010-07-31 09:58:45 -0500 (Sat, 31 Jul 2010) $
 |     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
+
+// Experimental e-token
+if(isset($_POST['send-contactus']) && !isset($_POST['e-token']))
+{
+	// set e-token so it can be processed by class2
+	$_POST['e-token'] = '';
+}
+
 require_once("class2.php");
 
     // security image may be disabled by removing the appropriate shortcodes from the template.
 	require_once(e_HANDLER."secure_img_handler.php");
 	$sec_img = new secure_image;
 
-
-require_once(HEADERF);
-
-if (!$CONTACT_FORM) {
-	if (file_exists(THEME."contact_template.php")) {
+if (!$CONTACT_FORM)
+{
+	if (file_exists(THEME."contact_template.php"))
+	{
 		require_once(THEME."contact_template.php");
-	} else {
+	}
+	else
+	{		
+		// Redirect Page if no contact-form or contact-info is available. 
+		if(($pref['sitecontacts']== e_UC_NOBODY) && trim(SITECONTACTINFO) == "")
+		{
+				header("location:".e_BASE."index.php");
+				exit;
+		}
+		
 		require_once(e_THEME."templates/contact_template.php");
 	}
 }
 
-if(isset($_POST['send-contactus'])){
+require_once(HEADERF);
+
+if(isset($_POST['send-contactus'])/* && isset($_POST['e-token'])*/)
+{
 
 	$error = "";
 
@@ -85,6 +104,8 @@ if(isset($_POST['send-contactus'])){
 		}
 
 	}
+
+
 
 // No errors - so proceed to email the admin and the user (if selected).
     if(!$error)

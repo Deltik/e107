@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_admin/sql/core_sql.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11614 $
+|     $Date: 2010-07-23 03:05:57 -0500 (Fri, 23 Jul 2010) $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 header("location:../index.php");
@@ -500,6 +500,7 @@ CREATE TABLE user (
   user_xup varchar(100) NOT NULL default '',
   PRIMARY KEY  (user_id),
   UNIQUE KEY user_name (user_name),
+  UNIQUE KEY user_loginname (user_loginname),
   KEY user_ban_index (user_ban)
 ) TYPE=MyISAM;
 # --------------------------------------------------------

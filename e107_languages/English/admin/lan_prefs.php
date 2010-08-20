@@ -1,22 +1,17 @@
 <?php
 
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|    	Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $Source: /cvs_backup/e107_0.7/e107_languages/English/admin/lan_prefs.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) 2002-2010 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * Site preferences - language file
+ *
+ * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_prefs.php $
+ * $Id: lan_prefs.php 11670 2010-08-20 12:59:41Z e107steved $
+ */
 
 define("PRFLAN_1", "Site Information");
 define("PRFLAN_2", "Site Name");
@@ -121,8 +116,8 @@ define("PRFLAN_110", "words longer than the length entered will be wrapped onto 
 define("PRFLAN_111", "Wrap long words in menu text");
 define("PRFLAN_112", "On");
 define("PRFLAN_113", "Off");
-define("PRFLAN_116", "Allow HTML posting");
-define("PRFLAN_117", "This will allow users to post HTML code anywhere on the site, select the userclass to allow this.");
+define("PRFLAN_116", "Class which can post HTML");
+define("PRFLAN_117", "This will allow users to post most HTML code anywhere on the site.");
 define("PRFLAN_118", "Use Geshi for syntax highlighting");
 define("PRFLAN_119", "Geshi is an open source multi-language syntax highlighter, see http://qbnz.com/highlighter/ for more information");
 define("PRFLAN_120", "Default Geshi syntax language");
@@ -197,6 +192,10 @@ define("PRFLAN_177", "Address specified for replies to emails from this site.");
 define('PRFLAN_208', 'User class which can email links to items on site');
 define('PRFLAN_209', 'Other Features');
 define('PRFLAN_210', 'Comments/Posting');
+define('PRFLAN_215', 'Class which can post &lt;script&gt; and similar tags');
+define('PRFLAN_216', '(Requires HTML posting rights as well)');
+define('PRFLAN_217', 'Filter HTML content');
+define('PRFLAN_218', 'If \'off\', puts users at increased risk of XSS exploits posted by members of the above class, or prior to 0.7.24');
 
 
 ?>

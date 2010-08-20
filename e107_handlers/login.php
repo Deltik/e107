@@ -12,9 +12,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_handlers/login.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $Revision: 11574 $
+|     $Date: 2010-06-05 23:19:09 -0500 (Sat, 05 Jun 2010) $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -117,6 +117,7 @@ class userlogin {
 				$user_id = $lode['user_id'];
 				$user_name = $lode['user_name'];
 				$user_xup = $lode['user_xup'];
+				$user_admin = $lode['user_admin'];
 
 				/* restrict more than one person logging in using same us/pw */
 				if($pref['disallowMultiLogin']) {
@@ -142,7 +143,7 @@ class userlogin {
 						cookie($pref['cookie_name'], $cookieval);
 					}
 				}
-				$edata_li = array("user_id" => $user_id, "user_name" => $username);
+				$edata_li = array("user_id" => $user_id, "user_name" => $username, "user_admin"=> $user_admin);
 				$e_event->trigger("login", $edata_li);
 				$redir = str_replace('&amp;','&',(e_QUERY ? e_SELF."?".e_QUERY : e_SELF));
 

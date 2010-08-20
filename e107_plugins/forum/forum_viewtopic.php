@@ -11,7 +11,7 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/forum/forum_viewtopic.php $
-|     $Id: forum_viewtopic.php 11350 2010-02-20 15:33:53Z mcfly_e107 $
+|     $Id: forum_viewtopic.php 11597 2010-07-11 13:36:04Z e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -254,7 +254,7 @@ $forum_info['forum_name'] = $tp -> toHTML($forum_info['forum_name'], TRUE,'no_ho
 // get info for main thread -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 $forum->set_crumb(TRUE); // Set $BREADCRUMB (and BACKLINK)
-$THREADNAME = $tp->toHTML($thread_info['head']['thread_name'], TRUE, 'no_hook, emotes_off');
+$THREADNAME = $tp->toHTML($thread_info['head']['thread_name'], TRUE, 'TITLE');
 $NEXTPREV = "&lt;&lt; <a href='".e_SELF."?{$thread_id}.{$forum_info['forum_id']}.prev'>".LAN_389."</a>";
 $NEXTPREV .= " | ";
 $NEXTPREV .= "<a href='".e_SELF."?{$thread_id}.{$forum_info['forum_id']}.next'>".LAN_390."</a> &gt;&gt;";

@@ -13,7 +13,7 @@
 |
 |		$Source: /cvs_backup/e107_0.7/e107_plugins/content/handlers/content_form_class.php,v $
 |		$Revision: 11474 $
-|		$Date: 2010-04-13 22:44:52 -0400 (Tue, 13 Apr 2010) $
+|		$Date: 2010-04-13 21:44:52 -0500 (Tue, 13 Apr 2010) $
 |		$Author: mcfly_e107 $
 +---------------------------------------------------------------+
 */

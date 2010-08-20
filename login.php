@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     �Steve Dunstan 2001-2002
+|     Steve Dunstan 2001-2002
 |     http://e107.org
 |     jalist@e107.org
 |
@@ -11,11 +11,18 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/login.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 13:56:14 -0500 (Wed, 17 Feb 2010) $
+|     $Revision: 11643 $
+|     $Date: 2010-07-31 09:58:45 -0500 (Sat, 31 Jul 2010) $
 |     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
+
+// Experimental e-token
+if(isset($_POST['userlogin']) && !isset($_POST['e-token']))
+{
+	// set e-token so it can be processed by class2
+	$_POST['e-token'] = '';
+}
 
 require_once("class2.php");
 if (USER)
@@ -51,7 +58,7 @@ if (!USER)
 	}
 	$LOGIN_TABLE_AUTOLOGIN = "<input type='checkbox' name='autologin' value='1' />";
 	$LOGIN_TABLE_AUTOLOGIN_LAN = LAN_LOGIN_8;
-	$LOGIN_TABLE_SUBMIT = "<input class='button' type='submit' name='userlogin' value=\"".LAN_LOGIN_9."\" />";
+	$LOGIN_TABLE_SUBMIT = "<input class='button' type='submit' name='userlogin' value=\"".LAN_LOGIN_9."\" /><input type='hidden' name='e-token' value='".e_TOKEN."' />";
 
 	$login_message = LAN_LOGIN_3." | ".SITENAME;
 	if (!isset($LOGIN_TABLE) || !$LOGIN_TABLE)

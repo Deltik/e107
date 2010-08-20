@@ -9,7 +9,7 @@
 * Private Messenger plugin - main user interface
 *
 * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/pm/pm.php $
-* $Id: pm.php 11495 2010-04-25 07:28:59Z e107steved $
+* $Id: pm.php 11598 2010-07-13 22:04:29Z e107steved $
 *
 */
 
@@ -17,14 +17,11 @@ $retrieve_prefs[] = 'pm_prefs';
 require_once('../../class2.php');
 
 
-
-
-
-	  if (!isset($pref['plug_installed']['pm']))
-	  {
-		header('location:'.e_BASE.'index.php');
-		exit;
-	  }
+if (!isset($pref['plug_installed']['pm']))
+{
+	header('location:'.e_BASE.'index.php');
+	exit;
+}
 
 
 require_once(e_PLUGIN.'pm/pm_class.php');

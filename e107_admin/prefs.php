@@ -9,9 +9,16 @@
 * Site preferences editing
 *
 * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/prefs.php $
-* $Id: prefs.php 11551 2010-05-24 19:58:43Z mcfly_e107 $
+* $Id: prefs.php 11670 2010-08-20 12:59:41Z e107steved $
 *
 */
+
+// Experimental e-token
+if(!empty($_POST) && !isset($_POST['e-token']))
+{
+	// set e-token so it can be processed by class2
+	$_POST['e-token'] = '';
+}
 
 require_once("../class2.php");
 include_once(e_HANDLER."userclass_class.php");
@@ -43,12 +50,6 @@ if ($_POST['submit_resetdisplaynames'])
 
 if (isset($_POST['updateprefs']))
 {
-	if(!varset($_POST['__referer']))
-	{
-		header('location:'.e_BASE.'index.php');
-		exit;
-	}
-
 	unset($_POST['updateprefs'],$_POST['sitelanguage']);
 
 	$_POST['cookie_name'] = str_replace(array(" ","."), "_", $_POST['cookie_name']);
@@ -98,7 +99,9 @@ if (isset($_POST['updateprefs']))
 	exit;
 }
 
-if($sql->db_Select("plugin", "plugin_path", "plugin_installflag='1' AND plugin_path = 'alt_auth'"))
+
+
+if (isset($pref['plug_installed']['alt_auth']))
 {
 	$authlist[] = "e107";
 	$handle=opendir(e_PLUGIN."alt_auth");
@@ -160,7 +163,7 @@ $text = "<script type=\"text/javascript\">
 	<div style='text-align:center'>
 	<div style='text-align:center; ".ADMIN_WIDTH."; margin-left: auto; margin-right: auto'>
 	<form method='post' action='".e_SELF."'>
-	<input type='hidden' name='__referer' value='".POST_REFERER."' />
+	<input type='hidden' name='e-token' value='".e_TOKEN."' />
 	<div id='main' style='text-align:center'>
 	<table style='width:100%' class='fborder'>
 	<colgroup>
@@ -677,6 +680,21 @@ $text .= "<div id='textpost' style='display:none; text-align:center'>
 	<td class='forumheader3' style='width:50%;'>".PRFLAN_116.":  <div class='smalltext'>".PRFLAN_117."</div></td>
 	<td class='forumheader3' style='width:50%; text-align: right;'>
 	".r_userclass('post_html',$pref['post_html'],'off','nobody,public,member,admin,main,classes')."
+	</td>
+	</tr>\n
+
+	<tr>
+	<td class='forumheader3' style='width:50%;'>".PRFLAN_215.":  <div class='smalltext'>".PRFLAN_216."</div></td>
+	<td class='forumheader3' style='width:50%; text-align: right;'>
+	".r_userclass('post_script',$pref['post_script'],'off','nobody,admin,main,classes')."
+	</td>
+	</tr>\n
+
+    <tr>
+	<td class='forumheader3' style='width:50%;'>".PRFLAN_217.":  <div class='smalltext'>".PRFLAN_218."</div></td>
+	<td class='forumheader3' style='width:50%; text-align: right;'>
+	<input type='radio' name='filter_script' value='1'".(varset($pref['filter_script'], 1) ? " checked='checked'" : "")." /> ".PRFLAN_112."&nbsp;&nbsp;
+	<input type='radio' name='filter_script' value='0'".(!varset($pref['filter_script'], 1) ? " checked='checked'" : "")." /> ".PRFLAN_113."
 	</td>
 	</tr>\n
 

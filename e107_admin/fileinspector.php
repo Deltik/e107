@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $Source: /cvs_backup/e107_0.7/e107_admin/fileinspector.php,v $
-|     $Revision: 11366 $
-|     $Date: 2010-02-23 11:27:17 -0500 (Tue, 23 Feb 2010) $
-|     $Author: mcfly_e107 $
+|     $Revision: 11617 $
+|     $Date: 2010-07-23 18:16:29 -0500 (Fri, 23 Jul 2010) $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 require_once('../class2.php');
@@ -701,9 +701,9 @@ class file_inspector {
 		$data .= "|     GNU General Public License (http://gnu.org).\n";
 		$data .= "|\n";
 		$data .= "|     \$Source: /cvs_backup/e107_0.7/e107_admin/fileinspector.php,v $\n";
-		$data .= "|     \$Revision: 11366 $\n";
-		$data .= "|     \$Date: 2010-02-23 11:27:17 -0500 (Tue, 23 Feb 2010) $\n";
-		$data .= "|     \$Author: mcfly_e107 $\n";
+		$data .= "|     \$Revision: 11617 $\n";
+		$data .= "|     \$Date: 2010-07-23 18:16:29 -0500 (Fri, 23 Jul 2010) $\n";
+		$data .= "|     \$Author: e107coders $\n";
 		$data .= "+----------------------------------------------------------------------------+\n";
 		$data .= "*/\n\n";
 		$data .= "if (!defined('e107_INIT')) { exit; }\n\n";
@@ -815,7 +815,7 @@ class file_inspector {
 	}
 }
 
-require_once('footer.php');
+require_once(e_ADMIN.'footer.php');
 
 function headerjs() {
 global $e107;

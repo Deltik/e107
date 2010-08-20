@@ -9,9 +9,16 @@
 * User settings editing
 *
 * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/usersettings.php $
-* $Id: usersettings.php 11541 2010-05-19 22:01:19Z secretr $
+* $Id: usersettings.php 11645 2010-08-01 12:57:11Z e107coders $
 *
 */
+
+// Experimental e-token
+if(!empty($_POST) && !isset($_POST['e-token']))
+{
+	// set e-token so it can be processed by class2
+	$_POST['e-token'] = '';
+}
 
 require_once("class2.php");
 require_once(e_HANDLER."ren_help.php");
@@ -101,14 +108,8 @@ function addCommonClasses($udata)
 //---------------------------------------------
 $error = "";
 
-if (isset($_POST['updatesettings']))
-{
-	if(!varset($_POST['__referer']))
-	{
-		header('location:'.e_BASE.'index.php');
-  		exit;
-	}
-	
+if (isset($_POST['updatesettings']) && varset($_POST['e-token']))
+{	
 	if(!varsettrue($pref['auth_method']) || $pref['auth_method'] == '>e107')
 	{
 		$pref['auth_method'] = 'e107';
@@ -176,7 +177,10 @@ if (isset($_POST['updatesettings']))
 	if (isset($_POST['loginname']))
 	{  // Only check if its been edited %*|/|&nbsp;|\#|\=|\$%
 		// another option would be /[^\w\pL\.]/u (non latin words)
-		$temp_name = trim(preg_replace('#[^a-z0-9_\.]#i', "", strip_tags($_POST['loginname'])));
+	//	$temp_name = trim(preg_replace('#[^a-z0-9_\.]#i', "", strip_tags($_POST['loginname'])));
+	// The above preg_replace will break any non-latin login and should not be used. 
+	
+		$temp_name = htmlspecialchars($_POST['loginname'], ENT_QUOTES);
 		if ($temp_name != $_POST['loginname'])
 		{
 			$error .= LAN_USET_13."\\n";
@@ -641,7 +645,7 @@ $text .= "<div>";
 
 $text .= "
 	<input type='hidden' name='_uid' value='{$uuid}' />
-	<input type='hidden' name='__referer' value='".POST_REFERER."' />
+	<input type='hidden' name='e-token' value='".e_TOKEN."' />
 	</div>
 	</form>
 	";
