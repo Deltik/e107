@@ -3,16 +3,16 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_plugins/forum/forum_mod.php,v $
-|     $Revision: 11499 $
-|     $Date: 2010-04-25 15:17:51 -0500 (Sun, 25 Apr 2010) $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/forum/forum_mod.php $
+|     $Revision: 11741 $
+|     $Id: forum_mod.php 11741 2010-09-04 08:32:42Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -62,12 +62,12 @@ function forum_thread_moderate($p)
 
 function forum_delete_thread($thread_id)
 {
-	global $sql;
+	global $sql, $e_event;
 	$thread_id = (int)$thread_id;
 	require_once(e_PLUGIN.'forum/forum_class.php');
 	$f = new e107forum;
 	$qry = "
-	SELECT t.thread_forum_id, t.thread_parent, t.thread_user, f.forum_sub
+	SELECT t.thread_forum_id, t.thread_parent, t.thread_user, t.thread_thread, t.thread_name, f.forum_sub, f.forum_name
 	FROM #forum_t AS t
 	LEFT JOIN #forum AS f ON t.thread_forum_id = f.forum_id
 	WHERE t.thread_id = ".$thread_id;
@@ -95,6 +95,15 @@ function forum_delete_thread($thread_id)
 			// update lastpost info
 			$f->update_lastpost('thread', $row['thread_parent']);
 			$f->update_lastpost('forum', $row['thread_forum_id']);
+			
+			// fire event 'forumpostdelete'
+			$edata_fo = array(
+				"post"				=> $row['thread_thread'],
+				"poster"			=> (intval($tmp[0]) ? $tmp[1] : "Anonymous"),
+				"forum_name"	=> $row['forum_name'],
+				"deleter"			=> USERNAME);
+			$e_event -> trigger("forumpostdelete", $edata_fo);
+			
 			$ret = FORLAN_154;
 		}
 		else
@@ -113,6 +122,17 @@ function forum_delete_thread($thread_id)
 
 			// update lastpost info
 			$f->update_lastpost('forum', $row['thread_forum_id']);
+			
+			// fire event 'forumthreaddelete'
+			$tmp = explode(".", $row['thread_user']);
+			$edata_fo = array(
+				"subject"			=> $row['thread_name'],
+				"post"				=> $row['thread_thread'],
+				"poster"			=> (intval($tmp[0]) ? $tmp[1] : "Anonymous"),
+				"forum_name"	=> $row['forum_name'],
+				"deleter"			=> USERNAME);
+			$e_event -> trigger("forumthreaddelete", $edata_fo);
+
 			$ret = FORLAN_6.($count ? ", ".$count." ".FORLAN_7."." : ".");
 		}
 

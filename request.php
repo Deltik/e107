@@ -5,21 +5,22 @@
 |     e107 website system
 |
 |     Copyright (c) e107 Inc. 2008-2010
-|     http://e107.org
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/request.php,v $
-|     $Revision: 11661 $
-|     $Date: 2010-08-16 16:26:28 -0500 (Mon, 16 Aug 2010) $
-|     $Author: e107coders $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/request.php $
+|     $Revision: 11704 $
+|     $Id: request.php 11704 2010-08-25 15:05:34Z secretr $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 
 // ********************************** SEE HIGHLIGHTED AND NUMBERED QUERIES *****************************
 
-
+// Prevent token re-generation
+define('e_TOKEN_FREEZE', true);
 
 require_once("class2.php");
 include_lan(e_LANGUAGEDIR.e_LANGUAGE."/lan_download.php");

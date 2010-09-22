@@ -4,16 +4,16 @@
 |     e107 website system
 |
 |     Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_admin/administrator.php,v $
-|     $Revision: 11643 $
-|     $Date: 2010-07-31 09:58:45 -0500 (Sat, 31 Jul 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/administrator.php $
+|     $Revision: 11695 $
+|     $Id: administrator.php 11695 2010-08-23 18:12:30Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -32,6 +32,8 @@ if (!getperms('3'))
 }
 $e_sub_cat = 'admin';
 require_once('auth.php');
+
+$action = '';
 
 if (e_QUERY)
 {
@@ -68,7 +70,7 @@ if (isset($_POST['update_admin']))
 	unset($ad_name, $a_perms);
 }
 
-if ($_POST['edit_admin'] || $action == "edit")
+if (isset($_POST['edit_admin']) || $action == "edit")
 {
 	$edid = array_keys($_POST['edit_admin']);
     $theid = ($edid[0]) ? $edid[0] : $sub_action;
@@ -105,9 +107,12 @@ if (isset($_POST['del_admin']))
 	admin_update($sql -> db_Update("user", "user_admin=0, user_perms='' WHERE user_id= ".$delid[0]), 'update', ADMSLAN_61, LAN_DELETED_FAILED);
 }
 
-if($_POST['edit_admin'] || $action == "edit"){
+if(isset($_POST['edit_admin']) || $action == "edit")
+{
 	edit_administrator($row);
-}else{
+}
+else
+{
    show_admins();
 }
 
@@ -120,6 +125,7 @@ function show_admins(){
 	<form action='".e_SELF."' method='post' id='del_administrator'>
 	<div>
 	<input type='hidden' name='del_administrator_confirm' id='del_administrator_confirm' value='1' />
+	<input type='hidden' name='e-token' value='".e_TOKEN."' />
 	<table class='fborder' style='width:99%'>
 	<tr>
 	<td style='width:5%' class='fcaption'>ID</td>
@@ -151,7 +157,6 @@ function show_admins(){
 
 		</tr>";
 	}
-
 	$text .= "</table></div>\n</form></div>\n</div>";
 
 	$ns->tablerender(ADMSLAN_13, $text);

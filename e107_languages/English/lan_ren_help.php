@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $Source: /cvs_backup/e107_0.7/e107_languages/English/lan_ren_help.php,v $
-|     $Revision: 11660 $
-|     $Date: 2010-08-16 11:41:35 -0500 (Mon, 16 Aug 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/lan_ren_help.php $
+|     $Revision: 11801 $
+|     $Id: lan_ren_help.php 11801 2010-09-18 21:22:29Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 define("LANHELP_1", "Black");
@@ -65,4 +65,7 @@ define("LANHELP_46", "* No files found in: ");
 define("LANHELP_47", "Insert flash: [flash=width,height]http://www.example.com/file.swf[/flash]");
 // 0.7.23
 define("LANHELP_48", "YouTube video: [youtube=tiny|small|medium|big|huge|width,height]6kYjxJmk0wc[/youtube]");
+// 0.7.24
+define("LANHELP_49", "Justify align: [justify]This text will be justified[/justify]");
+
 ?>

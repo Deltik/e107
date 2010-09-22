@@ -4,17 +4,17 @@
 +---------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_handlers/mysql_class.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 12:56:14 -0600 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/mysql_class.php $
+|     $Revision: 11766 $
+|     $Id: mysql_class.php 11766 2010-09-08 04:45:11Z e107coders $
+|     $Author: e107coders $
 |
 +----------------------------------------------------------------------------+
 */
@@ -30,8 +30,8 @@ $db_ConnectionID = NULL;
 * MySQL Abstraction class
 *
 * @package e107
-* @version $Revision: 11346 $
-* @author $Author: secretr $
+* @version $Revision: 11766 $
+* @author $Author: e107coders $
 */
 class db {
 
@@ -62,10 +62,18 @@ class db {
 	{
 		global $pref, $eTraffic;
 		$eTraffic->BumpWho('Create db object', 1);
+		if (!isset($_SESSION['e_language']))
+		{
+			return;
+		}
+		
+		$this->mySQLlanguage = ($_SESSION['e_language'] != $pref['sitelanguage']) ? $_SESSION['e_language'] : '';
+		
+		/*
 		$langid = 'e107language_'.$pref['cookie_name'];
 		if ($pref['user_tracking'] == 'session')
 		{
-			if (!isset($_SESSION[$langid]))
+			if (!isset($_SESSION['e_language']))
 			{
 				return;
 			}
@@ -73,12 +81,13 @@ class db {
 		}
 		else
 		{
-			if (!isset($_COOKIE[$langid]))
+			if (!isset($_COOKIE['e107_language']))
 			{
 				return;
 			}
-			$this->mySQLlanguage = $_COOKIE[$langid];
+			$this->mySQLlanguage = $_COOKIE['e107_language'];
 		}
+		*/
 	}
 
 	/**

@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $Source: /cvs_backup/e107_0.7/e107_languages/English/lan_usersettings.php,v $
-|     $Revision: 11553 $
-|     $Date: 2010-05-25 14:30:34 -0500 (Tue, 25 May 2010) $
-|     $Author: mcfly_e107 $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/lan_usersettings.php $
+|     $Revision: 11679 $
+|     $Id: lan_usersettings.php 11679 2010-08-22 18:40:32Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 define("PAGE_NAME", "User Settings");
@@ -29,7 +29,7 @@ define("LAN_114", "This will prevent your email address from being displayed on 
 //define("LAN_118", "Birthday: ");
 //define("LAN_119", "Location: ");
 define("LAN_120", "Signature: ");
-//define("LAN_121", "Avatar: ");
+define("LAN_121", "Avatar: ");
 define("LAN_122", "Timezone:");
 //define("LAN_144", "Website URL: ");
 define("LAN_150", "Settings updated and saved into database.");

@@ -3,17 +3,17 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_plugins/pm/pm_update.php,v $
-|     $Revision: 11499 $
-|     $Date: 2010-04-25 15:17:51 -0500 (Sun, 25 Apr 2010) $
-|     $Author: e107steved $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/pm/pm_update.php $
+|     $Revision: 11678 $
+|     $Id: pm_update.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 

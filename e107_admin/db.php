@@ -4,25 +4,31 @@
 |     e107 website system
 |
 |     Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_admin/db.php,v $
-|     $Revision: 11643 $
-|     $Date: 2010-07-31 09:58:45 -0500 (Sat, 31 Jul 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/db.php $
+|     $Revision: 11714 $
+|     $Id: db.php 11714 2010-08-28 17:01:30Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
 // Experimental e-token
-if((isset($_POST['sqltext']) || isset($_POST['delpref_checked'])) && !isset($_POST['e-token']))
+if(isset($_POST['delpref_checked']) && !isset($_POST['e-token']))
 {
 	// set e-token so it can be processed by class2
 	$_POST['e-token'] = '';
 }
+
+// No e-token for simple redirect. 
+if(isset($_POST['verify_sql']) || isset($_POST['db_update']) || isset($_POST['check_user']))
+{
+	unset($_POST['e-token']);
+}	
 
 require_once("../class2.php");
 if (!getperms('0')) 
@@ -243,7 +249,7 @@ function plugin_viewscan()
 			$previous = $row['plugin_path'];
 		}
 //		$text .= "<tr><td colspan='4' class='forumheader3'>".DBLAN_30."</td></tr>";
-        $text .= "</table></div></form>";
+        $text .= "</table></div><input type='hidden' name='e-token' value='".e_TOKEN."' /></form>";
         $ns -> tablerender(ADLAN_CL_7, $text);
 
 }

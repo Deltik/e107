@@ -1,16 +1,19 @@
 <?php
 /*
-* e107 website system
-*
-* Copyright (C) 2008-2010 e107 Inc (e107.org)
-* Released under the terms and conditions of the
-* GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
-*
-* User ban management
-*
-* $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/banlist.php $
-* $Id: banlist.php 11643 2010-07-31 14:58:45Z secretr $
-*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/banlist.php $
+|     $Revision: 11797 $
+|     $Id: banlist.php 11797 2010-09-17 21:58:27Z e107coders $
+|     $Author: e107coders $
++----------------------------------------------------------------------------+
 */
 
 // Experimental e-token
@@ -78,8 +81,6 @@ $text = "";
 
 $text .= "<div style='text-align:center'>
 	<form method='post' action='".e_SELF."'>
-	<input type='hidden' name='e-token' value='".e_TOKEN."' />
-
 	<table style='".ADMIN_WIDTH."' class='fborder'>
 
 	<tr>

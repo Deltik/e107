@@ -3,17 +3,17 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     �Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_admin/upload.php,v $
-|     $Revision: 11641 $
-|     $Date: 2010-07-31 03:45:29 -0500 (Sat, 31 Jul 2010) $
-|     $Author: e107coders $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/upload.php $
+|     $Revision: 11695 $
+|     $Id: upload.php 11695 2010-08-23 18:12:30Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 require_once("../class2.php");
@@ -22,6 +22,7 @@ if (!getperms("V")) {
 	exit;
 }
 $e_sub_cat = 'upload';
+$action = '';
 if (e_QUERY) {
 	$tmp = explode(".", e_QUERY);
 	$action = $tmp[0];
@@ -253,7 +254,9 @@ $ns->tablerender(UPLLAN_43, $text);
 
 // options -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-if (is_readable(e_ADMIN.'filetypes.php')) {
+$allowed_filetypes = '';
+if (is_readable(e_ADMIN.'filetypes.php')) 
+{
 	$allowed_filetypes = trim(file_get_contents(e_ADMIN.'filetypes.php'));
 }
 

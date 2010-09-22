@@ -1,16 +1,19 @@
 <?php
 /*
-* e107 website system
-*
-* Copyright (C) 2008-2010 e107 Inc (e107.org)
-* Released under the terms and conditions of the
-* GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
-*
-* Site preferences editing
-*
-* $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/prefs.php $
-* $Id: prefs.php 11670 2010-08-20 12:59:41Z e107steved $
-*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/prefs.php $
+|     $Revision: 11797 $
+|     $Id: prefs.php 11797 2010-09-17 21:58:27Z e107coders $
+|     $Author: e107coders $
++----------------------------------------------------------------------------+
 */
 
 // Experimental e-token
@@ -163,7 +166,7 @@ $text = "<script type=\"text/javascript\">
 	<div style='text-align:center'>
 	<div style='text-align:center; ".ADMIN_WIDTH."; margin-left: auto; margin-right: auto'>
 	<form method='post' action='".e_SELF."'>
-	<input type='hidden' name='e-token' value='".e_TOKEN."' />
+	
 	<div id='main' style='text-align:center'>
 	<table style='width:100%' class='fborder'>
 	<colgroup>
@@ -686,7 +689,7 @@ $text .= "<div id='textpost' style='display:none; text-align:center'>
 	<tr>
 	<td class='forumheader3' style='width:50%;'>".PRFLAN_215.":  <div class='smalltext'>".PRFLAN_216."</div></td>
 	<td class='forumheader3' style='width:50%; text-align: right;'>
-	".r_userclass('post_script',$pref['post_script'],'off','nobody,admin,main,classes')."
+	".r_userclass('post_script',$pref['post_script'],'off','nobody,member,admin,main,classes')."
 	</td>
 	</tr>\n
 
@@ -1038,25 +1041,13 @@ require_once("footer.php");
 
 function pref_submit() {
 	$text = "<tr>
-		<td colspan='2' style='text-align:center' class='forumheader'>";
+		<td colspan='2' style='text-align:center' class='forumheader'>
+	<input class='button' type='submit' name='updateprefs' value='".PRFLAN_52."' />
+	<input type='hidden' name='e-token' value='".e_TOKEN."' />";
 
-	// ML
-	/* if(e_MLANG == 1){
-	//$text .="<input class='fcaption' type='submit' name='updateprefs' value='".PRFLAN_52."' />
-	$but_typ = array(""); // empty = submit
-	$but_nam = array("updateprefs"); // empty = autobutX with X autoincrement
-	$but_val = array("updateprefs"); // empty = Submit
-	$but_class = array("caption"); // empty = button
-	$butjs = array(""); // empty = ""
-	$buttitle = array(""); // empty = ""
-	$text .= e107ml_adpanel(1,$but_typ,$but_nam,$but_val,$but_class,$butjs,$buttitle);
-	}else{*/
-	$text .= "<input class='button' type='submit' name='updateprefs' value='".PRFLAN_52."' />";
-	// }
 	$text .= "</td>
 		</tr>";
 
-	// END ML
 	return $text;
 }
 

@@ -1,16 +1,19 @@
 <?php
 /*
-* e107 website system
-*
-* Copyright (C) 2008-2010 e107 Inc (e107.org)
-* Released under the terms and conditions of the
-* GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
-*
-* News handler
-*
-* $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/news_class.php $
-* $Id: news_class.php 11552 2010-05-25 18:14:29Z mcfly_e107 $
-*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/news_class.php $
+|     $Revision: 11702 $
+|     $Id: news_class.php 11702 2010-08-25 11:36:42Z nlstart $
+|     $Author: nlstart $
++----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
@@ -29,7 +32,7 @@ class news {
 		$news['news_userid'] = ($news['news_userid']) ? $news['news_userid'] : USERID;
 		if(!isset($news['news_sticky'])) {$news['news_sticky'] = 0;}
 		$author_insert = ($news['news_author'] == 0) ? "news_author = '".USERID."'," : "";
-		$news['news_author'] = ($news['news_author']) ? $news['news_author'] : USERID;
+		$author_insert = (isset($news['news_author'])) ?  "news_author = '".$news['news_author']."'," : "";
 		$news['news_class'] = (varset($news['news_class'], '255'));
 
 		if ($news['news_id']) {

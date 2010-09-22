@@ -3,17 +3,17 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     (C)Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/print.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 12:56:14 -0600 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/print.php $
+|     $Revision: 11692 $
+|     $Id: print.php 11692 2010-08-23 17:32:16Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
@@ -71,7 +71,7 @@ else
 	}
 	$news_datestamp = $con->convert_date($news_datestamp, "long");
 	$print_text = "<span style=\"font-size: 13px; color: black; font-family: tahoma, verdana, arial, helvetica; text-decoration: none\">
-	<b>".LAN_PRINT_135.": ".$news_title."</b>
+	<b>".LAN_PRINT_135.$news_title."</b>
 	<br />
 	(".LAN_PRINT_86." ".$tp->toHTML($category_name, FALSE, "defs").")
 	<br />

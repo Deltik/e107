@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $Source: /cvs_backup/e107_0.7/e107_plugins/content/languages/English/lan_content_admin.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 12:56:14 -0600 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/content/languages/English/lan_content_admin.php $
+|     $Revision: 11729 $
+|     $Id: lan_content_admin.php 11729 2010-08-31 19:25:08Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -635,7 +635,7 @@ define("CONTENT_ADMIN_OPT_LAN_102", "link : top score");
 define("CONTENT_ADMIN_OPT_LAN_103", "link : recent items");
 define("CONTENT_ADMIN_OPT_LAN_104", "link : submit item");
 define("CONTENT_ADMIN_OPT_LAN_105", "icon : links");
-define("CONTENT_ADMIN_OPT_LAN_106", "none (), bullet (), middot (&middot;), white bullet (º), arrow (&raquo;), category_icon()");
+define("CONTENT_ADMIN_OPT_LAN_106", "none (), bullet (), middot (&middot;), white bullet (ï¿½), arrow (&raquo;), category_icon()");
 define("CONTENT_ADMIN_OPT_LAN_107", "none");
 define("CONTENT_ADMIN_OPT_LAN_108", "bullet");
 define("CONTENT_ADMIN_OPT_LAN_109", "middot");
@@ -704,4 +704,9 @@ define("CONTENT_ADMIN_OPT_LAN_171", "amount of levels");
 define("CONTENT_ADMIN_OPT_LAN_172", "numeric value to show that amount of levels of subcategories of the category tree. leave blank to show all levels.");
 define("CONTENT_ADMIN_OPT_LAN_173", "include 'home' in the breadcrumb");
 define("CONTENT_ADMIN_OPT_LAN_174", "include the content start page in the breadcrumb");
+
+// Gap for compatibility with 0.8
+
+define('CONTENT_ADMIN_OPT_LAN_178', 'Start times for items');
+
 ?>

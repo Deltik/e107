@@ -4,14 +4,14 @@
 |     e107 website system
 |
 |     Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/forum/forum_viewtopic.php $
-|     $Id: forum_viewtopic.php 11597 2010-07-11 13:36:04Z e107steved $
+|     $Id: forum_viewtopic.php 11678 2010-08-22 00:43:45Z e107coders $
 +----------------------------------------------------------------------------+
 */
 

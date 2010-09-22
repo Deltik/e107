@@ -1,17 +1,21 @@
 <?php
 /*
-* e107 website system
-*
-* Copyright (C) 2008-2010 e107 Inc (e107.org)
-* Released under the terms and conditions of the
-* GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
-*
-* Tree menu configuration
-*
-* $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/tree_menu/config.php $
-* $Id: config.php 11510 2010-05-01 20:46:06Z e107steved $
-*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/tree_menu/config.php $
+|     $Revision: 11678 $
+|     $Id: config.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Author: e107coders $
++----------------------------------------------------------------------------+
 */
+
 $eplug_admin = TRUE;
 require_once("../../class2.php");
 include_lan(e_PLUGIN."tree_menu/languages/".e_LANGUAGE.".php");

@@ -4,16 +4,16 @@
 |     e107 website system
 |
 |     Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_files/shortcode/batch/signup_shortcodes.php,v $
-|     $Revision: 11648 $
-|     $Date: 2010-08-04 06:37:28 -0500 (Wed, 04 Aug 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_files/shortcode/batch/signup_shortcodes.php $
+|     $Revision: 11678 $
+|     $Id: signup_shortcodes.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Author: e107coders $
 |
 | Mods to show extended field categories
 +----------------------------------------------------------------------------+

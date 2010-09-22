@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $Source: /cvs_backup/e107_0.7/e107_languages/English/admin/lan_newspost.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 12:56:14 -0600 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_newspost.php $
+|     $Revision: 11705 $
+|     $Id: lan_newspost.php 11705 2010-08-26 21:08:37Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 define("NWSLAN_1", "News story deleted.");
@@ -175,5 +175,6 @@ define('LAN_NEWS_51', 'Recalculate comment counts');
 define('LAN_NEWS_52', 'Proceed');
 define('LAN_NEWS_53', 'Update complete');
 define('LAN_NEWS_54', 'News Maintenance');
+define('LAN_NEWS_55', 'Author (Posted by)');
 
 ?>

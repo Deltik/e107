@@ -3,17 +3,17 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     (C)Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_plugins/forum/forum_post.php,v $
-|     $Revision: 11643 $
-|     $Date: 2010-07-31 09:58:45 -0500 (Sat, 31 Jul 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/forum/forum_post.php $
+|     $Revision: 11741 $
+|     $Id: forum_post.php 11741 2010-09-04 08:32:42Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -87,7 +87,7 @@ require_once(e_PLUGIN."forum/forum_shortcodes.php");
 require_once(e_HANDLER."ren_help.php");
 $gen = new convert;
 $fp = new floodprotect;
-global $tp;
+global $tp, $e_event;
 
 if ($sql->db_Select("tmp", "*", "tmp_ip='$ip' ")) {
 	$row = $sql->db_Fetch();
@@ -283,6 +283,21 @@ if (isset($_POST['newthread']) || isset($_POST['reply']))
 		}
 
 		$iid = $forum->thread_insert($subject, $post, $forum_id, $parent, $poster, $email_notify, $threadtype, $forum_info['forum_sub']);
+
+		//fire event forumthreadcreate
+		if (isset($_POST['newthread']))
+		{
+			$edata_fo = array("subject" => $subject, "post" => $post, "poster" => $poster, "forum_name" => $forum_info['forum_name']);
+			$e_event -> trigger("forumthreadcreate", $edata_fo);
+		}
+		
+		// fire event 'forumpostcreate
+		if (isset($_POST['reply']))
+		{
+			$edata_fo = array("post" => $post, "poster" => $poster, "forum_name" => $forum_info['forum_name']);
+			$e_event -> trigger("forumpostcreate", $edata_fo);
+		}		
+		
 		if($iid === -1)
 		{
 			require_once(HEADERF);
@@ -291,6 +306,7 @@ if (isset($_POST['newthread']) || isset($_POST['reply']))
 			exit;
 		}
 		if (isset($_POST['reply'])) {
+			$reply = $iid;
 			$iid = $parent;
 		}
 

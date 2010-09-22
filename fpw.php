@@ -3,19 +3,20 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/fpw.php,v $
-|     $Revision: 11570 $
-|     $Date: 2010-06-04 13:16:58 -0500 (Fri, 04 Jun 2010) $
-|     $Author: e107steved $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/fpw.php $
+|     $Revision: 11753 $
+|     $Id: fpw.php 11753 2010-09-06 20:59:15Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
+define('e_NOCACHE',TRUE);
 require_once("class2.php");
 
 if(USER)

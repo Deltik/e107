@@ -1,20 +1,25 @@
 <?php
 /*
-* e107 website system
-*
-* Copyright (c) 2008-2010 e107 Inc (e107.org)
-* Released under the terms and conditions of the
-* GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
-*
-* $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/login_menu/login_menu.php $
-* $Id: login_menu.php 11483 2010-04-17 02:16:51Z mcfly_e107 $
-*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/login_menu/login_menu.php $
+|     $Revision: 11760 $
+|     $Id: login_menu.php 11760 2010-09-07 17:02:27Z e107steved $
+|     $Author: e107steved $
++----------------------------------------------------------------------------+
 */
 
 /**
 *	@package e107
 *	@subpackage	login_menu
-*	@version $Id: login_menu.php 11483 2010-04-17 02:16:51Z mcfly_e107 $;
+*	@version $Id: login_menu.php 11760 2010-09-07 17:02:27Z e107steved $;
 *
 */
 if (!defined('e107_INIT')) { exit; }
@@ -69,7 +74,7 @@ if (USER == TRUE || ADMIN == TRUE)
 
 		// ------------ News Stats -----------
 
-		if (isset($menu_pref['login_menu']) && $menu_pref['login_menu']['new_news'] == true)
+		if (isset($menu_pref['login_menu']) && isset($menu_pref['login_menu']['new_news']) && ($menu_pref['login_menu']['new_news'] == true))
 		{
 			$new_news = $sql->db_Count("news", "(*)", "WHERE `news_datestamp` > {$time} AND news_class REGEXP '".e_CLASS_REGEXP."'");
 			$new_total += $new_news;
@@ -171,7 +176,7 @@ if (USER == TRUE || ADMIN == TRUE)
 }
 else
 {
-	if (!$LOGIN_MENU_FORM || !$LOGIN_MENU_MESSAGE)
+	if (!isset($LOGIN_MENU_FORM) || !isset($LOGIN_MENU_MESSAGE))
 	{
 		if (file_exists(THEME."login_menu_template.php"))
 		{
@@ -182,7 +187,8 @@ else
 			require_once(e_PLUGIN."login_menu/login_menu_template.php");
 		}
 	}
-	if(!$LOGIN_MENU_FORM || !$LOGIN_MENU_MESSAGE){
+	if(!isset($LOGIN_MENU_FORM) || !isset($LOGIN_MENU_MESSAGE))
+	{
     	require(e_PLUGIN."login_menu/login_menu_template.php");
 	}
 

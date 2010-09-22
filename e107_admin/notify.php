@@ -3,17 +3,17 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     �Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_admin/notify.php,v $
-|     $Revision: 11641 $
-|     $Date: 2010-07-31 03:45:29 -0500 (Sat, 31 Jul 2010) $
-|     $Author: e107coders $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/notify.php $
+|     $Revision: 11695 $
+|     $Id: notify.php 11695 2010-08-23 18:12:30Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 require_once('../class2.php');
@@ -29,7 +29,8 @@ require_once(e_HANDLER.'userclass_class.php');
 require_once(e_HANDLER.'form_handler.php');
 $rs = new form;
 $nc = new notify_config;
-if (isset($_POST['update'])) {
+if (isset($_POST['update'])) 
+{
 	$nc -> update();
 }
 $nc -> config();
@@ -38,11 +39,13 @@ class notify_config {
 
 	var $notify_prefs;
 
-	function notify_config() {
+	function notify_config() 
+	{
 		global $sysprefs, $eArrayStorage, $tp, $sql,$pref;
 		$this -> notify_prefs = $sysprefs -> get('notify_prefs');
 		$this -> notify_prefs = $eArrayStorage -> ReadArray($this -> notify_prefs);
 
+		$recalibrate = FALSE;
 		// load every e_notify.php file.
         foreach($pref['e_notify_list'] as $val)
 		{
@@ -133,9 +136,10 @@ class notify_config {
 		$ns -> tablerender(NT_LAN_1, $text);
 	}
 
-	function render_event($id, $description) {
+	function render_event($id, $description) 
+	{
 		global $rs, $tp;
-		$text .= "<tr>
+		$text = "<tr>
 		<td class='forumheader3' style='width: 30%'>
 		".$description.":
 		</td>

@@ -1,21 +1,19 @@
 <?php
 /*
-+---------------------------------------------------------------+
-|        e107 website system
-|        /admin/review.php
++ ----------------------------------------------------------------------------+
+|     e107 website system
 |
-|        (C)Steve Dunstan 2001-2002
-|        http://e107.org
-|        jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
 |
-|        Released under the terms and conditions of the
-|        GNU General Public License (http://gnu.org).
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
 |
-|		$Source: /cvs_backup/e107_0.7/e107_plugins/content/handlers/content_class.php,v $
-|		$Revision: 11464 $
-|		$Date: 2010-04-07 15:09:05 -0500 (Wed, 07 Apr 2010) $
-|		$Author: e107steved $
-+---------------------------------------------------------------+
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/content/handlers/content_class.php $
+|     $Revision: 11729 $
+|     $Id: content_class.php 11729 2010-08-31 19:25:08Z e107steved $
+|     $Author: e107steved $
++----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
@@ -153,6 +151,7 @@ class content{
 			$content_pref['content_nextprev'] = "1";						//use nextprev buttons
 			$content_pref['content_nextprev_number'] = "10";				//how many items on a page
 			$content_pref['content_defaultorder'] = "orderddate";			//default sort and order method
+			$content_pref['content_allow_display_times'] = '0';				// Option to display times with start/end dates
 			//upload icon/image size handling
 			$content_pref['content_upload_image_size'] = "500";				//resize size of uploaded image
 			$content_pref['content_upload_image_size_thumb'] = "100";		//resize size of created thumb on uploaded image
@@ -452,9 +451,9 @@ class content{
 
 			//insert default preferences into core
 			if($id == "0"){
-				$num_rows = $sql -> db_Select("core", "*", "e107_name='$plugintable' ");
+				$num_rows = $sql -> db_Select("core", "*", "e107_name='{$plugintable}' ");
 				if ($num_rows == 0) {
-					$sql -> db_Insert("core", "'$plugintable', '' ");
+					$sql -> db_Insert("core", "'{$plugintable}', '' ");
 				}else{
 					$row = $sql -> db_Fetch();
 				}

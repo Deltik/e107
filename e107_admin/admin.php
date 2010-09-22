@@ -4,16 +4,16 @@
 |     e107 website system
 |
 |     Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_admin/admin.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 12:56:14 -0600 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/admin.php $
+|     $Revision: 11772 $
+|     $Id: admin.php 11772 2010-09-09 21:36:35Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 require_once('../class2.php');
@@ -108,6 +108,7 @@ if (isset($potential))
 // More visible update check
 echo $tp->parseTemplate('{ADMIN_UPDATE}', true);
 
+
 // update users using old layout names to their new names
 $update_prefs = FALSE;
 if (!$pref['adminstyle'] || $pref['adminstyle'] == 'default') {
@@ -153,11 +154,13 @@ if ($update_prefs == true) {
 // auto db update
 if ('0' == ADMINPERMS) 
 {
-  $dont_check_update = TRUE;		// This reduces frequency of checks
-  require_once(e_ADMIN.'update_routines.php');
-  update_check();
+	$sql->db_Mark_Time("Start: Db Update Check");
+	$dont_check_update = TRUE;		// This reduces frequency of checks
+	require_once(e_ADMIN.'update_routines.php');
+	update_check();
 }
 // end auto db update
+$sql->db_Mark_Time("Start: Render Admin Panel");
 
 if (e_QUERY == 'purge' && getperms('0')) {
 	$admin_log->purge_log_events(false);
@@ -274,7 +277,7 @@ function log_request() {
 		return FALSE;
 	}
 }
-
+$sql->db_Mark_Time("Start: Render Admin Footer");
 require_once("footer.php");
 
 ?>

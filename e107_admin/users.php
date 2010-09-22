@@ -1,16 +1,19 @@
 <?php
 /*
-* e107 website system
-*
-* Copyright (C) 2008-2010 e107 Inc (e107.org)
-* Released under the terms and conditions of the
-* GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
-*
-* User settings editing
-*
-* $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/users.php $
-* $Id: users.php 11644 2010-08-01 12:41:17Z e107coders $
-*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/users.php $
+|     $Revision: 11797 $
+|     $Id: users.php 11797 2010-09-17 21:58:27Z e107coders $
+|     $Author: e107coders $
++----------------------------------------------------------------------------+
 */
 
 // Experimental e-token
@@ -834,7 +837,7 @@ class users
 
 		$text .= "<div style='cursor:pointer' onclick=\"expandit('sdisp')\">".LAN_DISPLAYOPT."</div>";
 		$text .= "<div  id='sdisp' style='padding-top:4px;display:none;text-align:center;margin-left:auto;margin-right:auto'>
-		<table class='forumheader3' style='width:95%'><tr>";
+		<table class='forumheader3' style='width:95%'>";
 /*
 		$fields = mysql_list_fields($mySQLdefaultdb, MPREFIX."user");		// Returns a resource. Deprecated
 		$columns = mysql_num_fields($fields);			// Bug in PHP5.3 using mysql_num_fields() with mysql_list_fields()
@@ -857,16 +860,25 @@ class users
         $m = 0;
 		foreach($fname as $fcol)
 		{
+			if($m == 0)
+			{
+				$text .= "<tr>";	
+			}
 			$checked = (in_array($fcol,$search_display)) ? "checked='checked'" : "";
 			$text .= "<td style='text-align:left; padding:0px'>";
 			$text .= "<input type='checkbox' name='searchdisp[]' value='".$fcol."' $checked />".str_replace("user_","",$fcol) . "</td>\n";
 			$m++;
-			if($m == 5){
-				$text .= "</tr><tr>";
+			if($m == 5)
+			{
+				$text .= "</tr>";
 				$m = 0;
-			 }
+			}
         }
 
+		if($m != 0)
+		{
+			$text .= "</tr>";
+		}
 		$text .= "</table></div>
 		</form>\n
 		</div>";

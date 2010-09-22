@@ -4,15 +4,15 @@
 |     e107 website system
 |
 |     Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_themes/jayya/admin_template.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 12:56:14 -0600 (Wed, 17 Feb 2010) $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_themes/jayya/admin_template.php $
+|     $Revision: 11703 $
+|     $Id: admin_template.php 11703 2010-08-25 12:12:44Z secretr $
 |     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
@@ -65,7 +65,7 @@ if (ADMIN) {
     if (file_exists(THEME.'admin_nav.js')) {
         $ADMIN_HEADER .= "<script type='text/javascript' src='".THEME."admin_nav.js'></script>";
     } else {
-        $ADMIN_HEADER .= "<script type='text/javascript' src='".e_FILE."admin_nav.js'></script>";
+        $ADMIN_HEADER .= "<script type='text/javascript' src='".e_FILE."nav_menu.js'></script>";
     }
 
     $ADMIN_HEADER .= "<div style='width: 100%'><table style='width:100%; border-collapse: collapse; border-spacing: 0px;'>

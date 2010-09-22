@@ -3,16 +3,15 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|	  Steve Dunstan 2001-2002 (jalist@e107.org)
-|
-|	  Copyright (C) 2008-2010 e107 Inc. (e107.org)
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/class2.php,v $
-|     $Revision: 11668 $
-|     $Date: 2010-08-20 04:20:48 -0500 (Fri, 20 Aug 2010) $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/class2.php $
+|     $Revision: 11786 $
+|     $Id: class2.php 11786 2010-09-15 22:12:49Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -87,7 +86,7 @@ if(($pos = strpos($_SERVER['PHP_SELF'], ".php/")) !== false) // redirect bad URL
 }
 // If url contains a .php in it, PHP_SELF is set wrong (imho), affecting all paths.  We need to 'fix' it if it does.
 $_SERVER['PHP_SELF'] = (($pos = strpos($_SERVER['PHP_SELF'], ".php")) !== false ? substr($_SERVER['PHP_SELF'], 0, $pos+4) : $_SERVER['PHP_SELF']);
-
+unset($pos);
 //
 // D: Setup PHP error handling
 //    (Now we can see PHP errors) -- but note that DEBUG is not yet enabled!
@@ -108,6 +107,7 @@ e107_ini_set('session.use_only_cookies', 1);
 e107_ini_set('session.use_trans_sid',    0);
 
 
+
 if(isset($retrieve_prefs) && is_array($retrieve_prefs)) {
 	foreach ($retrieve_prefs as $key => $pref_name) {
 		 $retrieve_prefs[$key] = preg_replace("/\W/", '', $pref_name);
@@ -119,23 +119,35 @@ if(isset($retrieve_prefs) && is_array($retrieve_prefs)) {
 define("MAGIC_QUOTES_GPC", (ini_get('magic_quotes_gpc') ? TRUE : FALSE));
 
 // Define the domain name and subdomain name.
-if(is_numeric(str_replace(".","",$_SERVER['HTTP_HOST']))){
-	$srvtmp = "";  // Host is an IP address.
-}else{
-	$srvtmp = explode(".",str_replace("www.","",$_SERVER['HTTP_HOST']));
-}
-
-define("e_SUBDOMAIN", (count($srvtmp)>2 && $srvtmp[2] ? $srvtmp[0] : FALSE)); // needs to be available to e107_config.
-
-if(e_SUBDOMAIN)
+if(is_numeric(str_replace(".","",$_SERVER['HTTP_HOST'])))
 {
-   	unset($srvtmp[0]);
+	$domain = FALSE;
+	$subdomain = FALSE;
+}
+else
+{	
+	if(preg_match("/\.?([a-z0-9-]+)(\.(com|net|org|co|me|ltd|plc|gov)\.[a-z]{2})$/i",$_SERVER['HTTP_HOST'],$m)) //eg. mysite.co.uk
+	{
+        $domain = $m[1].$m[2];
+    }
+	elseif(preg_match("/\.?([a-z0-9-]+)(\.[a-z]{2,})$/i",$_SERVER['HTTP_HOST'],$m))//  eg. .com/net/org/ws/biz/info
+	{       
+        $domain = $m[1].$m[2];		
+    }
+	else
+	{
+		$domain = FALSE; //invalid domain
+	}
+	
+	$replace = array(".".$domain,"www.","www");
+	$subdomain = str_replace($replace,'',$_SERVER['HTTP_HOST']);
 }
 
-define("e_DOMAIN",(count($srvtmp) > 1 ? (implode(".",$srvtmp)) : FALSE)); // if it's an IP it must be set to FALSE.
+define("e_DOMAIN",$domain);
+define("e_SUBDOMAIN",($subdomain) ? $subdomain : FALSE);
+unset($domain,$subdomain,$replace,$m);
 
-unset($srvtmp);
-
+// ---------------------------
 
 //  Ensure thet '.' is the first part of the include path
 $inc_path = explode(PATH_SEPARATOR, ini_get('include_path'));
@@ -151,11 +163,17 @@ unset($inc_path);
 //
 @include_once(realpath(dirname(__FILE__).'/e107_config.php'));
 
+// set debug mode in e107_config.php when admin access is unavailable
+if(defset('e_DEBUG')==TRUE) 
+{
+	$error_handler->debug = true;
+	error_reporting(E_ALL);	
+}
+
 if(isset($CLASS2_INCLUDE) && ($CLASS2_INCLUDE!=''))
 { 
 	 require_once(realpath(dirname(__FILE__).'/'.$CLASS2_INCLUDE)); 
 }
-
 
 if(!isset($ADMIN_DIRECTORY))
 {
@@ -179,48 +197,24 @@ if (strpos($_SERVER['PHP_SELF'], "trackback") === false) {
 		}
 	}
 }
+unset($inArray);
 
-// Experimental Code Below.
-// e-Token START
+// Session start. 
 
-session_start();
-session_regenerate_id(true); // true don't work on php4 - so time to move on people!	
+/**
+ * G: Retrieve Query data from URI
+ * (Until this point, we have no idea what the user wants to do)
+ */
 
-
-
-$token_name = 'e107_token_'.md5($_SERVER['HTTP_HOST'].e_HTTP);
-if(isset($_POST['e-token']) && ($_POST['e-token'] != $_SESSION[$token_name]) && $_POST['ajax_used']!=1)
-{
-	// echo "<br />Session token=".$_SESSION[$token_name];
-	// prevent dead loop, save server resources
-	// echo "<pre>".print_r($_POST,TRUE)."</pre>";
-	die('Access denied');
-}	
-	
-define('e_TOKEN', uniqid(md5(rand()),true));
-$_SESSION[$token_name] = e_TOKEN;
-// e-Token END
-
-//
-// G: Retrieve Query data from URI
-//    (Until this point, we have no idea what the user wants to do)
-//
 if (preg_match("#\[(.*?)](.*)#", $_SERVER['QUERY_STRING'], $matches)) {
 	define("e_MENU", $matches[1]);
 	$e_QUERY = $matches[2];
-
-	if(strlen(e_MENU) == 2) // language code ie. [fr]
-	{
-        require_once(e_HANDLER."language_class.php");
-		$slng = new language;
-		define("e_LANCODE",TRUE);
-		$_GET['elan'] = $slng->convert(e_MENU);
-	}
-
-}else {
+	unset($matches);
+}
+else
+{
 	define("e_MENU", "");
 	$e_QUERY = $_SERVER['QUERY_STRING'];
-  	define("e_LANCODE", "");
 }
 
 //
@@ -257,14 +251,15 @@ define("e_UC_ADMIN", 254);
 define("e_UC_NOBODY", 255);
 define("ADMINDIR", $ADMIN_DIRECTORY);
 
-//
-// H: Initialize debug handling
-// (NO E107 DEBUG CONSTANTS OR CODE ARE AVAILABLE BEFORE THIS POINT)
-// All debug objects and constants are defined in the debug handler
-// i.e. from here on you can use E107_DEBUG_LEVEL or any
-// E107_DBG_* constant for debug testing.
-//
-	require_once(e_HANDLER.'debug_handler.php');
+/**
+ * H: Initialize debug handling
+ * (NO E107 DEBUG CONSTANTS OR CODE ARE AVAILABLE BEFORE THIS POINT)
+ * All debug objects and constants are defined in the debug handler
+ * i.e. from here on you can use E107_DEBUG_LEVEL or any
+ * E107_DBG_* constant for debug testing.
+ */
+
+require_once(e_HANDLER.'debug_handler.php');
 
 if(E107_DEBUG_LEVEL && isset($db_debug) && is_object($db_debug)) {
 	$db_debug->Mark_Time('Start: Init ErrHandler');
@@ -402,57 +397,107 @@ $sql->db_Mark_Time('(Extracting Core Prefs Done)');
 //
 define("SITEURLBASE", ($pref['ssl_enabled'] == '1' ? "https://" : "http://").$_SERVER['HTTP_HOST']);
 define("SITEURL", SITEURLBASE.e_HTTP);
+define("e_SELF", ($pref['ssl_enabled'] == '1' ? "https://".$_SERVER['HTTP_HOST'] : "http://".$_SERVER['HTTP_HOST']) . ($_SERVER['PHP_SELF'] ? $_SERVER['PHP_SELF'] : $_SERVER['SCRIPT_FILENAME']));
+$page = substr(strrchr($_SERVER['PHP_SELF'], "/"), 1);
+define("e_PAGE", $page);
+	  
+/**
+ * Detect if we are in the Admin Area. 
+ * The following files are assumed to be admin areas:
+ * 1. Any file in the admin directory (check for non-plugin added to avoid mismatches)
+ * 2. any plugin file starting with 'admin_'
+ * 3. any plugin file in a folder called admin/
+ * 4. any file that specifies $eplug_admin = TRUE before class2.php is included.
+ */
+$inAdminDir = FALSE;
+$isPluginDir = strpos(e_SELF,'/'.$PLUGINS_DIRECTORY) !== FALSE;		// True if we're in a plugin
+$e107Path = str_replace($e107->base_path, "", e_SELF);				// Knock off the initial bits
+if	(
+		 (!$isPluginDir && strpos($e107Path, $ADMIN_DIRECTORY) === 0 ) 								// Core admin directory
+	  || ($isPluginDir && (strpos(e_PAGE,"admin_") === 0 || strpos($e107Path, "admin/") !== FALSE)) // Plugin admin file or directory
+	  || (varsettrue($eplug_admin))																	// Admin forced
+	)
+{
+	$inAdminDir = TRUE;
+}
 
-// let the subdomain determine the language (when enabled).
+// -----------------------------------------
 
 // Ensure $pref['sitelanguage'] is set if upgrading from 0.6
 $pref['sitelanguage'] = (isset($pref['sitelanguage']) ? $pref['sitelanguage'] : 'English');
-
-if(varset($pref['multilanguage_subdomain']) && ($pref['user_tracking'] == "session") && e_DOMAIN && MULTILANG_SUBDOMAIN !== FALSE)
-{
-		$mtmp = explode("\n", $pref['multilanguage_subdomain']);
-        foreach($mtmp as $val)
-		{
-        	if(e_DOMAIN == trim($val))
-			{
-            	$domain_active = TRUE;
-			}
-		}
-
-		if($domain_active || ($pref['multilanguage_subdomain'] == "1"))
-		{
-			e107_ini_set("session.cookie_domain", ".".e_DOMAIN);
-			require_once(e_HANDLER."language_class.php");
-			$slng = new language;
-	        if(!e_SUBDOMAIN)
-			{
-	        	$GLOBALS['elan'] = $pref['sitelanguage'];
-			}
-			elseif($eln = $slng->convert(e_SUBDOMAIN))
-			{
-	          	$GLOBALS['elan'] = $eln;
-			}
-		}
-}
-
 
 // if a cookie name pref isn't set, make one :)
 if (!$pref['cookie_name']) {
 	$pref['cookie_name'] = "e107cookie";
 }
 
+$sql->db_Mark_Time('Start: Init Language and detect changes');
+require_once(e_HANDLER."language_class.php");
+$lng = new language;
+$lng->detect(); // Must be before session_start(). Requires $pref, e_DOMAIN, e_MENU;
+
+// e-Token START
+$sql->db_Mark_Time('Start: e-Token creation');
+
+/**
+ * Set Cache Headers
+ * Must be set before session_start()
+ */
+if($inAdminDir || defined('e_NOCACHE'))
+{
+	 session_cache_limiter('nocache'); // don't cache the html. (Should fix back-button issues)
+}
+else
+{
+	header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");
+	header("Last-Modified: ".gmdate("D, d M Y H:i:s")." GMT");
+	header("Cache-Control: post-check=0, pre-check=0",false);
+	session_cache_limiter("must-revalidate");	
+}
+
+// Start session after $prefs are available.
+session_start(); // Needs to be started after language detection (session.cookie_domain) to avoid multi-language 'access-denied' issues. 
+header("Cache-Control: must-revalidate");	
+// TODO - maybe add IP as well?
+define('e_TOKEN_NAME', 'e107_token_'.md5($_SERVER['HTTP_HOST'].e_HTTP));
+
+if(isset($_SESSION) && isset($_POST['e-token']) && ($_POST['e-token'] != $_SESSION[e_TOKEN_NAME]) && $_POST['ajax_used']!=1)
+{
+	// do not redirect, prevent dead loop, save server resources
+	die('Access denied');
+}	
+
+// Create new token only if not exists or session id is regenerated (footer.php)
+if(!isset($_SESSION[e_TOKEN_NAME]) || (isset($_SESSION['regenerate_'.e_TOKEN_NAME]) && !defsettrue('e_TOKEN_FREEZE')))
+{
+	// we should not break ajax calls this way
+	$_SESSION[e_TOKEN_NAME] = uniqid(md5(rand()), true);
+	// this will be reset in the end of the script (footer) if needed
+	unset($_SESSION['regenerate_'.e_TOKEN_NAME]);
+}
+
+// use it now
+define('e_TOKEN', $_SESSION[e_TOKEN_NAME]);
+
+// Debug
+//header('X-etoken-name: '.e_TOKEN_NAME);
+//header('X-etoken-value: '.e_TOKEN);
+//header('X-etoken-freeze: '.(defsettrue('e_TOKEN_FREEZE') ? 1 : 0));
+
+// e-Token END
 // start a session if session based login is enabled
+
 // if ($pref['user_tracking'] == "session")
 //{
 //	session_start(); // start the session, even if it won't be used for login-tracking. 
 //}
 
-define("e_SELF", ($pref['ssl_enabled'] == '1' ? "https://".$_SERVER['HTTP_HOST'] : "http://".$_SERVER['HTTP_HOST']) . ($_SERVER['PHP_SELF'] ? $_SERVER['PHP_SELF'] : $_SERVER['SCRIPT_FILENAME']));
 
 // if the option to force users to use a particular url for the site is enabled, redirect users there as needed
 // Now matches RFC 2616 (sec 3.2): case insensitive, https/:443 and http/:80 are equivalent.
 // And, this is robust against hack attacks. Malignant users can put **anything** in HTTP_HOST!
-if($pref['redirectsiteurl'] && $pref['siteurl']) {
+if($pref['redirectsiteurl'] && $pref['siteurl'])
+{
 
 	if(isset($pref['multilanguage_subdomain']) && $pref['multilanguage_subdomain'])
 	{
@@ -498,131 +543,24 @@ if($pref['redirectsiteurl'] && $pref['siteurl']) {
 	}
 }
 
-$page = substr(strrchr($_SERVER['PHP_SELF'], "/"), 1);
-define("e_PAGE", $page);
+/**
+ * Set the User's Language
+ */
+$sql->db_Mark_Time('Start: Set User Language');
 
-// sort out the users language selection
-if (isset($_POST['setlanguage']) || isset($_GET['elan']) || isset($GLOBALS['elan']))
+$lng->set(); // set e_LANGUAGE, USERLAN, Language Session / Cookies etc. requires $pref; 
+
+header('Content-Language: '.e_LAN);
+
+if(varset($pref['multilanguage']) && (e_LANGUAGE != $pref['sitelanguage']))
 {
-	// query support, for language selection splash pages. etc
-	if($_GET['elan'])
-	{
-		$_POST['sitelanguage'] = str_replace(array(".", "/", "%"), "", $_GET['elan']);
-	}
-	if($GLOBALS['elan'] && !isset($_POST['sitelanguage']))
-	{
-		$_POST['sitelanguage'] = $GLOBALS['elan'];
-	}
-
-	$sql->mySQLlanguage = $_POST['sitelanguage'];
-	$sql2->mySQLlanguage = $_POST['sitelanguage'];
-
-	if ($pref['user_tracking'] == "session")
-	{
-		$_SESSION['e107language_'.$pref['cookie_name']] = $_POST['sitelanguage'];
-	}
-	else
-	{
-		setcookie('e107language_'.$pref['cookie_name'], $_POST['sitelanguage'], time() + 86400, "/");
-		$_COOKIE['e107language_'.$pref['cookie_name']] = $_POST['sitelanguage'];
-		if (strpos(e_SELF, ADMINDIR) === FALSE)
-		{
-			$locat = ((!$_GET['elan'] && e_QUERY) || (e_QUERY && e_LANCODE)) ? e_SELF."?".e_QUERY : e_SELF;
-			header("Location:".$locat);
-			exit();
-		}
-	}
+	$sql->mySQLlanguage  = e_LANGUAGE;
+	$sql2->mySQLlanguage = e_LANGUAGE;
 }
-
-// Multi-language options.
-
-// Get language list for rights checking.
-if( ! $tmplan = getcachedvars('language-list'))
-{
-	$handle = opendir(e_LANGUAGEDIR);
-	while ($file = readdir($handle))
-	{
-		// add only if e_LANGUAGEDIR.e_LANGUAGE/e_LANGUAGE
-		if ($file != '.' && $file != '..' && is_readable(e_LANGUAGEDIR.$file.'/'.$file.'.php'))
-		{
-			$lanlist[] = $file;
-		}
-	}
-	closedir($handle);
-	$tmplan = implode(',', $lanlist);
-	cachevars('language-list', $tmplan);
-}
-// Save language flat list
-define('e_LANLIST', $tmplan);
-
-// Set $language fallback to $pref['sitelanguage'] for the time being
-$language = $pref['sitelanguage'];
-
-// Get user language choice
-/// Force no multilingual sites to keep there preset languages? if (varset($pref['multilanguage']))
-{
-	if ($pref['user_tracking'] == 'session')
-	{
-		$user_language = (array_key_exists('e107language_'.$pref['cookie_name'], $_SESSION) ? $_SESSION['e107language_'.$pref['cookie_name']] : '');
-	}
-	else
-	{
-		$user_language= (isset($_COOKIE['e107language_'.$pref['cookie_name']])) ? $_COOKIE['e107language_'.$pref['cookie_name']] : '';
-	}
-	// Strip $user_language
-	//TODO allow [a-z][A-Z][0-9]_
-	$user_language = preg_replace('#\W#', '', $user_language);
-
-	// Is user language choice available?
-	if( ! in_array($user_language, $lanlist))
-	{
-		// Reset session
-		if(isset($_SESSION))
-		{
-			unset($_SESSION['e107language_'.$pref['cookie_name']]);
-		}
-		// Reset cookie
-		if(isset($_COOKIE['e107language_'.$pref['cookie_name']]))
-		{
-			unset($_COOKIE['e107language_'.$pref['cookie_name']]);
-		}
-		$user_language = '';
-	}
-	else
-	{
-		$language = $user_language;
-	}
-
-	// Ensure db got the proper language - default is empty
-	if (varset($pref['multilanguage']))
-	{
-		$sql->mySQLlanguage  = $user_language;
-		$sql2->mySQLlanguage = $user_language;
-	}
-}
-// We should have the language by now
-define('e_LANGUAGE', $language);
-
-// Keep USERLAN for backward compatibility
-define('USERLAN', e_LANGUAGE);
 
 //TODO do it only once and with the proper function
 include_lan(e_LANGUAGEDIR.e_LANGUAGE."/".e_LANGUAGE.".php");
 include_lan(e_LANGUAGEDIR.e_LANGUAGE."/".e_LANGUAGE."_custom.php");
-
-if($pref['sitelanguage'] != e_LANGUAGE && varset($pref['multilanguage']) && !$pref['multilanguage_subdomain'])
-{
-	list($clc) = explode("_",CORE_LC);
-	define("e_LAN", strtolower($clc));
-	define("e_LANQRY", "[".e_LAN."]");
-	unset($clc);
-}
-else
-{
-    define("e_LAN", FALSE);
-	define("e_LANQRY", FALSE);
-}
-$sql->db_Mark_Time('(Start: Pref/multilang done)');
 
 //
 // N: misc setups: online user tracking, cache
@@ -911,30 +849,11 @@ if(!is_array($menu_data)) {
 
 $sql->db_Mark_Time('(Start: Find/Load Theme)');
 
-
-// Work out which theme to use
-//----------------------------
-// The following files are assumed to use admin theme:
-//	  1. Any file in the admin directory (check for non-plugin added to avoid mismatches)
-// 	  2. any plugin file starting with 'admin_'
-// 	  3. any plugin file in a folder called admin/
-// 	  4. any file that specifies $eplug_admin = TRUE;
-//
-// e_SELF has the full HTML path
-$inAdminDir = FALSE;
-$isPluginDir = strpos(e_SELF,'/'.$PLUGINS_DIRECTORY) !== FALSE;		// True if we're in a plugin
-$e107Path = str_replace($e107->base_path, "", e_SELF);				// Knock off the initial bits
-if	(
-		 (!$isPluginDir && strpos($e107Path, $ADMIN_DIRECTORY) === 0 ) 								// Core admin directory
-	  || ($isPluginDir && (strpos(e_PAGE,"admin_") === 0 || strpos($e107Path, "admin/") !== FALSE)) // Plugin admin file or directory
-	  || (varsettrue($eplug_admin))																	// Admin forced
-	)
+// Load admin Language File. 
+if($inAdminDir == TRUE)
 {
-	$inAdminDir = TRUE;
-	// Load admin phrases ASAP
-	include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_admin.php');
+	include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_admin.php');	
 }
-
 
 if(!defined("THEME"))
 {
@@ -1110,7 +1029,7 @@ function check_class($var, $userclass = USERCLASS, $peer = FALSE, $debug = FALSE
 		$_admin = $peer['user_admin'] === 1;
 		$peer = false;
 	} else {
-		$_adminperms = ADMINPERMS;
+		$_adminperms = defined('ADMINPERMS') ? ADMINPERMS : '';
 		$_user = USER;
 		$_admin = ADMIN;
 	}
@@ -1306,7 +1225,7 @@ function save_prefs($table = 'core', $uid = USERID, $row_val = '')
 
 	  // Now save the updated values
 	  // traverse the pref array, with toDB on everything
-	  $_pref = $tp -> toDB($pref, true, true);
+	  $_pref = $tp -> toDB($pref, true, true, 'pReFs');
 	  // Create the data to be stored
 	  $sql->db_Select_gen("REPLACE INTO `#core` (e107_name,e107_value) values ('SitePrefs', '".$eArrayStorage->WriteArray($_pref)."') ");
 	  ecache::clear('SitePrefs');
@@ -1631,7 +1550,12 @@ if(isset($pref['track_online']) && $pref['track_online']) {
 	$e_online->online($pref['track_online'], $pref['flood_protect']);
 }
 
-function cookie($name, $value, $expire=0, $path = "/", $domain = "", $secure = 0) {
+function cookie($name, $value, $expire=0, $path = e_HTTP, $domain = "", $secure = 0)
+{
+	if(defined('MULTILANG_SUBDOMAIN') && MULTILANG_SUBDOMAIN === TRUE)
+	{
+		$domain = e_DOMAIN;
+	}
 	setcookie($name, $value, $expire, $path, $domain, $secure);
 }
 

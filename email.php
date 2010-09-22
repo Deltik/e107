@@ -4,16 +4,16 @@
 |     e107 website system
 |
 |     Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/email.php,v $
-|     $Revision: 11643 $
-|     $Date: 2010-07-31 09:58:45 -0500 (Sat, 31 Jul 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/email.php $
+|     $Revision: 11808 $
+|     $Id: email.php 11808 2010-09-21 18:04:36Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -94,7 +94,7 @@ if (isset($_POST['emailsubmit']))
 
 	if ($comments == '')
 	{
-		$message = LAN_EMAIL_188.' '.SITENAME.' ('.SITEURL.')';
+		$message = LAN_EMAIL_6.' '.SITENAME.' ('.SITEURL.')';
 		if (USER == TRUE)
 		{
 			$message .= "\n\n".LAN_EMAIL_1." ".USERNAME;
@@ -106,7 +106,7 @@ if (isset($_POST['emailsubmit']))
 	}
 	else
 	{
-		$message .= $comments."\n";
+//		$message .= $comments."\n";		// Added into message later
 	}
 	$ip = $e107->getip();
 	$message .= "\n\n".LAN_EMAIL_2." ".$ip."\n\n";

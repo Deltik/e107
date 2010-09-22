@@ -1,16 +1,18 @@
 <?php
 /*
 + ----------------------------------------------------------------------------+
-|	e107 website system
+|     e107 website system
 |
-| 	Copyright (C) 2008-2010 e107 Inc (e107.org)
-| 	Released under the terms and conditions of the
-| 	GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
 |
-|	$Source: /cvs_backup/e107_0.7/e107_handlers/event_class.php,v $
-|	$Revision: 11649 $
-|	$Date: 2010-08-04 20:18:09 -0500 (Wed, 04 Aug 2010) $
-|	$Author: e107coders $
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/event_class.php $
+|     $Revision: 11769 $
+|     $Id: event_class.php 11769 2010-09-09 10:03:49Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 	
@@ -48,7 +50,16 @@ class e107_event
 	 */
 	function register($eventname, $function, $include='')
 	{
-		// 
+		if(!isset($_SESSION['e_EVENT_functions'][$eventname])) // Notice removal
+		{
+			$_SESSION['e_EVENT_functions'][$eventname] = array();		
+		}
+		
+		if(!isset($_SESSION['e_EVENT_includes'][$eventname])) // Notice removal
+		{
+			$_SESSION['e_EVENT_includes'][$eventname] = array();		
+		}  
+		
 		if ($include!='')
 		{
 			// $this->includes[$eventname][] = $include;

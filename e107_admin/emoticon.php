@@ -3,17 +3,17 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_admin/emoticon.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 12:56:14 -0600 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/emoticon.php $
+|     $Revision: 11797 $
+|     $Id: emoticon.php 11797 2010-09-17 21:58:27Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -149,6 +149,7 @@ class emotec
 		<td class='forumheader' style='width: 50%;'>".EMOLAN_3."</td>
 		<td class='forumheader' style='width: 10%; text-align: center;'>".EMOLAN_8."</td>
 		<td class='forumheader' style='width: 20%;'>".EMOLAN_9."</td>
+		</tr>
 		";
 
 		$reject = array('^\.$','^\.\.$','^\/$','^CVS$','thumbs\.db','.*\._$', 'emoteconf*', '\.bak$');

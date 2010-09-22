@@ -3,21 +3,51 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_admin/footer.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 12:56:14 -0600 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/footer.php $
+|     $Revision: 11753 $
+|     $Id: footer.php 11753 2010-09-06 20:59:15Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
 $In_e107_Footer = TRUE;	// For registered shutdown function
+
+// simple SESSION Fixation
+	if(!session_id()) // someone closed the session?
+	{
+		session_start(); // restart
+	}
+
+// give 3rd party code a way to prevent token/session re-generation
+if(!defsettrue('e_TOKEN_FREEZE'))
+{
+	// regenerate SID
+	$oldSID = session_id(); // old SID
+	$oldSData = $_SESSION; // old session data
+	session_regenerate_id(false); // true don't work on php4 - so time to move on people!	
+	$newSID = session_id(); // new SID
+	
+	// Clean
+	session_id($oldSID); // switch to the old session
+	session_destroy(); // destroy it
+	
+	// set new ID, reopen the session, set saved data
+	session_id($newSID);
+	session_start();
+	$_SESSION = $oldSData;
+	$_SESSION['regenerate_'.e_TOKEN_NAME] = time(); // class2 have to re-create token on the next request
+	unset($oldSID, $newSID, $oldSData);
+}
+// write session data
+session_write_close();
+// SESSION End
 
 global $eTraffic, $error_handler, $db_time, $sql, $mySQLserver, $mySQLuser, $mySQLpassword, $mySQLdefaultdb, $ADMIN_FOOTER, $e107, $pref;
 
@@ -228,23 +258,53 @@ echo "</body></html>";
 $page = ob_get_clean();
 
 $etag = md5($page);
-header("Cache-Control: must-revalidate");
-header("ETag: {$etag}");
+
+if (isset($_SERVER['HTTP_IF_NONE_MATCH']))
+{
+	$IF_NONE_MATCH = str_replace('"','',$_SERVER['HTTP_IF_NONE_MATCH']);
+	
+	$data = "IF_NON_MATCH = ".$IF_NONE_MATCH;
+	$data .= "\nEtag = ".$etag;
+	file_put_contents(e_ADMIN."etag_log.txt",$data);
+
+	
+	if($IF_NONE_MATCH == $etag || ($IF_NONE_MATCH == ($etag."-gzip")))
+	{
+		header('HTTP/1.1 304 Not Modified');
+		exit();	
+	}
+}
+
 
 $pref['compression_level'] = 6;
-if(strstr(varset($_SERVER["HTTP_ACCEPT_ENCODING"],""), "gzip")) {
+if(strstr(varset($_SERVER["HTTP_ACCEPT_ENCODING"],""), "gzip"))
+{
 	$browser_support = true;
 }
-if(ini_get("zlib.output_compression") == false && function_exists("gzencode")) {
+if(ini_get("zlib.output_compression") == false && function_exists("gzencode"))
+{
 	$server_support = true;
 }
-if(varset($pref['compress_output'],false) && $server_support == true && $browser_support == true) {
+if(varset($pref['compress_output'],false) && $server_support == true && $browser_support == true)
+{
 	$level = intval($pref['compression_level']);
+	header("ETag: \"{$etag}-gzip\"");
 	$page = gzencode($page, $level);
 	header("Content-Encoding: gzip", true);
 	header("Content-Length: ".strlen($page), true);
 	echo $page;
-} else {
+}
+else 
+{
+	if($browser_support==TRUE) 
+	{
+		header("ETag: \"{$etag}-gzip\"");	
+	}
+	else
+	{
+		header("ETag: \"{$etag}\"");	
+	}
+	
 	header("Content-Length: ".strlen($page), true);
 	echo $page;
 }

@@ -4,16 +4,16 @@
 |     e107 website system
 |
 |     Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_files/shortcode/batch/bbcode_shortcodes.php,v $
-|     $Revision: 11660 $
-|     $Date: 2010-08-16 11:41:35 -0500 (Mon, 16 Aug 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_files/shortcode/batch/bbcode_shortcodes.php $
+|     $Revision: 11783 $
+|     $Id: bbcode_shortcodes.php 11783 2010-09-14 00:30:38Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -59,6 +59,7 @@ $bbcode['u'] = array($bbcode_func,"[u][/u]", LANHELP_26,"underline.png");
 $bbcode['center'] = array($bbcode_func,"[center][/center]", LANHELP_28,"center.png");
 $bbcode['left'] = array($bbcode_func,"[left][/left]", LANHELP_29,"left.png");
 $bbcode['right'] = array($bbcode_func,"[right][/right]", LANHELP_30,"right.png");
+$bbcode['justify'] = array($bbcode_func,"[justify][/justify]", LANHELP_49,"justify.png");
 $bbcode['bq'] = array($bbcode_func,"[blockquote][/blockquote]", LANHELP_31,"blockquote.png");
 $bbcode['code'] = array($bbcode_func,"[code][/code]", LANHELP_32,"code.png");
 $bbcode['list'] = array($bbcode_func,"[list][/list]", LANHELP_36,"list.png");

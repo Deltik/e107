@@ -1,20 +1,21 @@
 <?php
 /*
-+---------------------------------------------------------------+
-| e107 website system
-| ©Steve Dunstan 2001-2002
-| http://e107.org
-| jalist@e107.org
++ ----------------------------------------------------------------------------+
+|     e107 website system
 |
-| Plugin : Integrity-Checker
-| Version: 0.01 (first release)
-| ©HeX0R 2004
-| http://h3x0r.ath.cx
-| hex0r@h3x0r.ath.cx
-
-| Released under the terms and conditions of the
-| GNU General Public License (http://gnu.org).
-+---------------------------------------------------------------+
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|     Plugin : Integrity-Checker Version: 0.01 (first release)
+|     Copyright (C) 2004 HeX0R (http://h3x0r.ath.cx hex0r@h3x0r.ath.cx) 
+|
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/integrity_check/plugin.php $
+|     $Revision: 11678 $
+|     $Id: plugin.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Author: e107coders $
++----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }

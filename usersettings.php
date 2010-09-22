@@ -1,16 +1,19 @@
 <?php
 /*
-* e107 website system
-*
-* Copyright (C) 2008-2010 e107 Inc (e107.org)
-* Released under the terms and conditions of the
-* GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
-*
-* User settings editing
-*
-* $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/usersettings.php $
-* $Id: usersettings.php 11645 2010-08-01 12:57:11Z e107coders $
-*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/usersettings.php $
+|     $Revision: 11707 $
+|     $Id: usersettings.php 11707 2010-08-26 23:20:16Z e107coders $
+|     $Author: e107coders $
++----------------------------------------------------------------------------+
 */
 
 // Experimental e-token
@@ -19,7 +22,7 @@ if(!empty($_POST) && !isset($_POST['e-token']))
 	// set e-token so it can be processed by class2
 	$_POST['e-token'] = '';
 }
-
+define("e_NOCACHE",TRUE);
 require_once("class2.php");
 require_once(e_HANDLER."ren_help.php");
 require_once(e_HANDLER."user_extended_class.php");
@@ -645,7 +648,7 @@ $text .= "<div>";
 
 $text .= "
 	<input type='hidden' name='_uid' value='{$uuid}' />
-	<input type='hidden' name='e-token' value='".e_TOKEN."' />
+	<input type='hidden' name='e-token' value='".e_TOKEN."' style='width:100%' />
 	</div>
 	</form>
 	";

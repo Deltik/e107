@@ -3,17 +3,17 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_handlers/mail.php,v $
-|     $Revision: 11650 $
-|     $Date: 2010-08-07 05:46:04 -0500 (Sat, 07 Aug 2010) $
-|     $Author: e107steved $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/mail.php $
+|     $Revision: 11678 $
+|     $Id: mail.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 

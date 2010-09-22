@@ -4,14 +4,14 @@
 |     e107 website system
 |
 |     Copyright (c) e107 Inc. 2008-2010
-|     http://e107.org
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_admin/language.php,v $
-|     $Revision: 11657 $
-|     $Date: 2010-08-14 18:30:49 -0500 (Sat, 14 Aug 2010) $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/language.php $
+|     $Revision: 11810 $
+|     $Id: language.php 11810 2010-09-22 21:02:57Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -27,12 +27,18 @@ $e_sub_cat = 'language';
 require_once("auth.php");
 require_once(e_HANDLER."form_handler.php");
 require_once(e_HANDLER."file_class.php");
+require_once(e_HANDLER."language_class.php");
+$ln = new language;
 $fl = new e_file;
 $rs = new form;
 
 $tabs = table_list(); // array("news","content","links");
-$lanlist = explode(",",e_LANLIST);
+
+$lanlist = getLanlist();
 $message = "";
+
+
+
 
 if (e_QUERY) {
     $tmp = explode('.', e_QUERY);
@@ -135,6 +141,8 @@ if (varset($_POST['ziplang']) && varset($_POST['language']))
  */
 function share($newfile)
 {
+	global $pref;
+	
 	if(!$newfile)
 	{
 		return;
@@ -146,32 +154,48 @@ function share($newfile)
 	$email_message = "<br />Site: <a href='".SITEURL."'>".SITENAME."</a>
 	<br />User: ".USERNAME."\n
 	<br />Email: ".USEREMAIL."\n
+	<br />Language: ".$_POST['language']."\n
 	<br />IP:".USERIP."
-	<br />...would like to contribute the following language pack for e107. (see attached):
-	";
+	<br />...would like to contribute the following language pack for e107. (see attached)<br />:
+		
+	
+	<br />Missing Files: ".$_SESSION['lancheck_'.$_POST['language']]['file']."
+	<br />Bom Errors : ".$_SESSION['lancheck_'.$_POST['language']]['bom']."
+	<br />UTF Errors : ".$_SESSION['lancheck_'.$_POST['language']]['utf']."
+	<br />Definition Errors : ".$_SESSION['lancheck_'.$_POST['language']]['def']."
+	<br />Total Errors: ".$_SESSION['lancheck_'.$_POST['language']]['total'];
+	
+	
 	
 	require_once(e_HANDLER."mail.php");
 	
-	$send_to = "languagepacks@e107inc.org"; 
+	$send_to = (!$_POST['contribute_pack']) ? "languagepacks@e107inc.org" : "certifiedpack@e107inc.org"; 
 	$to_name = "e107 Inc.";
 	$Cc = "";
 	$Bcc = "";
 	$returnpath='';
 	$returnreceipt='';
 	$inline ="";
-	$subject = basename($newfile);
+		
+	$subject = (!$_POST['contribute_pack']) ? "[0.7 LanguagePack] " : "[0.7 Certified LanguagePack] ";		
+	$subject .= basename($newfile);
 	
-	if(!sendemail($send_to, $subject, $email_message, $to_name, "", "", $newfile, $Cc, $Bcc, $returnpath, $returnreceipt,$inline))
+	if(!@sendemail($send_to, $subject, $email_message, $to_name, '', '', $newfile, $Cc, $Bcc, $returnpath, $returnreceipt,$inline))
 	{
 		$text = "<div style='padding:40px'>";
-		$text .= defined('LANG_LAN_EML') ?  "<b>".LANG_LAN_EML."</b>" : "<b>Please email your language pack to:</b>";
-		$text .= " <a href='mailto:".$send_to."'>".$send_to."</a>";
+		$text .= defined('LANG_LAN_EML') ?  "<b>".LANG_LAN_EML."</b>" : "<b>There was a problem sending the language-pack. Please email your verified language pack to:</b>";
+		$text .= " <a href='mailto:".$send_to."?subject=".$subject."'>".$send_to."</a>";
 		$text .= "</div>";
 		
-		return $text;
-	} 
+		return $text;	
+	}
+	elseif($_POST['contribute_pack'])
+	{
+		return "<div style='padding:40px'>Pack Sent to e107 Inc. A confirmation email will be sent to ".$pref['siteadminemail']." once it is received.<br />Please also make sure that email coming from ".$send_to." is not blocked by your spam filter.</div>";
+	}
+
 	
-	return "";
+
 }
 
 unset($text);
@@ -466,22 +490,22 @@ function show_tools()
     include_lan(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_lancheck.php");
 
     $text .= "
-    <form name='lancheck' method='post' action='".e_ADMIN."lancheck.php'>
+    <form id='lancheck' method='post' action='".e_ADMIN."lancheck.php'>
     <table class='fborder' style='".ADMIN_WIDTH."'>
     <tr>
-    <td class='fcaption' style='width:40%'>".LAN_CHECK_1."</td>
-    <td class='forumheader3' style='text-align:center'>
+    <td class='fcaption' style='width:30%'>".LAN_CHECK_1."</td>
+    <td class='forumheader3'>
     <select name='language' class='tbox'>
     <option value=''>".LAN_SELECT."</option>";
 
-    $languages = explode(",",e_LANLIST);
-    sort($languages);
+    $languages = getLanList();
 
     foreach($languages as $lang)
     {
         if($lang != "English")
         {
-            $text .= "<option value='{$lang}' >{$lang}</option>\n";
+        	
+            $text .= "<option value='{$lang}'>{$lang}</option>\n";
         }
     }
 
@@ -492,28 +516,36 @@ function show_tools()
     </table></form>";
 	
 	  $text .= "
-    <form name='lancheck' method='post' action='".e_SELF."?tools'>
+    <form id='tools' method='post' action='".e_SELF."?tools'>
     <table class='fborder' style='".ADMIN_WIDTH."'>
     <tr>
-    <td class='fcaption' style='width:40%'>".LANG_LAN_23."</td>
-    <td class='forumheader3' style='text-align:center'>
+    <td class='fcaption' style='width:30%'>".LANG_LAN_23."</td>
+    <td class='forumheader3' >
     <select name='language' class='tbox'>
     <option value=''>".LAN_SELECT."</option>";
 
-    $languages = explode(",",e_LANLIST);
-    sort($languages);
+  
 
     foreach($languages as $lang)
     {
         if($lang != "English")
         {
-            $text .= "<option value='{$lang}' >{$lang}</option>\n";
+        	$sel = ($_POST['language']==$lang) ? "selected='selected'" : "";
+            $text .= "<option value='{$lang}' {$sel}>{$lang}</option>\n";
         }
     }
 
     $text .= "
     </select>
-    <input type='submit' name='ziplang' value=\"".LANG_LAN_24."\" class='button' />
+    <input type='submit' name='ziplang' value=\"".LANG_LAN_24."\" class='button' />";
+	
+	$srch = array("[","]");
+	$repl = array("<a rel='external' href='http://e107.org/news.php?extend.876.1'>","</a>");
+	$diz = (defsettrue("LANG_LAN_28")) ? LANG_LAN_28 : "Check this box if you're an [e107 certified translator].";
+	
+	$text .= " <input type='checkbox' name='contribute_pack' value='1' />".str_replace($srch,$repl,$diz);
+	
+	$text .= "
     </td></tr>
     </table></form>";
 	
@@ -522,12 +554,55 @@ function show_tools()
     $ns->tablerender(LANG_LAN_21, $text);
 }
 
-
+function find_locale($language)
+{
+	if(!is_readable(e_LANGUAGEDIR.$language."/".$language.".php"))
+	{
+		return FALSE;		
+	}
+		
+	$code = file_get_contents(e_LANGUAGEDIR.$language."/".$language.".php");
+	$tmp = explode("\n",$code);
+	
+	$srch = array("define","'",'"',"(",")",";","CORE_LC2","CORE_LC",",");
+		
+	foreach($tmp as $line)
+	{
+		if(strpos($line,"CORE_LC") !== FALSE && (strpos($line,"CORE_LC2") === FALSE))
+		{
+			$lc = trim(str_replace($srch,"",$line));
+		}
+		elseif(strpos($line,"CORE_LC2") !== FALSE)
+		{
+			$lc2 = trim(str_replace($srch,"",$line));
+		}		
+			
+	}
+	
+	if(!isset($lc) || !isset($lc2) || $lc=="" || $lc2=="")
+	{
+		return FALSE;	
+	}
+		
+	 return substr($lc,0,2)."_".strtoupper(substr($lc2,0,2)); 
+	// 
+}
 // ----------------------------------------------------------------------------
 
 function zip_up_lang($language)
 {
 	global $tp;
+	$ret = array();
+	$ret['file'] = "";
+	
+	if(!isset($_SESSION['lancheck_'.$language]))
+	{
+		$ret = array();
+		$ret['error'] = TRUE;
+		$ret['message'] = (defined('LANG_LAN_27')) ? LANG_LAN_27 : "Please verify your language files ('Verify') then try again.";
+		return $ret;	
+	}
+	
 		
 	if(!is_writable(e_FILE."public"))
 	{
@@ -536,11 +611,11 @@ function zip_up_lang($language)
 		return $ret;		
 	}
 	
-	if (is_readable(e_ADMIN."ver.php"))
+	if(is_readable(e_ADMIN."ver.php"))
 	{
-		include (e_ADMIN."ver.php");
+		include(e_ADMIN."ver.php");
 	}
-	 
+	
 	 $core_plugins = array(
 	"alt_auth","banner_menu","blogcalendar_menu","calendar_menu","chatbox_menu",
 	"clock_menu","comment_menu","compliance_menu","content","counter_menu",
@@ -554,21 +629,41 @@ function zip_up_lang($language)
 	 $core_themes = array("crahan","e107v4a","human_condition","interfectus","jayya",
 	 "khatru","kubrick","lamb","leaf","newsroom","reline","sebes","vekna_blue");
 
-	require_once (e_HANDLER.'pclzip.lib.php');
+	require_once(e_HANDLER.'pclzip.lib.php');
 	list($ver, $tmp) = explode(" ", $e107info['e107_version']);
-	$newfile = e_FILE."public/e107_".$ver."_".$language."_utf8.zip";
-	$archive = new PclZip($newfile);
-	$core = grab_lans(e_LANGUAGEDIR.$language."/", $language);
-	$plugs = grab_lans(e_PLUGIN, $language, $core_plugins);
-	$theme = grab_lans(e_THEME, $language, $core_themes);
-	$file = array_merge($core, $plugs, $theme);
-	$data = implode(",", $file);
-	
-	$ret = array();
-	
-	if ($archive->create($data) == 0)
+	if(!$locale = find_locale($language))
 	{
+		$ret['error'] = TRUE;
+		$file = "e107_languages/{$language}/{$language}.php";
+		$def = (defined('LANG_LAN_25')) ? LANG_LAN_25 : "Please check that CORE_LC and CORE_LC2 have values in [lcpath] and try again.";
+		$ret['message'] = str_replace("[lcpath]",$file,$def); // 
+		return $ret;	
+	}
 		
+	global $THEMES_DIRECTORY, $PLUGINS_DIRECTORY, $LANGUAGES_DIRECTORY, $HANDLERS_DIRECTORY, $HELP_DIRECTORY;
+		
+	if(($HANDLERS_DIRECTORY != "e107_handlers/") || ( $LANGUAGES_DIRECTORY != "e107_languages/") || ($THEMES_DIRECTORY != "e107_themes/") || ($HELP_DIRECTORY != "e107_docs/help/") || ($PLUGINS_DIRECTORY != "e107_plugins/"))
+	{
+		$ret['error'] = TRUE;
+		$ret['message'] = (defined('LANG_LAN_26')) ? LANG_LAN_26 : "Please make sure you are using default folder names in e107_config.php (eg. e107_languages/, e107_plugins/ etc.) and try again.";
+		return $ret;	
+	}	
+		
+	$newfile = e_FILE."public/e107_".$ver."_".$language."_".$locale."-utf8.zip";
+	
+	$archive = new PclZip($newfile);
+	$core = grab_lans(e_LANGUAGEDIR.$language."/", $language,'',0);
+	$core_admin = grab_lans(e_BASE.$LANGUAGES_DIRECTORY.$language."/admin/", $language,'',2);
+	$plugs = grab_lans(e_BASE.$PLUGINS_DIRECTORY, $language, $core_plugins); // standardized path. 
+	$theme  = grab_lans(e_BASE.$THEMES_DIRECTORY, $language, $core_themes);
+	$docs = grab_lans(e_BASE.$HELP_DIRECTORY,$language);
+	$handlers = grab_lans(e_BASE.$HANDLERS_DIRECTORY,$language); // standardized path. 
+		
+	$file = array_merge($core,$core_admin, $plugs, $theme, $docs, $handlers);
+	$data = implode(",", $file);
+				
+	if ($archive->create($data) == 0)
+	{		
 		$ret['error'] = TRUE;
 		$ret['message'] = $archive->errorInfo(true);
 		return $ret;
@@ -583,41 +678,73 @@ function zip_up_lang($language)
 	}
 }
 
-
-function grab_lans($path, $language, $filter = "")
+function getLanList()
 {
-	global $fl;
+	global $ln;
 	
-	if ($lanlist = $fl->get_files($path, "", "standard", 4))
+	$lst = explode(",",e_LANLIST);
+	$valid_langs = $ln->list;
+	$list = array();
+	
+	foreach($lst as $lang)
+	{
+		if(in_array($lang,$valid_langs))
+		{
+			$list[] = $lang;
+		}
+	}
+	
+	sort($list);
+	return $list;	
+}
+
+function grab_lans($path, $language, $filter = "",$depth=5)
+{
+	global $fl,$ln;
+	
+	if ($lanlist = $fl->get_files($path, "^[\w]+(\.php|\.js){0,1}$", "standard", $depth))
 	{
 		sort($lanlist);
 	}
 	else
 	{
-		return;
+		return array();
 	}
+	
+	
 	$pzip = array();
 	
+	$isocode = $ln->convert($language);
+	
+
 	
 	foreach ($lanlist as $p)
 	{	
 		$fullpath = $p['path'].$p['fname'];
-		
-		if($p['fname'] == ($language."_custom.php"))
+						
+		if($p['fname'] == ($language."_custom.php") || ($p['fname'] == ($language."_config.php")))
 		{
 			continue;
 		}
 		
-		if (strpos($fullpath, $language) !== FALSE)
+		$phpmailer = "phpmailer.lang-".$isocode.".php";
+		$tinyMce1 = "/langs/".$isocode.".js";
+		$tinyMce2 = "/langs/".$isocode."_dlg.js";
+		
+		
+		if (strpos($fullpath, $language) !== FALSE || strpos($fullpath,$phpmailer)!==FALSE || strpos($fullpath,$tinyMce1)!==FALSE || strpos($fullpath,$tinyMce2)!==FALSE)
 		{
 			if(is_array($filter))
 			{
-				$dir =  basename(dirname($p['path']));	
-
-				if(in_array($dir,$filter))
+				$dir =  basename(dirname($p['path']));
+				foreach($filter as $val)
 				{
-					$pzip[] = $fullpath;
-				}			
+					if(strpos($fullpath,$val)!==FALSE)
+					{
+						$pzip[] = $fullpath;	
+					}
+				}
+		
 			}
 			else
 			{
@@ -626,6 +753,7 @@ function grab_lans($path, $language, $filter = "")
 			
 		}
 	}
+	
 	return $pzip;
 }
 

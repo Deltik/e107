@@ -1,4 +1,4 @@
-// $Id: link.bb 11346 2010-02-17 18:56:14Z secretr $
+// $Id: link.bb 11696 2010-08-24 07:26:44Z e107steved $
 global $pref;
 
 /*
@@ -37,7 +37,7 @@ global $pref;
 		$parm .= ']';
 	}
 
-	list($link,$extras) = explode(" ",$parm);
+	list($link,$extras) = explode(' ',$parm.' ');
 	if(!$parm) $link = $code_text;
 
 	if($link == "external" && $extras == "")

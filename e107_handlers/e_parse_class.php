@@ -4,15 +4,15 @@
 |     e107 website system
 |
 |      Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_handlers/e_parse_class.php,v $
-|     $Revision: 11663 $
-|     $Date: 2010-08-19 04:52:55 -0500 (Thu, 19 Aug 2010) $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/e_parse_class.php $
+|     $Revision: 11804 $
+|     $Id: e_parse_class.php 11804 2010-09-21 07:38:40Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -107,6 +107,8 @@ class e_parse
 
 	var $replaceVars = array();
 
+
+
 	function e_parse()
 	{
 		// Preprocess the supermods to be useful default arrays with all values
@@ -119,9 +121,15 @@ class e_parse
 		{
 			$this->e_modSet[$key] = TRUE;
 		}
-
 	}
 
+
+
+	/**
+	 *
+	 *	@param boolean|'no_html'|'pReFs' $mod [optional]. 
+	 *			The 'pReFs' value is for internal use only, when saving prefs, to prevent sanitisation of HTML.
+	 */
 	function toDB($data, $nostrip = false, $no_encode = false, $mod = false)
 	{
 		global $pref;
@@ -139,10 +147,13 @@ class e_parse
 			{
 				$data = stripslashes($data);
 			}
-			$data = $this->preFilter($data);
-			if (!isset($pref['post_html']) || !check_class($pref['post_html']) || !isset($pref['post_script']) || !check_class($pref['post_script']))
+			if ($mod != 'pReFs')
 			{
-				$data = $this->dataFilter($data);
+				$data = $this->preFilter($data);
+				if (!check_class(varset($pref['post_html'], e_UC_MAINADMIN)) || !check_class(varset($pref['post_script'], e_UC_MAINADMIN)))
+				{
+					$data = $this->dataFilter($data);
+				}
 			}
 			if (isset($pref['post_html']) && check_class($pref['post_html']))
 			{
@@ -181,7 +192,7 @@ class e_parse
 
 		foreach ($ret as $s)
 		{
-			if (strpos($s, '[code') === FALSE)
+			if (substr($s, 0, 5) != '[code')
 			{
 				$vl = array();
 				$t = html_entity_decode(rawurldecode($s), ENT_QUOTES, CHARSET);
@@ -233,7 +244,12 @@ class e_parse
 
 	function preFilter($data)
 	{
-		$ret = preg_replace_callback('#\[(\w+?)(?:([\=\s])(.*?)){0,1}\](.*?)\[\/\\1(.*?)\]#is', array($this, 'filtTag'), $data);
+		if (!is_object($this->e_bb)) 
+		{
+			require_once(e_HANDLER.'bbcode_handler.php');
+			$this->e_bb = new e_bbcode;
+		}
+		$ret = $this->e_bb->parseBBCodes($data, 0, 'default', 'PRE');			// $postID zero for now - probably doesn't mater
 		return $ret;
 	}
 
@@ -249,7 +265,7 @@ class e_parse
 	 *		[5] - text after the closing tag but before the closing bracket (if any)
 	 *		[6] -
 	 */
-	function filtTag($matches)
+/*	function filtTag($matches)
 	{
 		switch (strtolower($matches[1]))
 		{
@@ -259,9 +275,10 @@ class e_parse
 				return $matches[0];
 		}
 	}
+*/
 
 
-
+	/* Deprecated function - leave in for now for the use of fixyoutube.php */
 	function checkYoutube(&$matches)
 	{
 		$bbpars = array();
@@ -291,7 +308,6 @@ class e_parse
 		}
 		else
 		{
-			//libxml_use_internal_errors(TRUE);
 			if (FALSE === ($info = simplexml_load_string($matches[4])))
 			{
 				//print_a($matches);
@@ -320,7 +336,7 @@ class e_parse
 				print_a($info);
 				return '[sanitised]'.$ok.'B'.htmlspecialchars($matches[0]).'B[/sanitised]';
 			}
-			$target =  $info2['@attributes'];
+			$target =  (array)$info2['@attributes'];
 			unset($info);
 			$ws = varset($target['width'], 0);
 			$hs = varset($target['height'], 0);
@@ -990,7 +1006,8 @@ class e_parse
         // Start parse [bb][/bb] codes
         if ($parseBB === TRUE)
 		{
-            if (!is_object($this->e_bb)) {
+			if (!is_object($this->e_bb)) 
+			{
                 require_once(e_HANDLER.'bbcode_handler.php');
                 $this->e_bb = new e_bbcode;
             }

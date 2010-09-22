@@ -3,14 +3,14 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $Source: /cvs_backup/e107_0.7/e107_languages/English/admin/lan_lancheck.php,v $
-|     $Revision: 11572 $
-|     $Date: 2010-06-05 01:13:51 -0500 (Sat, 05 Jun 2010) $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_lancheck.php $
+|     $Revision: 11756 $
+|     $Id: lan_lancheck.php 11756 2010-09-06 23:31:47Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 define("LAN_CHECK_1", "Verify/Edit Language Files"); // modified in 0.7.6
-define("LAN_CHECK_2", "Begin Verify");
+define("LAN_CHECK_2", "Verify");
 define("LAN_CHECK_3", "Verification of");
 define("LAN_CHECK_4", "File missing!");
 define("LAN_CHECK_5", "Phrase missing!");
@@ -30,6 +30,12 @@ define("LAN_CHECK_16", "Original File");
 define("LAN_CHECK_17", "A write problem occured while trying to save the file.");
 define("LAN_CHECK_18", "Language files in the standard format are NOT available for this plugin/theme.");
 define("LAN_CHECK_19", "Non-UTF-8 characters found!");
-
+define("LAN_CHECK_20", "Generate Language Pack");
+define("LAN_CHECK_21", "Verify Again");
+define("LAN_CHECK_22", "Theme");
+define("LAN_CHECK_23", "Errors Found");
+define("LAN_CHECK_24", "Summary");
+define("LAN_CHECK_25", "Themes");
+define("LAN_CHECK_26", "File");
 
 ?>

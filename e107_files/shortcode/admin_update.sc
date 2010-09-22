@@ -1,8 +1,9 @@
-// $Id: admin_update.sc 11346 2010-02-17 18:56:14Z secretr $
-global $tp;
+// $Id: admin_update.sc 11796 2010-09-17 21:30:53Z e107coders $
+//<?
+
 	if (!ADMIN) return "";
 
-	global $e107cache,$ns, $pref;
+	global $tp, $e107cache,$ns, $pref;
 	
   	if (!varset($pref['check_updates'], FALSE)) return "";
 	
@@ -13,13 +14,15 @@ global $tp;
 
 	$feed = "http://www.e107.org/releases.php";
 	
-	$e107cache->CachePageMD5 = md5($e107info['e107_version']);
+	$e107cache->CachePageMD5 = e_LANGUAGE;
 
-    if($cacheData = $e107cache->retrieve("updatecheck",3600, TRUE))
+	$cacheData = $e107cache->retrieve("releasecheck",3600, TRUE);
+	
+    if($cacheData)
     {
-   	  	return $ns -> tablerender(LAN_NEWVERSION, $cacheData);
+   	  	return ($cacheData !='up-to-date') ? $ns -> tablerender(LAN_NEWVERSION, $cacheData) : "";
     }
-
+	
 	// Keep commented out to be sure it continues to work under all circumstances.
 
 	//if ((strpos(e_SELF,'localhost') !== FALSE) || (strpos(e_SELF,'127.0.0.1') !== FALSE)) return '';
@@ -45,16 +48,16 @@ global $tp;
 			$link = varsettrue($val['attributes']['url']);
 			$compat = varsettrue($val['attributes']['compatibility']);
 	
-		 	if(($compat == '0.7') && version_compare($version,$cur_version)==1)
+		 	if(($compat == '0.7') && version_compare($version,$cur_version)==1 || (($compat == '0.7') && version_compare($version,$cur_version)==0 && ($tag =='svn')))
 			{
-	        	$ftext = "<a rel='external' href='".$link."' >".sprintf(LAN_NEWVERSION_DLD, "e107 v".$version)."</a><br />\n";
+	        	$ftext = "<a rel='external' href='".$link."' >".sprintf(LAN_NEWVERSION_DLD, "e107 v".$version)."</a>\n";
 	        	if(varsettrue($val['description']))
 	        	{
-	        		$ftext .= '<br />'.$tp->toHTML(trim($val['description']), true, 'BODY').'<br />';
+	        		$ftext .= '<br />'.$tp->toHTML(trim($val['description']), true, 'BODY');
 	        	}
 	        	if(varsettrue($val['attributes']['infourl']))
 	        	{
-	        		$ftext .= "<a rel='external' href='".$val['attributes']['infourl']."' >".LAN_NEWVERSION_MORE."</a>\n";
+	        		$ftext .= "<br /><a rel='external' href='".$val['attributes']['infourl']."' >".LAN_NEWVERSION_MORE."</a>\n";
 	        	}
 				break;
 			}
@@ -65,11 +68,14 @@ global $tp;
 	  $ftext = ADLAN_154;
 	}
 
-	$e107cache->set("updatecheck", $ftext, TRUE);
-	
 	if($ftext)
 	{
+		$e107cache->set("releasecheck", $ftext, TRUE);
 		return $ns -> tablerender(LAN_NEWVERSION, $ftext);
+	}
+	else
+	{
+		$e107cache->set("releasecheck", 'up-to-date', TRUE);
 	}
 
 

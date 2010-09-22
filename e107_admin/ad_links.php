@@ -3,17 +3,17 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_admin/ad_links.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 12:56:14 -0600 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/ad_links.php $
+|     $Revision: 11732 $
+|     $Id: ad_links.php 11732 2010-09-02 07:15:29Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -376,6 +376,7 @@ $e_icon_array = array(
 	'language' => E_32_LANGUAGE,
 	'links' => E_32_LINKS,
 	'mail' => E_32_MAIL,
+	'maintain' => E_32_MAINTAIN,
 	'menus' => E_32_MENUS,
 	'meta' => E_32_META,
 	'newsfeed' => E_32_NEWSFEED,

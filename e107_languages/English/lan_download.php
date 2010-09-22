@@ -3,9 +3,9 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $Source: /cvs_backup/e107_0.7/e107_languages/English/lan_download.php,v $
-|     $Revision: 11661 $
-|     $Date: 2010-08-16 16:26:28 -0500 (Mon, 16 Aug 2010) $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/lan_download.php $
+|     $Revision: 11678 $
+|     $Id: lan_download.php 11678 2010-08-22 00:43:45Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */

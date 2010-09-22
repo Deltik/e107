@@ -3,16 +3,16 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_files/def_e107_prefs.php,v $
-|     $Revision: 11656 $
-|     $Date: 2010-08-14 03:16:51 -0500 (Sat, 14 Aug 2010) $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_files/def_e107_prefs.php $
+|     $Revision: 11681 $
+|     $Id: def_e107_prefs.php 11681 2010-08-22 21:26:21Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -143,8 +143,9 @@ City, State, Country
   'themecss' => 'canvas.css',
   'plug_sc' => ':featurebox',
   'auth_method' => '',
-  'post_html' => '254',
-  'post_script' => '254',
+  'post_html' => '250',
+  'post_script' => '250',
+  'filter_script' => '1',
   'redirectsiteurl' => '0',
   'admin_alerts_uniquemenu' => '0',
   'null' => '',

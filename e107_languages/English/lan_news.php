@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $Source: /cvs_backup/e107_0.7/e107_languages/English/lan_news.php,v $
-|     $Revision: 11560 $
-|     $Date: 2010-05-31 16:04:50 -0500 (Mon, 31 May 2010) $
-|     $Author: e107steved $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/lan_news.php $
+|     $Revision: 11678 $
+|     $Id: lan_news.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 define("PAGE_NAME", "News");

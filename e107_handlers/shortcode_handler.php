@@ -1,20 +1,18 @@
 <?php
-
 /*
 + ----------------------------------------------------------------------------+
-| e107 website system
+|     e107 website system
 |
-| ©Steve Dunstan 2001-2002
-| http://e107.org
-| jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
 |
-| Released under the terms and conditions of the
-| GNU General Public License (http://gnu.org).
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
 |
-| $Source: /cvs_backup/e107_0.7/e107_handlers/shortcode_handler.php,v $
-| $Revision: 11346 $
-| $Date: 2010-02-17 12:56:14 -0600 (Wed, 17 Feb 2010) $
-| $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/shortcode_handler.php $
+|     $Revision: 11773 $
+|     $Id: shortcode_handler.php 11773 2010-09-09 21:37:48Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -104,11 +102,12 @@ class e_shortcode
 		}
 		$parm = trim($parm);
 
-		if (E107_DBG_BBSC || E107_DBG_SC)
+		if (E107_DBG_BBSC || E107_DBG_SC || E107_DBG_TIMEDETAILS)
 		{
 			global $db_debug;
 			$sql->db_Mark_Time("SC $code");
 			$db_debug->logCode(2, $code, $parm, "");
+			
 		}
 
 		if (is_array($this->scList) && array_key_exists($code, $this->scList))
@@ -187,8 +186,8 @@ class e_shortcode
 				}
 			}
 		}
-		if (E107_DBG_SC) {
-			$sql->db_Mark_Time("(SC $code Done)");
+		if (E107_DBG_SC || E107_DBG_TIMEDETAILS) {
+			$sql->db_Mark_Time("(After SC $code)");
 		}
 		return $ret;
 	}

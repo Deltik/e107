@@ -1,17 +1,22 @@
 <?php
 /*
-* e107 website system
-*
-* Copyright (C) 2008-2010 e107 Inc (e107.org)
-* Released under the terms and conditions of the
-* GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
-*
-* Language file - Theme manager admin
-*
-* $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_theme.php $
-* $Id: lan_theme.php 11512 2010-05-01 20:59:21Z e107steved $
-*
-*/define("TPVLAN_1", "You are looking at a preview of the <b>'".PREVIEWTHEMENAME."'</b> theme. It has not been set as the main theme for your site, it has been activated to provide a preview of how the theme looks.<br />To set this theme as your site theme, <a href='".e_ADMIN."theme.php'>return to your theme manager</a> and select 'Set As Site Theme'.<br />To preview more themes please <a href='".e_ADMIN."theme.php'>click here</a>");
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_theme.php $
+|     $Revision: 11678 $
+|     $Id: lan_theme.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Author: e107coders $
++----------------------------------------------------------------------------+
+*/
+
+define("TPVLAN_1", "You are looking at a preview of the <b>'".PREVIEWTHEMENAME."'</b> theme. It has not been set as the main theme for your site, it has been activated to provide a preview of how the theme looks.<br />To set this theme as your site theme, <a href='".e_ADMIN."theme.php'>return to your theme manager</a> and select 'Set As Site Theme'.<br />To preview more themes please <a href='".e_ADMIN."theme.php'>click here</a>");
 define("TPVLAN_2", "Theme Preview");
 define("TPVLAN_3", "Main site theme set to");
 define("TPVLAN_4", "Author");

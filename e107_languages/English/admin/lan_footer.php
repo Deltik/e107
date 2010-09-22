@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $Source: /cvs_backup/e107_0.7/e107_languages/English/admin/lan_footer.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 12:56:14 -0600 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_footer.php $
+|     $Revision: 11728 $
+|     $Id: lan_footer.php 11728 2010-08-31 19:10:07Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 define("FOOTLAN_1", "Site");
@@ -27,5 +27,6 @@ define("FOOTLAN_15", "Documentation");
 define("FOOTLAN_16", "Database");
 define("FOOTLAN_17", "Charset");
 define("FOOTLAN_18", "Site Theme");
+define("FOOTLAN_19", "Current Server Time");
 
 ?>

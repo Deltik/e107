@@ -1,20 +1,19 @@
 <?php
 /*
-+---------------------------------------------------------------+
-| e107 website system
++ ----------------------------------------------------------------------------+
+|     e107 website system
 |
-| ©Steve Dunstan 2001-2002
-| http://e107.org
-| jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
 |
-| Released under the terms and conditions of the
-| GNU General Public License (http://gnu.org).
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
 |
-| $Source: /cvs_backup/e107_0.7/e107_plugins/forum/forum_conf.php,v $
-| $Revision: 11346 $
-| $Date: 2010-02-17 12:56:14 -0600 (Wed, 17 Feb 2010) $
-| $Author: secretr $
-+---------------------------------------------------------------+
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/forum/forum_conf.php $
+|     $Revision: 11741 $
+|     $Id: forum_conf.php 11741 2010-09-04 08:32:42Z e107steved $
+|     $Author: e107steved $
++----------------------------------------------------------------------------+
 */
 require_once("../../class2.php");
 include_lan(e_PLUGIN.'forum/languages/'.e_LANGUAGE.'/lan_forum_conf.php');
@@ -66,7 +65,7 @@ if (isset($_POST['move']))
 	$forum = new e107forum;
 	$new_forum = intval($_POST['forum_move']);
 	$replies = $sql->db_Select("forum_t", "*", "thread_parent='$thread_id' ");
-	$sql->db_Select("forum_t", "thread_name, thread_forum_id", "thread_id ='".$thread_id."' ");
+	$sql->db_Select("forum_t", "thread_name, thread_user, thread_forum_id", "thread_id ='".$thread_id."' ");
 	$row = $sql->db_Fetch();
 	$old_forum = $row['thread_forum_id'];
 	$new_thread_name = $row['thread_name'];
@@ -89,6 +88,21 @@ if (isset($_POST['move']))
 
 	$forum->update_lastpost('forum', $old_forum, FALSE);
 	$forum->update_lastpost('forum', $new_forum, FALSE);
+	
+	// fire event 'forumthreadmove'
+	$tmp = explode(".", $row['thread_user']);
+	$sql->db_Select("forum", "forum_name", "forum_id='$old_forum' ");
+	$forum_old_row = 	$sql->db_Fetch();
+	$sql->db_Select("forum", "forum_name", "forum_id='$new_forum' ");
+	$forum_new_row = 	$sql->db_Fetch();
+	$edata_fo = array(
+		"old_thread_name"	=> $row['thread_name'],
+		"new_thread_name"	=> $new_thread_name,
+		"old_forum"				=> $forum_old_row['forum_name'],
+		"new_forum"				=> $forum_new_row['forum_name'],
+		"poster"			=> (intval($tmp[0]) ? $tmp[1] : "Anonymous"),
+		"mover"			=> USERNAME);
+	$e_event -> trigger("forumthreadmove", $edata_fo);
 	 
 	$message = FORLAN_9;
 	$url = e_PLUGIN."forum/forum_viewforum.php?".$new_forum;

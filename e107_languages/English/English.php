@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $Source: /cvs_backup/e107_0.7/e107_languages/English/English.php,v $
-|     $Revision: 11660 $
-|     $Date: 2010-08-16 11:41:35 -0500 (Mon, 16 Aug 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/English.php $
+|     $Revision: 11678 $
+|     $Id: English.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 setlocale(LC_ALL, 'en_GB.UTF-8', 'en_GB.utf8', 'eng_eng.utf8', 'en');

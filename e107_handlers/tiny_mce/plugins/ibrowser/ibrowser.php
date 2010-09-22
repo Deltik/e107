@@ -9,16 +9,19 @@
 // ------------------------------------------------
 //                                   www.j-cons.com
 // ================================================
-// $Revision: 11346 $Date: 2004/10/04
+// $Revision: 11346 Date: 2004/10/04
 // ================================================
 //
-// $Source: /cvs_backup/e107_0.7/e107_handlers/tiny_mce/plugins/ibrowser/ibrowser.php,v $
-// $Revision: 11346 $
-// $Date: 2010-02-17 12:56:14 -0600 (Wed, 17 Feb 2010) $
-// $Author: secretr $
+// $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/tiny_mce/plugins/ibrowser/ibrowser.php $
+// $Revision: 11716 $
+// $Id: ibrowser.php 11716 2010-08-29 11:14:49Z secretr $
 // +----------------------------------------------------------------------------+
 // Major Re-work by CaMer0n
 
+if(!defined('e_TOKEN_FREEZE'))
+{
+	define('e_TOKEN_FREEZE', true);
+}
 
 // unset $tinyMCE_imglib_include
 require_once("../../../../class2.php");

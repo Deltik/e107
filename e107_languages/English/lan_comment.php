@@ -1,14 +1,16 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system - Language File.
-|
-|     $Source: /cvs_backup/e107_0.7/e107_languages/English/lan_comment.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 12:56:14 -0600 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) 2002-2010 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * Comment handling - language files
+ *
+ * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/lan_comment.php $
+ * $Id: lan_comment.php 11687 2010-08-23 07:25:47Z e107steved $
+ */
 
 define("COMLAN_0", "[blocked by admin]");
 define("COMLAN_1", "Unblock");
@@ -22,6 +24,7 @@ define("COMLAN_8", "Comment");
 define("COMLAN_9", "Submit comment");
 define("COMLAN_10", "Administrator");
 define("COMLAN_11", "Was unable to enter your comment into the database - please retype leaving out any non-standard characters.");
+define('COMLAN_12', 'User');
 define("COMLAN_16", "Username: ");
 define("COMLAN_99", "Comments");
 define("COMLAN_100", "News");
@@ -63,6 +66,6 @@ define("COMLAN_TYPE_5", "docs");
 define("COMLAN_TYPE_6", "bugtrack");
 define("COMLAN_TYPE_7", "ideas");
 define("COMLAN_TYPE_8", "userprofile");
-define("COMLAN_TYPE_PAGE", "Content");		// Reall custom page, but use a 'non-technical' description
+define("COMLAN_TYPE_PAGE", "Content");		// Really custom page, but use a 'non-technical' description
 
 ?>

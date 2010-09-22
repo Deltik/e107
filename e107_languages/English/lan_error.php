@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $Source: /cvs_backup/e107_0.7/e107_languages/English/lan_error.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 12:56:14 -0600 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/lan_error.php $
+|     $Revision: 11721 $
+|     $Id: lan_error.php 11721 2010-08-30 16:59:06Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 define("PAGE_NAME", "Error");
@@ -39,7 +39,7 @@ define("LAN_ERROR_24", " was unsuccessful.");
 define("LAN_ERROR_25", "[1]: Unable to read core settings from database - Core settings exist but cannot be unserialized. Attempting to restore core backup ...");
 define("LAN_ERROR_26", "[2]: Unable to read core settings from database - non-existent core settings.");
 define("LAN_ERROR_27", "[3]: Core settings saved - backup made active.");
-define("LAN_ERROR_28", "[4]: No core backup found. Check that your database has valid content. If not, please run the <a href='".e_FILE."resetcore/resetcore.php'>Reset_Core</a> utility to rebuild your core settings. <br />After rebuilding your core please save a backup from the admin/sql screen.");
+define("LAN_ERROR_28", "[4]: No core backup found. Check that your database has valid content. If not, please run the <a href='".e_FILE_ABS."resetcore/resetcore.php'>Reset_Core</a> utility to rebuild your core settings. <br />After rebuilding your core please save a backup from the admin/sql screen.");
 define("LAN_ERROR_29", "[5]: Field(s) have been left blank. Please resubmit the form and fill in the required fields.");
 define("LAN_ERROR_30", "[6]: Unable to form a valid connection to mySQL. Please check that your e107_config.php contains the correct information.");
 define("LAN_ERROR_31", "[7]: mySQL is running but database ({$mySQLdefaultdb}) couldn't be connected to.<br />Please check it exists and that your e107_config.php contains the correct information.");

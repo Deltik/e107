@@ -8,6 +8,10 @@ if (!ADMIN)
 	exit();
 }
 
+// Comment out whichever isn't required
+define('YT_TEST_MODE', FALSE);
+//define('YT_TEST_MODE', TRUE);
+
 
 echo "Youtube tag conversion<br /><br />";
 
@@ -21,7 +25,7 @@ $ytChanged = FALSE;
  *	@param string $idField - the field which identifies a particular record in the table (usually the autoincrement field)
  *	@param string $fieldList - comma separated list of fields to check
  */
-function checkTable($tableName, $idField, $fieldList)
+function checkTable($tableName, $idField, $fieldList,$test = TRUE)
 {
 	global $sql, $sql2, $ytChanged;
 	echo 'Checking table: '.$tableName.'...';
@@ -59,8 +63,16 @@ function checkTable($tableName, $idField, $fieldList)
 				$new_data .= $spacer."`{$fn}`='{$fv}'";
 				$spacer = ', ';
 			}
-			$sql2->db_Update($tableName,  $new_data." WHERE `{$idField}`='{$row[$idField]}'");
-			echo '<br />'.$tableName.": Row ID {$row[$idField]} changed";
+			if($test == FALSE)
+			{
+				$sql2->db_Update($tableName,  $new_data." WHERE `{$idField}`='{$row[$idField]}'");
+				echo '<br />'.$tableName.": Row ID {$row[$idField]} changed";	
+			}
+			else
+			{
+				echo "<br />Test: ".$new_data;
+			}
+			
 		}
 	}
 	echo '...Done<br />';
@@ -88,11 +100,18 @@ function youtubeConvert($matches)
 }
 
 
-checkTable('forum_t', 'thread_id', 'thread_thread');
-checkTable('submitnews', 'submitnews_id', 'submitnews_item');
-checkTable('news', 'news_id', 'news_body,news_extended');
-checkTable('pcontent', 'content_id', 'content_text');
-checkTable('faq_info', 'faq_id', 'faq_answer');
+
+function quoteQuery($matches)
+{
+	return $matches[1].'?';
+}
+
+
+checkTable('forum_t', 'thread_id', 'thread_thread', YT_TEST_MODE);
+checkTable('submitnews', 'submitnews_id', 'submitnews_item', YT_TEST_MODE);
+checkTable('news', 'news_id', 'news_body,news_extended', YT_TEST_MODE);
+checkTable('pcontent', 'content_id', 'content_text', YT_TEST_MODE);
+checkTable('faq', 'faq_id', 'faq_answer', YT_TEST_MODE);
 
 echo 'Complete<br />';
 

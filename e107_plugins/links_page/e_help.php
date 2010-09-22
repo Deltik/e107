@@ -1,8 +1,27 @@
 <?php
-/* $Id: e_help.php 11346 2010-02-17 18:56:14Z secretr $ */
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
+|		Links plugin - help
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/links_page/e_help.php $
+|     $Revision: 11758 $
+|     $Id: e_help.php 11758 2010-09-07 12:18:00Z e107steved $
+|     $Author: e107steved $
++----------------------------------------------------------------------------+
+*/
+
+
 if (!defined('e107_INIT')) { exit; }
 
-include_lan(e_PLUGIN.'links_page/languages/'.e_LANGUAGE.'.php');
+include_lan(e_PLUGIN.'links_page/languages/'.e_LANGUAGE.'_help.php');
 
 if(!e_QUERY){
 	$text = LAN_ADMIN_HELP_1;

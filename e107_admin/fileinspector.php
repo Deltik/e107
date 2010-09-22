@@ -3,16 +3,16 @@
 +----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     (c)Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_admin/fileinspector.php,v $
-|     $Revision: 11617 $
-|     $Date: 2010-07-23 18:16:29 -0500 (Fri, 23 Jul 2010) $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/fileinspector.php $
+|     $Revision: 11678 $
+|     $Id: fileinspector.php 11678 2010-08-22 00:43:45Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -693,16 +693,15 @@ class file_inspector {
 		$data .= "+ ----------------------------------------------------------------------------+\n";
 		$data .= "|     e107 website system\n";
 		$data .= "|\n";
-		$data .= "|     �Steve Dunstan 2001-2002\n";
-		$data .= "|     http://e107.org\n";
-		$data .= "|     jalist@e107.org\n";
+		$data .= "|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)\n";
+		$data .= "|     Copyright (C) 2008-2010 e107 Inc (e107.org)\n";
 		$data .= "|\n";
 		$data .= "|     Released under the terms and conditions of the\n";
 		$data .= "|     GNU General Public License (http://gnu.org).\n";
 		$data .= "|\n";
 		$data .= "|     \$Source: /cvs_backup/e107_0.7/e107_admin/fileinspector.php,v $\n";
-		$data .= "|     \$Revision: 11617 $\n";
-		$data .= "|     \$Date: 2010-07-23 18:16:29 -0500 (Fri, 23 Jul 2010) $\n";
+		$data .= "|     \$Revision: 11678 $\n";
+		$data .= "|     \$Id: fileinspector.php 11678 2010-08-22 00:43:45Z e107coders $\n";
 		$data .= "|     \$Author: e107coders $\n";
 		$data .= "+----------------------------------------------------------------------------+\n";
 		$data .= "*/\n\n";

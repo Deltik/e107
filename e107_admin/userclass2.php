@@ -1,16 +1,19 @@
 <?php
 /*
-* e107 website system
-*
-* Copyright (C) 2008-2010 e107 Inc (e107.org)
-* Released under the terms and conditions of the
-* GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
-*
-* Userclass management
-*
-* $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/userclass2.php $
-* $Id: userclass2.php 11643 2010-07-31 14:58:45Z secretr $
-*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/userclass2.php $
+|     $Revision: 11794 $
+|     $Id: userclass2.php 11794 2010-09-17 13:28:28Z e107coders $
+|     $Author: e107coders $
++----------------------------------------------------------------------------+
 */
 
 // Experimental e-token
@@ -88,7 +91,7 @@ elseif(e_QUERY)
 	}
 }
 
-if (isset($_POST['delete']) && varset($_POST['e-token']))
+if (isset($_POST['delete']))
 {
 	if(isset($_POST['useraction']))
 	{
@@ -148,8 +151,9 @@ if (isset($_POST['createclass']))
 		$_POST['userclass_name'] = $tp->toDB($_POST['userclass_name']);
 		$_POST['userclass_description'] = $tp->toDB($_POST['userclass_description']);
 
-		$editclass = intval(varset($_POST['userclass_editclass'], 0));
-		if ($editclass && (getperms('0') || check_class($editclass)))
+		$editclass_check = varset($_POST['userclass_editclass'], false);
+		$editclass = intval($editclass_check);
+		if (false !== $editclass_check && (getperms('0') || check_class($editclass)))
 		{
 			$i = 1;
 			while ($sql->db_Select('userclass_classes', '*', "userclass_id='".$i."' ") && $i < 255)
@@ -365,7 +369,8 @@ else
 			<tr>
 			<td class='forumheader3'>{$row['userclass_name']}</td>
 			<td class='forumheader3'>".r_userclass_name($rEditClass)."</td>
-			<td class='forumheader3'>{$row['userclass_description']}</td>";
+			<td class='forumheader3'>{$row['userclass_description']}</td>
+			</tr>";
 		}
 	}
 }

@@ -3,17 +3,17 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_files/shortcode/batch/user_shortcodes.php,v $
-|     $Revision: 11346 $
-|     $Date: 2010-02-17 12:56:14 -0600 (Wed, 17 Feb 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_files/shortcode/batch/user_shortcodes.php $
+|     $Revision: 11687 $
+|     $Id: user_shortcodes.php 11687 2010-08-23 07:25:47Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -496,7 +496,7 @@ if($pref['profile_comments'])
 	{
 		$ret .= "<a href='".e_BASE.e_ADMIN."modcomment.php?profile.{$user['user_id']}'>".COMLAN_314."</a><br /><br />";
 	}
-	$ret .= $cobj->form_comment("comment", "profile", $user['user_id'], "", "", TRUE);
+	$ret .= $cobj->form_comment("comment", "profile", $user['user_id'], $user['user_name'], "", TRUE);
 	return $ret;
 }
 SC_END

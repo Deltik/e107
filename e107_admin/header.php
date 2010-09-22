@@ -1,21 +1,19 @@
 <?php
 /*
-+---------------------------------------------------------------+
-|        e107 website system
-|        /e107_admin/header.php
++ ----------------------------------------------------------------------------+
+|     e107 website system
 |
-|        �Steve Dunstan 2001-2002
-|        http://e107.org
-|        jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
 |
-|        Released under the terms and conditions of the
-|        GNU General Public License (http://gnu.org).
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
 |
-|   $Source: /cvs_backup/e107_0.7/e107_admin/header.php,v $
-|   $Revision: 11615 $
-|   $Date: 2010-07-23 17:10:16 -0500 (Fri, 23 Jul 2010) $
-|   $Author: e107coders $
-+---------------------------------------------------------------+
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/header.php $
+|     $Revision: 11760 $
+|     $Id: header.php 11760 2010-09-07 17:02:27Z e107steved $
+|     $Author: e107steved $
++----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
@@ -366,18 +364,26 @@ if (!function_exists('show_admin_menu')) {
 			$text = $BUTTONS_START;
 		}
 
-		foreach (array_keys($e107_vars) as $act) {
-			if (!isset($e107_vars[$act]['perm']) || !$e107_vars[$act]['perm'] || getperms($e107_vars[$act]['perm'])) {
-				if ($active_page == $act || (str_replace("?", "", e_PAGE.e_QUERY) == str_replace("?", "", $act))) {
+		foreach (array_keys($e107_vars) as $act) 
+		{
+			if (!isset($e107_vars[$act]['perm']) || !$e107_vars[$act]['perm'] || getperms($e107_vars[$act]['perm'])) 
+			{
+				if ($active_page == $act || (str_replace("?", "", e_PAGE.e_QUERY) == str_replace("?", "", $act))) 
+				{
 					$BUTTON_TEMPLATE = $sub_link ? $SUB_BUTTON_OVER : $BUTTON_OVER;
-				} else {
+				} 
+				else 
+				{
 					$BUTTON_TEMPLATE = $sub_link ? $SUB_BUTTON : $BUTTON;
 				}
 				$replace[0] = str_replace(" ", "&nbsp;", $e107_vars[$act]['text']);
-				$replace[1] = $e107_vars[$act]['link'];
-				if (!empty($e107_vars[$act]['include'])) {
+				$replace[1] = varset($e107_vars[$act]['link'], '');
+				if (!empty($e107_vars[$act]['include'])) 
+				{
 					$replace[2] = $e107_vars[$act]['include'];
-				} else {
+				} 
+				else 
+				{
 					$replace[2] = $js ? "onclick=\"showhideit('".$act."');\"" : "onclick=\"document.location='".$e107_vars[$act]['link']."'; disabled=true;\"";
 				}
 				$replace[3] = $title;

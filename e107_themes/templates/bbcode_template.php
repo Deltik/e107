@@ -4,16 +4,16 @@
 |     e107 website system
 |
 |     Steve Dunstan 2001-2002
-|     http://e107.org
-|     jalist@e107.org
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $Source: /cvs_backup/e107_0.7/e107_themes/templates/bbcode_template.php,v $
-|     $Revision: 11662 $
-|     $Date: 2010-08-17 03:19:02 -0500 (Tue, 17 Aug 2010) $
-|     $Author: secretr $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_themes/templates/bbcode_template.php $
+|     $Revision: 11783 $
+|     $Id: bbcode_template.php 11783 2010-09-14 00:30:38Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 // How to register your own BBcode button.
@@ -22,7 +22,7 @@
 // $register_bb['blank'] = array("", "[blank][/blank]","Blank example helper text",e_IMAGE."generic/bbcode/template.png");
 
 $BBCODE_TEMPLATE = "
-	{BB=link}{BB=b}{BB=i}{BB=u}{BB=img}{BB=center}{BB=left}{BB=right}
+	{BB=link}{BB=b}{BB=i}{BB=u}{BB=img}{BB=center}{BB=left}{BB=right}{BB=justify}
 	{BB=bq}{BB=code}{BB=list}{BB=fontcol}{BB=fontsize}{BB=emotes}{BB=youtube}
 ";
 
@@ -34,7 +34,7 @@ $BBCODE_TEMPLATE = "
 
 $BBCODE_TEMPLATE_SUBMITNEWS = "
 	{BB_HELP}<br />
-    {BB=link}{BB=b}{BB=i}{BB=u}{BB=img}{BB=center}{BB=left}{BB=right}
+    {BB=link}{BB=b}{BB=i}{BB=u}{BB=img}{BB=center}{BB=left}{BB=right}{BB=justify}
 	{BB=bq}{BB=code}{BB=list}{BB=fontcol}{BB=fontsize}{BB=emotes}{BB=flash}{BB=youtube}
 ";
 
@@ -43,8 +43,8 @@ $BBCODE_TEMPLATE_SUBMITNEWS = "
 
 $BBCODE_TEMPLATE_ADMIN = "
 	{BB_HELP=admin}<br />
-	{BB=link}{BB=b}{BB=i}{BB=u}{BB=img}{BB=center}{BB=left}
-	{BB=right}{BB=bq}{BB=code}{BB=list}{BB=fontcol}{BB=fontsize}{BB=emotes}
+	{BB=link}{BB=b}{BB=i}{BB=u}{BB=img}{BB=center}{BB=left}{BB=right}{BB=justify}
+	{BB=bq}{BB=code}{BB=list}{BB=fontcol}{BB=fontsize}{BB=emotes}
 	{BB_PREIMAGEDIR=".e_IMAGE."}
 	{BB=preimage}{BB=prefile}{BB=flash}{BB=youtube}
 ";
@@ -53,8 +53,8 @@ $BBCODE_TEMPLATE_ADMIN = "
 
 $BBCODE_TEMPLATE_NEWSPOST = "
 	{BB_HELP=$mode}<br />
-	{BB=link}{BB=b}{BB=i}{BB=u}{BB=img}{BB=center}{BB=left}
-	{BB=right}{BB=bq}{BB=code}{BB=list}{BB=fontcol}{BB=fontsize}{BB=emotes}
+	{BB=link}{BB=b}{BB=i}{BB=u}{BB=img}{BB=center}{BB=left}{BB=right}{BB=justify}
+	{BB=bq}{BB=code}{BB=list}{BB=fontcol}{BB=fontsize}{BB=emotes}
 	{BB_PREIMAGEDIR=".e_IMAGE."newspost_images/}
 	{BB=preimage}{BB=prefile}{BB=flash}{BB=youtube}
 ";
@@ -62,7 +62,7 @@ $BBCODE_TEMPLATE_NEWSPOST = "
 $BBCODE_TEMPLATE_CPAGE = "
 	{BB_HELP}<br />
 	{BB=newpage}
-	{BB=link}{BB=b}{BB=i}{BB=u}{BB=img}{BB=center}{BB=left}{BB=right}
+	{BB=link}{BB=b}{BB=i}{BB=u}{BB=img}{BB=center}{BB=left}{BB=right}{BB=justify}
 	{BB=bq}{BB=code}{BB=list}{BB=fontcol}{BB=fontsize}{BB=emotes}
 	{BB_PREIMAGEDIR=".e_IMAGE."custom/}
 	{BB=preimage}{BB=prefile}{BB=flash}{BB=youtube}

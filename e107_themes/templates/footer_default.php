@@ -9,12 +9,43 @@
 * Default footer for user pages
 *
 * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_themes/templates/footer_default.php $
-* $Id: footer_default.php 11625 2010-07-26 21:47:17Z e107steved $
+* $Id: footer_default.php 11765 2010-09-07 21:46:27Z e107coders $
 *
 */
 
 if (!defined('e107_INIT')) { exit; }
 $In_e107_Footer = TRUE;	// For registered shutdown function
+
+// simple SESSION Fixation
+	if(!session_id()) // someone closed the session?
+	{
+		session_start(); // restart
+	}
+	
+	// regenerate SID
+	$oldSID = session_id(); // old SID
+	$oldSData = $_SESSION; // old session data
+	session_regenerate_id(false); // true don't work on php4 - so time to move on people!	
+	$newSID = session_id(); // new SID
+	
+	// Clean
+	session_id($oldSID); // switch to the old session
+	session_destroy(); // destroy it
+	
+	// set new ID, reopen the session, set saved data
+	session_id($newSID);
+	session_start();
+	$_SESSION = $oldSData;
+	// give 3rd party code a way to prevent token re-generation
+	if(!defsettrue('e_TOKEN_FREEZE'))
+	{
+		$_SESSION['regenerate_'.e_TOKEN_NAME] = time(); // class2 have to re-create token on the next request
+	}
+	unset($oldSID, $newSID, $oldSData);
+	
+	// write session data
+	session_write_close();
+// SESSION End
 
 global $eTraffic, $error_handler, $db_time, $sql, $sql2, $mySQLserver, $mySQLuser, $mySQLpassword, $mySQLdefaultdb, $CUSTOMFOOTER, $FOOTER, $e107, $e107ParseHeaderFlag, $e107CustomFooter;
 global $pref;
@@ -77,7 +108,7 @@ if(varset($e107_popup)!=1){
 	echo ($rinfo ? "\n<div style='text-align:center' class='smalltext'>{$rinfo}</div>\n" : "");
 
 
-	if ((ADMIN || $pref['developer']) && E107_DEBUG_LEVEL) {
+	if ((ADMIN || $pref['developer'] || defined('e_DEBUG')) && E107_DEBUG_LEVEL) {
 		global $db_debug;
 		echo "\n<!-- DEBUG -->\n";
 		$db_debug->Show_All();
@@ -142,7 +173,8 @@ if ($pref['developer']) {
 	}
 }
 
-if((ADMIN == true || $pref['developer']) && count($error_handler->errors) && $error_handler->debug == true) 
+
+if((ADMIN == true || $pref['developer'] || defined('e_DEBUG')) && count($error_handler->errors) && $error_handler->debug == true) 
 {
 	echo "
 	<div class='e107_debug php_err block-text'>
@@ -203,8 +235,22 @@ echo "</body></html>";
 $page = ob_get_clean();
 
 $etag = md5($page);
-header("Cache-Control: must-revalidate");
-header("ETag: {$etag}");
+
+if (isset($_SERVER['HTTP_IF_NONE_MATCH']))
+{
+	$IF_NONE_MATCH = str_replace('"','',$_SERVER['HTTP_IF_NONE_MATCH']);
+	/*
+	$data = "IF_NON_MATCH = ".$IF_NONE_MATCH;
+	$data .= "\nEtag = ".$etag;
+	file_put_contents(e_THEME."templates/etag_log.txt",$data);
+	*/
+	
+	if($IF_NONE_MATCH == $etag || ($IF_NONE_MATCH == ($etag."-gzip")))
+	{
+		header('HTTP/1.1 304 Not Modified');
+		exit();	
+	}
+}
 
 $pref['compression_level'] = 6;
 $browser_support = FALSE;
@@ -220,6 +266,7 @@ if(ini_get("zlib.output_compression") == '' && function_exists("gzencode"))
 if(varset($pref['compress_output'],false) && $server_support == true && $browser_support == true) 
 {
 	$level = intval($pref['compression_level']);
+	header("ETag: \"{$etag}-gzip\"");
 	$page = gzencode($page, $level);
 	header("Content-Encoding: gzip", true);
 	header("Content-Length: ".strlen($page), true);
@@ -227,6 +274,15 @@ if(varset($pref['compress_output'],false) && $server_support == true && $browser
 } 
 else 
 {
+	if($browser_support==TRUE) 
+	{
+		header("ETag: \"{$etag}-gzip\"");	
+	}
+	else
+	{
+		header("ETag: \"{$etag}\"");	
+	}
+	
 	header("Content-Length: ".strlen($page), true);
 	echo $page;
 }

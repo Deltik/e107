@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Tiny MCE controller file.
 |
-|     $Source: /cvs_backup/e107_0.7/e107_handlers/tiny_mce/wysiwyg.php,v $
-|     $Revision: 11387 $
-|     $Date: 2010-03-07 15:04:25 -0600 (Sun, 07 Mar 2010) $
-|     $Author: e107steved $
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/tiny_mce/wysiwyg.php $
+|     $Revision: 11716 $
+|     $Id: wysiwyg.php 11716 2010-08-29 11:14:49Z secretr $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 

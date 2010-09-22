@@ -4,16 +4,16 @@
  |     e107 website system
  |
  |     Steve Dunstan 2001-2002
- |     http://e107.org
- |     jalist@e107.org
+ |     Copyright (C) 2008-2010 e107 Inc (e107.org)
+ |
  |
  |     Released under the terms and conditions of the
  |     GNU General Public License (http://gnu.org).
  |
- |     $Source: /cvs_backup/e107_0.7/e107_admin/ugflag.php,v $
- |     $Revision: 11643 $
- |     $Date: 2010-07-31 09:58:45 -0500 (Sat, 31 Jul 2010) $
- |     $Author: secretr $
+ |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/ugflag.php $
+ |     $Revision: 11732 $
+ |     $Id: ugflag.php 11732 2010-09-02 07:15:29Z e107steved $
+ |     $Author: e107steved $
  +----------------------------------------------------------------------------+
  */
 
@@ -30,6 +30,8 @@ if(!getperms('9'))
 	header('location:'.e_BASE.'index.php');
 	exit();
 }
+
+$e_sub_cat = 'maintain';
 
 if(isset($_POST['updatesettings']))
 {
@@ -106,7 +108,7 @@ $text .= '
 			<br />
 ';
 
-$text .= '
+$text .= '</td>
 		</tr>
 ';
 

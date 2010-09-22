@@ -1,21 +1,19 @@
 <?php
 /*
-+---------------------------------------------------------------+
-|        e107 website system
-|        /admin/review.php
++ ----------------------------------------------------------------------------+
+|     e107 website system
 |
-|        (C)Steve Dunstan 2001-2002
-|        http://e107.org
-|        jalist@e107.org
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
 |
-|        Released under the terms and conditions of the
-|        GNU General Public License (http://gnu.org).
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
 |
-|		$Source: /cvs_backup/e107_0.7/e107_plugins/content/admin_content_config.php,v $
-|		$Revision: 11346 $
-|		$Date: 2010-02-17 12:56:14 -0600 (Wed, 17 Feb 2010) $
-|		$Author: secretr $
-+---------------------------------------------------------------+
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/content/admin_content_config.php $
+|     $Revision: 11729 $
+|     $Id: admin_content_config.php 11729 2010-08-31 19:25:08Z e107steved $
+|     $Author: e107steved $
++----------------------------------------------------------------------------+
 */
 
 require_once("../../class2.php");
@@ -29,9 +27,15 @@ include_lan($plugindir.'languages/'.e_LANGUAGE.'/lan_content_admin.php');
 
 include_lan($plugindir.'languages/'.e_LANGUAGE.'/lan_content.php');
 
+require_once(e_HANDLER."calendar/calendar_class.php");
+$cal = new DHTML_Calendar(true);
+
 require_once(e_ADMIN."auth.php");
 require_once(e_HANDLER."form_handler.php");
 $rs = new form;
+
+
+
 require_once(e_HANDLER."userclass_class.php");
 require_once($plugindir."handlers/content_class.php");
 $aa = new content;
@@ -560,5 +564,12 @@ function admin_content_config_adminmenu(){
 // ##### End --------------------------------------------------------------------------------------
 
 require_once(e_ADMIN."footer.php");
+
+function headerjs()
+{
+	global $cal;
+	return $cal->load_files();
+}
+
 
 ?>
