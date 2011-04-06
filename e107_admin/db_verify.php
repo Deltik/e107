@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/db_verify.php $
-|     $Revision: 11691 $
-|     $Id: db_verify.php 11691 2010-08-23 17:14:39Z e107steved $
+|     $Revision: 11851 $
+|     $Id: db_verify.php 11851 2010-10-05 19:38:59Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -78,7 +78,8 @@ function read_tables($tab)
 				}
 			}
 
-			if (strpos($line, "TYPE=") !== FALSE) {
+			if ((strpos($line, "TYPE=") !== FALSE) || (strpos($line, "ENGINE=") !== FALSE))
+			{
 				$current_table = "";
 			}
 

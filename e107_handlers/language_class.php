@@ -4,8 +4,8 @@
 |     e107 website system - Language Class.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/language_class.php $
-|     $Revision: 11782 $
-|     $Id: language_class.php 11782 2010-09-12 00:47:57Z e107coders $
+|     $Revision: 12076 $
+|     $Id: language_class.php 12076 2011-02-26 19:12:58Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -190,12 +190,14 @@ class language{
 			"ChineseSimp"  	=> "简体中文",
 			"Dutch"			=> "Nederlands",
 			"English"		=> "English",
+			"Estonian"		=> "Eesti",
 			"Finnish"		=> "Suomi",
 			"French"		=> "Français",
 			"German"		=> "Deutsch",
 			"Greek"			=> "Ελληνικά",
 			"Hebrew"		=> "עִבְרִית",
 			"Hungarian"		=> "Magyar",
+			"Indonesian"	=> "Bahasa Indonesia",
 			"Italian"		=> "Italiano",
 			"Japanese"		=> "日本語",
 			"Korean"		=> "한국어",
@@ -215,7 +217,8 @@ class language{
 			"Slovak"		=> "Slovensky",
 			"Swedish"		=> "Svenska",
 			"Thai"			=> "ภาษาไทย",
-			"Turkish"		=> "Türkçe"
+			"Turkish"		=> "Türkçe",
+			"Vietnamese"	=> "Tiếng Việt"
 		);
 
 
@@ -382,7 +385,10 @@ class language{
 		if(varsettrue($pref['multilanguage_subdomain']) && $this->isLangDomain(e_DOMAIN) && (defset('MULTILANG_SUBDOMAIN') !== FALSE)) 
 		{
 			$detect_language = (e_SUBDOMAIN) ? $this->isValid(e_SUBDOMAIN) : $pref['sitelanguage'];
-			e107_ini_set("session.cookie_domain", ".".e_DOMAIN); // Must be before session_start()
+			if(e_DOMAIN)
+			{
+				e107_ini_set("session.cookie_domain", ".".e_DOMAIN); // Must be before session_start()
+			}
 			define('MULTILANG_SUBDOMAIN',TRUE);
 		}
 		elseif(e_MENU && ($detect_language = $this->isValid(e_MENU))) // 
@@ -407,7 +413,10 @@ class language{
 			$detect_language = FALSE; // ie. No Change. 
 		}
 		
-		e107_ini_set("session.cookie_path", e_HTTP);
+		if(e_HTTP)
+		{
+			e107_ini_set("session.cookie_path", e_HTTP);	
+		}
 
 		
 		$this->detect = $detect_language;	

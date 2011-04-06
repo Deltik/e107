@@ -10,9 +10,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/content/content_manager.php $
-|     $Revision: 11678 $
-|     $Id: content_manager.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12042 $
+|     $Id: content_manager.php 12042 2011-01-14 18:41:54Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -34,6 +34,10 @@ e107_require_once(e_HANDLER.'arraystorage_class.php');
 $eArrayStorage = new ArrayData();
 require_once(e_HANDLER."file_class.php");
 $fl = new e_file;
+
+require_once(e_HANDLER."calendar/calendar_class.php");
+$cal = new DHTML_Calendar(true);
+
 require_once($plugindir."handlers/content_class.php");
 $aa = new content;
 require_once($plugindir."handlers/content_db_class.php");
@@ -77,6 +81,8 @@ $e_wysiwyg	= "content_text";
 function headerjs()
 {
 	echo "<script type='text/javascript' src='".e_FILE."popup.js'></script>\n";
+	global $cal;
+	return $cal->load_files();
 }
 // ##### DB ---------------------------------------------------------------------------------------
 

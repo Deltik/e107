@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/forum/forum_post.php $
-|     $Revision: 11741 $
-|     $Id: forum_post.php 11741 2010-09-04 08:32:42Z e107steved $
+|     $Revision: 12100 $
+|     $Id: forum_post.php 12100 2011-03-13 14:15:43Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -25,6 +25,11 @@ if(isset($_POST['userlogin']) && !isset($_POST['e-token']))
 }
 
 require_once("../../class2.php");
+if (!isset($pref['plug_installed']['forum']))
+{
+	header('Location: '.e_BASE.'index.php');
+	exit;
+}
 $e_wysiwyg = "post";
 include_lan(e_PLUGIN.'forum/languages/'.e_LANGUAGE.'/lan_forum_post.php');
 
@@ -56,12 +61,12 @@ if ($action == 'rp')
 	}
 	else
 	{
-	  $forum_info = $forum->forum_get($thread_info['head']['thread_forum_id']);
+		$forum_info = $forum->forum_get($thread_info['head']['thread_forum_id']);
 	}
 }
 elseif ($action == 'nt')
 {
-	// New post
+	// New thread
 	$forum_info = $forum->forum_get($id);
 }
 elseif ($action == 'quote' || $action == 'edit')
@@ -433,18 +438,24 @@ if ($action == 'edit' || $action == 'quote')
 	}
 	$post = preg_replace("/&lt;span class=&#39;smallblacktext&#39;.*\span\>/", "", $post);
 
-	if ($action == 'quote') {
+	if ($action == 'quote') 
+	{
 		$post = preg_replace("#\[hide].*?\[/hide]#s", "", $post);
 		$tmp = explode(chr(1), $thread_info[0]['user_name']);
 		$timeStamp = time();
 		$post = "[quote{$timeStamp}={$tmp[0]}]\n".$post."\n[/quote{$timeStamp}]\n";
 		$eaction = FALSE;
 		$action = 'reply';
-	} else {
+	} 
+	else 
+	{
 		$eaction = TRUE;
-		if ($thread_info['0']['thread_parent']) {
+		if ($thread_info['0']['thread_parent']) 
+		{
 			$action = "reply";
-		} else {
+		} 
+		else 
+		{
 			$action = "nt";
 			$sact = "canc";	// added to override the bugtracker query below
 		}
@@ -456,31 +467,31 @@ if ($action == 'edit' || $action == 'quote')
 
 if (!$FORUMPOST)
 {
-  if (is_readable(THEME."forum_post_template.php"))
-  {
-    include_once(THEME."forum_post_template.php");
-  }
-  else
-  {
-  include_once(e_PLUGIN."forum/templates/forum_post_template.php");
-  }
+	if (is_readable(THEME."forum_post_template.php"))
+	{
+		include_once(THEME."forum_post_template.php");
+	}
+	else
+	{
+		include_once(e_PLUGIN."forum/templates/forum_post_template.php");
+	}
 }
 /* check post access (bugtracker #1424) */
 
 if($action == "rp" && !$sql -> db_Select("forum_t", "*", "thread_id='{$id}'"))
 {
 	$ns -> tablerender(LAN_20, "<div style='text-align:center'>".LAN_399."</div>");
-	 require_once(FOOTERF);
+	require_once(FOOTERF);
 	exit;
 }
 elseif($action == "nt")
 {
-  if (!$sact && !$sql -> db_Select("forum", "*", "forum_id='{$id}'"))
-  {
-	$ns -> tablerender(LAN_20, "<div style='text-align:center'>".LAN_399."</div>");
-	require_once(FOOTERF);
-	exit;
-  }
+	if (!$sact && !$sql -> db_Select("forum", "*", "forum_id='{$id}'"))
+	{
+		$ns -> tablerender(LAN_20, "<div style='text-align:center'>".LAN_399."</div>");
+		require_once(FOOTERF);
+		exit;
+	}
 }
 else
 {
@@ -512,6 +523,8 @@ else
 {
 	echo $text;
 }
+
+
 
 function isAuthor()
 {

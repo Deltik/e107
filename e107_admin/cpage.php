@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/cpage.php $
-|     $Revision: 11678 $
-|     $Id: cpage.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 11868 $
+|     $Id: cpage.php 11868 2010-10-09 11:51:09Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -25,18 +25,20 @@ $e_sub_cat = 'custom';
 $e_wysiwyg = "data";
 $page = new page;
 
-require_once("auth.php");
-// require_once(e_HANDLER."ren_help.php");
-require_once(e_HANDLER."userclass_class.php");
-
-if (e_QUERY)
+if (e_QUERY) 
 {
 	$tmp        = explode(".", e_QUERY);
-	$action     = $tmp[0];
+	$action     = $tmp[0]; // must be set before auth.php is loaded. 
 	$sub_action = $tmp[1];
 	$id         = $tmp[2];
 	$from       = varset($tmp[3],0);
 }
+
+require_once("auth.php");
+// require_once(e_HANDLER."ren_help.php");
+require_once(e_HANDLER."userclass_class.php");
+
+
 
 if(isset($_POST['submitPage']))
 {

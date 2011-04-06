@@ -1,13 +1,13 @@
 <?php
 /*
-* Copyright (c) 2010 e107 Inc e107.org, Licensed under GNU GPL (http://www.gnu.org/licenses/gpl.txt)
+* Copyright (c) 2011 e107 Inc e107.org, Licensed under GNU GPL (http://www.gnu.org/licenses/gpl.txt)
 * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/ver.php $
-* $Id: ver.php 11811 2010-09-22 21:21:50Z e107coders $
+* $Id: ver.php 12118 2011-04-06 19:09:01Z e107coders $
 *
 * Version file
 */
 
 if (!defined('e107_INIT')) { exit; }
 
-$e107info['e107_version'] = "0.7.24";
+$e107info['e107_version'] = "0.7.25";
 ?>

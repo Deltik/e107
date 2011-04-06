@@ -10,9 +10,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/header.php $
-|     $Revision: 11760 $
-|     $Id: header.php 11760 2010-09-07 17:02:27Z e107steved $
-|     $Author: e107steved $
+|     $Revision: 11871 $
+|     $Id: header.php 11871 2010-10-09 22:23:29Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -127,7 +127,9 @@ echo "<!-- *JS* -->\n";
 if (varset($pref['wysiwyg'],FALSE) && check_class($pref['post_html']) && varset($e_wysiwyg) != "") {
 	require_once(e_HANDLER."tiny_mce/wysiwyg.php");
 	define("e_WYSIWYG",TRUE);
-	echo wysiwyg($e_wysiwyg);
+	$wy = new wysiwyg($e_wysiwyg);
+	$wy->render();
+	// echo wysiwyg($e_wysiwyg);
 }else{
 	define("e_WYSIWYG",FALSE);
 }
@@ -301,6 +303,7 @@ if (!function_exists('show_admin_menu')) {
 	function show_admin_menu($title, $active_page, $e107_vars, $js = FALSE, $sub_link = FALSE, $sortlist = FALSE) {
 		global $ns, $BUTTON, $BUTTON_OVER, $BUTTONS_START, $BUTTONS_END, $SUB_BUTTON, $SUB_BUTTON_OVER, $SUB_BUTTONS_START, $SUB_BUTTONS_END;
 		$id_title = "yop_".str_replace(" ", "", $title);
+						
 		if (!isset($BUTTONS_START)) {
 			$BUTTONS_START = "<div style='text-align:center; width:100%'><table class='fborder' style='width:98%;'>\n";
 		}

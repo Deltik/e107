@@ -1,4 +1,5 @@
-// $Id: admin_latest.sc 11711 2010-08-27 13:06:38Z e107steved $
+// $Id: admin_latest.sc 11836 2010-09-30 21:43:10Z e107coders $
+//<?
 if (ADMIN) 
 {
 	if (!function_exists('admin_latest')) 
@@ -36,7 +37,7 @@ if (ADMIN)
 				$text .= "<br /><b><a href='".e_ADMIN_ABS."message.php'>".ADLAN_LAT_8." [".$amount."]</a></b>";
 			}
 
-			return $ns -> tablerender(ADLAN_LAT_1, $text, '', TRUE);
+			return $ns -> tablerender(ADLAN_LAT_1, $text, 'admin_latest', TRUE);
 		}
 	}
 

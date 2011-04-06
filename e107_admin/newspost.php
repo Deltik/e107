@@ -10,9 +10,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/newspost.php $
-|     $Revision: 11789 $
-|     $Id: newspost.php 11789 2010-09-16 17:16:49Z nlstart $
-|     $Author: nlstart $
+|     $Revision: 12061 $
+|     $Id: newspost.php 12061 2011-01-30 21:42:15Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 require_once('../class2.php');
@@ -42,6 +42,18 @@ $pst->id   = 'admin_newspost';
 // ------------------------------
 
 $newspost = new newspost;
+
+if (e_QUERY) 
+{
+	$tmp 		= explode('.', e_QUERY);
+	$action 	= $tmp[0]; // must be set before auth.php is loaded. 
+	$sub_action = varset($tmp[1],'');
+	$id 		= intval(varset($tmp[2],0));
+	$sort_order = varset($tmp[2],'desc');
+	$from 		= intval(varset($tmp[3],0));
+	unset($tmp);
+}
+
 require_once('auth.php');
 $pst->save_preset('news_datestamp'); // save and render result using unique name. Don't save item datestamp
 require_once(e_HANDLER.'userclass_class.php');
@@ -54,16 +66,7 @@ $fl = new e_file;
 $rs = new form;
 $ix = new news;
 
-if (e_QUERY) 
-{
-	$tmp 		= explode('.', e_QUERY);
-	$action 	= $tmp[0];
-	$sub_action = varset($tmp[1],'');
-	$id 		= intval(varset($tmp[2],0));
-	$sort_order = varset($tmp[2],'desc');
-	$from 		= intval(varset($tmp[3],0));
-	unset($tmp);
-}
+
 $from = ($from ? $from : 0);
 $amount = 10;
 
@@ -379,8 +382,8 @@ class newspost
 
 	function show_options($action) 
 	{
-		global $sql;
-
+		global $sql,$action;
+				
 		if ($action == '') {
 			$action = 'main';
 		}
@@ -428,12 +431,28 @@ class newspost
 					if (substr($_POST['data'],-7,7) == '[/html]') $_POST['data'] = substr($_POST['data'],0,-7);
 					if (substr($_POST['data'],0,6) == '[html]') $_POST['data'] = substr($_POST['data'],6);
 					$_POST['data'] .= '<br /><b>'.NWSLAN_49.' '.$submitnews_name.'</b>';
-					$_POST['data'] .= ($submitnews_file)? "<br /><br /><img src='{e_IMAGE}newspost_images/".$submitnews_file."' style='float:right; margin-left:5px;margin-right:5px;margin-top:5px;margin-bottom:5px; border:1px solid' />":'';
+					if($submitnews_file)
+					{
+						$tmp = explode(',',$submitnews_file);
+						foreach($tmp as $imgfile)
+						{
+							$_POST['data'] .= ($imgfile)? "<br /><br /><img src='{e_IMAGE}newspost_images/".$imgfile."' style='float:right; margin-left:5px;margin-right:5px;margin-top:5px;margin-bottom:5px; border:1px solid' alt='".$imgfile."' />":'';
+						}
+					}
+					
 				}
 				else
 				{
 					$_POST['data'] .= "\n[[b]".NWSLAN_49.' '.$submitnews_name.'[/b]]';
-					$_POST['data'] .= ($submitnews_file)?"\n\n[img]{e_IMAGE}newspost_images/".$submitnews_file.'[/img]': '';
+					if($submitnews_file)
+					{
+						$tmp = explode(',',$submitnews_file);
+						foreach($tmp as $imgfile)
+						{
+							$_POST['data'] .= "\n\n[img]{e_IMAGE}newspost_images/".$imgfile.'[/img]';				
+						}
+					}
+					
 				}
 				$_POST['cat_id'] = $submitnews_category;
 				$_POST['data'] = $tp->dataFilter($_POST['data']);		// Filter any nasties
@@ -1141,7 +1160,16 @@ class newspost
 	function submitted_news($sub_action, $id) 
 	{
 		global $rs, $ns, $tp;
+		
+				
 		$sql2 = new db;
+		
+		$sql2->db_Select('news_category');
+		while($row = $sql2->db_Fetch())
+		{
+			$newsCat[$row['category_id']] = $row['category_name'];
+		}
+		
 		$text = "<div style='text-align: center'>";
 		if ($category_total = $sql2->db_Select('submitnews', '*', "submitnews_id !='' ORDER BY submitnews_id DESC")) 
 		{
@@ -1149,8 +1177,13 @@ class newspost
 			<table class='fborder' style='".ADMIN_WIDTH."'>
 				<tr>
 					<td style='width:5%' class='fcaption'>ID</td>
-					<td style='width:70%' class='fcaption'>".NWSLAN_57."</td>
-					<td style='width:25%; text-align:center' class='fcaption'>".LAN_OPTIONS."</td>
+					<td style='width:60%' class='fcaption'>".NWSLAN_57."</td>
+					<td style='width:15%' class='fcaption'>".LAN_DATE."</td>
+					<td style='width:10%' class='fcaption'>".LAN_NEWS_55."</td>
+					<td class='fcaption'>".NWSLAN_6."</td>
+					<td class='fcaption'>".LAN_NEWS_56."</td>
+					
+					<td style='width:20%; text-align:center' class='fcaption'>".LAN_OPTIONS."</td>
 				</tr>";
 			while ($row = $sql2->db_Fetch()) 
 			{
@@ -1162,14 +1195,38 @@ class newspost
 				$text .= "
 				<tr>
 					<td style='width:5%; text-align:center; vertical-align:top' class='forumheader3'>$submitnews_id</td>
-					<td style='width:70%' class='forumheader3'>";
-				$text .= ($submitnews_auth == 0)? '<b>'.$tp->toHTML($submitnews_title,FALSE,'emotes_off, no_make_clickable').'</b>': $tp->toHTML($submitnews_title,FALSE,'emotes_off, no_make_clickable');
-				$text .= ' [ '.NWSLAN_104.' '.$submitnews_name.' '.NWSLAN_108.' '.date('D dS M y, g:ia', $submitnews_datestamp).']<br />'.$tp->toHTML($submitnews_item).
-				"</td><td style='width:25%; text-align:right; vertical-align:top' class='forumheader3'>";
+					<td style='width:60%' class='forumheader3'><a href=\"javascript:expandit('submitted_".$submitnews_id."')\">";
+				$text .= $tp->toHTML($submitnews_title,FALSE,'emotes_off, no_make_clickable');
+				$text .= '</a>';
+			//	$text .=  [ '.NWSLAN_104.' '.$submitnews_name.' '.NWSLAN_108.' '.date('D dS M y, g:ia', $submitnews_datestamp).']<br />';
+				$text .= "<div id='submitted_".$submitnews_id."' style='display:none'>".$tp->toHTML($submitnews_item,TRUE);
+				
+				if($submitnews_file)
+				{
+					$tmp = explode(',',$submitnews_file);
+					$text .= "<br />";
+					foreach($tmp as $imgfile)
+					{
+						$text .= "<br /><img src='".e_IMAGE_ABS."newspost_images/".$imgfile."' alt='".$imgfile."' />";					
+					}
+				}
+				$text .= "
+				</div>";
+				
+				
+				$text .= "</td>";
+				
+				$text .= "<td style='vertical-align:top' class='forumheader3'>".date('D jS M, Y, g:ia', $submitnews_datestamp)."</td>
+				<td style='vertical-align:top' class='forumheader3'><a href=\"mailto:".$submitnews_email."?subject=[".SITENAME."] ".trim($submitnews_title)."\" title='".$submitnews_email."'>".$submitnews_name."</a></td>
+				<td style='vertical-align:top' class='forumheader3'>".$tp->toHTML($newsCat[$submitnews_category],TRUE,'defs')."</td>
+				<td style='text-align:center; vertical-align:top' class='forumheader3'>".($submitnews_auth == 0 ?  "&nbsp;" : ADMIN_TRUE_ICON)."</td>
+				<td style='width:20%;  text-align:right; vertical-align:top' class='forumheader3'>";
 				$buttext = ($submitnews_auth == 0)? NWSLAN_58 :	NWSLAN_103;
-				$text .= $rs->form_open('post', e_SELF.'?sn', 'myform__{$submitnews_id}', '', '', " onsubmit=\"return jsconfirm('".$tp->toJS(NWSLAN_38." [ID: {$submitnews_id} ]")."')\"   ")
-				."<div>".$rs->form_button('button', 'category_edit_'.$submitnews_id, $buttext, "onclick=\"document.location='".e_SELF."?create.sn.{$submitnews_id}'\"")."
-				".$rs->form_button('submit', 'delete[sn_'.$submitnews_id.']', LAN_DELETE)."
+				$text .= $rs->form_open('post', e_SELF.'?sn', 'myform__'.$submitnews_id, '', '', " onsubmit=\"return jsconfirm('".$tp->toJS(NWSLAN_38." [ID: {$submitnews_id} ]")."')\"   ")
+				."<div style='white-space:nowrap'>".
+				$rs->form_button('button', 'category_view_'.$submitnews_id, NWSLAN_27, "onclick=\"expandit('submitted_".$submitnews_id."')\"").
+				$rs->form_button('button', 'category_edit_'.$submitnews_id, $buttext, "onclick=\"document.location='".e_SELF."?create.sn.{$submitnews_id}'\"")."
+				<input type='submit' class='button' name='delete[sn_".$submitnews_id."]' value=\"".LAN_DELETE."\" />
 				</div>".$rs->form_close()."
 				</td>
 				</tr>\n";

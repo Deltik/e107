@@ -1,3 +1,5 @@
+/* $Id: admin_help.sc 11836 2010-09-30 21:43:10Z e107coders $ */
+//<?
 if (!ADMIN) return '';
 
   $helpfile = '';

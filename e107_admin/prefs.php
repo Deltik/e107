@@ -10,9 +10,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/prefs.php $
-|     $Revision: 11797 $
-|     $Id: prefs.php 11797 2010-09-17 21:58:27Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12013 $
+|     $Id: prefs.php 12013 2010-12-18 22:55:22Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -45,7 +45,7 @@ if (!$pref['timezone']) {
 require_once(e_HANDLER."form_handler.php");
 $rs = new form;
 
-if ($_POST['submit_resetdisplaynames'])
+if (isset($_POST['submit_resetdisplaynames']))
 {
     $sql -> db_Update("user", "user_name=user_loginname");
 	$message = PRFLAN_157;
@@ -117,7 +117,8 @@ if (isset($pref['plug_installed']['alt_auth']))
 	}
 }
 
-if ($authlist) {
+if (isset($authlist)  && is_array($authlist))
+{
 	$auth_dropdown .= "<select class='tbox' name='auth_method'>\n";
 	foreach($authlist as $a) {
 		$s = ($pref['auth_method'] == $a ? " selected='selected' " : "");
@@ -702,6 +703,14 @@ $text .= "<div id='textpost' style='display:none; text-align:center'>
 	</tr>\n
 
     <tr>
+	<td class='forumheader3' style='width:50%;'>".PRFLAN_220.":  <div class='smalltext'>".PRFLAN_221."</div></td>
+	<td class='forumheader3' style='width:50%; text-align: right;'>
+	<input type='radio' name='html_abuse' value='1'".(varset($pref['html_abuse'], 1) ? " checked='checked'" : "")." /> ".PRFLAN_112."&nbsp;&nbsp;
+	<input type='radio' name='html_abuse' value='0'".(!varset($pref['html_abuse'], 1) ? " checked='checked'" : "")." /> ".PRFLAN_113."
+	</td>
+	</tr>\n
+
+    <tr>
 	<td class='forumheader3' style='width:50%;'>".PRFLAN_122.":  <div class='smalltext'>".PRFLAN_123."</div></td>
 	<td class='forumheader3' style='width:50%; text-align: right;'>
 	<input type='radio' name='wysiwyg' value='1'".($pref['wysiwyg'] ? " checked='checked'" : "")." /> ".PRFLAN_112."&nbsp;&nbsp;
@@ -1062,6 +1071,6 @@ function prefs_adminmenu() {
 	$var['security']['text'] = PRFLAN_47;
 	$var['comments']['text'] = PRFLAN_210;
 	$var['advanced']['text'] = PRFLAN_149;
-	show_admin_menu(LAN_OPTIONS, $action, $var, TRUE);
+	show_admin_menu(LAN_OPTIONS, '', $var, TRUE);
 }
 ?>

@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/calendar_menu/calendar.php $
-|     $Revision: 11678 $
-|     $Id: calendar.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12098 $
+|     $Id: calendar.php 12098 2011-03-12 12:38:17Z e107steved $
+|     $Author: e107steved $
 |
 | 11.11.06 - steved - mods for next CVS release
 |
@@ -122,6 +122,8 @@ $prop		= mktime(0, 0, 0, $month, 1, $year);		// Sets start date for new event en
 $nowmonth	= $ecal_class->cal_date['mon'];
 $nowyear	= $ecal_class->cal_date['year'];
 $nowday		= $ecal_class->cal_date['mday'];
+
+$events = array();
 
 // time switch buttons
 $cal_text = $tp -> parseTemplate($CALENDAR_TIME_TABLE, FALSE, $calendar_shortcodes);

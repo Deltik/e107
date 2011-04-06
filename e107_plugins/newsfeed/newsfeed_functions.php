@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/newsfeed/newsfeed_functions.php $
-|     $Revision: 11678 $
-|     $Id: newsfeed_functions.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 12021 $
+|     $Id: newsfeed_functions.php 12021 2010-12-31 01:04:42Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -107,14 +107,14 @@ if(!function_exists("newsfeed_info"))
 				$numtoshow = (intval($numtoshow) > 0 ? $numtoshow : 999);
 				$rss = unserialize($newsfeed_data);
 
-				$FEEDNAME = "<a href='".e_SELF."?show.$newsfeed_id'>$newsfeed_name</a>";
+				$FEEDNAME = "<a class='newsfeed-name' href='".e_SELF."?show.$newsfeed_id'>$newsfeed_name</a>";
 				$FEEDDESCRIPTION = $newsfeed_description;
 				if($newsfeed_image == "default")
 				{
 					if($file = fopen ($rss -> image['url'], "r"))
 					{
 						/* remote image exists - use it! */
-						$FEEDIMAGE = "<a href='".$rss -> image['link']."' rel='external'><img src='".$rss -> image['url']."' alt='".$rss -> image['title']."' style='border: 0; vertical-align: middle;' /></a>";
+						$FEEDIMAGE = "<a class='newsfeed-image' href='".$rss -> image['link']."' rel='external'><img src='".$rss -> image['url']."' alt='".$rss -> image['title']."' style='border: 0; vertical-align: middle;' /></a>";
 					}
 					else
 					{
@@ -124,7 +124,7 @@ if(!function_exists("newsfeed_info"))
 				}
 				else if ($newsfeed_image)
 				{
-					$FEEDIMAGE = "<img src='".$newsfeed_image."' alt='' />";
+					$FEEDIMAGE = "<img class='newsfeed-image' src='".$newsfeed_image."' alt='' />";
 				}
 				else
 				{
@@ -147,7 +147,7 @@ if(!function_exists("newsfeed_info"))
 
 				$FEEDLASTBUILDDATE = NFLAN_33.$pubbed;
 				$FEEDCOPYRIGHT = $tp -> toHTML($rss -> channel['copyright'], TRUE);
-				$FEEDTITLE = "<a href='".$rss -> channel['link']."' rel='external'>".$rss -> channel['title']."</a>";
+				$FEEDTITLE = "<a class='newsfeed-title' href='".$rss -> channel['link']."' rel='external'>".$rss -> channel['title']."</a>";
 				$FEEDLINK = $rss -> channel['link'];
 				if($newsfeed_active == 2 or $newsfeed_active == 3)
 				{
@@ -168,7 +168,7 @@ if(!function_exists("newsfeed_info"))
 				while($i < $numtoshow && $item_total[$i])
 				{
 					$item = $item_total[$i];
-					$FEEDITEMLINK = "<a href='".$item['link']."' rel='external'>".$tp -> toHTML($item['title'], TRUE)."</a>\n";
+					$FEEDITEMLINK = "<a class='newsfeed-itemlink' href='".$item['link']."' rel='external'>".$tp -> toHTML($item['title'], TRUE)."</a>\n";
 					$FEEDITEMLINK = str_replace('&', '&amp;', $FEEDITEMLINK);
 					$feeditemtext = preg_replace("#\[[a-z0-9=]+\]|\[\/[a-z]+\]|\{[A-Z_]+\}#si", "", strip_tags($item['description']));
 					$FEEDITEMTEXT = $tp->text_truncate($feeditemtext, $truncate, $truncate_string);
@@ -178,7 +178,7 @@ if(!function_exists("newsfeed_info"))
 					$i++;
 				}
 
-				$BACKLINK = "<a href='".e_SELF."'>".NFLAN_31."</a>";
+				$BACKLINK = "<a class='newsfeed-backlink' href='".e_SELF."'>".NFLAN_31."</a>";
 				$text .= preg_replace("/\{(.*?)\}/e", '$\1', $NEWSFEED_MENU_START) . $data . preg_replace("/\{(.*?)\}/e", '$\1', $NEWSFEED_MENU_END);
 			}
 		}

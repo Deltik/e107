@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/links_page/links_page_sql.php $
-|     $Revision: 11678 $
-|     $Id: links_page_sql.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12092 $
+|     $Id: links_page_sql.php 12092 2011-03-11 18:49:56Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 header("location:../index.php");
@@ -30,7 +30,7 @@ CREATE TABLE links_page_cat (
   link_category_class varchar(100) NOT NULL default '0',
   link_category_datestamp int(10) unsigned NOT NULL default '0',
   PRIMARY KEY  (link_category_id)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 # --------------------------------------------------------
 
 # Table structure for table `links_page`
@@ -49,5 +49,5 @@ CREATE TABLE links_page (
   link_datestamp int(10) unsigned NOT NULL default '0',
   link_author varchar(255) NOT NULL default '',
   PRIMARY KEY  (link_id)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 # --------------------------------------------------------

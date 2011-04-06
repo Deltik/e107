@@ -10,12 +10,22 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/forum/forum_conf.php $
-|     $Revision: 11741 $
-|     $Id: forum_conf.php 11741 2010-09-04 08:32:42Z e107steved $
-|     $Author: e107steved $
+|     $Id: forum_conf.php 12100 2011-03-13 14:15:43Z e107steved $
 +----------------------------------------------------------------------------+
 */
+
+if(!empty($_POST) && !isset($_POST['e-token']))
+{
+	// set e-token so it can be processed by class2
+	$_POST['e-token'] = '';
+}
+
 require_once("../../class2.php");
+if (!isset($pref['plug_installed']['forum']))
+{
+	header('Location: '.e_BASE.'index.php');
+	exit;
+}
 include_lan(e_PLUGIN.'forum/languages/'.e_LANGUAGE.'/lan_forum_conf.php');
 
 $e_sub_cat = 'forum';
@@ -131,6 +141,7 @@ if ($action == "delete_poll")
 		".FORLAN_13."
 		<br /><br />
 		<form method='post' action='".e_SELF."?".e_QUERY."'>
+		<input type='hidden' name='e-token' value='".e_TOKEN."' />
 		<input class='button' type='submit' name='deletecancel' value='".FORLAN_14."' />
 		<input class='button' type='submit' name='deletepollconfirm' value='".FORLAN_15."' />
 		</form>
@@ -189,6 +200,7 @@ if ($action == "move")
 		</tr>
 		<tr style='vertical-align: top;'>
 		<td colspan='2'  style='text-align:center'><br />
+		<input type='hidden' name='e-token' value='".e_TOKEN."' />
 		<input class='button' type='submit' name='move' value='".FORLAN_25."' />
 		<input class='button' type='submit' name='movecancel' value='".FORLAN_14."' />
 		</td>

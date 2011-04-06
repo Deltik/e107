@@ -11,13 +11,18 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/forum/forum_stats.php $
-|     $Revision: 11678 $
-|     $Id: forum_stats.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12100 $
+|     $Id: forum_stats.php 12100 2011-03-13 14:15:43Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
 require_once('../../class2.php');
+if (!isset($pref['plug_installed']['forum']))
+{
+	header('Location: '.e_BASE.'index.php');
+	exit;
+}
 
 include_lan(e_PLUGIN.'forum/languages/'.e_LANGUAGE.'/lan_forum_stats.php');
 @require_once(e_PLUGIN.'forum/forum_class.php');

@@ -1,4 +1,5 @@
-// $Id: admin_status.sc 11711 2010-08-27 13:06:38Z e107steved $
+// $Id: admin_status.sc 11836 2010-09-30 21:43:10Z e107coders $
+//<?
 if (getperms('0') || getperms('4')) 
 {
 	if (!function_exists('admin_status')) 
@@ -34,7 +35,7 @@ if (getperms('0') || getperms('4'))
 				$text .= "<img src='".e_IMAGE_ABS."admin_images/failedlogin_16.png' alt='' style='vertical-align: middle;' /> <a href='".e_ADMIN_ABS."fla.php'>".ADLAN_146.": $flo</a>";
 			}
 
-			return $ns -> tablerender(ADLAN_134, $text, '', TRUE);
+			return $ns -> tablerender(ADLAN_134, $text, 'admin_status', TRUE);
 		}
 	}
 

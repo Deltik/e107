@@ -1,3 +1,5 @@
+// $Id: admin_preset.sc 11836 2010-09-30 21:43:10Z e107coders $
+//<?
 if(ADMIN && getperms("0"))
 {
 	global $sql,$pst,$ns,$tp,$e_wysiwyg,$pref;
@@ -33,7 +35,7 @@ if(ADMIN && getperms("0"))
 				<input type='submit' class='button' name='delete_preset' value='".LAN_DELETE."' onclick=\"return jsconfirm('".$tp->toJS(LAN_PRESET_CONFIRMDEL." [".$existing."]")."')\" />";
 			}
 			$pst_text .= "</div></form>";
-			return $ns -> tablerender(LAN_PRESET, $pst_text, '', TRUE);
+			return $ns -> tablerender(LAN_PRESET, $pst_text, 'admin_preset', TRUE);
 		}
 	}
 }

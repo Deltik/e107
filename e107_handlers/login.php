@@ -12,8 +12,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/login.php $
-|     $Revision: 11678 $
-|     $Id: login.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 12065 $
+|     $Id: login.php 12065 2011-02-08 07:38:55Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -118,6 +118,7 @@ class userlogin {
 				$user_name = $lode['user_name'];
 				$user_xup = $lode['user_xup'];
 				$user_admin = $lode['user_admin'];
+				$user_email = $lode['user_email'];
 
 				/* restrict more than one person logging in using same us/pw */
 				if($pref['disallowMultiLogin']) {
@@ -143,7 +144,8 @@ class userlogin {
 						cookie($pref['cookie_name'], $cookieval);
 					}
 				}
-				$edata_li = array("user_id" => $user_id, "user_name" => $username, "user_admin"=> $user_admin);
+				$edata_li = array("user_id" => $user_id, "user_name" => $username, "user_admin"=> $user_admin, "user_email"=> $user_email);
+				
 				$e_event->trigger("login", $edata_li);
 				$redir = str_replace('&amp;','&',(e_QUERY ? e_SELF."?".e_QUERY : e_SELF));
 

@@ -10,7 +10,7 @@
  * Site preferences - language file
  *
  * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_prefs.php $
- * $Id: lan_prefs.php 11670 2010-08-20 12:59:41Z e107steved $
+ * $Id: lan_prefs.php 12013 2010-12-18 22:55:22Z e107steved $
  */
 
 define("PRFLAN_1", "Site Information");
@@ -196,6 +196,9 @@ define('PRFLAN_215', 'Class which can post &lt;script&gt; and similar tags');
 define('PRFLAN_216', '(Requires HTML posting rights as well)');
 define('PRFLAN_217', 'Filter HTML content');
 define('PRFLAN_218', 'If \'off\', puts users at increased risk of XSS exploits posted by members of the above class, or prior to 0.7.24');
+// Gap for 0.8 compatibility
+define('PRFLAN_220', 'HTML Abuse filter (experimental)');
+define('PRFLAN_221', 'Blocks some unmatched tags for those allowed to post HTML');
 
 
 ?>

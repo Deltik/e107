@@ -17,9 +17,9 @@
 | GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/clock_menu/clock_menu.php $
-|     $Revision: 11678 $
-|     $Id: clock_menu.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12012 $
+|     $Id: clock_menu.php 12012 2010-12-18 22:23:57Z e107steved $
+|     $Author: e107steved $
 +---------------------------------------------------------------+
 */
 
@@ -59,7 +59,7 @@ var MnthNam = new Array(
 </script>
 <?php
 echo "
-<script type='text/javascript' src='".e_PLUGIN."clock_menu/clock.js'></script>
+<script type='text/javascript' src='".e_PLUGIN_ABS."clock_menu/clock.js'></script>
 
 <script type=\"text/javascript\">\nwindow.setTimeout(\"tick('".$menu_pref['clock_dateprefix']."', '".$menu_pref['clock_format']."', '".$menu_pref['clock_datesuffix1']."', '".$menu_pref['clock_datesuffix2']."', '".$menu_pref['clock_datesuffix3']."', '".$menu_pref['clock_datesuffix4']."')\",150);\n</script>
 <!-- ### end clock ### //-->\n\n";

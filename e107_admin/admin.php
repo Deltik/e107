@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/admin.php $
-|     $Revision: 11772 $
-|     $Id: admin.php 11772 2010-09-09 21:36:35Z e107coders $
+|     $Revision: 11836 $
+|     $Id: admin.php 11836 2010-09-30 21:43:10Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -105,8 +105,8 @@ if (isset($potential))
 	$ns -> tablerender(LAN_WARNING, $text);
 }
 
-// More visible update check
-echo $tp->parseTemplate('{ADMIN_UPDATE}', true);
+// Moved to admin_template
+//echo $tp->parseTemplate('{ADMIN_UPDATE}', true);
 
 
 // update users using old layout names to their new names

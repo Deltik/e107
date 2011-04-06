@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_footer.php $
-|     $Revision: 11728 $
-|     $Id: lan_footer.php 11728 2010-08-31 19:10:07Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12060 $
+|     $Id: lan_footer.php 12060 2011-01-30 19:22:47Z secretr $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 define("FOOTLAN_1", "Site");
@@ -28,5 +28,5 @@ define("FOOTLAN_16", "Database");
 define("FOOTLAN_17", "Charset");
 define("FOOTLAN_18", "Site Theme");
 define("FOOTLAN_19", "Current Server Time");
-
+define("FOOTLAN_20", "Security level");
 ?>

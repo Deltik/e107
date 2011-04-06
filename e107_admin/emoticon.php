@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/emoticon.php $
-|     $Revision: 11797 $
-|     $Id: emoticon.php 11797 2010-09-17 21:58:27Z e107coders $
+|     $Revision: 11867 $
+|     $Id: emoticon.php 11867 2010-10-09 10:04:44Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -145,10 +145,10 @@ class emotec
 		<form method='post' action='".e_SELF."'>
 		<table style='".ADMIN_WIDTH."' class='fborder'>
 		<tr>
-		<td class='forumheader' style='width: 20%;'>".EMOLAN_2."</td>
-		<td class='forumheader' style='width: 50%;'>".EMOLAN_3."</td>
-		<td class='forumheader' style='width: 10%; text-align: center;'>".EMOLAN_8."</td>
-		<td class='forumheader' style='width: 20%;'>".EMOLAN_9."</td>
+		<td class='fcaption' style='width: 20%;'>".EMOLAN_2."</td>
+		<td class='fcaption' style='width: 50%;'>".EMOLAN_3."</td>
+		<td class='fcaption' style='width: 10%; text-align: center;'>".EMOLAN_8."</td>
+		<td class='fcaption' style='width: 20%;'>".EMOLAN_9."</td>
 		</tr>
 		";
 
@@ -160,8 +160,8 @@ class emotec
 
 			$text .= "
 			<tr>
-			<td class='forumheader' style='width: 20%;'>{$pack}</td>
-			<td class='forumheader' style='width: 20%;'>
+			<td class='forumheader3' style='width: 20%;'>{$pack}</td>
+			<td class='forumheader3' style='width: 20%;'>
 			";
 
 			foreach($emoteArray as $emote)

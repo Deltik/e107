@@ -11,18 +11,20 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/online_extended_menu/online_extended_menu.php $
-|     $Revision: 11678 $
-|     $Id: online_extended_menu.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12071 $
+|     $Id: online_extended_menu.php 12071 2011-02-13 09:53:43Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
 
-if(!defined("e_TRACKING_DISABLED") && (isset($pref['track_online']) && $pref['track_online'])) {
+if(!defined("e_TRACKING_DISABLED") && (isset($pref['track_online']) && $pref['track_online'])) 
+{
 	$text = ONLINE_EL1.GUESTS_ONLINE.", ";
 	$text .= ONLINE_EL2.MEMBERS_ONLINE." ...<br />";
 
-	if (MEMBERS_ONLINE) {
+	if (MEMBERS_ONLINE) 
+	{
 		global $listuserson, $ADMIN_DIRECTORY;
 		foreach($listuserson as $uinfo => $pinfo) {
 
@@ -53,15 +55,20 @@ if(!defined("e_TRACKING_DISABLED") && (isset($pref['track_online']) && $pref['tr
 		}
 	}
 
-	if ((MEMBERS_ONLINE + GUESTS_ONLINE) > ($menu_pref['most_members_online'] + $menu_pref['most_guests_online'])) {
+	// Update details of maximum members online if appropriate
+	// The check for (count($menu_pref) > 3) is to try and prevent DB updates if the host does something nasty to earlier queries - can end up with $menu_pref empty
+	if (((MEMBERS_ONLINE + GUESTS_ONLINE) > ($menu_pref['most_members_online'] + $menu_pref['most_guests_online'])) && (count($menu_pref) > 3))
+	{
+		global $sysprefs;
 		$menu_pref['most_members_online'] = MEMBERS_ONLINE;
 		$menu_pref['most_guests_online'] = GUESTS_ONLINE;
 		$menu_pref['most_online_datestamp'] = time();
-		$tmp = addslashes(serialize($menu_pref));
-		$sql->db_Update("core", "e107_value='$tmp' WHERE e107_name='menu_pref' ");
+		$sysprefs->setArray('menu_pref');
 	}
+
     global $gen;
-	if (!is_object($gen)) {
+	if (!is_object($gen)) 
+	{
 		$gen = new convert;
 	}
 

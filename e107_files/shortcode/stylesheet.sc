@@ -1,4 +1,6 @@
-// $Id: stylesheet.sc 11346 2010-02-17 18:56:14Z secretr $
+// $Id: stylesheet.sc 11831 2010-09-28 19:28:56Z e107steved $
+
+global $THEMES_DIRECTORY;
 
 $css = file_get_contents(THEME."style.css");
 $search = array("url(images","url('images");

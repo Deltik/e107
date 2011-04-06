@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_files/shortcode/batch/user_shortcodes.php $
-|     $Revision: 11687 $
-|     $Id: user_shortcodes.php 11687 2010-08-23 07:25:47Z e107steved $
+|     $Revision: 11956 $
+|     $Id: user_shortcodes.php 11956 2010-11-09 20:53:58Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -136,7 +136,7 @@ SC_END
 SC_BEGIN USER_LASTVISIT_LAPSE
 global $user;
 $gen = new convert;
-return $user['user_currentvisit'] ? "( ".$gen -> computeLapse($user['user_currentvisit'])." ".LAN_426." )" : "<i>".LAN_401."</i>";
+return $user['user_currentvisit'] ? "( ".$gen -> computeLapse($user['user_currentvisit'])." ".LAN_426." )" : '';
 SC_END
 
 SC_BEGIN USER_VISITS

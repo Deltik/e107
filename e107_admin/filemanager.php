@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/filemanager.php $
-|     $Revision: 11790 $
-|     $Id: filemanager.php 11790 2010-09-16 20:02:09Z e107steved $
+|     $Revision: 11845 $
+|     $Id: filemanager.php 11845 2010-10-04 18:36:45Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -249,6 +249,7 @@ $ns->tablerender(FMLAN_34, $text);
 $text = "<form enctype=\"multipart/form-data\" action=\"".e_SELF.(e_QUERY ? "?".e_QUERY : "")."\" method=\"post\">
 	<div style=\"text-align:center\">
 	<input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"2000000\" />
+	<input type='hidden' name='e-token' value='".e_TOKEN."' />\n
 	<table class='fborder' style=\"".ADMIN_WIDTH."\">";
 
 $text .= "<tr>

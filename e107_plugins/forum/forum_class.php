@@ -9,7 +9,7 @@
  * Forum plugin - thread classes
  *
  * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/forum/forum_class.php $
- * $Id: forum_class.php 11670 2010-08-20 12:59:41Z e107steved $
+ * $Id: forum_class.php 12059 2011-01-27 19:15:03Z nlstart $
  */
 if (!defined('e107_INIT')) { exit; }
 
@@ -17,7 +17,7 @@ class e107forum
 {
 	var $filterNasties = TRUE;
 
-	
+
 	function e107forum()
 	{
 		global $pref;
@@ -141,7 +141,7 @@ class e107forum
 			}
 		}
 	}
-	
+
 	function forum_markasread($forum_id)
 	{
 	  global $sql;
@@ -596,19 +596,50 @@ class e107forum
 		if ($sql->db_Select_gen($qry))
 		{
 			$row = $sql->db_Fetch();
+			if ($this->filterNasties)
+			{
+				$row['thread_name'] = $tp->dataFilter($row['thread_name']);
+				$row['thread_thread'] = $tp->dataFilter($row['thread_thread']);
+			}
 			$ret['head'] = $row;
 			if (!array_key_exists(0, $ret))
 			{
-				if ($this->filterNasties)
-				{
-					$row['thread_name'] = $tp->dataFilter($row['thread_name']);
-					$row['thread_thread'] = $tp->dataFilter($row['thread_thread']);
-				}
 				$ret[0] = $row;
 			}
 		}
 		return $ret;
 	}
+
+
+	/**
+	 *	Determine whether current user has access to the specified thread.
+	 *
+	 *	@param int $thread_id
+	 *
+	 *	@return boolean TRUE if access allowed, FALSE if denied
+	 */
+	function thread_get_allowed($thread_id)
+	{
+		global $sql;
+		$thread_id = intval($thread_id);
+		$qry = "
+		SELECT t.thread_id from #forum_t as t
+		JOIN #forum AS f ON f.forum_id = t.thread_forum_id
+		LEFT JOIN #forum AS fp ON fp.forum_id = f.forum_parent
+		WHERE t.thread_id = {$thread_id}
+		AND f.forum_parent != 0
+		AND fp.forum_class IN (".USERCLASS_LIST.")
+		AND f.forum_class IN (".USERCLASS_LIST.")
+		LIMIT 0,1
+		";
+
+		if ($sql->db_Select_gen($qry))
+		{
+			return TRUE;
+		}
+		return FALSE;
+	}
+
 
 	function thread_count($thread_id)
 	{
@@ -707,7 +738,7 @@ class e107forum
 	{
 		global $sql, $tp, $pref, $e107;
 		global $PLUGINS_DIRECTORY;
-		
+
 		$forum_info = '';
 		$post_time = time();
 		$forum_sub = intval($forum_sub);
@@ -771,7 +802,7 @@ class e107forum
 				$sql->db_Select('user', 'user_admin, user_perms, user_class, user_ban', 'user_id = '.$parent_thread[0]['user_id']);
 				$thread_owner = $sql->db_Fetch(MYSQL_ASSOC);
 				$forum_info = $this->forum_get($parent_thread[0]['thread_forum_id']);
-				
+
 				//Ensure owner is not banned and has permissions to view forum and forum parent
 				if(
 					$thread_owner['user_ban'] == 0 &&
@@ -856,7 +887,7 @@ class e107forum
 		}
 		return $ret;
 	}
-	
+
 	//*** added by marj
         function postGetOldestNew($count = 50, $userviewed = USERVIEWED)
         {
@@ -951,13 +982,12 @@ class e107forum
 		$sql->db_Update("forum", "forum_threads='$threads', forum_replies='$replies' WHERE forum_id=".$forumID);
 		if($recalc_threads == true)
 		{
-			$sql->db_Select("forum_t", "thread_parent, count(*) as replies", "thread_forum_id = $forumID GROUP BY thread_parent");
-			$tlist = $sql->db_getList();
-			foreach($tlist as $t)
-			{
-				$tid = $t['thread_parent'];
-				$replies = intval($t['replies']);
-				$sql->db_Update("forum_t", "thread_total_replies='$replies' WHERE thread_id=".$tid);
+			$sql->db_Select('forum_t', 'thread_id', "thread_forum_id = {$forumID} AND thread_parent=0");
+			$tList = $sql->db_getList();
+			foreach($tList as $t) {
+				$sql->db_Select('forum_t', 'count(*) as replies', "thread_parent = {$t['thread_id']}");
+				$row = $sql->db_Fetch(MYSQL_ASSOC);
+				$sql->db_Update('forum_t', "thread_total_replies={$row['replies']} WHERE thread_id={$t['thread_id']}");
 			}
 		}
 	}
@@ -983,7 +1013,7 @@ class e107forum
 		}
 		return FALSE;
 	}
-	
+
 	/*
 	 * set bread crumb
 	 * $forum_href override ONLY applies when template is missing FORUM_CRUMB
@@ -993,17 +1023,17 @@ class e107forum
 	{
 		global $FORUM_CRUMB,$forum_info,$thread_info,$tp;
 		global $BREADCRUMB,$BACKLINK;  // Eventually we should deprecate BACKLINK
-		
+
 		if(is_array($FORUM_CRUMB))
 		{
 			$search 	= array("{SITENAME}", "{SITENAME_HREF}");
 			$replace 	= array(SITENAME, "href='".e_BASE."index.php'");
 			$FORUM_CRUMB['sitename']['value'] = str_replace($search, $replace, $FORUM_CRUMB['sitename']['value']);
-		
+
 			$search 	= array("{FORUMS_TITLE}", "{FORUMS_HREF}");
 			$replace 	= array(LAN_01, "href='".e_PLUGIN."forum/forum.php'");
 			$FORUM_CRUMB['forums']['value'] = str_replace($search, $replace, $FORUM_CRUMB['forums']['value']);
-		
+
 			$search 	= "{PARENT_TITLE}";
 			$replace 	= $tp->toHTML($forum_info['parent_name']);
 			$FORUM_CRUMB['parent']['value'] = str_replace($search, $replace, $FORUM_CRUMB['parent']['value']);
@@ -1050,7 +1080,7 @@ class e107forum
 				$forum_sub_parent = (substr($forum_info['sub_parent'], 0, 1) == "*" ? substr($forum_info['sub_parent'], 1) : $forum_info['sub_parent']);
 				$BREADCRUMB .= "<a class='forumlink' href='".e_PLUGIN."forum/forum_viewforum.php?{$forum_info['forum_sub']}'>{$forum_sub_parent}</a>".$dfltsep;
 			}
-			
+
 			$tmpFname = $forum_info['forum_name'];
 			if(substr($tmpFname, 0, 1) == "*") { $tmpFname = substr($tmpFname, 1); }
 			if ($forum_href)

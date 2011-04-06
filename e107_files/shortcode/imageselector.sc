@@ -1,5 +1,5 @@
-// $Id: imageselector.sc 11346 2010-02-17 18:56:14Z secretr $
-
+// $Id: imageselector.sc 12055 2011-01-22 02:14:27Z e107coders $
+// <?
 global $sql,$parm;
 
 	if(strstr($parm,"=")){  // query style parms.
@@ -15,7 +15,8 @@ global $sql,$parm;
 
   //	$paths = explode("|",$path);
     $recurse = ($subdirs) ? $subdirs : 0;
-	if($imagelist = $fl->get_files($path,".jpg|.gif|.png|.JPG|.GIF|.PNG", 'standard', $recurse)){
+	if($imagelist = $fl->get_files($path,'\.jpg|\.gif|\.png|\.JPG|\.GIF|\.PNG|\.jpeg|\.JPEG|\.svg|\.SVG', 'standard', $recurse))
+	{
 		sort($imagelist);
 	}
 
@@ -24,7 +25,7 @@ global $sql,$parm;
     $height = ($height) ? $height : "*";
     $label = ($label) ? $label : " -- -- ";
 
-	$text .= "<select {$multi} class='tbox' name='$name' id='$name' onchange=\"preview_image('$name','$path','".e_IMAGE_ABS."generic/blank.gif');\">
+	$text .= "<select {$multi} class='tbox sc-imageselector' name='$name' id='$name' onchange=\"preview_image('$name','$path','".e_IMAGE_ABS."generic/blank.gif');\">
 	<option value=''>".$label."</option>\n";
 	foreach($imagelist as $icon)
 	{

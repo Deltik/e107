@@ -11,7 +11,7 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/signup.php $
-|     $Id: signup.php 11760 2010-09-07 17:02:27Z e107steved $
+|     $Id: signup.php 12094 2011-03-11 19:11:01Z e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -54,12 +54,12 @@ if(e_QUERY == "resend" && !USER && ($pref['user_reg_veri'] == 1))
 	$errmsg = '';
 	require_once(HEADERF);
 
-    if(!$clean_email = check_email($tp -> toDB($_POST['resend_email'])))
+    if (!($clean_email = check_email($tp -> toDB($_POST['resend_email']))))
 	{
 		$clean_email = "xxx";
 	}
 
-    if(!$new_email = check_email($tp -> toDB($_POST['resend_newemail'])))
+    if (!($new_email = check_email($tp -> toDB($_POST['resend_newemail']))))
 	{
     	$new_email = FALSE;
 	}
@@ -75,8 +75,9 @@ if(e_QUERY == "resend" && !USER && ($pref['user_reg_veri'] == 1))
 
 		if(trim($_POST['resend_password']) !="" && $new_email)
 		{
-        	if($sql->db_Select("user", "user_id", "user_password = \"".md5($_POST['resend_password'])."\" AND user_ban=2 AND user_sess !='' LIMIT 1"))
+        	if (($count = $sql->db_Select("user", "user_id", "user_password = \"".md5($_POST['resend_password'])."\" AND user_ban=2 AND user_sess !=''")) === 1)
 			{
+			// TODO: Check for duplicate email
 				$row = $sql -> db_Fetch();
             	if($sql->db_Update("user", "user_email='".$new_email."' WHERE user_id = '".$row['user_id']."' LIMIT 1 "))
 				{
@@ -85,9 +86,11 @@ if(e_QUERY == "resend" && !USER && ($pref['user_reg_veri'] == 1))
 			}
 			else
 			{
-			   	//require_once(e_HANDLER."message_handler.php");
-			   	//message_handler("ALERT",LAN_SIGNUP_52); // Incorrect Password.
-			   	$errmsg = LAN_SIGNUP_52;
+				// Incorrect password, or users with same password
+				//message_handler('ALERT', 'Error with count: '.$count);
+                $ns -> tablerender(LAN_ERROR,LAN_SIGNUP_52);
+                require_once(FOOTERF);
+                exit;
 			}
 		}
 
@@ -395,9 +398,14 @@ if (isset($_POST['register']))
 	if($_POST['password1xup']) $_POST['password1'] = $_POST['password1xup'];
 	if($_POST['password2xup']) $_POST['password2'] = $_POST['password2xup'];
 
-//	Strip most invalid characters now %*|/|&nbsp;|\#|\=|\$%
-// another option would be /[^\w\pL\.]/u (non latin words)
-	$temp_name = trim(preg_replace('#[^a-z0-9_\.]#i', "", strip_tags($_POST['loginname'])));
+	//	Strip most invalid characters now %*|/|&nbsp;|\#|\=|\$%
+	// another option would be /[^\w\pL\.]/u (non latin words)
+
+	// /[\^\*\|\/;:#=\$'!#`\s\(\)%\?<>\\{}~@] // check for invalid characters
+	// [^a-z0-9_\.] this is not multi-language compatible
+	
+	//$temp_name = trim(preg_replace("/[\^\*\|\/;:#=\$'!#`\s\(\)%\?<>\\{}~@]/", "", strip_tags($_POST['loginname'])));
+	$temp_name = str_replace('--', '', trim(preg_replace("/[\^\*\|\/;:#=\$'\"!#`\s\(\)%\?<>\\{}]/", '', strip_tags($_POST['loginname']))));
 	if ($temp_name != $_POST['loginname'])
 	{
 		$error_message .= LAN_409."\\n";
@@ -405,7 +413,7 @@ if (isset($_POST['register']))
 	}
 	$_POST['loginname'] = $temp_name;
 
-	if (strcasecmp($_POST['loginname'],"Anonymous") == 0)
+	if ((strcasecmp($_POST['loginname'],"Anonymous") == 0) || (strcasecmp($_POST['loginname'],LAN_ANONYMOUS) == 0))
 	{
 		$error_message .= LAN_103."\\n";
 		$error = TRUE;
@@ -640,16 +648,58 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 	}
 
 
-	// Avatar validation (already checked if compulsory field not filled in)
-	if ((varset($pref['signup_option_image'],0) > 0) && $_POST['image'])
+
+
+/**
+ *	Does some basic checks on a string claiming to represent an off-site image
+ *
+ *	@param string $imageName
+ *
+ *	@return boolean|string FALSE for unacceptable, potentially modified string if acceptable
+ */
+function checkRemoteImage($imageName)
+{
+	$newImageName = trim(str_replace(array('\'', '"', '(', ')'), '', $imageName));		// Strip invalid characters
+	if ($imageName != $newImageName)
 	{
-		$_POST['image'] = str_replace(array('\'', '"', '(', ')'), '', $_POST['image']);   // these are invalid anyway, so why allow them? (XSS Fix)
-		$avName = e_IMAGE.'avatars/'.$tp -> toDB($_POST['image']);
-		if ($size = getimagesize($avName))
+		return FALSE;
+	}
+	if (!preg_match('#(?:localhost|\..{2,6})\/.+\.(?:jpg|jpeg|png|svg|gif)$#i', $newImageName))
+	{
+		return FALSE;
+	}
+	return $newImageName;
+}
+
+
+	// Avatar validation (already checked if compulsory field not filled in)
+	$avName = varset($_POST['image'], '');
+	$_POST['image'] = '';
+	if ((varset($pref['signup_option_image'],0) > 0) && $avName)
+	{
+		$avmsg = '';
+		$avName = str_replace(array('\'', '"', '(', ')'), '', $avName);   // these are invalid anyway, so why allow them? (XSS Fix)
+		if (strpos($avName, '/') !== FALSE)
+		{	// Assume an off-site image
+			$avFullName = $avName = checkRemoteImage($avName);
+			if ($avName === FALSE)
+			{
+				$avmsg = LAN_SIGNUP_104;
+			}
+		}
+		else
+		{	// Its one of the standard choices
+			$avName = $tp -> toDB($avName);
+			$avFullName = e_IMAGE.'avatars/'.$avName;
+			if (!is_readable($avFullName))
+			{
+				$avmsg = LAN_SIGNUP_60;			// Error accessing avatar
+			}
+		}
+		if (!$avmsg && ($size = getimagesize($avFullName)))
 		{
 			$avwidth = $size[0];
 			$avheight = $size[1];
-			$avmsg = "";
 	
 			$pref['im_width'] = varset($pref['im_width'], 120);
 			$pref['im_height'] = varset($pref['im_height'], 100);
@@ -668,14 +718,13 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 		}
 		if ($avmsg) 
 		{
-			$_POST['image'] = "";
 			$error_message .= $avmsg;
 			$error = TRUE;
 		}
-	}
-	else
-	{
-		$_POST['image'] = "";
+		else
+		{
+			$_POST['image'] = $avName;
+		}
 	}
 
 

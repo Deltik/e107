@@ -11,11 +11,22 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/forum/forum_viewtopic.php $
-|     $Id: forum_viewtopic.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Id: forum_viewtopic.php 12100 2011-03-13 14:15:43Z e107steved $
 +----------------------------------------------------------------------------+
 */
 
+if((isset($_POST['report_thread']) || in_array('thread_action', $_POST)) && !isset($_POST['e-token']))
+{
+	// set e-token so it can be processed by class2
+	$_POST['e-token'] = '';
+}
+
 require_once('../../class2.php');
+if (!isset($pref['plug_installed']['forum']))
+{
+	header('Location: '.e_BASE.'index.php');
+	exit;
+}
 
 include_lan(e_PLUGIN.'forum/languages/'.e_LANGUAGE.'/lan_forum_viewtopic.php');
 include_once(e_PLUGIN.'forum/forum_class.php');
@@ -40,17 +51,17 @@ if (isset($_POST['highlight_search']))
 
 if (!e_QUERY)
 {
-	//No paramters given, redirect to forum home
+	//No paramaters given, redirect to forum home
 	header("Location:".e_PLUGIN."forum/forum.php");
 	exit;
 }
 else
 {
 	$tmp = explode(".", e_QUERY);
-	$thread_id = varset($tmp[0]);
+	$thread_id = intval(varset($tmp[0], 0));
 	$topic_from = varset($tmp[1], 0);
 	$action = varset($tmp[2]);
-	if (!$thread_id || !is_numeric($thread_id))
+	if (!$thread_id)
 	{
 		header("Location:".e_PLUGIN."forum/forum.php");
 		exit;
@@ -141,7 +152,7 @@ if ($action == "report") {
 		$text = LAN_424."<br /><br /><a href='forum_viewtopic.php?".$thread_id.".post'>".LAN_429."</a";
 		$ns->tablerender(LAN_414, $text, array('forum_viewtopic', 'report'));
 	} else {
-		$thread_name = $tp -> toHTML($thread_info['head']['thread_name'], TRUE, 'no_hook, emotes_off');
+		$thread_name = $tp -> toHTML($thread_info['head']['thread_name'], TRUE, 'USER_TITLE');
 		define("e_PAGETITLE", LAN_01." / ".LAN_426." ".$thread_name);
 		require_once(HEADERF);
 		$text = "<form action='".e_PLUGIN."forum/forum_viewtopic.php?".e_QUERY."' method='post'> <table style='width:100%'>
@@ -162,6 +173,7 @@ if ($action == "report") {
 			</tr>
 			<tr>
 			<td colspan='2' style='text-align:center;'><br />
+			<input type='hidden' name='e-token' value='".e_TOKEN."' />
 			<input class='button' type='submit' name='report_thread' value='".LAN_419."' />
 			</td>
 			</tr>
@@ -199,7 +211,7 @@ if (!check_class($forum_info['forum_class']) || !check_class($forum_info['parent
 
 $forum->thread_incview($thread_id);
 
-define("e_PAGETITLE", LAN_01." / ".$tp->toHTML($forum_info['forum_name'], TRUE, 'no_hook, emotes_off')." / ".$tp->toHTML($thread_info['head']['thread_name'], TRUE, 'no_hook, emotes_off'));
+define("e_PAGETITLE", LAN_01." / ".$tp->toHTML($forum_info['forum_name'], TRUE, 'USER_TITLE')." / ".$tp->toHTML($thread_info['head']['thread_name'], TRUE, 'USER_TITLE'));
 //define("MODERATOR", (preg_match("/".preg_quote(ADMINNAME)."/", $forum_info['forum_moderators']) && getperms('A') ? TRUE : FALSE));
 define("MODERATOR", $forum_info['forum_moderators'] != "" && check_class($forum_info['forum_moderators']));
 $modArray = $forum->forum_getmods($forum_info['forum_moderators']);
@@ -249,12 +261,12 @@ if (!$FORUMSTART) {
 	}
 }
 
-$forum_info['forum_name'] = $tp -> toHTML($forum_info['forum_name'], TRUE,'no_hook,emotes_off');
+$forum_info['forum_name'] = $tp -> toHTML($forum_info['forum_name'], TRUE,'USER_TITLE');
 
 // get info for main thread -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 $forum->set_crumb(TRUE); // Set $BREADCRUMB (and BACKLINK)
-$THREADNAME = $tp->toHTML($thread_info['head']['thread_name'], TRUE, 'TITLE');
+$THREADNAME = $tp->toHTML($thread_info['head']['thread_name'], TRUE, 'USER_TITLE');
 $NEXTPREV = "&lt;&lt; <a href='".e_SELF."?{$thread_id}.{$forum_info['forum_id']}.prev'>".LAN_389."</a>";
 $NEXTPREV .= " | ";
 $NEXTPREV .= "<a href='".e_SELF."?{$thread_id}.{$forum_info['forum_id']}.next'>".LAN_390."</a> &gt;&gt;";
@@ -397,6 +409,7 @@ function showmodoptions()
 		<div>
 		<a href='".e_PLUGIN."forum/forum_post.php?edit.{$post_info['thread_id']}.{$topic_from}'>".IMAGE_admin_edit."</a>
 		<input type='image' ".IMAGE_admin_delete." name='delete_{$post_info['thread_id']}' value='thread_action' onclick=\"return confirm_('{$type}', {$forum_id}, {$thread_id}, '{$post_info['user_name']}')\" />
+		<input type='hidden' name='e-token' value='".e_TOKEN."' />
 		";
 	if ($type == 'thread')
 	{

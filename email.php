@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/email.php $
-|     $Revision: 11808 $
-|     $Id: email.php 11808 2010-09-21 18:04:36Z e107steved $
+|     $Revision: 11948 $
+|     $Id: email.php 11948 2010-11-02 22:36:41Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -162,9 +162,27 @@ if (isset($_POST['emailsubmit']))
 	{
 	    // Load Mail Handler and Email Template.
 		require_once(e_HANDLER.'mail.php');
-	    $email_body = $EMAIL_HEADER;
+		if (file_exists(THEME.'email_template.php'))
+		{
+			require_once(THEME.'email_template.php');
+		}
+		else
+		{
+			require_once(e_THEME.'templates/email_template.php');
+		}
+
+		$email_body = '';
+		if(isset($EMAIL_HEADER))
+		{
+			$email_body = $tp->parseTemplate($EMAIL_HEADER);
+		}
+
 		$email_body .= (trim($comments) != '') ? $tp->toEmail($comments).'<hr />' : '';
-		$email_body .= $tp->toEmail($message).$EMAIL_FOOTER;
+		$email_body .= $tp->toEmail($message);
+		if (isset($EMAIL_FOOTER))
+		{
+			$email_body .= $tp->parseTemplate($EMAIL_FOOTER);
+		}
 
 		if (sendemail($email_send, LAN_EMAIL_3.SITENAME,$email_body))
 		{

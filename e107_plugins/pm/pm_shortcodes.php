@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/pm/pm_shortcodes.php $
-|     $Revision: 11678 $
-|     $Id: pm_shortcodes.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12033 $
+|     $Id: pm_shortcodes.php 12033 2011-01-12 14:12:32Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -33,11 +33,11 @@ $us = new user_select;
 $type = ($pm_prefs['dropdown'] == TRUE ? 'list' : 'popup');
 if(check_class($pm_prefs['multi_class']))
 {
-	$ret = $us->select_form($type, 'textarea.pm_to');
+	$ret = $us->select_form($type, 'textarea.pm_to', '', $pm_prefs['pm_class']);
 }
 else
 {
-	$ret = $us->select_form($type, 'pm_to');
+	$ret = $us->select_form($type, 'pm_to', '', $pm_prefs['pm_class']);
 }
 return $ret;
 SC_END

@@ -7,14 +7,14 @@
 * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
 *
 * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/forum/e_list.php $
-* $Id: e_list.php 11479 2010-04-16 02:35:56Z mcfly_e107 $
+* $Id: e_list.php 12098 2011-03-12 12:38:17Z e107steved $
 *
 */
 
 /**
 *	@package e107
 *	@subpackage	forum
-*	@version $Id: e_list.php 11479 2010-04-16 02:35:56Z mcfly_e107 $;
+*	@version $Id: e_list.php 12098 2011-03-12 12:38:17Z e107steved $;
 *
 */
 if (!defined('e107_INIT')) { exit; }
@@ -79,7 +79,8 @@ else
 		$u_name = substr($thread_user, (strpos($thread_user, ".")+1));
 		$thread_user = $u_id;
 
-		if ($thread_anon) {
+		if (isset($thread_anon)) 
+		{
 			$tmp = explode(chr(1), $thread_anon);
 			$thread_user = $tmp[0];
 			$thread_user_ip = $tmp[1];
@@ -118,7 +119,7 @@ else
 			$parent_name = $thread_name;
 		}
 		$rowheading	= $this -> parse_heading($parent_name, $mode);
-		if($parent_id)
+		if (isset($parent_id) && $parent_id)
 		{
 			$lnk = $thread_id.".post";
 		}

@@ -12,8 +12,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/admin_log_class.php $
-|     $Revision: 11678 $
-|     $Id: admin_log_class.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 11864 $
+|     $Id: admin_log_class.php 11864 2010-10-09 05:19:30Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -93,12 +93,16 @@ class e_admin_log {
 			$event_detail = $tp -> toDB($event_detail, true,false,'no_html');
 			$event_type = $tp -> toDB($event_type, true,false,'no_html');
 			$time_stamp = time();
-			$uid = (USER) ? USERID : '0';
+			$uid = defined('USERID') ? USERID : '0';
 			$ip = $e107->getip();
 			if($this->_options['backtrace'] == true) {
 				$event_detail .= "\n\n".debug_backtrace();
 			}
-			$sql->db_Insert('dblog', "'', '{$event_type}', {$time_stamp}, {$uid}, '{$ip}', '{$event_title}', '{$event_detail}' ");
+			if(!$sql->db_Insert('dblog', "'', '{$event_type}', {$time_stamp}, {$uid}, '{$ip}', '{$event_title}', '{$event_detail}' "))
+			{
+				trigger_error("Couldn't insert into dblog table",E_USER_ERROR);
+			}
+			
 		}
 	}
 

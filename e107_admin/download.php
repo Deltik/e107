@@ -10,9 +10,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/download.php $
-|     $Revision: 11807 $
-|     $Id: download.php 11807 2010-09-21 12:54:22Z e107steved $
-|     $Author: e107steved $
+|     $Revision: 11868 $
+|     $Id: download.php 11868 2010-10-09 11:51:09Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -157,6 +157,8 @@ if (isset($_POST['updateoptions']))
 	$pref['agree_flag'] = $_POST['agree_flag'];
 	$pref['download_email'] = $_POST['download_email'];
 	$pref['download_nomultiple'] = $_POST['download_nomultiple'];
+	$pref['download_splashdelay'] = $_POST['download_splashdelay'];
+
 	$pref['agree_text'] = $tp->toDB($_POST['agree_text']);
 	$pref['download_denied'] = $tp->toDB($_POST['download_denied']);
 	$pref['download_reportbroken'] = $_POST['download_reportbroken'];
@@ -169,7 +171,7 @@ if (isset($_POST['updateoptions']))
 
 if(isset($_POST['addlimit']))
 {
-	if($sql->db_Select('generic','gen_id',"gen_type = 'download_limit' AND gen_datestamp = {$_POST['newlimit_class']}"))
+	if($sql->db_Select('generic','gen_id',"gen_type = 'download_limit' AND gen_datestamp = ".intval($_POST['newlimit_class'])))
 	{
 		$message = DOWLAN_116;
 	}
@@ -373,6 +375,11 @@ if ($action == "opt")
 		<tr>
 		<td class='forumheader3'>".DOWLAN_160."</td>
 		<td class='forumheader3' style='text-align:left'>". ($pref['download_nomultiple'] ? "<input type='checkbox' name='download_nomultiple' value='1' checked='checked' />" : "<input type='checkbox' name='download_nomultiple' value='1' />")."</td>
+		</tr>
+
+		<tr>
+		<td class='forumheader3'>".DOWLAN_161."</td>
+		<td class='forumheader3' style='text-align:left'>". ($pref['download_splashdelay'] ? "<input type='checkbox' name='download_splashdelay' value='1' checked='checked' />" : "<input type='checkbox' name='download_splashdelay' value='1' />")."</td>
 		</tr>
 
 
@@ -1902,7 +1909,7 @@ class download
 
 function download_adminmenu($parms) {
 	global $download;
-	global $action;
+	list($action) = explode('.',e_QUERY);
 	$download->show_options($action);
 }
 

@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/contact.php $
-|     $Revision: 11678 $
-|     $Id: contact.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12098 $
+|     $Id: contact.php 12098 2011-03-12 12:38:17Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -30,7 +30,7 @@ require_once("class2.php");
 	require_once(e_HANDLER."secure_img_handler.php");
 	$sec_img = new secure_image;
 
-if (!$CONTACT_FORM)
+if (!isset($CONTACT_FORM) || !$CONTACT_FORM)
 {
 	if (file_exists(THEME."contact_template.php"))
 	{
@@ -167,6 +167,7 @@ if(isset($_POST['send-contactus'])/* && isset($_POST['e-token'])*/)
 
 if(SITECONTACTINFO && $CONTACT_INFO)
 {
+	require_once(e_FILE."shortcode/batch/contact_shortcodes.php");
 	$text = $tp->parseTemplate($CONTACT_INFO, TRUE, $contact_shortcodes);
 	$ns -> tablerender(LANCONTACT_01, $text,"contact");
 }

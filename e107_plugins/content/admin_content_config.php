@@ -10,9 +10,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/content/admin_content_config.php $
-|     $Revision: 11729 $
-|     $Id: admin_content_config.php 11729 2010-08-31 19:25:08Z e107steved $
-|     $Author: e107steved $
+|     $Revision: 11869 $
+|     $Id: admin_content_config.php 11869 2010-10-09 11:51:49Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -29,6 +29,10 @@ include_lan($plugindir.'languages/'.e_LANGUAGE.'/lan_content.php');
 
 require_once(e_HANDLER."calendar/calendar_class.php");
 $cal = new DHTML_Calendar(true);
+
+if(e_QUERY){
+	$qs = explode(".", e_QUERY);
+}
 
 require_once(e_ADMIN."auth.php");
 require_once(e_HANDLER."form_handler.php");
@@ -52,9 +56,7 @@ global $tp;
 $deltest = array_flip($_POST);
 
 // check query
-if(e_QUERY){
-	$qs = explode(".", e_QUERY);
-}
+
 
 if(isset($_POST['delete']))
 {

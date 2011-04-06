@@ -1,3 +1,5 @@
+// $Id: admin_siteinfo.sc 12060 2011-01-30 19:22:47Z secretr $
+//<?
 if (ADMIN) 
 {
 	global $ns, $pref, $themename, $themeversion, $themeauthor, $themedate, $themeinfo, $mySQLdefaultdb;
@@ -6,6 +8,14 @@ if (ADMIN)
 	{ 
 		include(e_ADMIN."ver.php"); 
 	}
+	
+	if($parm == "version")
+	{
+		return $e107info['e107_version'];
+	}
+	
+	
+	
 
 	$obj = new convert;
 	$install_date = $obj->convert_date($pref['install_date'], "long");
@@ -22,6 +32,10 @@ if (ADMIN)
 	<b>e107</b>
 	<br />
 	".FOOTLAN_3." ".$e107info['e107_version']."
+	<br /><br />
+	<b>".FOOTLAN_20."</b>
+	<br />
+	[".e_SECURITY_LEVEL."] ".defset('LAN_SECURITYL_'.e_SECURITY_LEVEL, 'n/a')." 
 	<br /><br />
 	<b>".FOOTLAN_18."</b>
 	<br />".$pref['sitetheme']."<br /><br />
@@ -56,5 +70,5 @@ if (ADMIN)
 	<br /><br />
 	<b>".FOOTLAN_17."</b>
 	<br />".CHARSET;
-	return $ns -> tablerender(FOOTLAN_13, $text, '', TRUE);
+	return $ns -> tablerender(FOOTLAN_13, $text, 'admin_siteinfo', TRUE);
 }

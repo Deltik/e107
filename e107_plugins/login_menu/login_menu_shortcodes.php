@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/login_menu/login_menu_shortcodes.php $
-|     $Revision: 11678 $
-|     $Id: login_menu_shortcodes.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12012 $
+|     $Id: login_menu_shortcodes.php 12012 2010-12-18 22:23:57Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -107,11 +107,11 @@ if(ADMIN)
 {
 	if(defined('BULLET'))
 	{
-		$bullet = '<img src="'.THEME.'images/'.BULLET.'" alt="" style="vertical-align: middle;" />';
+		$bullet = '<img src="'.THEME_ABS.'images/'.BULLET.'" alt="" style="vertical-align: middle;" />';
 	}
 	elseif(file_exists(THEME.'images/bullet2.gif'))
 	{
-		$bullet = '<img src="'.THEME.'images/bullet2.gif" alt="" style="vertical-align: middle;" />';
+		$bullet = '<img src="'.THEME_ABS.'images/bullet2.gif" alt="" style="vertical-align: middle;" />';
 	}
 }
 return $bullet;
@@ -140,11 +140,11 @@ SC_BEGIN LM_BULLET
 $bullet = '';
 if(defined('BULLET'))
 {
-	$bullet = '<img src="'.THEME.'images/'.BULLET.'" alt="" style="vertical-align: middle;" />';
+	$bullet = '<img src="'.THEME_ABS.'images/'.BULLET.'" alt="" style="vertical-align: middle;" />';
 }
 elseif(file_exists(THEME.'images/bullet2.gif'))
 {
-	$bullet = '<img src="'.THEME.'images/bullet2.gif" alt="" style="vertical-align: middle;" />';
+	$bullet = '<img src="'.THEME_ABS.'images/bullet2.gif" alt="" style="vertical-align: middle;" />';
 }
 return $bullet;
 SC_END

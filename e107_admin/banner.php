@@ -11,11 +11,14 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/banner.php $
-|     $Revision: 11678 $
-|     $Id: banner.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Id: banner.php 12086 2011-02-27 14:50:07Z e107steved $
 +----------------------------------------------------------------------------+
 */
+if(!empty($_POST) && !isset($_POST['e-token']))
+{
+	// set e-token so it can be processed by class2
+	$_POST['e-token'] = ''; 
+}
 require_once("../class2.php");
 if (!getperms("D")) 
 {
@@ -24,6 +27,13 @@ if (!getperms("D"))
 }
 
 $e_sub_cat = 'banner';
+
+if(e_QUERY) // must be before auth.php
+{
+	list($action, $sub_action, $id) = explode(".", e_QUERY);
+	$id = intval($id);
+}
+
 require_once("auth.php");
 require_once(e_HANDLER."form_handler.php");
 $rs = new form;
@@ -36,10 +46,7 @@ include_lan(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_menus.php");
 include_lan(e_PLUGIN."banner_menu/languages/".e_LANGUAGE.".php");
 
 
-if(e_QUERY)
-{
-	list($action, $sub_action, $id) = explode(".", e_QUERY);
-}
+
 
 //$reject = array('$.','$..','/','CVS','thumbs.db','*._$',"thumb_", 'index', '.DS_Store');
 //$images = $fl->get_files(e_IMAGE."banners/","",$reject);
@@ -70,11 +77,11 @@ if (isset($_POST['update_menu'])) {
 if ($_POST['createbanner'] || $_POST['updatebanner'])
 {
 
-	$start_date = (!$_POST['startmonth'] || !$_POST['startday'] || !$_POST['startyear'] ? 0 : mktime (0, 0, 0, $_POST['startmonth'], $_POST['startday'], $_POST['startyear']));
+	$start_date = (int) (!$_POST['startmonth'] || !$_POST['startday'] || !$_POST['startyear'] ? 0 : mktime (0, 0, 0, $_POST['startmonth'], $_POST['startday'], $_POST['startyear']));
 
-	$end_date = (!$_POST['endmonth'] || !$_POST['endday'] || !$_POST['endyear'] ? 0 : mktime (0, 0, 0, $_POST['endmonth'], $_POST['endday'], $_POST['endyear']));
+	$end_date = (int) (!$_POST['endmonth'] || !$_POST['endday'] || !$_POST['endyear'] ? 0 : mktime (0, 0, 0, $_POST['endmonth'], $_POST['endday'], $_POST['endyear']));
 
-	$cli = ($_POST['client_name'] ? $_POST['client_name'] : $_POST['banner_client_sel']);
+	$cli = $tp->toDB($_POST['client_name'] ? $_POST['client_name'] : $_POST['banner_client_sel']);
 
 	if ($_POST['banner_pages']) {
 		$postcampaign = ($_POST['banner_campaign'] ? $_POST['banner_campaign'] : $_POST['banner_campaign_sel']);
@@ -92,16 +99,21 @@ if ($_POST['createbanner'] || $_POST['updatebanner'])
 		$cam = ($_POST['banner_campaign'] ? $_POST['banner_campaign'] : $_POST['banner_campaign_sel']);
 	}
 
-	if ($_POST['createbanner']) {
-		admin_update($sql->db_Insert("banner", "0, '".$cli."', '".$_POST['client_login']."', '".$_POST['client_password']."', '".$_POST['banner_image']."', '".$_POST['click_url']."', '".intval($_POST['impressions_purchased'])."', '$start_date', '$end_date', '".$_POST['banner_class']."', 0, 0, '', '".$cam."'"), 'insert', BNRLAN_63);
-	} else {
-		admin_update($sql->db_Update("banner", "banner_clientname='".$cli."', banner_clientlogin='".$_POST['client_login']."', banner_clientpassword='".$_POST['client_password']."', banner_image='".$_POST['banner_image']."', banner_clickurl='".$_POST['click_url']."', banner_impurchased='".intval($_POST['impressions_purchased'])."', banner_startdate='$start_date', banner_enddate='$end_date', banner_active='".$_POST['banner_class']."', banner_campaign='".$cam."' WHERE banner_id='".$_POST['eid']."'"), 'update', BNRLAN_64);
+	$clickURL = $tp->toDB($_POST['click_url']);
+	unset($_POST['click_url']);
+	if ($_POST['createbanner']) 
+	{
+		admin_update($sql->db_Insert("banner", "0, '".$cli."', '".$tp->toDB($_POST['client_login'])."', '".$tp->toDB($_POST['client_password'])."', '".rawurlencode($_POST['banner_image'])."', '".$clickURL."', '".intval($_POST['impressions_purchased'])."', '$start_date', '$end_date', '".intval($_POST['banner_class'])."', 0, 0, '', '".$tp->toDB($cam)."'"), 'insert', BNRLAN_63);
+	} 
+	else 
+	{
+		admin_update($sql->db_Update("banner", "banner_clientname='".$cli."', banner_clientlogin='".$tp->toDB($_POST['client_login'])."', banner_clientpassword='".$tp->toDB($_POST['client_password'])."', banner_image='".rawurlencode($_POST['banner_image'])."', banner_clickurl='".$clickURL."', banner_impurchased='".intval($_POST['impressions_purchased'])."', banner_startdate='$start_date', banner_enddate='$end_date', banner_active='".intval($_POST['banner_class'])."', banner_campaign='".$tp->toDB($cam)."' WHERE banner_id='".intval($_POST['eid'])."'"), 'update', BNRLAN_64);
 	}
-	unset($_POST['client_name'], $_POST['client_login'], $_POST['client_password'], $_POST['banner_image'], $_POST['click_url'], $_POST['impressions_purchased'], $start_date, $end_date, $_POST['banner_enabled'], $_POST['startday'], $_POST['startmonth'], $_POST['startyear'], $_POST['endday'], $_POST['endmonth'], $_POST['endyear'], $_POST['banner_class'], $_POST['banner_pages'], $_POST['banner_listtype']);
+	unset($_POST['client_name'], $_POST['client_login'], $_POST['client_password'], $_POST['banner_image'], $_POST['impressions_purchased'], $start_date, $end_date, $_POST['banner_enabled'], $_POST['startday'], $_POST['startmonth'], $_POST['startyear'], $_POST['endday'], $_POST['endmonth'], $_POST['endyear'], $_POST['banner_class'], $_POST['banner_pages'], $_POST['banner_listtype']);
 }
 
 if (isset($_POST['confirm'])) {
-	admin_update($sql->db_Delete("banner", "banner_id='".$_POST['id']."' "), 'delete', BNRLAN_1);
+	admin_update($sql->db_Delete("banner", "banner_id='".intval($_POST['id'])."' "), 'delete', BNRLAN_1);
 }
 
 if ($action == "delete" && $sub_action) {
@@ -109,9 +121,10 @@ if ($action == "delete" && $sub_action) {
 		<b>".BNRLAN_2."</b>
 		<br /><br />
 		<form method='post' action='".e_SELF."'>
+		<input type='hidden' name='e-token' value='".e_TOKEN."' />
 		<input class='button' type='submit' name='cancel' value='".LAN_CANCEL."' />
 		<input class='button' type='submit' name='confirm' value='".LAN_CONFDELETE."' />
-		<input type='hidden' name='id' value='".$sub_action."' />
+		<input type='hidden' name='id' value='".intval($sub_action)."' />
 		</form>
 		</div>";
 	$ns->tablerender(BNRLAN_5, $text);
@@ -228,8 +241,8 @@ if ($action == "create") {
 				$_POST['client_name'] = $banner_clientname;
 				$_POST['client_login'] = $banner_clientlogin;
 				$_POST['client_password'] = $banner_clientpassword;
-				$_POST['banner_image'] = $banner_image;
-				$_POST['click_url'] = $banner_clickurl;
+				$_POST['banner_image'] = rawurldecode($banner_image);
+				$_POST['click_url'] = rawurldecode($banner_clickurl);
 				$_POST['impressions_purchased'] = $banner_impurchased;
 				$_POST['banner_campaign'] = $banner_campaign;
 				$_POST['banner_active'] = $banner_active;
@@ -446,7 +459,8 @@ if ($action == "create") {
 
 
 
-		<tr><td colspan='2' style='text-align:center' class='forumheader'>";
+		<tr><td colspan='2' style='text-align:center' class='forumheader'>
+		<input type='hidden' name='e-token' value='".e_TOKEN."' />";
 	$text .= ($sub_action == "edit" && $id ? "<input class='button' type='submit' name='updatebanner' value='".BNRLAN_40."' /><input type='hidden' name='eid' value='".$id."' />" : "<input class='button' type='submit' name='createbanner' value='".BNRLAN_41."' />");
 
 	$text .= "</td></tr></table>
@@ -549,7 +563,10 @@ if ($action == "menu")
 	</tr>
 
 	<tr>
-	<td colspan='2' class='forumheader' style='text-align:center'><input class='button' type='submit' name='update_menu' value='".BANNER_MENU_L18."' /></td>
+	<td colspan='2' class='forumheader' style='text-align:center'>
+	<input type='hidden' name='e-token' value='".e_TOKEN."' />
+	<input class='button' type='submit' name='update_menu' value='".BANNER_MENU_L18."' />
+	</td>
 	</tr>
 
 	</table>

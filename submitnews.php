@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/submitnews.php $
-|     $Revision: 11678 $
-|     $Id: submitnews.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 12027 $
+|     $Id: submitnews.php 12027 2011-01-05 09:38:55Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -39,6 +39,17 @@ if (!check_class($pref['subnews_class']))
 	require_once(FOOTERF);
 	exit;
 }
+
+
+		$newsCat = array();
+		if($sql->db_Select('news_category'))
+		{
+			while($row = $sql->db_Fetch())
+			{
+				$newsCat[$row['category_id']] = $row['category_name'];
+			}	
+		}
+		
 
 if (isset($_POST['submitnews_submit']) && $_POST['submitnews_title'] && $_POST['submitnews_item'])
 {
@@ -131,10 +142,10 @@ if (isset($_POST['submitnews_submit']) && $_POST['submitnews_title'] && $_POST['
 
 	if ($submitnews_error === FALSE)
 	{
-		$sql->db_Insert("submitnews", "0, '$submitnews_user', '$submitnews_email', '$submitnews_title', '".intval($_POST['cat_id'])."', '$submitnews_item', '".time()."', '$ip', '0', '$submitnews_file' ");
-		$edata_sn = array("user" => $submitnews_user, "email" => $submitnews_email, "itemtitle" => $submitnews_title, "catid" => intval($_POST['cat_id']), "item" => $submitnews_item, "ip" => $ip, "newname" => $submitnews_file);
+		$id = $sql->db_Insert("submitnews", "0, '$submitnews_user', '$submitnews_email', '$submitnews_title', '".intval($_POST['cat_id'])."', '$submitnews_item', '".time()."', '$ip', '0', '$submitnews_file' ");
+		$edata_sn = array("user" => $submitnews_user, "email" => $submitnews_email,"itemid"=>$id, "itemtitle" => $submitnews_title, "catid" => intval($_POST['cat_id']),"catname" => $newsCat[$_POST['cat_id']], "item" => $submitnews_item, "image" => $submitnews_file, "ip" => $ip);
 		$e_event->trigger("subnews", $edata_sn);
-		$ns->tablerender(LAN_133, "<div style='text-align:center'>".LAN_134."</div>");
+		$ns->tablerender(LAN_133, "<div class='submitnews-submitted' style='text-align:center'>".LAN_134."</div>");
 		require_once(FOOTERF);
 		exit;
 	}
@@ -182,15 +193,17 @@ $text .= "
   <td style='width:20%' class='forumheader3'>".NWSLAN_6.": </td>
 	<td style='width:80%' class='forumheader3'>";
 
-if (!$sql->db_Select("news_category"))
+if (!count($newsCat))
 {
 	$text .= NWSLAN_10;
 }
 else
 {
 	$text .= "
-		<select name='cat_id' class='tbox'>";
-	while (list($cat_id, $cat_name, $cat_icon) = $sql->db_Fetch())
+		<select name='cat_id' class='tbox'>
+		<option value=''>&nbsp;</option>\n";
+		foreach($newsCat as $cat_id=>$cat_name)
+	// while (list($cat_id, $cat_name, $cat_icon) = $sql->db_Fetch())
 	{
 		$sel = (varset($_POST['cat_id'],'') == $cat_id) ? "selected='selected'" : "";
 		$text .= "<option value='{$cat_id}' {$sel}>".$tp->toHTML($cat_name, FALSE, "defs")."</option>";

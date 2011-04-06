@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/footer.php $
-|     $Revision: 11753 $
-|     $Id: footer.php 11753 2010-09-06 20:59:15Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12060 $
+|     $Id: footer.php 12060 2011-01-30 19:22:47Z secretr $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -25,28 +25,35 @@ $In_e107_Footer = TRUE;	// For registered shutdown function
 		session_start(); // restart
 	}
 
-// give 3rd party code a way to prevent token/session re-generation
-if(!defsettrue('e_TOKEN_FREEZE'))
-{
-	// regenerate SID
-	$oldSID = session_id(); // old SID
-	$oldSData = $_SESSION; // old session data
-	session_regenerate_id(false); // true don't work on php4 - so time to move on people!	
-	$newSID = session_id(); // new SID
-	
-	// Clean
-	session_id($oldSID); // switch to the old session
-	session_destroy(); // destroy it
-	
-	// set new ID, reopen the session, set saved data
-	session_id($newSID);
-	session_start();
-	$_SESSION = $oldSData;
-	$_SESSION['regenerate_'.e_TOKEN_NAME] = time(); // class2 have to re-create token on the next request
-	unset($oldSID, $newSID, $oldSData);
-}
+// give 3rd party code a way to prevent token/session re-generation, respect security level
+	if(!defsettrue('e_TOKEN_FREEZE'))
+	{	
+		if(defset('e_SECURITY_LEVEL', 5) >= 10)
+		{
+			// regenerate SID
+			$oldSID = session_id(); // old SID
+			$oldSData = $_SESSION; // old session data
+			session_regenerate_id(false); // true don't work on php4 - so time to move on people!	
+			$newSID = session_id(); // new SID
+			
+			// Clean
+			session_id($oldSID); // switch to the old session
+			session_destroy(); // destroy it
+			
+			// set new ID, reopen the session, set saved data
+			session_id($newSID);
+			session_start();
+			$_SESSION = $oldSData;
+			
+			unset($oldSID, $newSID, $oldSData);
+		}
+		if(defset('e_SECURITY_LEVEL', 5) >= 8)
+		{
+			$_SESSION['regenerate_'.e_TOKEN_NAME] = time(); // class2 have to re-create token on the next request
+		}
+	}
 // write session data
-session_write_close();
+	session_write_close();
 // SESSION End
 
 global $eTraffic, $error_handler, $db_time, $sql, $mySQLserver, $mySQLuser, $mySQLpassword, $mySQLdefaultdb, $ADMIN_FOOTER, $e107, $pref;
@@ -265,7 +272,7 @@ if (isset($_SERVER['HTTP_IF_NONE_MATCH']))
 	
 	$data = "IF_NON_MATCH = ".$IF_NONE_MATCH;
 	$data .= "\nEtag = ".$etag;
-	file_put_contents(e_ADMIN."etag_log.txt",$data);
+	//file_put_contents(e_ADMIN."etag_log.txt",$data);
 
 	
 	if($IF_NONE_MATCH == $etag || ($IF_NONE_MATCH == ($etag."-gzip")))

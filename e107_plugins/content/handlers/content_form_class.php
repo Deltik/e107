@@ -10,8 +10,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/content/handlers/content_form_class.php $
-|     $Revision: 11729 $
-|     $Id: content_form_class.php 11729 2010-08-31 19:25:08Z e107steved $
+|     $Revision: 11822 $
+|     $Id: content_form_class.php 11822 2010-09-27 18:24:08Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */

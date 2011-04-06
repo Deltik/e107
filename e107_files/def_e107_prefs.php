@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_files/def_e107_prefs.php $
-|     $Revision: 11681 $
-|     $Id: def_e107_prefs.php 11681 2010-08-22 21:26:21Z e107steved $
+|     $Revision: 12013 $
+|     $Id: def_e107_prefs.php 12013 2010-12-18 22:55:22Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -146,6 +146,7 @@ City, State, Country
   'post_html' => '250',
   'post_script' => '250',
   'filter_script' => '1',
+  'html_abuse' => '1',
   'redirectsiteurl' => '0',
   'admin_alerts_uniquemenu' => '0',
   'null' => '',

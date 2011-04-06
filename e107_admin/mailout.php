@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/mailout.php $
-|     $Revision: 11678 $
-|     $Id: mailout.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 11867 $
+|     $Id: mailout.php 11867 2010-10-09 10:04:44Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -529,7 +529,7 @@ $text = "
 	<tr>
 	<td style='width:30%' class='forumheader3'>".PRFLAN_63."<br /></td>
 	<td style='width:70%; text-align:right' class='forumheader3'><input class='button' type='submit' name='testemail' value=\"".PRFLAN_65."\" />
-	<input name='testaddress' class='tbox' type='text' value=\"".SITEADMINEMAIL."\" />
+	<input name='testaddress' class='tbox' size='40' type='text' value=\"".SITEADMINEMAIL."\" />
 	</td>
 	</tr>
 

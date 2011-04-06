@@ -1,4 +1,4 @@
-/* $Id: admin_lang.sc 11771 2010-09-09 21:34:57Z e107coders $ */
+/* $Id: admin_lang.sc 11841 2010-10-04 07:38:49Z e107coders $ */
 //<?
 if(ADMIN)
 {
@@ -19,16 +19,16 @@ if(ADMIN)
 		if(!getperms($sql->mySQLlanguage) && $lanperms)
 		{
 			$sql->mySQLlanguage = ($lanperms[0] != $pref['sitelanguage']) ? $lanperms[0] : "";
-			if(defset('MULTILANG_SUBDOMAIN')==TRUE)
+			if(defset('MULTILANG_SUBDOMAIN')==TRUE && !in_array(e_LANGUAGE,$lanperms))
 			{
 				$_SESSION['e_language'] = $lanperms[0];
 				header("Location:".$lng->subdomainUrl($lanperms[0]));
 			}
 			else
 			{
-				$_SESSION['e_language'] = $lanperms[0];
-				setcookie('e107_language', $lanperms[0], time() + 86400, '/');
-				$_COOKIE['e107_language'] = $lanperms[0];
+			//	$_SESSION['e_language'] = $lanperms[0];
+			//	setcookie('e107_language', $lanperms[0], time() + 86400, '/');
+			//	$_COOKIE['e107_language'] = $lanperms[0];
 			}
 		}
 		
@@ -94,11 +94,12 @@ if(ADMIN)
 			$text .= "</select>
 			<br /><br />
 	   		<input class='button' type='submit' name='setlanguage' value='".UTHEME_MENU_L1."' />
+			<input type='hidden' name='e-token' value='".e_TOKEN."' /> 
 			</div>
 				</form>
 			</div>";
 		}
 		
-		return $ns->tablerender(UTHEME_MENU_L2, $text, '', TRUE);
+		return $ns->tablerender(UTHEME_MENU_L2, $text, 'admin_lang', TRUE);
 	}
 }

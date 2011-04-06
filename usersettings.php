@@ -10,9 +10,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/usersettings.php $
-|     $Revision: 11707 $
-|     $Id: usersettings.php 11707 2010-08-26 23:20:16Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12102 $
+|     $Id: usersettings.php 12102 2011-03-14 20:48:04Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -107,6 +107,30 @@ function addCommonClasses($udata)
 }
 
 
+
+/**
+ *	Does some basic checks on a string claiming to represent an off-site image
+ *
+ *	@param string $imageName
+ *
+ *	@return boolean|string FALSE for unacceptable, potentially modified string if acceptable
+ */
+function checkRemoteImage($imageName)
+{
+	$newImageName = trim(str_replace(array('\'', '"', '(', ')'), '', $imageName));		// Strip invalid characters
+	if ($imageName != $newImageName)
+	{
+		return FALSE;
+	}
+	if (!preg_match('#(?:localhost|\..{2,6})\/.+\.(?:jpg|jpeg|png|svg|gif)$#i', $newImageName))
+	{
+		return FALSE;
+	}
+	return $newImageName;
+}
+
+
+
 // Save user settings (whether or not changed)
 //---------------------------------------------
 $error = "";
@@ -143,25 +167,73 @@ if (isset($_POST['updatesettings']) && varset($_POST['e-token']))
 
 
 	// Check external avatar
-	$_POST['image'] = str_replace(array('\'', '"', '(', ')'), '', $_POST['image']);   // these are invalid anyway, so why allow them? (XSS Fix)
-	if ($_POST['image'] && $size = getimagesize($_POST['image'])) {
-		$avwidth = $size[0];
-		$avheight = $size[1];
-		$avmsg = "";
-
-		$pref['im_width'] = ($pref['im_width']) ? $pref['im_width'] : 120;
-		$pref['im_height'] = ($pref['im_height']) ? $pref['im_height'] : 100;
-		if ($avwidth > $pref['im_width']) {
-			$avmsg .= LAN_USET_1." ($avwidth)<br />".LAN_USET_2.": {$pref['im_width']}<br /><br />";
+	$avName = varset($_POST['image'], '');
+	$avmsg = '';
+	$_POST['image'] = '';
+	if ($avName)
+	{
+		$avName = str_replace(array('\'', '"', '(', ')'), '', $avName);   // these are invalid anyway, so why allow them? (XSS Fix)
+		if (strpos($avName, '/') !== FALSE)
+		{	// Assume an off-site image
+			$avName = checkRemoteImage($avName);
+			if ($avName === FALSE)
+			{
+				$avmsg = LAN_USET_18;
+			}
+			$avFullName = $avName;
 		}
-		if ($avheight > $pref['im_height']) {
-			$avmsg .= LAN_USET_3." ($avheight)<br />".LAN_USET_4.": {$pref['im_height']}";
+		else
+		{	// Its one of the standard choices
+			$avName = $tp -> toDB($avName);
+			if (strpos($avName, '-upload-') === 0)
+			{	// Uploaded avatar
+				$avFullName = e_FILE.'public/avatars/'.str_replace('-upload-', '', $avName);
+			}
+			else
+			{	// Site-provided avatar
+				$avFullName = e_IMAGE.'avatars/'.$avName;
+			}
+			if (!is_readable($avFullName))
+			{
+				$avmsg = LAN_USET_19.': '.$avFullName;			// Error accessing avatar
+				$avName = FALSE;
+			}
 		}
-		if ($avmsg) {
-			$_POST['image'] = "";
+		if ($avmsg)
+		{
 			$error = $avmsg;
 		}
+		elseif ($size = getimagesize($avFullName)) 
+		{
+			$avwidth = $size[0];
+			$avheight = $size[1];
+			$avmsg = '';
 
+			$pref['im_width'] = ($pref['im_width']) ? $pref['im_width'] : 120;
+			$pref['im_height'] = ($pref['im_height']) ? $pref['im_height'] : 100;
+			if ($avwidth > $pref['im_width']) 
+			{
+				$avmsg .= LAN_USET_1." ($avwidth)<br />".LAN_USET_2.": {$pref['im_width']}<br /><br />";
+			}
+			if ($avheight > $pref['im_height']) 
+			{
+				$avmsg .= LAN_USET_3." ($avheight)<br />".LAN_USET_4.": {$pref['im_height']}";
+			}
+			if ($avmsg) 
+			{
+				$error = $avmsg;
+				$avName = '';
+			}
+			else
+			{
+				$_POST['image'] = $avName;
+			}
+		}
+		else
+		{
+			$error = LAN_USET_19.': '.$avFullName;
+			$avName = FALSE;
+		}
 	}
 
 	$signup_option_title = array(LAN_308, LAN_120, LAN_121, LAN_122, LAN_USET_6);
@@ -183,7 +255,7 @@ if (isset($_POST['updatesettings']) && varset($_POST['e-token']))
 	//	$temp_name = trim(preg_replace('#[^a-z0-9_\.]#i', "", strip_tags($_POST['loginname'])));
 	// The above preg_replace will break any non-latin login and should not be used. 
 	
-		$temp_name = htmlspecialchars($_POST['loginname'], ENT_QUOTES);
+		$temp_name = str_replace('--', '', trim(preg_replace("/[\^\*\|\/;:#=\$'\"!#`\s\(\)%\?<>\\{}]/", '', strip_tags($_POST['loginname']))));
 		if ($temp_name != $_POST['loginname'])
 		{
 			$error .= LAN_USET_13."\\n";
@@ -193,12 +265,16 @@ if (isset($_POST['updatesettings']) && varset($_POST['e-token']))
 		{
 			$error .= LAN_USET_14."\\n";
 		}
+		if ((strcasecmp($_POST['loginname'],"Anonymous") == 0) || (strcasecmp($_POST['loginname'],LAN_ANONYMOUS) == 0))
+		{
+			$error .= LAN_USET_11."\\n";
+		}
 		$_POST['loginname'] = $temp_name;
 	}
 
 
 // Password checks
-	$pwreset = "";
+	$pwreset = '';
 	if ($_POST['password1'] != $_POST['password2']) {
 		$error .= LAN_105."\\n";
 	}
@@ -284,7 +360,7 @@ function make_email_query($email, $fieldname = 'banlist_ip')
 
 
 // Display name checks
-	if (isset($_POST['username']))
+	if (check_class($pref['displayname_class']) && isset($_POST['username']))
 	{
 	  // Impose a minimum length on display name
 	  $username = trim(strip_tags($_POST['username']));

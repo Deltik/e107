@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/file_class.php $
-|     $Revision: 11678 $
-|     $Id: file_class.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 11819 $
+|     $Id: file_class.php 11819 2010-09-24 12:03:13Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -99,7 +99,7 @@ class e_file
 		}
 		if($omit == 'standard')
 		{
-			$rejectArray = array('^\.$','^\.\.$','^\/$','^CVS$','thumbs\.db','.*\._$');
+			$rejectArray = array('^\.$','^\.\.$','^\/$','^\.svn','^CVS$','thumbs\.db','.*\._$');
 		}
 		else
 		{

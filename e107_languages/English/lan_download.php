@@ -4,8 +4,8 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/lan_download.php $
-|     $Revision: 11678 $
-|     $Id: lan_download.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 12054 $
+|     $Id: lan_download.php 12054 2011-01-22 02:11:39Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -105,5 +105,9 @@ define("LAN_dl_80", "Please enable cookies and [try again].");
 define("LAN_dl_81", "Cookies Required");
 define("LAN_dl_82", "Please Wait");
 
+//0.7.25
+
+define("LAN_dl_83", "Your download will begin in a moment...");
+define("LAN_dl_84", "If your download doesn't start within a few seconds, please [click here].");
 
 ?>

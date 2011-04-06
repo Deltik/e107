@@ -12,8 +12,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/mysql_class.php $
-|     $Revision: 11766 $
-|     $Id: mysql_class.php 11766 2010-09-08 04:45:11Z e107coders $
+|     $Revision: 12047 $
+|     $Id: mysql_class.php 12047 2011-01-16 22:07:13Z e107coders $
 |     $Author: e107coders $
 |
 +----------------------------------------------------------------------------+
@@ -30,7 +30,7 @@ $db_ConnectionID = NULL;
 * MySQL Abstraction class
 *
 * @package e107
-* @version $Revision: 11766 $
+* @version $Revision: 12047 $
 * @author $Author: e107coders $
 */
 class db {
@@ -333,6 +333,7 @@ class db {
 		{
 			$keyList= "`".implode("`,`", array_keys($arg))."`";
 			$valList= "'".implode("','", $arg)."'";
+			$valList = str_replace(",'NULL'",",NULL",$valList); // Handle NULL correctly. 
 			$query = "INSERT INTO `".MPREFIX."{$table}` ({$keyList}) VALUES ({$valList})";
 		}
 		else

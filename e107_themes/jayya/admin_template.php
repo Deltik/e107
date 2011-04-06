@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_themes/jayya/admin_template.php $
-|     $Revision: 11703 $
-|     $Id: admin_template.php 11703 2010-08-25 12:12:44Z secretr $
-|     $Author: secretr $
+|     $Revision: 11836 $
+|     $Id: admin_template.php 11836 2010-09-30 21:43:10Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -88,7 +88,7 @@ if(ADMIN)
     <tr>
     <td>
     {SETSTYLE=leftmenu}
-	".(e_PAGE != 'admin.php' ? '{ADMIN_UPDATE} ' : '')."
+	{ADMIN_UPDATE=notadminpanel}
     {ADMIN_LANG}
     {ADMIN_PWORD}
     {ADMIN_MSG}
@@ -116,7 +116,9 @@ if(ADMIN)
     </td>";
 }
 $ADMIN_HEADER .= "
+
 <td class='default_menu'>
+{ADMIN_UPDATE=adminpanel}
 {SETSTYLE=default}
 ";
 

@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/search.php $
-|     $Revision: 11678 $
-|     $Id: search.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 11868 $
+|     $Id: search.php 11868 2010-10-09 11:51:09Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -23,10 +23,13 @@ if (!getperms('X')) {
 	exit;
 }
 $e_sub_cat = 'search';
+
+$query = explode('.', e_QUERY); // must be set before auth.php is loaded. 
+
 require_once('auth.php');
 require_once(e_HANDLER.'userclass_class.php');
 
-$query = explode('.', e_QUERY);
+
 
 $search_prefs = $sysprefs -> getArray('search_prefs');
 
@@ -287,10 +290,10 @@ if ($query[0] == 'settings') {
 	</tr>";
 
 	$text .= "<tr>
-	<td class='forumheader'>".SEALAN_24."</td>
-	<td class='forumheader'>".SEALAN_25."</td>
-	<td class='forumheader'>".LAN_ORDER."</td>
-	<td class='forumheader'>".LAN_EDIT."</td>
+	<td class='fcaption'>".SEALAN_24."</td>
+	<td class='fcaption'>".SEALAN_25."</td>
+	<td class='fcaption'>".LAN_ORDER."</td>
+	<td class='fcaption'>".LAN_EDIT."</td>
 	</tr>";
 
 	foreach($search_handlers as $key => $value) {
@@ -358,8 +361,8 @@ if ($query[0] == 'settings') {
 	</tr>";
 
 	$text .= "<tr>
-	<td class='forumheader'>".SEALAN_24."</td>
-	<td class='forumheader'>".SEALAN_25."</td>
+	<td class='fcaption'>".SEALAN_24."</td>
+	<td class='fcaption'>".SEALAN_25."</td>
 	</tr>";
 
 	foreach ($search_prefs['comments_handlers'] as $key => $value) {

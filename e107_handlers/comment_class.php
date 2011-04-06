@@ -12,9 +12,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/comment_class.php $
-|     $Revision: 11678 $
-|     $Id: comment_class.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 11941 $
+|     $Id: comment_class.php 11941 2010-11-01 22:10:28Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -639,8 +639,8 @@ class comment {
 	function get_e_comment()
 	{
 		$data = getcachedvars('e_comment');
-	  if($data!==FALSE)
-	  {
+		if($data!==FALSE)
+		{
 			return $data;
 		}
 
@@ -650,18 +650,24 @@ class comment {
 		$omit = array('^\.$','^\.\.$','^\/$','^CVS$','thumbs\.db','.*\._$','.bak$');
 		$files = $fl->get_files(e_PLUGIN, 'e_comment.php', $omit, 1, 0);
 
-		foreach($files as $file){
+		foreach($files as $file)
+		{
 			unset($e_comment, $key);
 			include($file['path'].$file['fname']);
-			if($e_comment && is_array($e_comment)){
+			if(isset($e_comment) && is_array($e_comment))
+			{
 				$key = $e_comment['eplug_comment_ids'];
-				if(isset($key) && $key!=''){
+				if(isset($key) && $key!='')
+				{
 					$data[$key] = $e_comment;
 				}
-			}else{
+			}
+			else
+			{
 				//convert old method variables into the same array method
 				$key = $e_plug_table;
-				if(isset($key) && $key!=''){
+				if(isset($key) && $key!='')
+				{
 					$e_comment['eplug_comment_ids']	= $e_plug_table;
 					$e_comment['plugin_name']		= $plugin_name;
 					$e_comment['plugin_path']		= $plugin_path;
@@ -844,7 +850,7 @@ class comment {
 					  }
 					}
 				  }		// End Switch
-				  if($ret['comment_title'])
+				  if(varset($ret['comment_title']))
 				  {
 					$reta[] = $ret;
 					$valid++;

@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_themes/templates/admin_template.php $
-|     $Revision: 11678 $
-|     $Id: admin_template.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 11836 $
+|     $Id: admin_template.php 11836 2010-09-30 21:43:10Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -28,7 +28,7 @@ $ADMIN_HEADER = "<div style='text-align:center'>
 <table style='width:100%' cellspacing='10' cellpadding='10'>
 <tr>
 <td style='width:17%; vertical-align: top;'>
-".(e_PAGE != 'admin.php' ? '{ADMIN_UPDATE} ' : '')."
+{ADMIN_UPDATE=notadminpanel}
 {ADMIN_NAV}
 {ADMIN_LANG}
 {ADMIN_PWORD}
@@ -40,7 +40,8 @@ $ADMIN_HEADER = "<div style='text-align:center'>
 {ADMIN_PLUGINS}
 </td>
 <td style='width:62%; vertical-align: top;'>
-";
+{ADMIN_UPDATE=adminpanel}";
+
 
 $ADMIN_FOOTER = "</td>
 <td style='width:17%; vertical-align:top'>

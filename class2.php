@@ -10,9 +10,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/class2.php $
-|     $Revision: 11786 $
-|     $Id: class2.php 11786 2010-09-15 22:12:49Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12090 $
+|     $Id: class2.php 12090 2011-03-10 18:46:11Z nlstart $
+|     $Author: nlstart $
 +----------------------------------------------------------------------------+
 */
 //
@@ -44,11 +44,12 @@
 $eTimingStart = microtime();					// preserve these when destroying globals in step C
 $oblev_before_start = ob_get_level();
 
-// Filter common bad agents / queries. 
-if(strpos($_SERVER['QUERY_STRING'],"=http")!==FALSE || strpos($_SERVER["HTTP_USER_AGENT"],"libwww-perl")!==FALSE)
-{
-	exit();
-}
+// Block common bad agents / queries / php issues. 
+array_walk($_SERVER,  'e107_filter', '_SERVER');
+array_walk($_GET,     'e107_filter', '_GET');
+array_walk($_POST,    'e107_filter', '_POST');
+array_walk($_COOKIE,  'e107_filter', '_COOKIE');
+array_walk($_REQUEST, 'e107_filter', '_REQUEST'); 
 
 //
 // B: Remove all output buffering
@@ -77,7 +78,7 @@ if($register_globals == true){
 }
 
 
-if(($pos = strpos($_SERVER['PHP_SELF'], ".php/")) !== false) // redirect bad URLs to the correct one.
+if(($pos = stripos($_SERVER['PHP_SELF'], ".php/")) !== false) // redirect bad URLs to the correct one.
 {
 	$new_url = substr($_SERVER['PHP_SELF'], 0, $pos+4);
 	$new_loc = ($_SERVER['QUERY_STRING']) ? $new_url."?".$_SERVER['QUERY_STRING'] : $new_url;
@@ -85,7 +86,7 @@ if(($pos = strpos($_SERVER['PHP_SELF'], ".php/")) !== false) // redirect bad URL
 	exit();
 }
 // If url contains a .php in it, PHP_SELF is set wrong (imho), affecting all paths.  We need to 'fix' it if it does.
-$_SERVER['PHP_SELF'] = (($pos = strpos($_SERVER['PHP_SELF'], ".php")) !== false ? substr($_SERVER['PHP_SELF'], 0, $pos+4) : $_SERVER['PHP_SELF']);
+$_SERVER['PHP_SELF'] = (($pos = stripos($_SERVER['PHP_SELF'], ".php")) !== false ? substr($_SERVER['PHP_SELF'], 0, $pos+4) : $_SERVER['PHP_SELF']);
 unset($pos);
 //
 // D: Setup PHP error handling
@@ -139,7 +140,7 @@ else
 		$domain = FALSE; //invalid domain
 	}
 	
-	$replace = array(".".$domain,"www.","www");
+	$replace = array(".".$domain,"www.","www",$domain);
 	$subdomain = str_replace($replace,'',$_SERVER['HTTP_HOST']);
 }
 
@@ -199,7 +200,20 @@ if (strpos($_SERVER['PHP_SELF'], "trackback") === false) {
 }
 unset($inArray);
 
-// Session start. 
+/**
+ * NEW - system security levels
+ * Could be overridden by e107_config.php OR $CLASS2_INCLUDE script (if not set earlier)
+ * 
+ * 0 (disabled)
+ * 5 (balanced) - token value once per session
+ * 8 (high) - token value regenerated on every page load
+ * 10 (insane) - #8 + regenerate SID on every page load
+ * default is 5
+ */
+if(!defined('e_SECURITY_LEVEL')) 
+{
+	define('e_SECURITY_LEVEL', 5);
+}
 
 /**
  * G: Retrieve Query data from URI
@@ -397,7 +411,12 @@ $sql->db_Mark_Time('(Extracting Core Prefs Done)');
 //
 define("SITEURLBASE", ($pref['ssl_enabled'] == '1' ? "https://" : "http://").$_SERVER['HTTP_HOST']);
 define("SITEURL", SITEURLBASE.e_HTTP);
-define("e_SELF", ($pref['ssl_enabled'] == '1' ? "https://".$_SERVER['HTTP_HOST'] : "http://".$_SERVER['HTTP_HOST']) . ($_SERVER['PHP_SELF'] ? $_SERVER['PHP_SELF'] : $_SERVER['SCRIPT_FILENAME']));
+
+if(!defined('e_SELF')) // user override option 
+{
+	define("e_SELF", ($pref['ssl_enabled'] == '1' ? "https://".$_SERVER['HTTP_HOST'] : "http://".$_SERVER['HTTP_HOST']) . ($_SERVER['PHP_SELF'] ? $_SERVER['PHP_SELF'] : $_SERVER['SCRIPT_FILENAME']));	
+}
+
 $page = substr(strrchr($_SERVER['PHP_SELF'], "/"), 1);
 define("e_PAGE", $page);
 	  
@@ -461,14 +480,28 @@ header("Cache-Control: must-revalidate");
 // TODO - maybe add IP as well?
 define('e_TOKEN_NAME', 'e107_token_'.md5($_SERVER['HTTP_HOST'].e_HTTP));
 
-if(isset($_SESSION) && isset($_POST['e-token']) && ($_POST['e-token'] != $_SESSION[e_TOKEN_NAME]) && $_POST['ajax_used']!=1)
+// Ajax calls should be handled manual at this time (set e_TOKEN_FREEZE in Ajax scripts before the API is loaded)
+if(e_SECURITY_LEVEL > 0 && session_id() && isset($_POST['e-token']) && ($_POST['e-token'] != varset($_SESSION[e_TOKEN_NAME]))/* && $_POST['ajax_used']!=1*/)
 {
-	// do not redirect, prevent dead loop, save server resources
+	if(defsettrue('e_DEBUG'))
+	{		
+		$details = "HOST: ".$_SERVER['HTTP_HOST']."\n";
+		$details .= "REQUEST_URI: ".$_SERVER['REQUEST_URI']."\n";		
+		$details .= "_SESSION:\n";
+		$details .= print_r($_SESSION,true);
+		$details .= "\n_POST:\n";
+		$details .= print_r($_POST,true);
+		$details .= "\nPlugins:\n";
+		$details .= print_r($pref['plug_installed'],true);
+			
+		$admin_log->log_event("Access denied", $details, E_LOG_WARNING);				
+	}	
+		// do not redirect, prevent dead loop, save server resources
 	die('Access denied');
-}	
+}
 
-// Create new token only if not exists or session id is regenerated (footer.php)
-if(!isset($_SESSION[e_TOKEN_NAME]) || (isset($_SESSION['regenerate_'.e_TOKEN_NAME]) && !defsettrue('e_TOKEN_FREEZE')))
+// Create new token only if not exists or session id is regenerated (footer.php), respect security level
+if(!isset($_SESSION[e_TOKEN_NAME]) || (e_SECURITY_LEVEL >= 8 && isset($_SESSION['regenerate_'.e_TOKEN_NAME]) && !defsettrue('e_TOKEN_FREEZE')))
 {
 	// we should not break ajax calls this way
 	$_SESSION[e_TOKEN_NAME] = uniqid(md5(rand()), true);
@@ -562,6 +595,7 @@ if(varset($pref['multilanguage']) && (e_LANGUAGE != $pref['sitelanguage']))
 include_lan(e_LANGUAGEDIR.e_LANGUAGE."/".e_LANGUAGE.".php");
 include_lan(e_LANGUAGEDIR.e_LANGUAGE."/".e_LANGUAGE."_custom.php");
 
+define('e_LOCALE',(strtolower(CORE_LC)."-".strtoupper(CORE_LC2)));
 //
 // N: misc setups: online user tracking, cache
 //
@@ -572,18 +606,20 @@ $e_online = new e_online();
 $e107cache = new ecache;
 
 
-if (isset($pref['del_unv']) && $pref['del_unv'] && $pref['user_reg_veri'] != 2) {
-	$threshold=(time() - ($pref['del_unv'] * 60));
-	$sql->db_Delete("user", "user_ban = 2 AND user_join < '{$threshold}' ");
+if (isset($pref['del_unv']) && $pref['del_unv'] && $pref['user_reg_veri'] != 2) 
+{
+	$threshold = intval(time() - ($pref['del_unv'] * 60));
+	$sql->db_Delete('user', "user_ban = 2 AND user_join < ".$threshold);
 }
 
-e107_require_once(e_HANDLER."override_class.php");
+e107_require_once(e_HANDLER.'override_class.php');
 $override=new override;
 
-e107_require_once(e_HANDLER."event_class.php");
+e107_require_once(e_HANDLER.'event_class.php');
 $e_event=new e107_event;
 
-if (isset($pref['notify']) && $pref['notify'] == true) {
+if (isset($pref['notify']) && $pref['notify'] == true) 
+{
 	e107_require_once(e_HANDLER.'notify_class.php');
 }
 
@@ -594,7 +630,7 @@ $sql -> db_Mark_Time('Start: Init session');
 init_session();
 
 // for multi-language these definitions needs to come after the language loaded.
-define("SITENAME", trim($tp->toHTML($pref['sitename'], "", 'USER_TITLE,value,defs')));
+define("SITENAME", trim($tp->toHTML($pref['sitename'], "", 'USER_TITLE,defs')));
 define("SITEBUTTON", $pref['sitebutton']);
 define("SITETAG", $tp->toHTML($pref['sitetag'], FALSE, "emotes_off, defs"));
 define("SITEDESCRIPTION", $tp->toHTML($pref['sitedescription'], "", "emotes_off,defs"));
@@ -813,7 +849,7 @@ $e_deltaTime=0;
 
 if (isset($_COOKIE['e107_tdOffset'])) {
 	// Actual seconds of delay. See e107.js and footer_default.php
-	$e_deltaTime = $_COOKIE['e107_tdOffset'];
+	$e_deltaTime = (15*floor(($_COOKIE['e107_tdOffset']/60)/15))*60; // Delay in seconds rounded to the lowest quarter hour
 }
 
 if (isset($_COOKIE['e107_tzOffset'])) {
@@ -1175,7 +1211,7 @@ function get_user_data($uid, $extra = "")
 		}
 	}
 
-	$var = $sql->db_Fetch();
+	$var = $sql->db_Fetch(MYSQL_ASSOC);
 	$extended_struct = getcachedvars("extended_struct");
 	if(!$extended_struct)
 	{
@@ -1183,7 +1219,7 @@ function get_user_data($uid, $extra = "")
 		$qry = "SHOW COLUMNS FROM #user_extended ";
 		if($sql->db_Select_gen($qry))
 		{
-			while($row = $sql->db_Fetch())
+			while($row = $sql->db_Fetch(MYSQL_ASSOC))
 			{
 				if($row['Default'] != "")
 				{
@@ -1465,15 +1501,15 @@ function init_session() {
 			$update_ip = ($result['user_ip'] != USERIP ? ", user_ip = '".USERIP."'" : "");
 
 			if($result['user_currentvisit'] + 3600 < time() || !$result['user_lastvisit'])
-			{
+			{	// New visit
 				$result['user_lastvisit'] = $result['user_currentvisit'];
 				$result['user_currentvisit'] = time();
-				$sql->db_Update("user", "user_visits = user_visits + 1, user_lastvisit = '{$result['user_lastvisit']}', user_currentvisit = '{$result['user_currentvisit']}', user_viewed = ''{$update_ip} WHERE user_id='".USERID."' ");
+				$sql->db_Update('user', "user_visits = user_visits + 1, user_lastvisit = '{$result['user_lastvisit']}', user_currentvisit = '{$result['user_currentvisit']}', user_viewed = ''{$update_ip} WHERE user_id=".USERID);
 			}
 			else
 			{
 				$result['user_currentvisit'] = time();
-				$sql->db_Update("user", "user_currentvisit = '{$result['user_currentvisit']}'{$update_ip} WHERE user_id='".USERID."' ");
+				$sql->db_Update('user', "user_currentvisit = '{$result['user_currentvisit']}'{$update_ip} WHERE user_id=".USERID);
 			}
 
 			$currentUser = $result;
@@ -1671,6 +1707,33 @@ function e107_require($fname) {
 	global $e107_debug;
 	$ret = ($e107_debug ? require($fname) : @require($fname));
 	return $ret;
+}
+
+function e107_filter($input,$key,$type)
+{	
+	if (is_array($input))
+	{
+		return array_walk($input, 'e107_filter',$type);	
+	} 
+	
+	if($type == "_SERVER")
+	{	
+		if(($key == "QUERY_STRING") && strpos(strtolower($input),"=http")!==FALSE)
+		{
+			exit();
+		}
+		
+		if(($key == "HTTP_USER_AGENT") && strpos($input,"libwww-perl")!==FALSE)
+		{
+			exit();	
+		}			
+	}
+		
+	if(strpos(str_replace('.', '', $input), '22250738585072011') !== FALSE) // php-bug 53632
+	{
+		exit();
+	} 
+	
 }
 
 function include_lan($path, $force = false)

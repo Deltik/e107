@@ -10,8 +10,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/users_extended.php $
-|     $Revision: 11678 $
-|     $Id: users_extended.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 11868 $
+|     $Id: users_extended.php 11868 2010-10-09 11:51:09Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -45,6 +45,17 @@ $user = new users_ext;
 $curtype = '1';
 require_once(e_HANDLER."calendar/calendar_class.php");
 $cal = new DHTML_Calendar(true);
+
+if (e_QUERY)
+{
+	$tmp = explode(".", e_QUERY);
+	$action = $tmp[0]; // must be set before auth.php is loaded. 
+	$sub_action = varset($tmp[1],'');
+	$id = varset($tmp[2],0);
+	unset($tmp);
+}
+
+
 require_once("auth.php");
 require_once(e_HANDLER."user_extended_class.php");
 require_once(e_HANDLER."userclass_class.php");
@@ -53,14 +64,7 @@ require_once(e_HANDLER."userclass_class.php");
 $ue = new e107_user_extended;
 $message = '';
 
-if (e_QUERY)
-{
-	$tmp = explode(".", e_QUERY);
-	$action = $tmp[0];
-	$sub_action = varset($tmp[1],'');
-	$id = varset($tmp[2],0);
-	unset($tmp);
-}
+
 
 
 

@@ -1,5 +1,5 @@
 <?php
-// $Id: rss_shortcodes.php 11346 2010-02-17 18:56:14Z secretr $
+// $Id: rss_shortcodes.php 11999 2010-12-17 12:24:29Z e107coders $
 if (!defined('e107_INIT')) { exit; }   
 
 include_once(e_HANDLER.'shortcode_handler.php');
@@ -9,7 +9,7 @@ $rss_shortcodes = $tp -> e_sc -> parse_scbatch(__FILE__);
 SC_BEGIN RSS_FEED
 global $row, $tp;
 $url2 = e_PLUGIN."rss_menu/rss.php?".e_LANQRY.$tp->toHTML($row['rss_url'], TRUE, 'constants').".2".($row['rss_topicid'] ? ".".$row['rss_topicid'] : '');
-return "<a href='".$url2."'>".$tp->toHTML($row['rss_name'], TRUE)."</a>";
+return "<a href='".$url2."'>".$tp->toHTML($row['rss_name'], TRUE,'defs')."</a>";
 SC_END
 
 SC_BEGIN RSS_ICON

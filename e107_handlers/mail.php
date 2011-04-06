@@ -11,14 +11,16 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/mail.php $
-|     $Revision: 11678 $
-|     $Id: mail.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 12075 $
+|     $Id: mail.php 12075 2011-02-26 19:11:54Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
 
+/*
+Mustn't load this here - it can provoke loading of the shortcode handler before the theme and its shortcodes have been loaded.
 	if(is_readable(THEME."email_template.php"))
 	{
     	require(THEME."email_template.php");
@@ -32,6 +34,8 @@ if (!defined('e107_INIT')) { exit; }
 		$EMAIL_HEADER = $tp->parseTemplate($EMAIL_HEADER);
 		$EMAIL_FOOTER = $tp->parseTemplate($EMAIL_FOOTER);
 	}
+*/
+
 /*
 Please note that mailed attachments have been found to be corrupted using php 4.3.3
 php 4.3.6 does NOT have this problem.
@@ -102,7 +106,7 @@ function sendemail($send_to, $subject, $message, $to_name, $send_from='', $from_
 	if (preg_match('/<(font|br|a|img|b)/i', $message)) {
 		$Html = $message; // Assume html if it begins with one of these tags
 	} else {
-		$Html = htmlspecialchars($message);
+		$Html = htmlspecialchars($message,ENT_QUOTES,CHARSET);
 		$Html = preg_replace('%(http|ftp|https)(://\S+)%', '<a href="\1\2">\1\2</a>', $Html);
 		$Html = preg_replace('/([[:space:]()[{}])(www.[-a-zA-Z0-9@:%_\+.~#?&\/\/=]+)/i', '\\1<a href="http://\\2">\\2</a>', $Html);
 		$Html = preg_replace('/([_\.0-9a-z-]+@([0-9a-z][0-9a-z-]+\.)+[a-z]{2,3})/i', '<a href="mailto:\\1">\\1</a>', $Html);

@@ -11,9 +11,7 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/credits.php $
-|     $Revision: 11678 $
-|     $Id: credits.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Id: credits.php 12030 2011-01-06 13:29:15Z nlstart $
 +----------------------------------------------------------------------------+
 */
 
@@ -32,7 +30,7 @@ $creditsArray = array(
 	array(	"name" => "PCLZip",
 				"url" => "http://www.phpconcept.net/pclzip/",
 				"description" => CRELAN_11,
-				"version" => "2.3",
+				"version" => "2.8.2",
 				"licence" => "GPL"
 			),
 	array(	"name" => "PCLTar",
@@ -44,7 +42,7 @@ $creditsArray = array(
 	array(	"name" => "TinyMCE",
 				"url" => "http://tinymce.moxiecode.com/",
 				"description" => CRELAN_13,
-				"version" => "2.08",
+				"version" => "3.3.9.2",
 				"licence" => "GPL"
 			),
 	array(	"name" => "Nuvolo Icons",
@@ -56,7 +54,7 @@ $creditsArray = array(
 	array(	"name" => "PHPMailer",
 				"url" => "http://phpmailer.sourceforge.net/",
 				"description" => CRELAN_15,
-				"version" => "1.72",
+				"version" => "2.0.4",
 				"licence" => "GPL"
 			),
 	array(	"name" => "Brainjar DHTML Menu",
@@ -85,17 +83,19 @@ $creditsArray = array(
 			),
 	);
 
-$contentA = array(
+$contentA = array( // ORDER BY FirstName ASC ;)
 	"<h3>".CRELAN_6."<\/h3>",
-	"<h1>Carl Cedergren<\/h1>[ asperon ]<br /><br /><br />".CRELAN_20,
 	"<h1>Cameron Hanly<\/h1>[ CaMer0n ]<br /><br /><br />".CRELAN_21,
-	"<h1>Steve Dunstan<\/h1>[ jalist ]<br /><br /><br />".CRELAN_22,
+	"<h1>Carl Cedergren<\/h1>[ asperon ]<br /><br /><br />".CRELAN_20,
 	"<h1>Eric Vanderfeesten<\/h1> [ lisa ]<br /><br /><br />".CRELAN_23,
+	"<h1>James Currie<\/h1>[ SweetAs ]<br /><br /><br />".CRELAN_27,
+	"<h1>Martin Nicholls<\/h1>[ streaky ]<br /><br /><br />".CRELAN_26,
+	"<h1>Miroslav Yovchev<\/h1>[ SecretR ]<br /><br /><br />".defset('CRELAN_29'),
+	"<h1>Pete Holzmann<\/h1>[ MrPete ]<br /><br /><br />".CRELAN_28,
+	"<h1>Steve Dunstan<\/h1>[ jalist ]<br /><br /><br />".CRELAN_22,
+	"<h1>Steven Davies<\/h1>[ steved ]<br /><br /><br />".defset('CRELAN_30'),
 	"<h1>Thom Michelbrink<\/h1>[ McFly ]<br /><br /><br />".CRELAN_24,
 	"<h1>William Moffett<\/h1>[ que ]<br /><br /><br />".CRELAN_25,
-	"<h1>Martin Nicholls<\/h1>[ streaky ]<br /><br /><br />".CRELAN_26,
-	"<h1>James Currie<\/h1>[ SweetAs ]<br /><br /><br />".CRELAN_27,
-	"<h1>Pete Holzmann<\/h1>[ MrPete ]<br /><br /><br />".CRELAN_28
 );
 
 echo "<?xml version='1.0' encoding='".CHARSET."' ?><!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">

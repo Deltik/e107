@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_images/thumb.php $
-|     $Revision: 11678 $
-|     $Id: thumb.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12104 $
+|     $Id: thumb.php 12104 2011-03-14 21:10:00Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 /*
@@ -60,6 +60,7 @@ if (e_QUERY)
 	$opts = varset($tmp[2],'upsize');
 	if(!resize_image($source, 'stdout', $newsize, $opts))
 	{
+		$source = $tp->toDB($source);
 		echo "Couldn't find: {$source}<br />";
 	} 
 } 

@@ -11,15 +11,16 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/log/admin_config.php $
-|     $Revision: 11678 $
-|     $Id: admin_config.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12053 $
+|     $Id: admin_config.php 12053 2011-01-21 21:59:56Z nlstart $
+|     $Author: nlstart $
 +----------------------------------------------------------------------------+
 */
 require_once("../../class2.php");
-if (!getperms("P")) {
+if (!getperms("P")) 
+{
 	header("location:../../index.php");
-	 exit;
+	exit;
 }
 
 if (isset($_POST['updateStats']))
@@ -92,6 +93,7 @@ if (isset($_POST['updatesettings'])) {
 	$pref['statCountAdmin'] = $_POST['statCountAdmin'];
 	$pref['statUserclass'] = $_POST['statUserclass'];
 	$pref['statBrowser'] = $_POST['statBrowser'];
+	($_POST['statBrowser'] == 1)?($pref['statBrowserDispCompr'] = $_POST['statBrowserDispCompr']):$pref['statBrowserDispCompr']=0;
 	$pref['statOs'] = $_POST['statOs'];
 	$pref['statScreen'] = $_POST['statScreen'];
 	$pref['statDomain'] = $_POST['statDomain'];
@@ -147,7 +149,7 @@ $text = "<div style='text-align:center'>
 	".ADSTAT_L6."&nbsp;&nbsp;
 	<input type='radio' name='statBrowser' value='1'".($pref['statBrowser'] ? " checked='checked'" : "")." /> ".ADSTAT_ON."&nbsp;&nbsp;
 	<input type='radio' name='statBrowser' value='0'".(!$pref['statBrowser'] ? " checked='checked'" : "")." /> ".ADSTAT_OFF."<br />
-
+	
 	".ADSTAT_L7."&nbsp;&nbsp;
 	<input type='radio' name='statOs' value='1'".($pref['statOs'] ? " checked='checked'" : "")." /> ".ADSTAT_ON."&nbsp;&nbsp;
 	<input type='radio' name='statOs' value='0'".(!$pref['statOs'] ? " checked='checked'" : "")." /> ".ADSTAT_OFF."<br />
@@ -174,7 +176,21 @@ $text = "<div style='text-align:center'>
 
 	</td>
 	</tr>
+";
 
+if ($pref['statBrowser'] == 1)
+{	// Only display option to show browser stats in a compact way if stats on browser is actived
+$text .= "
+	<tr>
+	<td style='width:50%' class='forumheader3'>".ADSTAT_L35."</span></td>
+	<td style='width:50%; text-align: right;' class='forumheader3'>
+	<input type='radio' name='statBrowserDispCompr' value='1'".($pref['statBrowserDispCompr'] ? " checked='checked'" : "")." /> ".ADSTAT_ON."&nbsp;&nbsp;
+	<input type='radio' name='statBrowserDispCompr' value='0'".(!$pref['statBrowserDispCompr'] ? " checked='checked'" : "")." /> ".ADSTAT_OFF."<br />
+	</td>
+	</tr>";
+}
+	
+$text .= "
 	<tr>
 	<td style='width:50%' class='forumheader3'>".ADSTAT_L12."<br /><span class='smalltext'>".ADSTAT_L13."</span></td>
 	<td style='width:50%; text-align: right;' class='forumheader3'>

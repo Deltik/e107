@@ -9,7 +9,7 @@
 * Default footer for user pages
 *
 * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_themes/templates/footer_default.php $
-* $Id: footer_default.php 11765 2010-09-07 21:46:27Z e107coders $
+* $Id: footer_default.php 12060 2011-01-30 19:22:47Z secretr $
 *
 */
 
@@ -21,28 +21,33 @@ $In_e107_Footer = TRUE;	// For registered shutdown function
 	{
 		session_start(); // restart
 	}
-	
-	// regenerate SID
-	$oldSID = session_id(); // old SID
-	$oldSData = $_SESSION; // old session data
-	session_regenerate_id(false); // true don't work on php4 - so time to move on people!	
-	$newSID = session_id(); // new SID
-	
-	// Clean
-	session_id($oldSID); // switch to the old session
-	session_destroy(); // destroy it
-	
-	// set new ID, reopen the session, set saved data
-	session_id($newSID);
-	session_start();
-	$_SESSION = $oldSData;
-	// give 3rd party code a way to prevent token re-generation
+	// give 3rd party code a way to prevent token re-generation, respect security level
 	if(!defsettrue('e_TOKEN_FREEZE'))
-	{
-		$_SESSION['regenerate_'.e_TOKEN_NAME] = time(); // class2 have to re-create token on the next request
+	{	
+		if(defset('e_SECURITY_LEVEL', 5) >= 10)
+		{
+			// regenerate SID
+			$oldSID = session_id(); // old SID
+			$oldSData = $_SESSION; // old session data
+			session_regenerate_id(false); // true don't work on php4 - so time to move on people!	
+			$newSID = session_id(); // new SID
+			
+			// Clean
+			session_id($oldSID); // switch to the old session
+			session_destroy(); // destroy it
+			
+			// set new ID, reopen the session, set saved data
+			session_id($newSID);
+			session_start();
+			$_SESSION = $oldSData;
+			
+			unset($oldSID, $newSID, $oldSData);
+		}
+		if(defset('e_SECURITY_LEVEL', 5) >= 8)
+		{
+			$_SESSION['regenerate_'.e_TOKEN_NAME] = time(); // class2 have to re-create token on the next request
+		}
 	}
-	unset($oldSID, $newSID, $oldSData);
-	
 	// write session data
 	session_write_close();
 // SESSION End

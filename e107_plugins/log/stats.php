@@ -3,7 +3,7 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     ©Steve Dunstan 2001-2002
+|     Steve Dunstan 2001-2002
 |     Copyright (C) 2008-2010 e107 Inc (e107.org)
 |
 |
@@ -11,12 +11,17 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/log/stats.php $
-|     $Revision: 11678 $
-|     $Id: stats.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12098 $
+|     $Id: stats.php 12098 2011-03-12 12:38:17Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 require_once("../../class2.php");
+if (!isset($pref['plug_installed']['log']))
+{
+	header('Location: '.e_BASE.'index.php');
+	exit;
+}
 
 include_lan(e_PLUGIN."log/languages/".e_LANGUAGE.".php");
 
@@ -125,6 +130,9 @@ $browser_map = array (
 'w3m'               => "w3m",
 'Webtv'             => "webtv",
 'Xiino'             => "xiino",
+'Chrome'            => "chrome",
+'Nokia S60 OSS Browser' => "nokia",
+'Nokia Browser'     => "nokia",
 );
 
 $country["arpa"] = "ARPANet";
@@ -426,7 +434,7 @@ switch($action)
 	break;
 	case 3:
 	if($pref['statBrowser']) {
-		$text .= $stat -> renderBrowsers();
+		$text .= $stat -> renderBrowsers($pref['statBrowserDispCompr']);
 	} else {
 		$text .= ADSTAT_L7;
 	}
@@ -520,8 +528,6 @@ $links .=
 ($action != 12 ? "<a href='{$path}?12'>".ADSTAT_L43."</a>" : "<b>".ADSTAT_L43."</b>")." | ".
 ($action != 13 ? "<a href='{$path}?13'>".ADSTAT_L44."</a>" : "<b>".ADSTAT_L44."</b>");
 $links .= "</div><br /><br />";
-
-
 
 $ns->tablerender(ADSTAT_L6, $links.$text);
 require_once(FOOTERF);
@@ -631,12 +637,12 @@ class siteStats {
 		$totalu = 0;
 		foreach ($this -> fileInfo as $k => $v)
 		{
-		  $found = (strpos($k,'error/') === 0);
-		  if ($do_errors XOR !$found) 
-		  {
-		    $totalArray[$k] = $v;
-			$total += $v['ttlv'];
-		  }
+			$found = (strpos($k,'error/') === 0);
+			if ($do_errors XOR !$found) 
+			{
+				$totalArray[$k] = $v;
+				if (isset($v['ttlv'])) $total += $v['ttlv'];
+			}
 		}
 		$totalArray = $this -> arraySort($totalArray, "ttl");
 
@@ -672,6 +678,7 @@ class siteStats {
 		$row = $sql -> db_Fetch();
 		$pageTotal = unserialize($row['log_data']);
 		$total = 0;
+		$text = '';
 
 		$can_delete = ADMIN && getperms("P");
 		$do_errors = $do_errors && $can_delete;
@@ -757,7 +764,7 @@ class siteStats {
 
 	/* -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
-	function renderBrowsers() {
+	function renderBrowsers($compress = FALSE) {
 		global $sql, $browser_map;
 
 		if($entries = $sql -> db_Select("logstats", "*", "log_id='statBrowser'")) {
@@ -772,6 +779,24 @@ class siteStats {
 
 		if(!is_array($statBrowser)) {
 			return "<div style='text-align: center;'>".ADSTAT_L25."</div>";
+		}
+
+		if($compress) {
+			$tempArray = array();
+			foreach($statBrowser as $k => $v) {
+				$found = false;
+				foreach(array_keys($browser_map) as $br) {
+					if(stripos($k, $br) === 0) {
+						$tempArray[$br] = (isset($tempArray[$br]) ? $tempArray[$br]+$v : $v);
+						$found = true;
+						break;  //We found what we wanted, break from foreach
+					}
+				}
+				if(!$found) {
+					$tempArray[$k] = $v;
+				}
+			}
+			$statBrowser = $tempArray;
 		}
 
 		if(is_array($statBrowser)) {
@@ -807,7 +832,7 @@ class siteStats {
 		}
 		return $text;
 	}
-
+	
 	/* -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 	function renderOses() {
@@ -841,15 +866,16 @@ class siteStats {
 
 			$image = "";
 			if(strstr($key, "Windows")) {	$image = "windows.png"; }
-			if(strstr($key, "Mac")) {	$image = "mac.png"; }
-			if(strstr($key, "Linux")) {	$image = "linux.png"; }
-			if(strstr($key, "BeOS")) {	$image = "beos.png"; }
-			if(strstr($key, "FreeBSD")) {	$image = "freebsd.png"; }
-			if(strstr($key, "NetBSD")) {	$image = "netbsd.png"; }
-			if(strstr($key, "Unspecified")) {	$image = "unspecified.png"; }
-			if(strstr($key, "OpenBSD")) {	$image = "openbsd.png"; }
-			if(strstr($key, "Unix")) {	$image = "unix.png"; }
-			if(strstr($key, "Spiders")) {	$image = "spiders.png"; }
+			elseif(strstr($key, "Mac")) {	$image = "mac.png"; }
+			elseif(strstr($key, "Linux")) {	$image = "linux.png"; }
+			elseif(strstr($key, "BeOS")) {	$image = "beos.png"; }
+			elseif(strstr($key, "FreeBSD")) {	$image = "freebsd.png"; }
+			elseif(strstr($key, "NetBSD")) {	$image = "netbsd.png"; }
+			elseif(strstr($key, "Unspecified")) {	$image = "unspecified.png"; }
+			elseif(strstr($key, "OpenBSD")) {	$image = "openbsd.png"; }
+			elseif(strstr($key, "Unix")) {	$image = "unix.png"; }
+			elseif(strstr($key, "Spiders")) {	$image = "spiders.png"; }
+			elseif(stristr($key, "Android")) {	$image = "android.png"; }
 
 			$percentage = round(($info/$total) * 100, 2);
 			$text .= "<tr>

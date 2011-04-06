@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_credits.php $
-|     $Revision: 11678 $
-|     $Id: lan_credits.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 11975 $
+|     $Id: lan_credits.php 11975 2010-11-23 11:26:26Z secretr $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 
@@ -48,6 +48,10 @@ define("CRELAN_25", ""); // que
 define("CRELAN_26", ""); // streaky
 define("CRELAN_27", "\"Wot? No tea?? 0_0\""); // SweetAs
 define("CRELAN_28", ""); // MrPete
+define("CRELAN_29", "Up and forward!"); // SecretR
+define("CRELAN_30", ""); // steved
+//define("CRELAN_31", "");
+//define("CRELAN_32", "");
 
 // end dev team
 

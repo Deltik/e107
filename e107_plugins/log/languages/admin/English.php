@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/log/languages/admin/English.php $
-|     $Revision: 11678 $
-|     $Id: English.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12053 $
+|     $Id: English.php 12053 2011-01-21 21:59:56Z nlstart $
+|     $Author: nlstart $
 +----------------------------------------------------------------------------+
 */
 	
@@ -53,8 +53,7 @@ define("ADSTAT_L31", "Remove selected pages");
 define("ADSTAT_L32", "Page Tidy");
 define("ADSTAT_L33", "Configure Statistics Logging");
 define("ADSTAT_L34", "Site Stats");
+define("ADSTAT_L35", "View compact browser info in stats");
 
 define('ADSTAT_L38', "You must set the e107_plugins/log/logs folder to be writable");	// Constant compatible with 0.8
-
-
 ?>

@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/user_extended_class.php $
-|     $Revision: 11695 $
-|     $Id: user_extended_class.php 11695 2010-08-23 18:12:30Z e107steved $
+|     $Revision: 11853 $
+|     $Id: user_extended_class.php 11853 2010-10-05 21:20:55Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -324,11 +324,12 @@ class e107_user_extended
 		$regex = $tp->toText($parms[1]);
 		$regexfail = $tp->toText($parms[2]);
 		$fname = "ue[user_".$struct['user_extended_struct_name']."]";
-	  if(strpos($include, 'class') === FALSE)	
-	  {
+		if(strpos($include, 'class') === FALSE)	
+		{
 			$include .= " class='tbox' ";
 		}
 
+		$ret = '';
 		switch($struct['user_extended_struct_type'])
 		{
 			case 1:  //textbox
@@ -342,7 +343,7 @@ class e107_user_extended
 				{
 					$choice = trim($choice);
 					$chk = ($curval == $choice)? " checked='checked' " : "";
-					$ret = "<input {$include} type='radio' name='{$fname}' value='{$choice}' {$chk} /> {$choice}";
+					$ret .= "<input {$include} type='radio' name='{$fname}' value='{$choice}' {$chk} /> {$choice}";
 				}
 				return $ret;
 				break;

@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/profanity_filter.php $
-|     $Revision: 11678 $
-|     $Id: profanity_filter.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12080 $
+|     $Id: profanity_filter.php 12080 2011-02-26 23:07:26Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -35,6 +35,10 @@ class e_profanityFilter
 			if($word != "")
 			{
 				$word_array[] = $word;
+				if (strpos($word, '&#036;') !== FALSE)
+				{
+					$word_array[] = str_replace('&#036;', '\$', $word);		// Special case - '$' may be 'in clear' or as entity
+				}
 			}
 		}
 		if(count($word_array))

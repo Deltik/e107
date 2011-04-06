@@ -10,8 +10,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/rss_menu/rss.php $
-|     $Revision: 11678 $
-|     $Id: rss.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 12074 $
+|     $Id: rss.php 12074 2011-02-25 21:24:11Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -27,6 +27,11 @@ Plugins should use an e_rss.php file in their plugin folder
 */
 
 require_once("../../class2.php");
+if (!isset($pref['plug_installed']['rss_menu']))
+{
+	header('Location: '.e_BASE.'index.php');
+	exit;
+}
 
 global $tp;
 
@@ -200,9 +205,10 @@ class rssCreate {
 				SELECT n.*, u.user_id, u.user_name, u.user_email, u.user_customtitle, nc.category_name, nc.category_icon FROM #news AS n
 				LEFT JOIN #user AS u ON n.news_author = u.user_id
 				LEFT JOIN #news_category AS nc ON n.news_category = nc.category_id
-				WHERE n.news_class IN (".USERCLASS_LIST.") AND NOT (n.news_class REGEXP ".$nobody_regexp.") AND n.news_start < ".time()." AND (n.news_end=0 || n.news_end>".time().") {$render} {$topic} ORDER BY news_datestamp DESC LIMIT 0,".$this -> limit;
+				WHERE n.news_class IN (".USERCLASS_LIST.") AND NOT (n.news_class REGEXP ".$nobody_regexp.") AND n.news_start < ".time()." AND (n.news_end=0 || n.news_end>".time().") {$render} {$topic} ORDER BY n.news_datestamp DESC LIMIT 0,".$this -> limit;
 				$sql->db_Select_gen($this -> rssQuery);
 				$tmp = $sql->db_getList();
+				
 				$this -> rssItems = array();
 				$loop=0;
 				foreach($tmp as $value) {
@@ -211,12 +217,25 @@ class rssCreate {
                     if($value['news_summary'])
                     {
                         	$this -> rssItems[$loop]['description'] = $value['news_summary'];
-					}else{
-						$this -> rssItems[$loop]['description'] = $value['news_body'];
+							$this -> rssItems[$loop]['content_encoded'] = ($value['news_body']."<br />".$value['news_extended']);
+					}
+					else
+					{
+						$this -> rssItems[$loop]['description'] = ($value['news_body']."<br />".$value['news_extended']);
+						$this -> rssItems[$loop]['content_encoded'] = ($value['news_body']."<br />".$value['news_extended']);
                     }
+					
+					if($value['news_thumbnail'])
+					{
+						$this -> rssItems[$loop]['media_content_url'][] = "http://".$_SERVER['HTTP_HOST'].e_HTTP.e_IMAGE."newspost_images/".$news_item['news_thumbnail'];
+						$this -> rssItems[$loop]['media_content_type'][] = "image";
+					}
+					
 					$this -> rssItems[$loop]['author'] = $value['user_name'];
                     $this -> rssItems[$loop]['author_email'] = $value['user_email'];
-					$this -> rssItems[$loop]['category'] = "<category domain='".SITEURL."news.php?cat.".$value['news_category']."'>".$value['category_name']."</category>";
+
+					$this -> rssItems[$loop]['category_name'] = $tp->toHTML($value['category_name'],TRUE,'defs');
+                    $this -> rssItems[$loop]['category_link'] = $e107->base_path."news.php?cat.".$value['news_category'];
 
 					if($value['news_allow_comments'] && $pref['comments_disabled'] != 1){
 						$this -> rssItems[$loop]['comment'] = "http://".$_SERVER['HTTP_HOST'].e_HTTP."comment.php?comment.news.".$value['news_id'];
@@ -403,10 +422,10 @@ class rssCreate {
 	}
 
 	function buildRss($rss_title) {
-		global $sql, $pref, $tp, $e107, $PLUGINS_DIRECTORY,$topic_id ;
+		global $sql, $pref, $tp, $e107, $PLUGINS_DIRECTORY,$topic_id,$content_type ;
 		header('Content-type: application/xml', TRUE);
 
-		$rss_title = $tp->toRss($pref['sitename']." : ".$rss_title);
+		$rss_title = $tp->toRss($tp->toHtml($pref['sitename'],'','defs')." : ".$tp->toHtml($rss_title,'','defs'));
         $rss_namespace = ($this->rssNamespace) ? "xmlns:".$this->rssNamespace : "";
         $rss_custom_channel = ($this->rssCustomChannel) ? $this->rssCustomChannel : "";
 		
@@ -434,8 +453,8 @@ class rssCreate {
 						echo "
 							<item>
 							<title>".$tp->toRss($value['title'])."</title>
-							<description>".substr($tp->toRss($value['description']),0,150)."</description>
-							<author>".$value['author']."&lt;".$this->nospam($value['author_email'])."&gt;</author>
+							<description>".substr($tp->toRss($value['description']),0,160)."</description>
+							<author>".$this->nospam($value['author_email'])." (".$value['author'].")</author>
 							<link>".$link."</link>
 							</item>";
 					}
@@ -449,7 +468,13 @@ class rssCreate {
 				echo "<?xml version=\"1.0\" encoding=\"".CHARSET."\"?>
 				<!-- generator=\"e107\" -->
 				<!-- content type=\"".$this -> contentType."\" -->
-				<rss {$rss_namespace} version=\"2.0\">
+				<rss {$rss_namespace} version=\"2.0\" 
+					xmlns:content=\"http://purl.org/rss/1.0/modules/content/\" 
+					xmlns:atom=\"http://www.w3.org/2005/Atom\"
+					xmlns:dc=\"http://purl.org/dc/elements/1.1/\"
+					xmlns:sy=\"http://purl.org/rss/1.0/modules/syndication/\"
+
+				>
 				<channel>
 				<title>".$tp->toRss($rss_title)."</title>
 				<link>".$pref['siteurl']."</link>
@@ -458,14 +483,19 @@ class rssCreate {
 				echo $tp->toHtml($rss_custom_channel,FALSE)."\n"; // CDATA and toRss() must not be used for $rss_custom_channel. 
 
 				echo "<language>".CORE_LC.(defined("CORE_LC2") ? "-".CORE_LC2 : "")."</language>
-				<copyright>".preg_replace("#\<br \/\>|\n|\r#si", "", SITEDISCLAIMER)."</copyright>
+				<copyright>".$tp->toRss(SITEDISCLAIMER)."</copyright>
 				<managingEditor>".$this->nospam($pref['siteadminemail'])." (".$pref['siteadmin'].")</managingEditor>
 				<webMaster>".$this->nospam($pref['siteadminemail'])." (".$pref['siteadmin'].")</webMaster>
 				<pubDate>".date("r",($time + $this -> offset))."</pubDate>
 				<lastBuildDate>".date("r",($time + $this -> offset))."</lastBuildDate>
 				<docs>http://backend.userland.com/rss</docs>
 				<generator>e107 (http://e107.org)</generator>
-				<ttl>60</ttl>";
+				<sy:updatePeriod>hourly</sy:updatePeriod>
+				<sy:updateFrequency>1</sy:updateFrequency>
+
+				<ttl>60</ttl>\n";
+				
+				echo "<atom:link href=\"".e_SELF."?".e_QUERY."\" rel=\"self\" type=\"application/rss+xml\" />\n";
 
 				if (trim(SITEBUTTON))
 				{
@@ -477,7 +507,7 @@ class rssCreate {
 					<width>88</width>
 					<height>31</height>
 					<description>".$tp->toRss($pref['sitedescription'])."</description>
-					</image>";
+					</image>\n";
 				}
 
 				// Generally Ignored by 99% of readers.
@@ -497,16 +527,29 @@ class rssCreate {
 					$link 		= (e_LANQRY) ? str_replace("?","?".e_LANQRY,$value['link']) : $value['link'];
                     $catlink	= (e_LANQRY) ? str_replace("?","?".e_LANQRY,$value['category_link']) : $value['category_link'];
 
-					echo "
-						<item>
-						<title>".$tp->toRss($value['title'])."</title>\n";
+					echo "<item>\n";
+					echo "<title>".$tp->toRss($value['title'])."</title>\n";
 
 					if($link){
 						echo "<link>".$link."</link>\n";
 					}
 
 					echo "<description>".$tp->toRss($value['description'],TRUE)."</description>\n";
-
+					
+					if($value['content_encoded'])
+					{
+						echo "<content:encoded>".$tp->toRss($value['content_encoded'],TRUE)."</content:encoded>\n";	
+					}
+					
+					/*if($value['media_content_url'])
+					{
+						foreach($value['media_content_url'] as $k=>$mcu)
+						{
+							echo "<media:content url=\"".$tp->toRss($mcu)."\" medium=\"".$value['media_content_type'][$k]."\">";	
+						}
+					}*/
+					
+					
 					if($value['category_name'] && $catlink){
 						echo "<category domain='".$catlink."'>".$tp -> toRss($value['category_name'])."</category>\n";
 					}
@@ -516,8 +559,9 @@ class rssCreate {
 						echo "<comments>".$value['comment']."</comments>\n";
 					}
 
-					if($value['author']){
-						echo "<author>".$this->nospam($value['author_email'])." (".$value['author'].")</author>\n";
+					if($value['author'])
+					{
+						echo "<dc:creator>".$value['author']."</dc:creator>\n"; // correct tag for author without email. 
 					}
 
 					// enclosure support for podcasting etc.
@@ -539,7 +583,7 @@ class rssCreate {
 						}		
 					}
 
-					echo "</item>";
+					echo "</item>\n\n";
 				}
 		   //		echo "<atom:link href=\"".e_SELF."?".($this -> contentType).".4.".$this -> topicId ."\" rel=\"self\" type=\"application/rss+xml\" />";
 				echo "
@@ -669,7 +713,7 @@ class rssCreate {
 						//<content>complete story here</content>\n
 						echo "
 						<link rel='alternate' type='text/html' href='".$value['link']."' />\n
-						<summary type='text'>".$tp->toRss($value['description'])."</summary>\n";
+						<summary type='text'>".strip_tags($tp->toRss($value['description'],FALSE))."</summary>\n";
 
 						//optional
 						if($value['category_name']){

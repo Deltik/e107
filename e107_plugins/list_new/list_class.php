@@ -10,9 +10,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/list_new/list_class.php $
-|     $Revision: 11678 $
-|     $Id: list_class.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 11941 $
+|     $Id: list_class.php 11941 2010-11-01 22:10:28Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit(); }
@@ -465,28 +465,30 @@ class listclass {
 	function getlvisit()
 	{
 		global $qs, $list_pref;
+		
+		$lvisit = defined('USERLV') ? USERLV : time() + 1000;			// Set default value
 
 		if(isset($qs[0]) && $qs[0] == "new")
 		{
-			if(isset($list_pref['new_page_timelapse']) && $list_pref['new_page_timelapse']){
-				if(isset($list_pref['new_page_timelapse_days']) && is_numeric($list_pref['new_page_timelapse_days']) && $list_pref['new_page_timelapse_days']){
+			if(isset($list_pref['new_page_timelapse']) && $list_pref['new_page_timelapse'])
+			{
+				if(isset($list_pref['new_page_timelapse_days']) && is_numeric($list_pref['new_page_timelapse_days']) && $list_pref['new_page_timelapse_days'])
+				{
 					$days = $list_pref['new_page_timelapse_days'];
-				}else{
+				}
+				else
+				{
 					$days = "30";
 				}
-				if(isset($qs[1]) && is_numeric($qs[1]) && $qs[1] <= $days){
+				if(isset($qs[1]) && is_numeric($qs[1]) && $qs[1] <= $days)
+				{
 					$lvisit = time()-$qs[1]*86400;
-				}else{
-					$lvisit = USERLV;
 				}
-			}else{
-				$lvisit = USERLV;
 			}
-		}else{
-			$lvisit = USERLV;
 		}
 		return $lvisit;
 	}
+
 
 	function getBullet($sectionicon, $mode)
 	{

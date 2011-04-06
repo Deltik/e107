@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_admin.php $
-|     $Revision: 11678 $
-|     $Id: lan_admin.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12060 $
+|     $Id: lan_admin.php 12060 2011-01-30 19:22:47Z secretr $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 define("ADLAN_0", "News");
@@ -275,4 +275,9 @@ define("LAN_CREDITS","Credits");
 define("LAN_NEWVERSION","New Version Available");
 define("LAN_NEWVERSION_MORE","learn more");
 define("LAN_NEWVERSION_DLD","Download %s from SF.net");
+
+define("LAN_SECURITYL_0", "Looking for troubles (none)");
+define("LAN_SECURITYL_5", "Balanced");
+define("LAN_SECURITYL_8", "High");
+define("LAN_SECURITYL_10", "Insane");
 ?>
