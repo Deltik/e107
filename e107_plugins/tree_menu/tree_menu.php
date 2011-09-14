@@ -10,9 +10,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/tree_menu/tree_menu.php $
-|     $Revision: 11678 $
-|     $Id: tree_menu.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12344 $
+|     $Id: tree_menu.php 12344 2011-09-02 12:50:35Z secretr $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 
@@ -127,9 +127,9 @@ foreach($mainLinkArray as $links) {
 function setlink($link_name, $link_url, $link_open, $link_description) 
 {
 	global $tp;
-	if (!strstr($link_url, "http:") && !strstr($link_url, "void") && strpos($link_url, "mailto:") !== 0) 
+	if (strpos($link_url, '://') === FALSE && strpos($link_url, 'mailto:') !== 0 && !strstr($link_url, "void")) 
 	{
-		$link_url = e_BASE.$link_url;
+		$link_url = SITEURL.$link_url;
 	}
 	$link_url =	$tp->replaceConstants($link_url, $nonrelative = TRUE, $all = false);
     $href = " href='".$link_url."'";

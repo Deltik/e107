@@ -1,5 +1,5 @@
 <?php
-/* $Id: e_emailprint.php 11581 2010-06-20 20:05:23Z e107steved $ */
+/* $Id: e_emailprint.php 12141 2011-04-18 12:32:34Z e107steved $ */
 
 if (!defined('e107_INIT')) { exit; }
 
@@ -26,7 +26,7 @@ function print_item($id)
 		$row['content_heading']		= $tp -> toHTML($row['content_heading']);
 		$row['content_subheading']	= $tp -> toHTML($row['content_subheading']);
 		$row['content_text']		= $tp -> replaceConstants($row['content_text']);
-		$row['content_text']		= preg_replace("/\{EMAILPRINT\}|\[newpage\]/", "", $tp -> toHTML($row['content_text'], TRUE));
+		$row['content_text']		= preg_replace("/\{EMAILPRINT\}|\[newpage(?:\=.*?){0,1}\]/", "", $tp -> toHTML($row['content_text'], TRUE));
 		$authordetails				= $aa -> getAuthor($row['content_author']);
 		$row['content_datestamp']	= $con -> convert_date($row['content_datestamp'], "long");
 

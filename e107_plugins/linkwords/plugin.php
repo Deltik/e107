@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/linkwords/plugin.php $
-|     $Revision: 11678 $
-|     $Id: plugin.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12178 $
+|     $Id: plugin.php 12178 2011-05-02 20:45:40Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -79,7 +79,7 @@ $eplug_tables = array(
 	linkword_word varchar(100) NOT NULL default '',
 	linkword_link varchar(150) NOT NULL default '',
 	PRIMARY KEY ( linkword_id )
-	) TYPE=MyISAM AUTO_INCREMENT=1;"
+	) ENGINE=MyISAM AUTO_INCREMENT=1;"
 );
 
 

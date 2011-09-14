@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/sql/extended_country.php $
-|     $Revision: 11678 $
-|     $Id: extended_country.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12178 $
+|     $Id: extended_country.php 12178 2011-05-02 20:45:40Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 header("location:../index.php");
@@ -28,7 +28,7 @@ CREATE TABLE user_extended_country (
   country_iso char(2) NOT NULL default '',
   PRIMARY KEY  (country_code),
   KEY country_iso (country_iso)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 INSERT INTO user_extended_country VALUES('AFG', 'Afghanistan', 'Asia', 'Southern and Central Asia', 'AF');
 INSERT INTO user_extended_country VALUES('NLD', 'Netherlands', 'Europe', 'Western Europe', 'NL');

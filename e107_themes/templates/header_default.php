@@ -6,8 +6,8 @@
 |     Released under the terms and conditions of the GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_themes/templates/header_default.php $
-|     $Revision: 12099 $
-|     $Id: header_default.php 12099 2011-03-12 19:59:38Z e107coders $
+|     $Revision: 12324 $
+|     $Id: header_default.php 12324 2011-07-23 21:02:44Z e107coders $
 |     $Author: e107coders $
 +-----------------------------------------------------------------------------------------------+
 */
@@ -72,7 +72,7 @@ if (!function_exists("parseheader")) {
 
 // send the charset to the browser - overrides spurious server settings with the lan pack settings.
 // Would like to set the MIME type appropriately - but it broke other things
-//if (stristr($_SERVER["HTTP_ACCEPT"], "application/xhtml+xml")) 
+//if (stristr($_SERVER["HTTP_ACCEPT"], "application/xhtml+xml"))
 //  header("Content-type: application/xhtml+xml; charset=".CHARSET, true);
 //else
   header("Content-type: text/html; charset=".CHARSET, true);
@@ -89,7 +89,7 @@ echo "<html xmlns='http://www.w3.org/1999/xhtml'".(defined("TEXTDIRECTION") ? " 
 <meta http-equiv='content-style-type' content='text/css' />
 ";
 echo (defined("CORE_LC")) ? "<meta http-equiv='content-language' content='".CORE_LC."' />\n" : "";
-echo "<title>".SITENAME.(defined("e_PAGETITLE") ? ": ".e_PAGETITLE : (defined("PAGE_NAME") ? ": ".PAGE_NAME : ""))."</title>\n";
+echo "<title>".(defined("e_PAGETITLE") ? e_PAGETITLE." - " : (defined("PAGE_NAME") ? PAGE_NAME." - " : "")).SITENAME."</title>\n";
 
 
 //
@@ -98,7 +98,7 @@ echo "<title>".SITENAME.(defined("e_PAGETITLE") ? ": ".e_PAGETITLE : (defined("P
 echo "<!-- *JS* -->\n";
 
 // Wysiwyg JS support on or off.
-if (((varset($pref['wysiwyg'],FALSE) && check_class($pref['post_html'])) || defsettrue('e_WYSIWYG')) && varset($e_wysiwyg) != "") 
+if (((varset($pref['wysiwyg'],FALSE) && check_class($pref['post_html'])) || defsettrue('e_WYSIWYG')) && varset($e_wysiwyg) != "")
 {
 	require_once(e_HANDLER."tiny_mce/wysiwyg.php");
 	define("e_WYSIWYG",TRUE);
@@ -113,18 +113,18 @@ else
 
 
 echo "<script type='text/javascript' src='".e_FILE_ABS."e107.js'></script>\n";
-if (isset($theme_js_php) && $theme_js_php) 
+if (isset($theme_js_php) && $theme_js_php)
 {
 	echo "<script type='text/javascript' src='".THEME_ABS."theme-js.php'></script>\n";
-} 
-else 
+}
+else
 {
 	if (is_readable(THEME.'theme.js')) { echo "<script type='text/javascript' src='".THEME_ABS."theme.js'></script>\n"; }
 	if (is_readable(e_FILE.'user.js') && filesize(e_FILE.'user.js')) { echo "<script type='text/javascript' src='".e_FILE_ABS."user.js'></script>\n"; }
 }
 
 
-if (isset($eplug_js) && $eplug_js) 
+if (isset($eplug_js) && $eplug_js)
 {
 	echo "\n<!-- eplug_js -->\n";
 	if(is_array($eplug_js))
@@ -241,14 +241,32 @@ function render_meta($type)
 {
 	global $pref,$tp;
 
-	if (!isset($pref['meta_'.$type][e_LANGUAGE])){ return;}
-	if (!$pref['meta_'.$type][e_LANGUAGE]){ return; }
+	// if (!isset($pref['meta_'.$type][e_LANGUAGE])){ return;}
+	// if (!$pref['meta_'.$type][e_LANGUAGE]){ return; }
 
-	if($type == "tag")
+	if($type == "tag" && defset($pref['meta_tag'][e_LANGUAGE]))
 	{
 		return str_replace("&lt;", "<", $tp -> toHTML($pref['meta_tag'][e_LANGUAGE], FALSE, "nobreak, no_hook, no_make_clickable"))."\n";
 	}
-	else
+	elseif($type == 'og')
+	{
+		if(!defined("META_OG") || !defined("XMLNS"))
+		{
+			return;
+		}
+		
+		$ret = '';
+		$tmp = unserialize(META_OG);
+		
+		// FB will still utilize 'name' instead of 'property' (which is not valid XHTML)
+		foreach($tmp as $k=>$v)
+		{
+			$ret .= '<meta name="og:'.$k.'" content="'.$v.'" />'."\n";
+		}
+
+		return $ret;		
+	}
+	elseif(defset($pref['meta_'.$type][e_LANGUAGE]))
 	{
 		return '<meta name="'.$type.'" content="'.$pref['meta_'.$type][e_LANGUAGE].'" />'."\n";
 	}
@@ -260,6 +278,8 @@ echo (defined("META_KEYWORDS")) ? "<meta name=\"keywords\" content=\"".$key_merg
 echo render_meta('copyright');
 echo render_meta('author');
 echo render_meta('tag');
+echo render_meta('og');
+
 
 unset($key_merge,$diz_merge);
 
@@ -341,7 +361,7 @@ if(!isset($e107_popup))
 	$e107_popup = 0;
 }
 if ($e107_popup != 1) {
-	
+
 //
 // L: (optional) Body JS to disable right clicks
 //
@@ -394,26 +414,26 @@ if ($e107_popup != 1) {
 	}
 
 	$e107ParseHeaderFlag = FALSE;				// Deliberately choose a distinct Name! (Its got to reach the footer)
-	if (e_PAGE == 'news.php' && isset($NEWSHEADER)) 
+	if (e_PAGE == 'news.php' && isset($NEWSHEADER))
 	{
 		parseheader($NEWSHEADER);
-	} 
-	else 
+	}
+	else
 	{
 		$full_query = e_SELF."?".e_QUERY."!";
-		foreach ($custompage as $key_extract => $cust_extract) 
+		foreach ($custompage as $key_extract => $cust_extract)
 		{
-			foreach ($cust_extract as $key => $kpage) 
+			foreach ($cust_extract as $key => $kpage)
 			{
-				if ($kpage && (strstr(e_SELF, $kpage) || strstr($full_query,$kpage))) 
+				if ($kpage && (strstr(e_SELF, $kpage) || strstr($full_query,$kpage)))
 				{
 					$e107ParseHeaderFlag = TRUE;
-					if ($key_extract=='no_array') 
+					if ($key_extract=='no_array')
 					{
 						$cust_header = $CUSTOMHEADER ? $CUSTOMHEADER : $HEADER;
 						$e107CustomFooter = $CUSTOMFOOTER ? $CUSTOMFOOTER : $FOOTER;
-					} 
-					else 
+					}
+					else
 					{
 						$cust_header = $CUSTOMHEADER[$key_extract] ? $CUSTOMHEADER[$key_extract] : $HEADER;
 						$e107CustomFooter = $CUSTOMFOOTER[$key_extract] ? $CUSTOMFOOTER[$key_extract] : $FOOTER;	// Another intentionally distinct name

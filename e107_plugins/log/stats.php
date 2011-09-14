@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/log/stats.php $
-|     $Revision: 12098 $
-|     $Id: stats.php 12098 2011-03-12 12:38:17Z e107steved $
+|     $Revision: 12206 $
+|     $Id: stats.php 12206 2011-05-10 21:27:26Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -29,7 +29,7 @@ function core_head() {
 	$bar = (file_exists(THEME."images/bar.png") ? THEME."images/bar.png" : e_IMAGE."generic/bar.png");
 	return "<style type='text/css'>
 <!--
-.b { background-image: url(".$bar."); border: 1px solid #999; height: 10px; font-size: 0px }
+.b { background-image: url('".$bar."'); border: 1px solid #999; height: 10px; font-size: 0px }
 -->
 </style>";
 }

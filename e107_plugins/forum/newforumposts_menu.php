@@ -11,14 +11,14 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/forum/newforumposts_menu.php $
-|     $Revision: 12012 $
-|     $Id: newforumposts_menu.php 12012 2010-12-18 22:23:57Z e107steved $
+|     $Revision: 12238 $
+|     $Id: newforumposts_menu.php 12238 2011-05-29 12:08:41Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
 
-global $tp;
+global $tp, $menu_pref;
 $gen = new convert;
 
 include_lan(e_PLUGIN."forum/languages/".e_LANGUAGE."/lan_newforumposts_menu.php");
@@ -29,7 +29,7 @@ $query2 = "
 SELECT tp.thread_name AS parent_name, 
 t.thread_datestamp , t.thread_thread, t.thread_name, t.thread_id, t.thread_user, 
 f.forum_id, f.forum_name, f.forum_class, u.user_name, fp.forum_class FROM #forum_t AS t 
-LEFT JOIN #user AS u ON t.thread_user = u.user_id
+LEFT JOIN #user AS u ON SUBSTRING_INDEX(t.thread_user,'.',1) = u.user_id
 LEFT JOIN #forum_t AS tp ON t.thread_parent = tp.thread_id
 LEFT JOIN #forum AS f ON (f.forum_id = t.thread_forum_id AND f.forum_class IN (".USERCLASS_LIST."))
 LEFT JOIN #forum AS fp ON f.forum_parent = fp.forum_id

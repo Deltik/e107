@@ -11,12 +11,14 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/content/e_meta.php $
-|     $Revision: 11678 $
-|     $Id: e_meta.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12136 $
+|     $Id: e_meta.php 12136 2011-04-15 18:04:06Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
+
+if (substr(e_PAGE, 0, 7) != 'content') return;
 
 echo "<script type='text/javascript' src='".e_FILE."popup.js'></script>\n";
 

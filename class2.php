@@ -10,8 +10,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/class2.php $
-|     $Revision: 12090 $
-|     $Id: class2.php 12090 2011-03-10 18:46:11Z nlstart $
+|     $Revision: 12328 $
+|     $Id: class2.php 12328 2011-08-12 19:26:40Z nlstart $
 |     $Author: nlstart $
 +----------------------------------------------------------------------------+
 */
@@ -46,10 +46,9 @@ $oblev_before_start = ob_get_level();
 
 // Block common bad agents / queries / php issues. 
 array_walk($_SERVER,  'e107_filter', '_SERVER');
-array_walk($_GET,     'e107_filter', '_GET');
-array_walk($_POST,    'e107_filter', '_POST');
-array_walk($_COOKIE,  'e107_filter', '_COOKIE');
-array_walk($_REQUEST, 'e107_filter', '_REQUEST'); 
+if (isset($_GET)) array_walk($_GET,     'e107_filter', '_GET');
+if (isset($_POST)) array_walk($_POST,    'e107_filter', '_POST');
+if (isset($_COOKIE)) array_walk($_COOKIE,  'e107_filter', '_COOKIE');
 
 //
 // B: Remove all output buffering
@@ -78,7 +77,7 @@ if($register_globals == true){
 }
 
 
-if(($pos = stripos($_SERVER['PHP_SELF'], ".php/")) !== false) // redirect bad URLs to the correct one.
+if(($pos = strpos(strtolower($_SERVER['PHP_SELF']), ".php/")) !== false) // redirect bad URLs to the correct one.
 {
 	$new_url = substr($_SERVER['PHP_SELF'], 0, $pos+4);
 	$new_loc = ($_SERVER['QUERY_STRING']) ? $new_url."?".$_SERVER['QUERY_STRING'] : $new_url;
@@ -86,7 +85,7 @@ if(($pos = stripos($_SERVER['PHP_SELF'], ".php/")) !== false) // redirect bad UR
 	exit();
 }
 // If url contains a .php in it, PHP_SELF is set wrong (imho), affecting all paths.  We need to 'fix' it if it does.
-$_SERVER['PHP_SELF'] = (($pos = stripos($_SERVER['PHP_SELF'], ".php")) !== false ? substr($_SERVER['PHP_SELF'], 0, $pos+4) : $_SERVER['PHP_SELF']);
+$_SERVER['PHP_SELF'] = (($pos = strpos(strtolower($_SERVER['PHP_SELF']), ".php")) !== false ? substr($_SERVER['PHP_SELF'], 0, $pos+4) : $_SERVER['PHP_SELF']);
 unset($pos);
 //
 // D: Setup PHP error handling
@@ -106,6 +105,7 @@ e107_ini_set('magic_quotes_sybase',      0);
 e107_ini_set('arg_separator.output',     '&amp;');
 e107_ini_set('session.use_only_cookies', 1);
 e107_ini_set('session.use_trans_sid',    0);
+
 
 
 
@@ -474,6 +474,10 @@ else
 	session_cache_limiter("must-revalidate");	
 }
 
+$SESS_NAME = strtoupper(preg_replace("/[\W_]/","",$pref['cookie_name'])); // clean-up characters.  
+session_name('SESS'.$SESS_NAME); // avoid session conflicts with separate sites within subdomains
+unset($SESS_NAME);
+
 // Start session after $prefs are available.
 session_start(); // Needs to be started after language detection (session.cookie_domain) to avoid multi-language 'access-denied' issues. 
 header("Cache-Control: must-revalidate");	
@@ -784,9 +788,15 @@ if(varset($pref['force_userupdate']) && USER)
 $sql->db_Mark_Time('Start: Signup/splash/admin');
 
 define("e_SIGNUP", e_BASE.(file_exists(e_BASE."customsignup.php") ? "customsignup.php" : "signup.php"));
-define("e_LOGIN", e_BASE.(file_exists(e_BASE."customlogin.php") ? "customlogin.php" : "login.php"));
 
-if ($pref['membersonly_enabled'] && !USER && e_SELF != SITEURL.e_SIGNUP && e_SELF != SITEURL."index.php" && e_SELF != SITEURL."fpw.php" && e_SELF != SITEURL.e_LOGIN && strpos(e_PAGE, "admin") === FALSE && e_SELF != SITEURL.'membersonly.php' && e_SELF != SITEURL.'sitedown.php') {
+if(!defined('e_LOGIN')) // customizable via e107_config.php
+{
+	define("e_LOGIN", e_BASE.(file_exists(e_BASE."customlogin.php") ? "customlogin.php" : "login.php"));	
+}
+
+
+if ($pref['membersonly_enabled'] && !USER && e_SELF != SITEURL.e_SIGNUP && e_SELF != SITEURL."index.php" && e_SELF != SITEURL."fpw.php" && e_SELF != SITEURL.e_LOGIN && strpos(e_PAGE, "admin") === FALSE && e_SELF != SITEURL.'membersonly.php' && e_SELF != SITEURL.'sitedown.php')
+{
 	header("Location: ".e_HTTP."membersonly.php");
 	exit();
 }
@@ -796,7 +806,7 @@ $sql->db_Delete("tmp", "tmp_time < ".(time() - 300)." AND tmp_ip!='data' AND tmp
 
 
 if (varset($pref['maintainance_flag'])
- && strpos(e_SELF, 'admin.php') === FALSE && strpos(e_SELF, 'sitedown.php') === FALSE)
+ && strpos(e_SELF, 'admin.php') === FALSE && strpos(e_SELF, 'sitedown.php') === FALSE && strpos(e_SELF, '/secure_img_render.php') === FALSE)
 {
 	if(!ADMIN || ($pref['maintainance_flag'] == e_UC_MAINADMIN && !getperms('0')))
 	{
@@ -817,7 +827,10 @@ if (e_QUERY == 'logout')
 {
 	$ip = $e107->getip();
 	$udata=(USER === TRUE) ? USERID.".".USERNAME : "0";
-	$sql->db_Update("online", "online_user_id = '0', online_pagecount=online_pagecount+1 WHERE online_user_id = '{$udata}' LIMIT 1");
+	if (isset($pref['track_online']) && $pref['track_online'])
+	{
+		$sql->db_Update("online", "online_user_id = '0', online_pagecount=online_pagecount+1 WHERE online_user_id = '{$udata}' LIMIT 1");
+	}
 
 	//if ($pref['user_tracking'] == 'session')
 	{
@@ -849,7 +862,7 @@ $e_deltaTime=0;
 
 if (isset($_COOKIE['e107_tdOffset'])) {
 	// Actual seconds of delay. See e107.js and footer_default.php
-	$e_deltaTime = (15*floor(($_COOKIE['e107_tdOffset']/60)/15))*60; // Delay in seconds rounded to the lowest quarter hour
+	$e_deltaTime = (15*floor((($_COOKIE['e107_tdOffset'] + 450)/60)/15))*60; // Delay in seconds rounded to the nearest quarter hour
 }
 
 if (isset($_COOKIE['e107_tzOffset'])) {
@@ -1709,34 +1722,88 @@ function e107_require($fname) {
 	return $ret;
 }
 
-function e107_filter($input,$key,$type)
-{	
-	if (is_array($input))
+function e107_filter($input,$key,$type,$base64=FALSE)
+{
+	if(is_string($input) && trim($input)=="")
 	{
-		return array_walk($input, 'e107_filter',$type);	
+		return;
+	}
+		
+	if(is_array($input))
+	{
+		return array_walk($input, 'e107_filter', $type);	
 	} 
-	
-	if($type == "_SERVER")
-	{	
-		if(($key == "QUERY_STRING") && strpos(strtolower($input),"=http")!==FALSE)
+			
+	if($type == "_POST" || ($type == "_SERVER" && ($key == "QUERY_STRING")))
+	{
+		if($type == "_POST" && ($base64 == FALSE))
 		{
+			$input = preg_replace("/(\[code\])(.*?)(\[\/code\])/is","",$input);
+		}
+	
+		$regex = "/(document\.write|base64_decode|chr|php_uname|fwrite|fopen|fputs|passthru|popen|proc_open|shell_exec|exec|proc_nice|proc_terminate|proc_get_status|proc_close|pfsockopen|apache_child_terminate|posix_kill|posix_mkfifo|posix_setpgid|posix_setsid|posix_setuid|phpinfo) *?\((.*) ?\;?/i";
+		if(preg_match($regex,$input))
+		{
+			header('HTTP/1.0 400 Bad Request', true, 400);
 			exit();
 		}
 		
+		if(preg_match("/system *?\((.*);.*\)/i",$input))
+		{
+			header('HTTP/1.0 400 Bad Request', true, 400);
+			exit();	
+		}
+		
+		$regex = "/(wget |curl -o |fetch |lwp-download|onmouse)/i";
+		if(preg_match($regex,$input))
+		{
+			header('HTTP/1.0 400 Bad Request', true, 400);
+			exit();
+		}
+	
+	}
+	
+	if($type == "_SERVER")
+	{	
+
+		if(($key == "QUERY_STRING") && (
+			strpos(strtolower($input),"../../")!==FALSE 
+			|| strpos(strtolower($input),"=http")!==FALSE 
+			|| strpos(strtolower($input),"http%3A%2F%2F")!==FALSE
+			|| strpos(strtolower($input),"php://")!==FALSE  
+			|| strpos(strtolower($input),"data://")!==FALSE
+			))
+		{
+			header('HTTP/1.0 400 Bad Request', true, 400);
+			exit();
+		}
+					
 		if(($key == "HTTP_USER_AGENT") && strpos($input,"libwww-perl")!==FALSE)
 		{
+			header('HTTP/1.0 400 Bad Request', true, 400);
 			exit();	
-		}			
+		}
+		
+						
 	}
 		
 	if(strpos(str_replace('.', '', $input), '22250738585072011') !== FALSE) // php-bug 53632
 	{
+		header('HTTP/1.0 400 Bad Request', true, 400);
 		exit();
 	} 
 	
+	if($base64 != TRUE)
+	{
+		e107_filter(base64_decode($input),$key,$type,TRUE);
+	}
+	
 }
 
-function include_lan($path, $force = false)
+
+
+
+function include_lan($path, $force = FALSE)
 {
 	if ( ! is_readable($path))
 	{

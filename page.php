@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/page.php $
-|     $Revision: 11787 $
-|     $Id: page.php 11787 2010-09-16 13:04:59Z e107steved $
-|     $Author: e107steved $
+|     $Revision: 12290 $
+|     $Id: page.php 12290 2011-06-29 01:09:46Z e107coders $
+|     $Author: e107coders $
 |
 +----------------------------------------------------------------------------+
 */
@@ -202,6 +202,14 @@ class pageClass
 		if($this -> title)
 		{
 			$ptitle = "<div class='cpage_title'>".$this -> title."</div>";
+		}
+		
+
+		if(ADMIN && getperms("5"))
+		{
+ 			$text .= "<a href='".e_ADMIN_ABS."cpage.php?create.edit.".$this -> pageID."'>
+			<img src='".e_IMAGE_ABS."/admin_images/edit_16.png' alt='edit' title='Edit' style='border: 0px none; height: 16px; width: 16px;'>
+			</a><br />";
 		}
 
 		$text .= $this -> pageToRender;

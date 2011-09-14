@@ -4,8 +4,8 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/lan_usersettings.php $
-|     $Revision: 11897 $
-|     $Id: lan_usersettings.php 11897 2010-10-16 20:13:13Z e107steved $
+|     $Revision: 12188 $
+|     $Id: lan_usersettings.php 12188 2011-05-04 20:38:01Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -112,5 +112,6 @@ define("LAN_USET_16", "Tick box to delete existing photo without uploading anoth
 define("LAN_USET_17", "Display name already used. Please choose another");
 define('LAN_USET_18', 'Invalid name for avatar');
 define('LAN_USET_19', 'Avatar cannot be accessed');
+define('LAN_USET_20', 'Cannot get image information');
 
 ?>

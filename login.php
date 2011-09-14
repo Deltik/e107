@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/login.php $
-|     $Revision: 11678 $
-|     $Id: login.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 12296 $
+|     $Id: login.php 12296 2011-06-29 05:39:14Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -25,7 +25,8 @@ if(isset($_POST['userlogin']) && !isset($_POST['e-token']))
 }
 
 require_once("class2.php");
-if (USER)
+
+if (USER || e_LOGIN !='login.php') // Disable page if user logged in, or some custom e_LOGIN value is used. 
 {
 	header('location:'.e_BASE.'index.php');
 	exit();
@@ -90,7 +91,9 @@ if (!USER)
 	echo $tp->simpleParse($LOGIN_TABLE_FOOTER, $tVars, false);
 }
 
-echo "</body></html>";
+$FOOTER = "";
+require_once(FOOTERF);
+//echo "</body></html>";
 
 $sql->db_Close();
 

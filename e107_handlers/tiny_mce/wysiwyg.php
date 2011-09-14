@@ -4,8 +4,8 @@
 |     e107 website system - Tiny MCE controller file.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/tiny_mce/wysiwyg.php $
-|     $Revision: 12115 $
-|     $Id: wysiwyg.php 12115 2011-03-30 08:23:04Z e107coders $
+|     $Revision: 12152 $
+|     $Id: wysiwyg.php 12152 2011-04-20 20:43:49Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -32,7 +32,7 @@ class wysiwyg
 		$mce_plugins[2]	= ($pref['smiley_activate']) ? "emoticons" : "";		// 'emotions' for the tinyMCE plugin, 'emoticons' for ours
 		$mce_plugins[3]	= "iespell";
 		$mce_plugins[4]	= "media";
-		$mce_plugins[5]	= (ADMIN) ? "ibrowser" : "image";				// Third party plugins - 'image' may not be a valid plugin name
+		$mce_plugins[5]	= (ADMIN) ? "ibrowser" : "";				// Third party plugins - 'image' may not be a valid plugin name
 		//$mce_plugins[6]	= "compat2x";					// May well not be needed - mostly for if we have our own code
 		$mce_plugins[7]	= "paste";
 
@@ -160,16 +160,18 @@ class wysiwyg
 		
 		$this->getConfig();
 		
+		$newConfig = array();
+		
 		foreach($this->config as $key=>$val)
 		{
 			if($val != 'true' && $val !='false')
 			{
 				$val = "'".$val."'";
 			}
-			$text .= "\t\t  ".$key." : ".$val.",\n";
+			$newConfig[] = "\t\t  ".$key." : ".$val;
 		}
 		
-		return $text;
+		return implode(",\n",$newConfig);
 		
 	}
 	

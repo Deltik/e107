@@ -4,9 +4,7 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_users_extended.php $
-|     $Revision: 11678 $
-|     $Id: lan_users_extended.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Id: lan_users_extended.php 12306 2011-07-06 13:43:10Z secretr $
 +----------------------------------------------------------------------------+
 */
 define("EXTLAN_1", "Name");
@@ -91,6 +89,7 @@ define("EXTLAN_75", "Error adding field to database.");
 define("EXTLAN_76", "Invalid characters in field name - only A-Z, a-z, 0-9, '_' allowed.");
 define("EXTLAN_77", "Category not deleted - must delete fields in category first: ");
 define('EXTLAN_78', 'Cannot find file --FILE-- needed to create data table');
+define('EXTLAN_79', 'Validation error - aborted.');
 
 
 //textbox

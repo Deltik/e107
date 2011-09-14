@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/log/plugin.php $
-|     $Revision: 12092 $
-|     $Id: plugin.php 12092 2011-03-11 18:49:56Z e107steved $
+|     $Revision: 12241 $
+|     $Id: plugin.php 12241 2011-05-31 17:32:33Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -47,7 +47,7 @@ $eplug_icon_small = $eplug_folder."/images/stats_16.png";
 $eplug_caption = ADSTAT_L33;
 	
 // List of preferences -----------------------------------------------------------------------------------------------
-$eplug_prefTable = "menu_pref";
+//$eplug_prefTable = "menu_pref";
 $eplug_prefs = array(
 		"statActivate" => 0, 
 		"statUserclass" => "", 

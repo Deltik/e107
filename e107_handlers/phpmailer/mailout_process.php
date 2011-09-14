@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/phpmailer/mailout_process.php $
-|     $Revision: 11678 $
-|     $Id: mailout_process.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 12290 $
+|     $Id: mailout_process.php 12290 2011-06-29 01:09:46Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -25,6 +25,7 @@ $FOOTER = "";
 define("e_PAGETITLE",MAILAN_60);
 require_once(HEADERF);
 set_time_limit(18000);
+ignore_user_abort(true);
 session_write_close();
 
 
@@ -212,8 +213,8 @@ if($_POST['cancel_emails']){
 		$activator = (substr(SITEURL, -1) == "/" ? SITEURL."signup.php?activate.".$row['user_id'].".".$row['user_sess'] : SITEURL."/signup.php?activate.".$row['user_id'].".".$row['user_sess']);
         $signup_link = ($row['user_sess']) ? "<a href='$activator'>$activator</a>" : "";
 
-		$search = array("|USERNAME|","|USERID|","|SIGNUP_LINK|");
-		$replace = array($row['user_name'],$row['user_id'],$signup_link);
+		$search = array("|USERNAME|","|USERID|","|SIGNUP_LINK|","|USER_LOGIN|","|USER_EMAIL|");
+		$replace = array($row['user_name'],$row['user_id'],$signup_link,$row['user_loginname'],$row['user_email']);
 
         $mes_body = str_replace($search,$replace,$message_body);
 		$alt_body = str_replace($search,$replace,stripslashes($tp->toText($_POST['email_body'])));

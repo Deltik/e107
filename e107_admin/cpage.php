@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/cpage.php $
-|     $Revision: 11868 $
-|     $Id: cpage.php 11868 2010-10-09 11:51:09Z e107coders $
+|     $Revision: 12145 $
+|     $Id: cpage.php 12145 2011-04-19 01:29:45Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -434,7 +434,7 @@ class page
 		$pref['listPages'] = $_POST['listPages'];
 		$pref['pageCookieExpire'] = $_POST['pageCookieExpire'];
 		save_prefs();
-		$this -> message = "Settings saved.";
+		$this -> message = LAN_SETSAVED;
 	}
 
 	function show_options($action)

@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/search.php $
-|     $Revision: 11678 $
-|     $Id: search.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12341 $
+|     $Id: search.php 12341 2011-09-02 10:38:04Z secretr $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 
@@ -180,7 +180,7 @@ if (isset($_GET['q']) || isset($_GET['in']) || isset($_GET['ex']) || isset($_GET
 	elseif ($search_prefs['time_restrict']) {
 		$time = time() - $search_prefs['time_secs'];
 		$query_check = $tp -> toDB($full_query);
-		$ip = getip();
+		$ip = $e107->getip();
 		if ($sql -> db_Select("tmp", "tmp_ip, tmp_time, tmp_info", "tmp_info LIKE 'type_search%' AND tmp_ip='".$ip."'")) {
 			$row = $sql -> db_Fetch();
 			if (($row['tmp_time'] > $time) && ($row['tmp_info'] != 'type_search '.$query_check)) {

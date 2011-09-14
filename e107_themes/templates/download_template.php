@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_themes/templates/download_template.php $
-|     $Revision: 11678 $
-|     $Id: download_template.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12224 $
+|     $Id: download_template.php 12224 2011-05-26 12:20:56Z secretr $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -213,7 +213,7 @@ if(!isset($DOWNLOAD_LIST_TABLE_END))
 
 // ##### VIEW TABLE -------------------------------------------------------------------------------
 
-$DL_VIEW_PAGETITLE = PAGE_NAME." / {DOWNLOAD_CATEGORY} / {DOWNLOAD_VIEW_NAME}";
+$DL_VIEW_PAGETITLE = "{DOWNLOAD_VIEW_NAME} / {DOWNLOAD_CATEGORY} / ".PAGE_NAME;
 $DL_VIEW_CAPTION = "{DOWNLOAD_VIEW_CAPTION}";
 
 if(!isset($DL_VIEW_NEXTPREV))

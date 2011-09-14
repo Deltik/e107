@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/forum/forum_admin.php $
-|     $Revision: 11869 $
-|     $Id: forum_admin.php 11869 2010-10-09 11:51:49Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12242 $
+|     $Id: forum_admin.php 12242 2011-06-02 19:59:08Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 $eplug_admin = true;
@@ -236,6 +236,8 @@ if (isset($_POST['updateoptions']))
 	$pref['forum_hilightsticky'] = $_POST['forum_hilightsticky'];
 	$pref['forum_maxwidth'] = $_POST['forum_maxwidth'];
 	$pref['forum_linkimg'] = $_POST['forum_linkimg'];
+	$pref['forum_posts_sig'] = $_POST['forum_posts_sig'];
+	$pref['forum_class_sig'] = $_POST['forum_class_sig'];
 	save_prefs();
 	$forum->show_message(FORLAN_10);
 }
@@ -1126,6 +1128,16 @@ class forum
 		<tr>
 		<td style='width:75%' class='forumheader3'>".FORLAN_132."<br /><span class='smalltext'>".FORLAN_133."</span></td>
 		<td style='width:25%;text-align:center' class='forumheader3' >".($pref['forum_hilightsticky'] ? "<input type='checkbox' name='forum_hilightsticky' value='1' checked='checked' />" : "<input type='checkbox' name='forum_hilightsticky' value='1' />")."</td>
+		</tr>
+
+		<tr>
+		<td style='width:75%' class='forumheader3'>".FORLAN_67."<br /><span class='smalltext'>".FORLAN_68."</span></td>
+		<td style='width:25%;text-align:center' class='forumheader3' ><input class='tbox' type='text' name='forum_posts_sig' size='3' value='".$pref['forum_posts_sig']."' maxlength='3' /></td>
+		</tr>
+
+		<tr>
+		<td style='width:75%' class='forumheader3'>".FORLAN_69."<br /></td>
+		<td style='width:25%;text-align:center' class='forumheader3' >" . r_userclass("forum_class_sig", $pref['forum_class_sig'], 'off', 'nobody,member,admin,classes') . "</td>
 		</tr>
 
 		<tr>

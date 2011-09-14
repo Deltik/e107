@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_mailout.php $
-|     $Revision: 11678 $
-|     $Id: lan_mailout.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12180 $
+|     $Id: lan_mailout.php 12180 2011-05-02 21:09:45Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 define("PRFLAN_52", "Save Changes");
@@ -95,9 +95,8 @@ define("MAILAN_65", "seconds");
 define("MAILAN_66", "Cancelled Successfully");
 define("MAILAN_67", "Use 'POP before SMTP' authentication"); 
 define('MAILAN_68', 'Test address');
-
-
-
+define("MAILAN_69","user login");
+define("MAILAN_70","user email");
 
 
 

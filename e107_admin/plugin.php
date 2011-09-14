@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/plugin.php $
-|     $Revision: 11867 $
-|     $Id: plugin.php 11867 2010-10-09 10:04:44Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12174 $
+|     $Id: plugin.php 12174 2011-05-01 15:57:44Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -270,7 +270,7 @@ if ($action == 'uninstall')
 			include_once(e_HANDLER."file_class.php");
 			$fi = new e_file;
 			$result = $fi->rmtree(e_PLUGIN.$eplug_folder);
-			$text .= ($result ? "<br />All files removed from ".e_PLUGIN.$eplug_folder : '<br />File deletion failed<br />'.EPL_ADLAN_31.' <b>'.e_PLUGIN.$eplug_folder.'</b> '.EPL_ADLAN_32);
+			$text .= '<br />'.($result ? EPL_ADLAN_64.e_PLUGIN.$eplug_folder : EPL_ADLAN_65.'<br />'.EPL_ADLAN_31.' <b>'.e_PLUGIN.$eplug_folder.'</b> '.EPL_ADLAN_32);
 		}
 		else
 		{

@@ -10,8 +10,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/comment.php $
-|     $Revision: 11708 $
-|     $Id: comment.php 11708 2010-08-27 06:53:48Z e107steved $
+|     $Revision: 12190 $
+|     $Id: comment.php 12190 2011-05-04 21:34:54Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -356,7 +356,7 @@ elseif ($action == 'comment')
 			$e_comment = $cobj->get_e_comment();
 			if ($table == $e_comment[$table]['eplug_comment_ids'])
 			{
-				if ($sql->db_Select($table,$e_comment[$table]['db_title'],$e_comment[$table]['db_id']."={$id} "))
+				if ($sql->db_Select($e_comment[$table]['db_table'],$e_comment[$table]['db_title'],$e_comment[$table]['db_id']."={$id} "))
 				{
 				  $row = $sql->db_Fetch();
 				  $subject = $row[$e_comment[$table]['db_title']];

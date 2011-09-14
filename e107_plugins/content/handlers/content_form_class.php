@@ -10,13 +10,18 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/content/handlers/content_form_class.php $
-|     $Revision: 11822 $
-|     $Id: content_form_class.php 11822 2010-09-27 18:24:08Z e107steved $
-|     $Author: e107steved $
+|     $Revision: 12289 $
+|     $Id: content_form_class.php 12289 2011-06-29 01:07:28Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
+if (!isset($pref['plug_installed']['content']))
+{
+	header('location:'.e_BASE.'index.php');
+	exit;
+}
 
 $plugindir		= e_PLUGIN."content/";
 $plugintable	= "pcontent";		//name of the table used in this plugin (never remove this, as it's being used throughout the plugin !!)

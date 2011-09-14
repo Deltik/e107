@@ -10,8 +10,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/usersettings.php $
-|     $Revision: 12102 $
-|     $Id: usersettings.php 12102 2011-03-14 20:48:04Z e107steved $
+|     $Revision: 12188 $
+|     $Id: usersettings.php 12188 2011-05-04 20:38:01Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -172,6 +172,7 @@ if (isset($_POST['updatesettings']) && varset($_POST['e-token']))
 	$_POST['image'] = '';
 	if ($avName)
 	{
+		$avName = strip_if_magic($avName);
 		$avName = str_replace(array('\'', '"', '(', ')'), '', $avName);   // these are invalid anyway, so why allow them? (XSS Fix)
 		if (strpos($avName, '/') !== FALSE)
 		{	// Assume an off-site image
@@ -203,7 +204,7 @@ if (isset($_POST['updatesettings']) && varset($_POST['e-token']))
 		{
 			$error = $avmsg;
 		}
-		elseif ($size = getimagesize($avFullName)) 
+		elseif (FALSE !== ($size = getimagesize($avFullName)))
 		{
 			$avwidth = $size[0];
 			$avheight = $size[1];
@@ -231,7 +232,7 @@ if (isset($_POST['updatesettings']) && varset($_POST['e-token']))
 		}
 		else
 		{
-			$error = LAN_USET_19.': '.$avFullName;
+			$error = LAN_USET_20.': '.$avFullName;
 			$avName = FALSE;
 		}
 	}

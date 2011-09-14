@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/poll/poll_class.php $
-|     $Revision: 11946 $
-|     $Id: poll_class.php 11946 2010-11-02 21:58:07Z e107steved $
-|     $Author: e107steved $
+|     $Revision: 12330 $
+|     $Id: poll_class.php 12330 2011-08-12 19:37:09Z nlstart $
+|     $Author: nlstart $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -247,7 +247,7 @@ class poll
 					$votep = implode(chr(1), $votes);
 					$pollArray['poll_votes'] = $votep;
 
-					$sql->db_Update("polls", "poll_votes = '$votep', poll_ip='".$poll_ip.$userid."^' WHERE poll_id=".$poll_id);
+					$sql->db_Update("polls", "poll_votes = '$votep'".($pollArray['poll_storage_method'] != POLL_MODE_COOKIE ? ", poll_ip='".$poll_ip.$userid."^'" : '')." WHERE poll_id=".$poll_id);
 					echo "
 				<script type='text/javascript'>
 				<!--

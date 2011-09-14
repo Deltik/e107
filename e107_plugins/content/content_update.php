@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/content/content_update.php $
-|     $Revision: 11678 $
-|     $Id: content_update.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12178 $
+|     $Id: content_update.php 12178 2011-05-02 20:45:40Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -66,7 +66,7 @@ if(!$sql->db_Query("SHOW COLUMNS FROM ".MPREFIX."pcontent")) {
 	content_meta text NOT NULL,
 	content_layout varchar(255) NOT NULL default '',
 	PRIMARY KEY  (content_id)
-	) TYPE=MyISAM;";
+	) ENGINE=MyISAM;";
 	
 	$sql->db_Select_gen($query);
 }

@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/userclass.php $
-|     $Revision: 12116 $
-|     $Id: userclass.php 12116 2011-03-30 21:18:07Z e107steved $
+|     $Revision: 12214 $
+|     $Id: userclass.php 12214 2011-05-17 19:45:47Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -42,8 +42,12 @@ require_once('auth.php');
 // Get class membership for user now - we may need to udpate it
 $sql->db_Select('user', '*', 'user_id='.$id);
 $row = $sql->db_Fetch();
-$currentClasses = array_flip(explode(',', $row['user_class']));			// Current class membership for user (class ID as key)
-
+$row['user_class'] = trim($row['user_class']);
+$currentClasses = array();
+if ($row['user_class'])
+{
+	$currentClasses = array_flip(explode(',', $row['user_class']));			// Current class membership for user (class ID as key)
+}
 
 $sql->db_Select('userclass_classes');
 $c = 0;
@@ -124,7 +128,11 @@ for($a = 0; $a <= (count($class)-1); $a++) {
 $adminreturn = e_ADMIN.'users.php?cu';
 if (isset($qs[1]))
 {
-	$adminreturn .= '.'.$qs[1].(isset($qs[2]) ? ".{$qs[2]}.{$qs[3]}.{$qs[4]}" : "");
+	if (($qs[1] != 'main') && ($qs[1] != 'cu'))
+	{
+		$adminreturn .= '.'.$qs[1];
+	}
+	$adminreturn .= (isset($qs[2]) && $qs[2] ? ".{$qs[2]}.{$qs[3]}.{$qs[4]}" : '');
 }
 
 $text .= "	<tr><td class='forumheader' colspan='2' style='text-align:center'>

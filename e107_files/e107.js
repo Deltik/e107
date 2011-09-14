@@ -1,17 +1,16 @@
 <!--
-
 /*
 + ----------------------------------------------------------------------------+
 |	e107 website system - Javascript File.
 |
 |	$URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_files/e107.js $
-|	$Revision: 12028 $
-|	$Id: e107.js 12028 2011-01-05 23:03:48Z e107coders $
+|	$Revision: 12346 $
+|	$Id: e107.js 12346 2011-09-02 13:20:04Z secretr $
 +----------------------------------------------------------------------------+
 */
 
 /*
- * NOTE: KEEP THIS AT THE TOP OF E107.JS!
+ * NOTE: KEEP THIS AT THE TOP OF E107.JS !!
  * localTime is recorded ASAP after page load; SyncWithServerTime is called at the END
  * of page processing. We want localTime and serverTime set in close chronological order.
  * Page Processing order is as follows:
@@ -59,10 +58,10 @@ function expandit(curobj, hide) {
 	if(document.getElementById(curobj)) {
   		folder=document.getElementById(curobj).style;
 	} else {
-		if(ns6==1||operaaa==true) {
-			folder=curobj.nextSibling.nextSibling.style;
+		if(ns6==1||operaaa==true || typeof curobj['nextSibling'] != 'undefined' ) {
+			folder= typeof curobj.nextSibling.tagName != 'undefined' ? curobj.nextSibling.style : curobj.nextSibling.nextSibling.style;
 		} else {
-			folder=document.all[curobj.sourceIndex+1].style;
+			folder=document.all[curobj.sourceIndex+1].style; 
 		}
    }
 	if(folder.display=="none")

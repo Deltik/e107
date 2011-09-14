@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/log/admin_config.php $
-|     $Revision: 12053 $
-|     $Id: admin_config.php 12053 2011-01-21 21:59:56Z nlstart $
-|     $Author: nlstart $
+|     $Revision: 12153 $
+|     $Id: admin_config.php 12153 2011-04-20 21:23:45Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 require_once("../../class2.php");
@@ -182,7 +182,7 @@ if ($pref['statBrowser'] == 1)
 {	// Only display option to show browser stats in a compact way if stats on browser is actived
 $text .= "
 	<tr>
-	<td style='width:50%' class='forumheader3'>".ADSTAT_L35."</span></td>
+	<td style='width:50%' class='forumheader3'>".ADSTAT_L35."</td>
 	<td style='width:50%; text-align: right;' class='forumheader3'>
 	<input type='radio' name='statBrowserDispCompr' value='1'".($pref['statBrowserDispCompr'] ? " checked='checked'" : "")." /> ".ADSTAT_ON."&nbsp;&nbsp;
 	<input type='radio' name='statBrowserDispCompr' value='0'".(!$pref['statBrowserDispCompr'] ? " checked='checked'" : "")." /> ".ADSTAT_OFF."<br />

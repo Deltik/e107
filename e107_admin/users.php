@@ -10,25 +10,25 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/users.php $
-|     $Revision: 12037 $
-|     $Id: users.php 12037 2011-01-13 20:56:29Z nlstart $
-|     $Author: nlstart $
+|     $Revision: 12284 $
+|     $Id: users.php 12284 2011-06-28 08:53:08Z secretr $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 
 // Experimental e-token
-if(isset($_POST['useraction']) || isset($_POST['adduser']) && !isset($_POST['e-token']))
+if((isset($_POST['useraction']) || isset($_POST['adduser'])) && !isset($_POST['e-token']))
 {
 	// set e-token so it can be processed by class2
-	unset($_POST['e-token']);
+	$_POST['e-token'] = '';
 }
 
 require_once("../class2.php");
 
-if (!getperms("4"))
+if (!getperms('4'))
 {
-  header("location:".e_BASE."index.php");
-  exit;
+	header("location:".e_BASE."index.php");
+	exit;
 }
 
 
@@ -61,7 +61,7 @@ $sub_action = '';
 if (e_QUERY)
 {
 	$tmp = explode(".", e_QUERY);
-	$action = $tmp[0]; // must be set before auth.php is loaded. 
+	$action = $tmp[0]; // must be set before auth.php is loaded.
 	$sub_action = varset($tmp[1],'');
 	$id = varset($tmp[2],0);
 	$from = varset($tmp[3],0);
@@ -290,6 +290,7 @@ if (isset($_POST['adduser']))
 			'user_join' => $now,
 			'user_lastvisit' => $now,
 			'user_currentvisit' => $now,
+			'user_prefs' => '',
 			'user_new' => '',
 			'user_viewed' => '',
 			//'user_login' => $_POST['realname'],
@@ -298,7 +299,6 @@ if (isset($_POST['adduser']))
 			'user_realm' => '',
 			'user_pwchange' => $now
 		);
-		//admin_update($sql -> db_Insert("user", "0, '{$username}', '{$loginname}',  '', '".md5($_POST['password1'])."', '{$key}', '".$_POST['email']."', '".$_POST['signature']."', '".$_POST['image']."', '".$_POST['timezone']."', '1', '".time()."', '".time()."', '".time()."', '0', '0', '0', '0', '0', '0', '0', '', '', '0', '0', '".$_POST['realname']."', '".$svar."', '', '', '".time()."', ''"), 'insert', USRLAN_70);
 		admin_update($sql -> db_Insert("user", $newUserData), 'insert', USRLAN_70);
 	}
 }
@@ -411,11 +411,11 @@ if (isset($_POST['useraction']) && $_POST['useraction'] == 'test')
 }
 
 // ------- Delete User --------------
-if (isset($_POST['useraction']) && $_POST['useraction'] == 'deluser') 
+if (isset($_POST['useraction']) && $_POST['useraction'] == 'deluser')
 {
-	if ($_POST['confirm']) 
+	if ($_POST['confirm'])
 	{
-		if ($sql->db_Delete("user", "user_id='".$_POST['userid']."' AND user_perms != '0' AND user_perms != '0.'")) 
+		if ($sql->db_Delete("user", "user_id='".$_POST['userid']."' AND user_perms != '0' AND user_perms != '0.'"))
 		{
 		   $sql->db_Delete("user_extended", "user_extended_id='".$_POST['userid']."' ");
 		   $e_event->trigger('userdel', intval($_POST['userid']));
@@ -426,7 +426,7 @@ if (isset($_POST['useraction']) && $_POST['useraction'] == 'deluser')
 	}
 	else
 	{	// Put up confirmation
-		if ($sql->db_Select("user", "*", "user_id='".$_POST['userid']."' ")) 
+		if ($sql->db_Select("user", "*", "user_id='".$_POST['userid']."' "))
 		{
 			$row = $sql->db_Fetch();
 			$qry = (e_QUERY) ? "?".e_QUERY : "";
@@ -895,7 +895,7 @@ class users
 		{
 			if($m == 0)
 			{
-				$text .= "<tr>";	
+				$text .= "<tr>";
 			}
 			$checked = (in_array($fcol,$search_display)) ? "checked='checked'" : "";
 			$text .= "<td style='text-align:left; padding:0px'>";
@@ -1076,10 +1076,10 @@ class users
 		$ns->tablerender(USRLAN_55, $text);
 	}
 
-	function add_user() 
+	function add_user()
 	{
 		global $rs, $ns, $pref,$tp;
-		
+
 		$text = "<div style='text-align:center'>". $rs->form_open("post", e_SELF.'?create', "adduserform")."
 			<table style='".ADMIN_WIDTH."' class='fborder'>
 			<tr>

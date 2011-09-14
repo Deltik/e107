@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/request.php $
-|     $Revision: 12088 $
-|     $Id: request.php 12088 2011-03-03 17:58:29Z e107coders $
+|     $Revision: 12327 $
+|     $Id: request.php 12327 2011-07-29 19:48:09Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -40,7 +40,7 @@ if (!e_QUERY || isset($_POST['userlogin']))
 
 $req_cookie = 'e-request_'.md5($_SERVER['SERVER_ADDR']);
 
-if(isset($_COOKIE[$req_cookie]) && $_SESSION['download_splash'] !==TRUE) // if cookie found, suggest to try later
+if(isset($_COOKIE[$req_cookie]) && ($_COOKIE[$req_cookie]!= intval(e_QUERY)) && $_SESSION['download_splash'] !==TRUE) // if cookie found, suggest to try later
 {
 	$_SESSION['download_splash'] = FALSE;
 	require_once(HEADERF);
@@ -56,7 +56,7 @@ if(isset($_COOKIE[$req_cookie]) && $_SESSION['download_splash'] !==TRUE) // if c
 
 if(varset($pref['download_nomultiple'])==1 )
 {
-	if(!setcookie($req_cookie, 1, time() + 30, "/")) // set the cookie and if it fails, request cookies be enabled
+	if(!setcookie($req_cookie, intval(e_QUERY), time() + 30, "/")) // set the cookie and if it fails, request cookies be enabled
 	{
 		$_SESSION['download_splash'] = FALSE;
 		require_once(HEADERF);
@@ -164,7 +164,15 @@ if(varset($pref['download_splashdelay'])==1 )
 		if(!$SPLASH_PREVIEW)
 		{
 			$_SESSION['download_splash'] = TRUE;
-			header("Refresh: 3; url=\"".$_SERVER['REQUEST_URI']."\"");		
+			
+			$theLink = SITEURL."request.php?".intval(e_QUERY);
+			header("Refresh: 3; url=\"".$theLink."\"");
+
+			function core_head() // deprecated function in 0.8
+			{
+				return '<meta http-equiv="refresh" content="5; URL=request.php?'.intval(e_QUERY).'" />';	// in case the header fails. 
+			}
+				
 		}
 		
 		require_once(HEADERF);
@@ -196,7 +204,7 @@ if(varset($pref['download_splashdelay'])==1 )
 		$repl[2] = "</a>";
 		
 		$srch[3] = "[";
-		$repl[3] = "<a class='request-splash-clicklink' href='".e_SELF."?[nosplash]".e_QUERY."'>";
+		$repl[3] = "<a class='request-splash-clicklink' href='request.php?[nosplash]".intval(e_QUERY)."'>";
 		
 		$text = str_replace($srch,$repl,$REQUEST_TEMPLATE);
 				
@@ -460,9 +468,14 @@ function send_file($file)
 		header("Location: ".SITEURL.$file);
 		exit();
 	}
+	
 	@set_time_limit(10 * 60);
+	@session_write_close();
 	@e107_ini_set("max_execution_time", 10 * 60);
 	while (@ob_end_clean()); // kill all output buffering else it eats server resources
+	@ob_implicit_flush(TRUE);
+	
+	
 	$filename = $file;
 	$file = basename($file);
 	$path = realpath($filename);

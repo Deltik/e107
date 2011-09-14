@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/top.php $
-|     $Revision: 11678 $
-|     $Id: top.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12223 $
+|     $Id: top.php 12223 2011-05-21 08:01:08Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 require_once("class2.php");
@@ -75,14 +75,14 @@ if ($action == "active") {
 		 
 		while ($row = $sql->db_Fetch()) {
 			extract($row);
-			if (check_class($forum_class)) {
-
+			if (check_class($forum_class)) 
+			{
 				if($user_name)
 				{
 					$POSTER = "<a href='".e_HTTP."user.php?id.{$thread_user}'>{$user_name}</a>";
-				} else {
-					list($anonposter, $ipaddress) = explode(chr(1), $thread_anon);
-					$POSTER = $anonposter;
+				} else 
+				{
+					$POSTER = LAN_ANONYMOUS;
 				}
 
 				$LINKTOTHREAD = e_PLUGIN_ABS."forum/forum_viewtopic.php?".$thread_id;

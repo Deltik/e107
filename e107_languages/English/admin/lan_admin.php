@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_admin.php $
-|     $Revision: 12060 $
-|     $Id: lan_admin.php 12060 2011-01-30 19:22:47Z secretr $
-|     $Author: secretr $
+|     $Revision: 12315 $
+|     $Id: lan_admin.php 12315 2011-07-08 03:02:34Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 define("ADLAN_0", "News");
@@ -200,7 +200,8 @@ define("ADLAN_ERR_3", "There are one or more files in your public upload directo
 define("ADLAN_ERR_4", "Deprecated plugin file(s) found");
 define("ADLAN_ERR_5", "The following files need to be renamed to");
 define("ADLAN_ERR_6", "Then, click here to re-scan your plugin folders.");
-
+define("ADLAN_ERR_7", "Malicious files have been detected on your server. They should be deleted [b]immediately[/b].");
+define("ADLAN_ERR_8", "Please run [File inspector] to check for core files that may have been modified.");
 
 // Common Terms
 define("LAN_EDIT","Edit");
@@ -275,6 +276,7 @@ define("LAN_CREDITS","Credits");
 define("LAN_NEWVERSION","New Version Available");
 define("LAN_NEWVERSION_MORE","learn more");
 define("LAN_NEWVERSION_DLD","Download %s from SF.net");
+define('LAN_NEWVERSION_CHECK_ERROR', 'Version check error');
 
 define("LAN_SECURITYL_0", "Looking for troubles (none)");
 define("LAN_SECURITYL_5", "Balanced");

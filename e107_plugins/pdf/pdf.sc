@@ -1,6 +1,19 @@
 /*
- * e107 website system (c) 2001-2008 Steve Dunstan (e107.org)
- * $Id: pdf.sc 11346 2010-02-17 18:56:14Z secretr $
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/pdf/pdf.sc $
+|     $Revision: 12289 $
+|     $Id: pdf.sc 12289 2011-06-29 01:07:28Z e107coders $
+|     $Author: e107coders $
++----------------------------------------------------------------------------+
 */
 
 if (defined("ICONPRINTPDF") && file_exists(THEME."images/".ICONPRINTPDF)) 

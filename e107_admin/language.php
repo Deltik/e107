@@ -10,8 +10,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/language.php $
-|     $Revision: 12117 $
-|     $Id: language.php 12117 2011-04-06 18:38:47Z e107coders $
+|     $Revision: 12128 $
+|     $Id: language.php 12128 2011-04-11 10:39:05Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -823,7 +823,7 @@ function grab_lans($path, $language, $filter = "",$depth=5)
 				$dir =  basename(dirname($p['path']));
 				foreach($filter as $val)
 				{
-					if(strpos($fullpath,$val)!==FALSE)
+					if(strpos($fullpath,'/'.$val.'/')!==FALSE)
 					{
 						$pzip[] = $fullpath;	
 					}

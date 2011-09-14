@@ -10,8 +10,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/list_new/list_new_menu.php $
-|     $Revision: 12082 $
-|     $Id: list_new_menu.php 12082 2011-02-27 11:24:53Z e107steved $
+|     $Revision: 12126 $
+|     $Id: list_new_menu.php 12126 2011-04-10 21:27:12Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -61,7 +61,7 @@ for($i = 0;$i < count($arr);$i++)
 
 $caption = (isset($list_pref[$mode."_caption"]) && $list_pref[$mode."_caption"] ? $list_pref[$mode."_caption"] : LIST_MENU_1);
 $caption = $tp->toHtml($caption, FALSE, 'USER_TITLE');
-$text = $tp->toHtml($caption, TRUE, 'USER_BODY');
+$text = $tp->toHtml($text, TRUE, 'USER_BODY');
 $ns->tablerender($caption, $text, 'list_new');
 unset($caption);
 unset($text);

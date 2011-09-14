@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/rss_menu/plugin.php $
-|     $Revision: 11678 $
-|     $Id: plugin.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12178 $
+|     $Id: plugin.php 12178 2011-05-02 20:45:40Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit(); }
@@ -66,7 +66,7 @@ $eplug_tables = array(
 	rss_class tinyint(1) unsigned NOT NULL default '0',
 	rss_limit tinyint(3) unsigned NOT NULL default '0',
 	PRIMARY KEY (rss_id)
-	) TYPE=MyISAM;",
+	) ENGINE=MyISAM;",
 
 	"INSERT INTO ".MPREFIX."rss VALUES
 	(0, '".RSS_NEWS."', 'news', '', 'news', '".RSS_PLUGIN_LAN_7."', '".time()."', 0, 9),
@@ -97,7 +97,7 @@ $upgrade_alter_tables	= array(
 	rss_class tinyint(1) unsigned NOT NULL default '0',
 	rss_limit tinyint(3) unsigned NOT NULL default '0',
 	PRIMARY KEY (rss_id)
-	) TYPE=MyISAM;",
+	) ENGINE=MyISAM;",
 
 	"INSERT INTO ".MPREFIX."rss VALUES
 	(0, '".RSS_NEWS."', 'news', '', 'news', '".RSS_PLUGIN_LAN_7."', '".time()."', 0, 9),

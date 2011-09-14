@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_files/shortcode/batch/news_shortcodes.php $
-|     $Revision: 11678 $
-|     $Id: news_shortcodes.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12304 $
+|     $Id: news_shortcodes.php 12304 2011-07-05 08:31:43Z secretr $
+|     $Author: secretr $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -36,7 +36,7 @@ $news_body = $tp -> toHTML($news_item['news_body'], TRUE, 'BODY, fromadmin', $ne
 if($news_item['news_extended'] && (isset($_POST['preview']) || strpos(e_QUERY, 'extend') !== FALSE) && $parm != "noextend")
 {
     $news_extended = $tp -> toHTML($news_item['news_extended'], TRUE, 'BODY, fromadmin', $news_item['news_author']);
-    $news_body .= "<br /><br />".$news_extended;
+    $news_body .= '<div class="e-news-extend">'.$news_extended.'</div>';
 }
 return $news_body;
 SC_END

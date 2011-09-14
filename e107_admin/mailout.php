@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/mailout.php $
-|     $Revision: 11867 $
-|     $Id: mailout.php 11867 2010-10-09 10:04:44Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12247 $
+|     $Id: mailout.php 12247 2011-06-05 09:28:25Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -227,7 +227,7 @@ if (isset($_POST['submit'])) {
 
 		$text .="
  		<tr>
-			<td class='forumheader3' colspan='2'>".stripslashes($tp->toHTML($_POST['email_body'],TRUE))."</td>
+			<td class='forumheader3' colspan='2'>".stripslashes($tp->toHTML($_POST['email_body'],TRUE, 'E_BODY', '', FALSE))."</td>
 		</tr>
 
 	</table>
@@ -489,7 +489,9 @@ function show_mailform($foo=""){
 	if(e_WYSIWYG) {
 		$text .="<span style='vertical-align: super;margin-left:5%;margin-bottom:auto;margin-top:auto'><input type='button' class='button' name='usrname' value=\"".MAILAN_16."\" onclick=\"tinyMCE.selectedInstance.execCommand('mceInsertContent',0,'|USERNAME|')\" />
 		<input type='button' class='button' name='usrlink' value=\"".MAILAN_17."\" onclick=\"tinyMCE.selectedInstance.execCommand('mceInsertContent',0,'|SIGNUP_LINK|')\" />
-		<input type='button' class='button' name='usrid' value=\"".MAILAN_18."\" onclick=\"tinyMCE.selectedInstance.execCommand('mceInsertContent',0,'|USERID|')\" /></span>";
+		<input type='button' class='button' name='usrid' value=\"".MAILAN_18."\" onclick=\"tinyMCE.selectedInstance.execCommand('mceInsertContent',0,'|USERID|')\" />
+		<input type='button' class='button' name='usrlogin' value=\"".MAILAN_69."\" onclick=\"tinyMCE.selectedInstance.execCommand('mceInsertContent',0,'|USER_LOGIN|')\" />
+		<input type='button' class='button' name='usremail' value=\"".MAILAN_70."\" onclick=\"tinyMCE.selectedInstance.execCommand('mceInsertContent',0,'|USER_EMAIL|')\" /></span>";
 	}
 
  	$text .="
@@ -782,7 +784,9 @@ function sc_Select($container='sc_selector') {
 	$sc = array(
 		"|USERNAME|" => MAILAN_16,
         "|SIGNUP_LINK|" => MAILAN_17,
-        "|USERID|" => MAILAN_18
+        "|USERID|" => MAILAN_18,
+        "|USER_LOGIN|" => MAILAN_69,
+        "|USER_EMAIL|" => MAILAN_70
 	);
 
 	foreach($sc as $key=>$val){

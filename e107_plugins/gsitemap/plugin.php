@@ -10,9 +10,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/gsitemap/plugin.php $
-|     $Revision: 11900 $
-|     $Id: plugin.php 11900 2010-10-18 19:15:47Z nlstart $
-|     $Author: nlstart $
+|     $Revision: 12178 $
+|     $Id: plugin.php 12178 2011-05-02 20:45:40Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -65,7 +65,7 @@ CREATE TABLE ".MPREFIX."gsitemap (
 	gsitemap_img varchar(50) NOT NULL default '',
 	gsitemap_active int(3) NOT NULL default '0',
 	PRIMARY KEY  (gsitemap_id)
-) TYPE=MyISAM;"
+) ENGINE=MyISAM;"
 );
 
 

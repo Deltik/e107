@@ -4,8 +4,8 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_cpage.php $
-|     $Revision: 11678 $
-|     $Id: lan_cpage.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 12145 $
+|     $Id: lan_cpage.php 12145 2011-04-19 01:29:45Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -53,5 +53,6 @@ define("CUSLAN_41", "Display author and date information");
 define("CUSLAN_42", "No pages defined yet");
 define('CUSLAN_43', 'untitled menu: ');
 define('CUSLAN_44', 'untitled page');
+
 
 ?>

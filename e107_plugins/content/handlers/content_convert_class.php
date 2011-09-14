@@ -10,14 +10,18 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/content/handlers/content_convert_class.php $
-|     $Revision: 11678 $
-|     $Id: content_convert_class.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 12289 $
+|     $Id: content_convert_class.php 12289 2011-06-29 01:07:28Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
-
+if (!isset($pref['plug_installed']['content']))
+{
+	header('location:'.e_BASE.'index.php');
+	exit;
+}
 $plugindir		= e_PLUGIN."content/";
 $plugintable	= "pcontent";		//name of the table used in this plugin (never remove this, as it's being used throughout the plugin !!)
 $datequery		= " AND content_datestamp < ".time()." AND (content_enddate=0 || content_enddate>".time().") ";

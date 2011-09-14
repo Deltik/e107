@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_themes/templates/membersonly_template.php $
-|     $Revision: 11678 $
-|     $Id: membersonly_template.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 12296 $
+|     $Id: membersonly_template.php 12296 2011-06-29 05:39:14Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -39,5 +39,5 @@ $MEMBERSONLY_TABLE = "
 </div>
 ";
 
-$MEMBERSONLY_END = "<div>";
+$MEMBERSONLY_END = "</div>";
 ?>

@@ -10,9 +10,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/content/plugin.php $
-|     $Revision: 11678 $
-|     $Id: plugin.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12178 $
+|     $Id: plugin.php 12178 2011-05-02 20:45:40Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -83,7 +83,7 @@ $eplug_tables = array(
 	content_meta text NOT NULL,
 	content_layout varchar(255) NOT NULL default '',
 	PRIMARY KEY  (content_id)
-	) TYPE=MyISAM;",
+	) ENGINE=MyISAM;",
 	"INSERT INTO ".MPREFIX."pcontent VALUES (1, 'content', '', '', '', '1', '', '', '', '0', '0', '0', '0', '', '".time()."', '0', '0', '', '1', '0', '', '')",
 	"INSERT INTO ".MPREFIX."pcontent VALUES (2, 'article', '', '', '', '1', '', '', '', '0', '0', '0', '0', '', '".time()."', '0', '0', '', '2', '0', '', '')",
 	"INSERT INTO ".MPREFIX."pcontent VALUES (3, 'review', '', '', '', '1', '', '', '', '0', '0', '0', '0', '', '".time()."', '0', '0', '', '3', '0', '', '')"

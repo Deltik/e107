@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/forum/languages/English/lan_forum_admin.php $
-|     $Revision: 11678 $
-|     $Id: lan_forum_admin.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12242 $
+|     $Id: lan_forum_admin.php 12242 2011-06-02 19:59:08Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 define("FORLAN_1", "You must enter the number of days you wish to prune.");
@@ -75,6 +75,9 @@ define("FORLAN_63", "Ranks");
 define("FORLAN_64", "Enter your levels here, if left blank generic stars will be used to denote level. Separate levels with comma. Maximum of 10 levels, lowest first.");
 define("FORLAN_65", "Forum Title");
 define("FORLAN_66", "Poll plugin not installed");
+define("FORLAN_67", "Posts to activate signature:");
+define("FORLAN_68", "The number of posts needed to allow someone's signature to show on the forums. (0 means none)");
+define("FORLAN_69", "Class whose signature is displayed in forums:");
 
 define("FORLAN_70", "Enable file / image attachments");
 define("FORLAN_71", "Allow users to upload file or image with their forum post,");

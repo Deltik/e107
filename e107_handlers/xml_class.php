@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/xml_class.php $
-|     $Revision: 11804 $
-|     $Id: xml_class.php 11804 2010-09-21 07:38:40Z e107steved $
-|     $Author: e107steved $
+|     $Revision: 12289 $
+|     $Id: xml_class.php 12289 2011-06-29 01:07:28Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -75,7 +75,7 @@ class parseXml {
 				return $data;
 			}
 		}
-		if (function_exists("curl_init"))
+		if (function_exists("curl_init") && function_exists("curl_exec"))
 		{
 			$cu = curl_init();
 			curl_setopt($cu, CURLOPT_URL, $address);

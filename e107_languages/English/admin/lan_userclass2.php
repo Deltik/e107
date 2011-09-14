@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_userclass2.php $
-|     $Revision: 11678 $
-|     $Id: lan_userclass2.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12246 $
+|     $Id: lan_userclass2.php 12246 2011-06-04 14:14:26Z nlstart $
+|     $Author: nlstart $
 +----------------------------------------------------------------------------+
 */
 define("UCSLAN_1", "Cleared all users from class.");
@@ -37,5 +37,8 @@ define("UCSLAN_23", "Users in this class ...");
 
 define("UCSLAN_24", "Who can manage class");
 
+define("UCSLAN_25", "ID");
+define("UCSLAN_26", "Username");
+define("UCSLAN_27", "Return");
 
 ?>

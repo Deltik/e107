@@ -1,4 +1,4 @@
-// $Id: admin_update.sc 11836 2010-09-30 21:43:10Z e107coders $
+// $Id: admin_update.sc 12135 2011-04-13 19:45:31Z e107steved $
 //<?
 
 	if (!ADMIN) return "";
@@ -30,7 +30,9 @@
 	
     if($cacheData)
     {
-   	  	return ($cacheData !='up-to-date') ? $ns -> tablerender(LAN_NEWVERSION, $cacheData,'admin_update') : "";
+		if ($cacheData == 'up-to-date') return '';
+		$tmp = explode('|', $cacheData);
+   	  	return $ns -> tablerender($tmp[0], $tmp[1],'admin_update');
     }
 	
 	// Keep commented out to be sure it continues to work under all circumstances.
@@ -42,7 +44,7 @@
 	$xml = new parseXml;
 	$xm = new XMLParse();
 	
-    $ftext = "";
+    $ftext = '';
 	
 	if($rawData = $xml -> getRemoteXmlFile($feed,5))
 	{	
@@ -72,20 +74,22 @@
 				break;
 			}
 		}
+		$caption = LAN_NEWVERSION;
 	}
 	else // Error getting data
-	{  
-	  $ftext = ADLAN_154;
+	{
+		$ftext = ADLAN_154;
+		$caption = LAN_NEWVERSION_CHECK_ERROR;
 	}
 
 	if($ftext)
 	{
-		$e107cache->set("releasecheck", $ftext, TRUE);
-		return $ns -> tablerender(LAN_NEWVERSION, $ftext,'admin_update');
+		$e107cache->set("releasecheck", $caption.'|'.$ftext, TRUE);
+		return $ns -> tablerender($caption, $ftext,'admin_update');
 	}
 	else
 	{
 		$e107cache->set("releasecheck", 'up-to-date', TRUE);
 	}
-
+unset ($ftext, $caption);
 

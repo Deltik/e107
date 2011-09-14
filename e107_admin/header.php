@@ -10,8 +10,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/header.php $
-|     $Revision: 11871 $
-|     $Id: header.php 11871 2010-10-09 22:23:29Z e107coders $
+|     $Revision: 12315 $
+|     $Id: header.php 12315 2011-07-08 03:02:34Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -103,6 +103,12 @@ if (!defined('ADMIN_DELETE_ICON'))
 {
 	define("ADMIN_DELETE_ICON", "<img src='".e_IMAGE_ABS."admin_images/delete_16.png' alt='' title='".LAN_DELETE."' style='border:0px; height:16px; width:16px' />");
 	define("ADMIN_DELETE_ICON_PATH", e_IMAGE."admin_images/delete_16.png");
+}
+
+if (!defined('ADMIN_WARNING_ICON'))
+{
+	define("ADMIN_WARNING_ICON", "<img src='".e_IMAGE_ABS."admin_images/nopreview.png' alt='' title='".LAN_WARNING."' style='border:0px' />");
+	define("ADMIN_WARNING_ICON_PATH", e_IMAGE."admin_images/nopreview.png");
 }
 
 //
