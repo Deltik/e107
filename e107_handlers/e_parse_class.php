@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/e_parse_class.php $
-|     $Revision: 12319 $
-|     $Id: e_parse_class.php 12319 2011-07-13 19:43:05Z e107steved $
+|     $Revision: 12467 $
+|     $Id: e_parse_class.php 12467 2011-12-22 14:03:34Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -217,7 +217,7 @@ class e_parse
 		{
 			$checkTags = explode(',', $tagList);
 		}
-		$data = preg_replace('#\[code\].*?\[\/code\]#i', '', $data);		// Ignore code blocks
+		$data = preg_replace('#\[code.*?\[\/code\]#i', '', $data);		// Ignore code blocks
 		foreach ($checkTags as $tag)
 		{
 			if (($pos = stripos($data, '</'.$tag)) !== FALSE)
@@ -232,12 +232,16 @@ class e_parse
 	}
 
 
-
-	function dataFilter($data)
+	/*
+	 * Filter User Input
+	*/
+	function dataFilter($data,$mode='bbcode')
 	{
 		$ans = '';
-		$vetWords = array('<applet', '<body', '<embed', '<frame', '<script', '<frameset', '<html', '<iframe', 
-					'<style', '<layer', '<link', '<ilayer', '<meta', '<object', '<plaintext', 'javascript:', 'vbscript:');
+		$vetWords = array('<applet', '<body', '<embed', '<frame', '<script','%3Cscript',
+						 '<frameset', '<html', '<iframe', '<style', '<layer', '<link',
+						 '<ilayer', '<meta', '<object', '<plaintext', 'javascript:',
+						 'vbscript:','data:text/html');
 
 		$ret = preg_split('#(\[code.*?\[/code.*?])#mis', $data, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE );
 
@@ -270,10 +274,17 @@ class e_parse
 					$s = preg_replace_callback('#('.implode('|', $vl).')#mis', array($this, 'modtag'), $t);
 				}
 			}
+					
 			$s = preg_replace('#(?:onmouse.+?|onclick|onfocus)\s*?\=#i', '[sanitised]$0[/sanitised]', $s);
 			$s = preg_replace_callback('#base64([,\(])(.+?)([\)\'\"])#mis', array($this, 'proc64'), $s);
 			$ans .= $s;
 		}
+		
+		if($mode == 'link' && count($vl))
+		{
+			return "#sanitized";
+		}
+			
 		return $ans;
 	}
 

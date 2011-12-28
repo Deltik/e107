@@ -10,9 +10,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/class2.php $
-|     $Revision: 12328 $
-|     $Id: class2.php 12328 2011-08-12 19:26:40Z nlstart $
-|     $Author: nlstart $
+|     $Revision: 12422 $
+|     $Id: class2.php 12422 2011-11-29 23:36:57Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 //
@@ -1741,7 +1741,7 @@ function e107_filter($input,$key,$type,$base64=FALSE)
 			$input = preg_replace("/(\[code\])(.*?)(\[\/code\])/is","",$input);
 		}
 	
-		$regex = "/(document\.write|base64_decode|chr|php_uname|fwrite|fopen|fputs|passthru|popen|proc_open|shell_exec|exec|proc_nice|proc_terminate|proc_get_status|proc_close|pfsockopen|apache_child_terminate|posix_kill|posix_mkfifo|posix_setpgid|posix_setsid|posix_setuid|phpinfo) *?\((.*) ?\;?/i";
+		$regex = "/(document\.location|document\.write|base64_decode|chr|php_uname|fwrite|fopen|fputs|passthru|popen|proc_open|shell_exec|exec|proc_nice|proc_terminate|proc_get_status|proc_close|pfsockopen|apache_child_terminate|posix_kill|posix_mkfifo|posix_setpgid|posix_setsid|posix_setuid|phpinfo) *?\((.*) ?\;?/i";
 		if(preg_match($regex,$input))
 		{
 			header('HTTP/1.0 400 Bad Request', true, 400);
@@ -1764,16 +1764,17 @@ function e107_filter($input,$key,$type,$base64=FALSE)
 	}
 	
 	if($type == "_SERVER")
-	{	
-
+	{
 		if(($key == "QUERY_STRING") && (
 			strpos(strtolower($input),"../../")!==FALSE 
 			|| strpos(strtolower($input),"=http")!==FALSE 
-			|| strpos(strtolower($input),"http%3A%2F%2F")!==FALSE
-			|| strpos(strtolower($input),"php://")!==FALSE  
-			|| strpos(strtolower($input),"data://")!==FALSE
+			|| strpos(strtolower($input),strtolower("http%3A%2F%2F"))!==FALSE
+			|| strpos(strtolower($input),"php:")!==FALSE  
+			|| strpos(strtolower($input),"data:")!==FALSE
+			|| strpos(strtolower($input),strtolower("%3Cscript"))!==FALSE
 			))
 		{
+
 			header('HTTP/1.0 400 Bad Request', true, 400);
 			exit();
 		}

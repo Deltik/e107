@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/plugin_class.php $
-|     $Revision: 11678 $
-|     $Id: plugin_class.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12461 $
+|     $Id: plugin_class.php 12461 2011-12-10 19:32:27Z secretr $
+|     $Author: secretr $
 |
 +----------------------------------------------------------------------------+
 */
@@ -678,10 +678,21 @@ class e107plugin
 						}
 					}
 
-					if($is_installed && (substr($adds,-3) == ".bb"))
+					if($is_installed)
 					{
-						$bb_name = substr($adds, 0,-3); // remove the .bb
-                    	$bb_array[$bb_name] = "0"; // default userclass.
+						// simple bbcode
+						if(substr($adds,-3) == ".bb")
+						{
+							$bb_name = substr($adds, 0,-3); // remove the .bb
+	                    	$bb_array[$bb_name] = "0"; // default userclass.
+						}
+						// bbcode class
+						elseif(substr($adds, 0, 3) == "bb_" && substr($adds, -4) == ".php") 
+						{
+							$bb_name = substr($adds, 0,-4); // remove the .php
+							$bb_name = substr($bb_name, 3);
+	                    	$bb_array[$bb_name] = "0"; // TODO - instance and getPermissions() method
+						}
 					}
 
 					if($is_installed && (substr($adds,-4) == "_sql"))
@@ -689,7 +700,7 @@ class e107plugin
 						$pref['e_sql_list'][$path] = $adds;
 					}
 				}
-
+				
                 // Build Bbcode list (will be empty if plugin not installed)
                 if(count($bb_array) > 0)
 				{
@@ -758,9 +769,13 @@ class e107plugin
 		}
 
 		// Grab List of Shortcodes & BBcodes
-		$shortcodeList	= $fl->get_files(e_PLUGIN.$plugin_path, ".sc$", "standard", 1);
-		$bbcodeList		= $fl->get_files(e_PLUGIN.$plugin_path, ".bb$", "standard", 1);
-        $sqlList		= $fl->get_files(e_PLUGIN.$plugin_path, "_sql.php$", "standard", 1);
+		$shortcodeList	= $fl->get_files(e_PLUGIN.$plugin_path, '\.sc$', "standard", 1);
+		
+		$bbcodeList		= $fl->get_files(e_PLUGIN.$plugin_path, '\.bb$', "standard", 1);
+		$bbcodeClassList= $fl->get_files(e_PLUGIN.$plugin_path, '^bb_(.*)\.php$', "standard", 1);
+		$bbcodeList = array_merge($bbcodeList, $bbcodeClassList);
+		
+        $sqlList		= $fl->get_files(e_PLUGIN.$plugin_path, '_sql\.php$', "standard", 1);
 
 		// Search Shortcodes
 		foreach($shortcodeList as $sc)
@@ -789,12 +804,11 @@ class e107plugin
 			}
 		}
 
-
 		if($debug==TRUE)
 		{
 			echo $plugin_path." = ".implode(",",$p_addons)."<br />";
 		}
-
+		
 		return implode(",",$p_addons);
 	}
 

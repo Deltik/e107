@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/filemanager.php $
-|     $Revision: 11845 $
-|     $Id: filemanager.php 11845 2010-10-04 18:36:45Z e107steved $
+|     $Revision: 12356 $
+|     $Id: filemanager.php 12356 2011-09-14 20:18:58Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -306,9 +306,11 @@ while ($dirs[$c]) {
 }
 
 $c = 0;
-while ($files[$c]) {
-	$img = substr(strrchr($files[$c], "."), 1, 3);
-	if (!$img || !preg_match("/css|exe|gif|htm|jpg|js|php|png|txt|xml|zip/i", $img)) {
+while ($files[$c]) 
+{
+	$img = strtolower(substr(strrchr($files[$c], "."), 1, 3));
+	if (!$img || !preg_match("/css|exe|gif|htm|jpg|js|php|png|txt|xml|zip/i", $img)) 
+	{
 		$img = "def";
 	}
 	$size = parsesize(filesize(e_BASE.$path."/".$files[$c]));

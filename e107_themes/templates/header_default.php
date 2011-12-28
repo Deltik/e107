@@ -6,8 +6,8 @@
 |     Released under the terms and conditions of the GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_themes/templates/header_default.php $
-|     $Revision: 12324 $
-|     $Id: header_default.php 12324 2011-07-23 21:02:44Z e107coders $
+|     $Revision: 12477 $
+|     $Id: header_default.php 12477 2011-12-28 03:12:22Z e107coders $
 |     $Author: e107coders $
 +-----------------------------------------------------------------------------------------------+
 */
@@ -244,7 +244,7 @@ function render_meta($type)
 	// if (!isset($pref['meta_'.$type][e_LANGUAGE])){ return;}
 	// if (!$pref['meta_'.$type][e_LANGUAGE]){ return; }
 
-	if($type == "tag" && defset($pref['meta_tag'][e_LANGUAGE]))
+	if($type == "tag" && !empty($pref['meta_tag'][e_LANGUAGE]))
 	{
 		return str_replace("&lt;", "<", $tp -> toHTML($pref['meta_tag'][e_LANGUAGE], FALSE, "nobreak, no_hook, no_make_clickable"))."\n";
 	}
@@ -266,7 +266,7 @@ function render_meta($type)
 
 		return $ret;		
 	}
-	elseif(defset($pref['meta_'.$type][e_LANGUAGE]))
+	elseif(!empty($pref['meta_'.$type][e_LANGUAGE]))
 	{
 		return '<meta name="'.$type.'" content="'.$pref['meta_'.$type][e_LANGUAGE].'" />'."\n";
 	}
@@ -451,7 +451,7 @@ if ($e107_popup != 1) {
 //
 
 	if(ADMIN){
-		if(file_exists(e_BASE.'install.php')){ echo "<div class='installe' style='text-align:center'><br /><b>*** ".CORE_LAN4." ***</b><br />".CORE_LAN5."</div><br /><br />"; }
+		if(file_exists(e_BASE.'install.php')){ echo "<div class='installe' style='text-align:center'><b>*** ".CORE_LAN4." ***</b><br />".CORE_LAN5."</div>"; }
 	}
 
 // Display Welcome Message when old method activated.

@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_newspost.php $
-|     $Revision: 12024 $
-|     $Id: lan_newspost.php 12024 2011-01-04 09:38:46Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12381 $
+|     $Id: lan_newspost.php 12381 2011-11-17 21:14:51Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 define("NWSLAN_1", "News story deleted.");
@@ -173,9 +173,14 @@ define("LAN_NEWS_49", "Render-type");
 define('LAN_NEWS_50', 'Maintenance');
 define('LAN_NEWS_51', 'Recalculate comment counts');
 define('LAN_NEWS_52', 'Proceed');
-define('LAN_NEWS_53', 'Update complete');
+define('LAN_NEWS_53', 'Update complete - --UPDATE-- comment counts updated, --DELETED-- disallowed comments deleted');
 define('LAN_NEWS_54', 'News Maintenance');
 define('LAN_NEWS_55', 'Author (Posted by)');
 define('LAN_NEWS_56', 'Posted');
+
+// Gap to bring messages into sync with 0.8
+define('LAN_NEWS_61', 'Also delete disallowed comments');
+define('LAN_NEWS_62', 'Error accessing database, or no news items found');
+
 
 ?>

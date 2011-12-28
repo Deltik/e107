@@ -10,8 +10,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/header.php $
-|     $Revision: 12315 $
-|     $Id: header.php 12315 2011-07-08 03:02:34Z e107coders $
+|     $Revision: 12477 $
+|     $Id: header.php 12477 2011-12-28 03:12:22Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -215,7 +215,7 @@ if (strpos(e_SELF.'?'.e_QUERY, 'menus.php?configure') === FALSE && isset($pref['
 } 
 else 
 {
-	$css_file = file_exists(THEME.'admin_style.css') ? THEME_ABS.'admin_style.css' : THEME_ABS.'style.css';
+	$css_file = strpos(e_SELF.'?'.e_QUERY, 'menus.php?configure') === FALSE && file_exists(THEME.'admin_style.css') ? THEME_ABS.'admin_style.css' : THEME_ABS.'style.css';
 	echo "<link rel='stylesheet' href='".$css_file."' type='text/css' />\n";
 }
 if (!isset($no_core_css) || !$no_core_css) {

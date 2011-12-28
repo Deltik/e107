@@ -1,21 +1,16 @@
 <?php
-/*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_files/def_e107_prefs.php $
-|     $Revision: 12013 $
-|     $Id: def_e107_prefs.php 12013 2010-12-18 22:55:22Z e107steved $
-|     $Author: e107steved $
-+----------------------------------------------------------------------------+
-*/
+/**
+ * e107 website system
+ * 
+ * Copyright (C) e107 Inc (e107.org)
+ * 
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://gnu.org).
+ * 
+ * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_files/def_e107_prefs.php $
+ * $Id: def_e107_prefs.php 12477 2011-12-28 03:12:22Z e107coders $
+ */
+
 
 if (!defined('e107_INIT')) { exit; }
 
@@ -33,10 +28,10 @@ $pref = array (
 City, State, Country
 [b]Phone:[/b] 555-555-5555
 [b]Email:[/b] sales@mydomain.com',
-  'sitetheme' => 'reline',
+  'sitetheme' => 'core',
   'themecss' => 'style.css',
   'image_preload' => '0',
-  'admintheme' => 'jayya',
+  'admintheme' => 'core',
   'admincss' => 'style.css',
   'adminstyle' => 'classis',
   'sitedisclaimer' => LAN_PREF_3,
@@ -98,7 +93,7 @@ City, State, Country
   'cachestatus' => '',
   'displayrendertime' => '0',
   'displaysql' => '0',
-  'displaythemeinfo' => '0',
+  'displaythemeinfo' => '1',
   'timezone' => 'GMT',
   'search_restrict' => '0',
   'antiflood1' => '1',
@@ -108,10 +103,11 @@ City, State, Country
   'linkpage_screentip' => '0',
   'plug_status' => 'rss_menu',
   'plug_latest' => '',
-  'wmessage_sc' => '0',
+  'wmessage_sc' => '1',
+  'wm_enclose'	=> '1',
   'frontpage' =>
   array (
-    'all' => 'news.php',
+    'all' => 'index.php',
   ),
   'admin_alerts_ok' => '1',
   'link_replace' => '0',
@@ -130,7 +126,7 @@ City, State, Country
   'email_text' => '',
   'useGeshi' => '0',
   'wysiwyg' => '0',
-  'old_np' => '0',
+  'old_np' => '1',
   'make_clickable' => '0',
   'track_online' => '1',
   'emotepack' => 'default',

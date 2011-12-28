@@ -1,5 +1,6 @@
-// $Id: link.bb 11696 2010-08-24 07:26:44Z e107steved $
-global $pref;
+// $Id: link.bb 12422 2011-11-29 23:36:57Z e107coders $
+//<?
+global $pref,$tp;
 
 /*
 	[link=$parm $extras]$code_text[/link]
@@ -14,7 +15,7 @@ global $pref;
 */
 
 
-	$parm = trim($parm);
+	$parm = $tp->dataFilter(trim($parm),'link');
 
 	/* Fix for people using link=external= */
 	if(strpos($parm,"external=") !== FALSE)

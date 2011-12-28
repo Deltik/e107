@@ -4,16 +4,16 @@
 |     e107 website system
 |
 |     Steve Dunstan 2001-2002
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|     Copyright (C) 2008-2011 e107 Inc (e107.org)
 |
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/xml_class.php $
-|     $Revision: 12289 $
-|     $Id: xml_class.php 12289 2011-06-29 01:07:28Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12370 $
+|     $Id: xml_class.php 12370 2011-10-02 17:16:09Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -69,11 +69,13 @@ class parseXml {
 			{
 				e107_ini_set('default_socket_timeout', $old_timeout);
 			}
-			if ($data)
+			if ($data !== FALSE)
 			{
 				$this->xmlFileContents = $data;
 				return $data;
 			}
+			$this->error = "File_get_contents() error";		// Fill in more info later
+			return FALSE;
 		}
 		if (function_exists("curl_init") && function_exists("curl_exec"))
 		{
