@@ -9,7 +9,7 @@
 * Default footer for user pages
 *
 * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_themes/templates/footer_default.php $
-* $Id: footer_default.php 12060 2011-01-30 19:22:47Z secretr $
+* $Id: footer_default.php 12549 2012-01-13 06:55:24Z e107coders $
 *
 */
 
@@ -225,7 +225,7 @@ if (abs($_serverTime - $lastSet) > 120) {
 	* Drawback: each update may cause all server times to display a bit different
 	*/
 	echo "<script type='text/javascript'>\n";
-	echo "SyncWithServerTime('{$_serverTime}');
+	echo "SyncWithServerTime('{$_serverTime}','".e_DOMAIN."');
        </script>\n";
 }
 

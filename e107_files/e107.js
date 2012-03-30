@@ -4,8 +4,8 @@
 |	e107 website system - Javascript File.
 |
 |	$URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_files/e107.js $
-|	$Revision: 12346 $
-|	$Id: e107.js 12346 2011-09-02 13:20:04Z secretr $
+|	$Revision: 12549 $
+|	$Id: e107.js 12549 2012-01-13 06:55:24Z e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -30,21 +30,22 @@ var localTime = Math.floor(nowLocal.getTime()/1000);	/* time, in ms -- recorded 
  * The value calculated in SyncWithServerTime is not known until after the
  * entire page has been processed.
  */
-function SyncWithServerTime(serverTime)
+function SyncWithServerTime(serverTime,domain)
 {
 	if (serverTime) 
 	{
 	  	/* update time difference cookie */
 		var serverDelta=Math.floor(localTime-serverTime);
-	  	document.cookie = 'e107_tdOffset='+serverDelta+'; path=/';
-	  	document.cookie = 'e107_tdSetTime='+(localTime-serverDelta)+'; path=/'; /* server time when set */
+		
+	  	document.cookie = 'e107_tdOffset='+serverDelta+'; path=/; domain= .'+domain;
+	  	document.cookie = 'e107_tdSetTime='+(localTime-serverDelta)+'; path=/; domain=.'+domain; /* server time when set */
 	}
 
 	var tzCookie = 'e107_tzOffset=';
 //	if (document.cookie.indexOf(tzCookie) < 0) {
 		/* set if not already set */
 		var timezoneOffset = nowLocal.getTimezoneOffset(); /* client-to-GMT in minutes */
-		document.cookie = tzCookie + timezoneOffset+'; path=/';
+		document.cookie = tzCookie + timezoneOffset+'; path=/; domain=.'+domain;
 //	}
 }
 var ns6=0;

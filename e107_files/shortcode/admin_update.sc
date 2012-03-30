@@ -1,4 +1,4 @@
-// $Id: admin_update.sc 12135 2011-04-13 19:45:31Z e107steved $
+// $Id: admin_update.sc 12523 2012-01-09 01:51:55Z e107coders $
 //<?
 
 	if (!ADMIN) return "";
@@ -7,11 +7,13 @@
 	
   	if (!varset($pref['check_updates'], FALSE)) return "";
 	
-	if($parm == "adminpanel" && (strpos(e_SELF,e_ADMIN_ABS."admin.php")===FALSE))
+	list($when,$parm) = explode("|",$parm);
+	
+	if($when == "adminpanel" && (strpos(e_SELF,e_ADMIN_ABS."admin.php")===FALSE))
 	{ 
 		return;
 	}
-	if(($parm == "notadminpanel") && (strpos(e_SELF,e_ADMIN_ABS."admin.php")!==FALSE))
+	if(($when == "notadminpanel" || $when == '') && (strpos(e_SELF,e_ADMIN_ABS."admin.php")!==FALSE))
 	{
 		return;
 	}
@@ -28,11 +30,21 @@
 
 	$cacheData = $e107cache->retrieve("releasecheck",3600, TRUE);
 	
+	
     if($cacheData)
     {
-		if ($cacheData == 'up-to-date') return '';
-		$tmp = explode('|', $cacheData);
-   	  	return $ns -> tablerender($tmp[0], $tmp[1],'admin_update');
+    	list($caption,$ftext) = explode('|', $cacheData);
+		if ($cacheData == 'up-to-date') return '';		
+		
+    	if($parm == 'text')
+		{
+			return "<div id='new-version'><div id='new-version-caption'>".$caption."</div><div id='new-version-diz'>".$ftext."</div></div>" ;	
+		}
+		else
+		{
+   	  		return $ns -> tablerender($caption, $ftext,'admin_update');	
+		}
+		
     }
 	
 	// Keep commented out to be sure it continues to work under all circumstances.
@@ -85,7 +97,7 @@
 	if($ftext)
 	{
 		$e107cache->set("releasecheck", $caption.'|'.$ftext, TRUE);
-		return $ns -> tablerender($caption, $ftext,'admin_update');
+		return ($parm == 'text') ? "<div id='new-version'><div id='new-version-caption'>".$caption."</div><div id='new-version-diz'>".$ftext."</div></div>" : $ns -> tablerender($caption, $ftext,'admin_update');
 	}
 	else
 	{

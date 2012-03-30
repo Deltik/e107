@@ -4,8 +4,8 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_language.php $
-|     $Revision: 11842 $
-|     $Id: lan_language.php 11842 2010-10-04 07:43:15Z e107coders $
+|     $Revision: 12553 $
+|     $Id: lan_language.php 12553 2012-01-14 12:53:11Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -48,5 +48,7 @@ define("LANG_LAN_29", "You should correct the remaining errors before contributi
 define("LANG_LAN_30", "Release Date");
 define("LANG_LAN_31", "Compatibility");
 define("LANG_LAN_32", "Installed Languages");
+define("LANG_LAN_33", "Display only errors during verification");
+define("LANG_LAN_34", "Please verify and correct the remaining [x] error(s) before attempting to create a language-pack.");
 
 ?>

@@ -4,8 +4,8 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_admin.php $
-|     $Revision: 12315 $
-|     $Id: lan_admin.php 12315 2011-07-08 03:02:34Z e107coders $
+|     $Revision: 12522 $
+|     $Id: lan_admin.php 12522 2012-01-09 01:50:50Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -282,4 +282,6 @@ define("LAN_SECURITYL_0", "Looking for troubles (none)");
 define("LAN_SECURITYL_5", "Balanced");
 define("LAN_SECURITYL_8", "High");
 define("LAN_SECURITYL_10", "Insane");
+
+define("LAN_PLEASEWAIT","Please Wait");
 ?>

@@ -10,8 +10,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/list_new/list_class.php $
-|     $Revision: 12229 $
-|     $Id: list_class.php 12229 2011-05-28 11:13:38Z e107steved $
+|     $Revision: 12575 $
+|     $Id: list_class.php 12575 2012-01-23 22:34:47Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -162,8 +162,8 @@ class listclass {
 
 		require_once(e_HANDLER."file_class.php");
 		$fl = new e_file;
-		$rejectlist = array('$.','$..','/','CVS','thumbs.db','Thumbs.db','*._$', 'index', 'null*', '.bak');
-		$iconlist = $fl->get_files(e_PLUGIN, "e_list\.php$", "standard", 1);
+		//$rejectlist = array('$.','$..','/','CVS','thumbs.db','Thumbs.db','*._$', 'index', 'null*', '.bak');
+		$iconlist = $fl->get_files(e_PLUGIN, "^e_list\.php$", "standard", 1);
 		foreach($iconlist as $icon)
 		{
 			$tmp = explode("/", $icon['path']);

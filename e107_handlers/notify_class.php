@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/notify_class.php $
-|     $Revision: 12061 $
-|     $Id: notify_class.php 12061 2011-01-30 21:42:15Z e107coders $
+|     $Revision: 12524 $
+|     $Id: notify_class.php 12524 2012-01-09 01:52:57Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -207,8 +207,11 @@ function notify_newspost($data) {
 	{
 		return;
 	}
+	// Never use $tp->toDB() here. 
+	$message = '<b>'.$data['news_title'].'</b>';
+	$message .= (trim($data['news_summary'])!='') ? '<br /><br />'.trim($data['news_summary']) : "";
+	$message .= '<br /><br />'.trim($data['data']).'<br /><br />'.$data['news_extended'];
 	
-	$message = $tp->toDB('<b>'.$data['news_title'].'</b><br /><br />'.$data['news_summary'].'<br /><br />'.$data['data'].'<br /><br />'.$data['news_extended']);
 	$nt -> send('newspost', $data['news_title'], $message);
 }
 
@@ -219,8 +222,11 @@ function notify_newsupd($data) {
 	{
 		return;
 	}
-
-	$message = $tp->toDB('<b>'.$data['news_title'].'</b><br /><br />'.$data['news_summary'].'<br /><br />'.$data['data'].'<br /><br />'.$data['news_extended']);
+	// Never use $tp->toDB() here. 
+	$message = '<b>'.$data['news_title'].'</b>';
+	$message .= (trim($data['news_summary'])!='') ? '<br /><br />'.trim($data['news_summary']) : "";
+	$message .= '<br /><br />'.trim($data['data']).'<br /><br />'.$data['news_extended'];
+	
 	$nt -> send('newsupd', NT_LAN_NU_1.': '.$data['news_title'], $message);
 }
 

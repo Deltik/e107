@@ -1,15 +1,18 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system - Language File.
-|
-|     $Source: /cvs_backup/e107_0.7/e107_plugins/links_page/languages/English.php,v $
-|     $Revision: 11758 $
-|     $Date: 2010-09-07 07:18:00 -0500 (Tue, 07 Sep 2010) $
-|     $Author: e107steved $
-+----------------------------------------------------------------------------+
-*/
-
+ * e107 website system - English Language file
+ * 
+ * Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
+ * Copyright (C) 2008-2010 e107 Inc (e107.org)
+ * 
+ * Released under the terms and conditions of the GNU General Public License
+ * (http://gnu.org).
+ * 
+ * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/links_page/languages/English.php $
+ * $Revision: 12607 $
+ * $Id: English.php 12607 2012-03-16 21:11:42Z nlstart $
+ * $Author: nlstart $
+ */
 
 define("LCLAN_PLUGIN_LAN_1", "Links Page");
 define("LCLAN_PLUGIN_LAN_2", "Links Page For Displaying External Web Links");

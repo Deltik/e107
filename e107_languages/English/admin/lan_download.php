@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_download.php $
-|     $Revision: 12132 $
-|     $Id: lan_download.php 12132 2011-04-12 21:25:31Z e107steved $
-|     $Author: e107steved $
+|     $Revision: 12599 $
+|     $Id: lan_download.php 12599 2012-02-27 14:31:16Z nlstart $
+|     $Author: nlstart $
 +----------------------------------------------------------------------------+
 */
 define("DOWLAN_1", "Download added to database.");
@@ -146,4 +146,10 @@ define("DOWLAN_159", "Include sub-sub-category counts in subcategory counts");
 
 define("DOWLAN_160", "Prevent simultaneous downloads by individual users");
 define("DOWLAN_161", "Using a splash page to delay the downloading of files");
+
+define("DOWLAN_162", "Requests for");
+define("DOWLAN_163", "User");
+define("DOWLAN_164", "IP");
+define("DOWLAN_165", "Date / time");
+define("DOWLAN_166", "Return to Downloads Front Page");
 ?>

@@ -9,7 +9,7 @@
  * Event calendar - search shim
  *
  * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/calendar_menu/e_search.php $
- * $Id: e_search.php 12440 2011-12-05 18:03:34Z e107steved $
+ * $Id: e_search.php 12577 2012-01-28 21:07:05Z e107steved $
  */
 if (!defined('e107_INIT')) { exit(); }
 

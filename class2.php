@@ -10,9 +10,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/class2.php $
-|     $Revision: 12422 $
-|     $Id: class2.php 12422 2011-11-29 23:36:57Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12554 $
+|     $Id: class2.php 12554 2012-01-14 23:01:11Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 //
@@ -476,7 +476,9 @@ else
 
 $SESS_NAME = strtoupper(preg_replace("/[\W_]/","",$pref['cookie_name'])); // clean-up characters.  
 session_name('SESS'.$SESS_NAME); // avoid session conflicts with separate sites within subdomains
-unset($SESS_NAME);
+$doma = (!e_SUBDOMAIN || defsettrue('MULTILANG_SUBDOMAIN')) ? ".".e_DOMAIN : FALSE;
+session_set_cookie_params(FALSE,e_HTTP,$doma); // same cookie for www. and without 
+unset($SESS_NAME,$doma);
 
 // Start session after $prefs are available.
 session_start(); // Needs to be started after language detection (session.cookie_domain) to avoid multi-language 'access-denied' issues. 
@@ -1471,13 +1473,7 @@ function init_session() {
 	define('USERIP', $e107->getip());
 	if (!isset($_COOKIE[$pref['cookie_name']]) && !isset($_SESSION[$pref['cookie_name']]))
 	{
-		define("USER", FALSE);
-		define('USERID', 0);
-		define("USERTHEME", FALSE);
-		define("ADMIN", FALSE);
-		define("GUEST", TRUE);
-		define('USERCLASS', '');
-		define('USEREMAIL', '');
+		setGuest();
 	}
 	else
 	{
@@ -1488,28 +1484,25 @@ function init_session() {
 			cookie($pref['cookie_name'], "", (time() - 2592000));
 			$_SESSION[$pref['cookie_name']] = "";
 			session_destroy();
-			define("ADMIN", FALSE);
-			define("USER", FALSE);
-			define('USERID', 0);
-			define("USERCLASS", "");
+			setGuest();
 			define('USERCLASS_LIST', class_list());
-			define("LOGINMESSAGE",CORE_LAN10."<br /><br />");
+			define('LOGINMESSAGE',CORE_LAN10.'<br /><br />');
 			return (FALSE);
 		}
 
 		$result = get_user_data($uid);
-		if(is_array($result) && md5($result['user_password']) == $upw)
+		if(is_array($result) && (md5($result['user_password']) == $upw) && ($result['user_ban'] == 0))
 		{
-			define("USERID", $result['user_id']);
-			define("USERNAME", $result['user_name']);
-			define("USERURL", (isset($result['user_homepage']) ? $result['user_homepage'] : false));
-			define("USEREMAIL", $result['user_email']);
-			define("USER", TRUE);
-			define("USERCLASS", $result['user_class']);
-			define("USERREALM", $result['user_realm']);
-			define("USERVIEWED", $result['user_viewed']);
-			define("USERIMAGE", $result['user_image']);
-			define("USERSESS", $result['user_sess']);
+			define('USER', TRUE);
+			define('USERID', $result['user_id']);
+			define('USERNAME', $result['user_name']);
+			define('USERURL', (isset($result['user_homepage']) ? $result['user_homepage'] : false));
+			define('USEREMAIL', $result['user_email']);
+			define('USERCLASS', $result['user_class']);
+			define('USERREALM', $result['user_realm']);
+			define('USERVIEWED', $result['user_viewed']);
+			define('USERIMAGE', $result['user_image']);
+			define('USERSESS', $result['user_sess']);
 
 			$update_ip = ($result['user_ip'] != USERIP ? ", user_ip = '".USERIP."'" : "");
 
@@ -1527,9 +1520,7 @@ function init_session() {
 
 			$currentUser = $result;
 			$currentUser['user_realname'] = $result['user_login']; // Used by force_userupdate
-			define("USERLV", $result['user_lastvisit']);
-
-			if ($result['user_ban'] == 1) { exit; }
+			define('USERLV', $result['user_lastvisit']);
 
 			if ($result['user_admin'])
 			{
@@ -1568,12 +1559,8 @@ function init_session() {
 		}
 		else
 		{
-			define("USER", FALSE);
-			define('USERID', 0);
-			define("USERTHEME", FALSE);
-			define("ADMIN", FALSE);
-			define("CORRUPT_COOKIE", TRUE);
-			define("USERCLASS", "");
+			setGuest();
+			define('CORRUPT_COOKIE', TRUE);
 		}
 	}
 
@@ -1594,6 +1581,29 @@ function init_session() {
 //	}
 }
 
+
+/**
+ *	Set all the defines appropriate to a guest (visitor or user who isn't logged in)
+ */
+function setGuest()
+{
+	define('USER', FALSE);
+	define('ADMIN', FALSE);
+	define('GUEST', TRUE);
+	define('USERID', 0);
+	define('USERTHEME', FALSE);
+	define('USERCLASS', '');
+	define('USEREMAIL', '');
+	define('USERURL', '');
+	define('USEREMAIL', '');
+	define('USERREALM', '');
+	define('USERVIEWED', '');
+	define('USERIMAGE', '');
+	define('USERSESS', '');
+}
+
+
+
 $sql->db_Mark_Time('Start: Go online');
 if(isset($pref['track_online']) && $pref['track_online']) {
 	$e_online->online($pref['track_online'], $pref['flood_protect']);
@@ -1601,10 +1611,11 @@ if(isset($pref['track_online']) && $pref['track_online']) {
 
 function cookie($name, $value, $expire=0, $path = e_HTTP, $domain = "", $secure = 0)
 {
-	if(defined('MULTILANG_SUBDOMAIN') && MULTILANG_SUBDOMAIN === TRUE)
+	if(!e_SUBDOMAIN || (defined('MULTILANG_SUBDOMAIN') && MULTILANG_SUBDOMAIN === TRUE))
 	{
-		$domain = e_DOMAIN;
+		$domain = ".".e_DOMAIN;
 	}
+
 	setcookie($name, $value, $expire, $path, $domain, $secure);
 }
 
@@ -1866,9 +1877,13 @@ function force_userupdate()
 			if (!check_class($row['user_extended_struct_applicable'])) { continue; }		// Must be applicable to this user class
 			if (!check_class($row['user_extended_struct_write'])) { continue; }				// And user must be able to change it
 			$user_extended_struct_name = "user_{$row['user_extended_struct_name']}";
-			if ((!$currentUser[$user_extended_struct_name]) || (($row['user_extended_struct_type'] == 7) && ($currentUser[$user_extended_struct_name] == '0000-00-00')))
+			if (!isset($currentUser[$user_extended_struct_name]))
 			{
-			  return TRUE;
+				return TRUE;
+			}
+			if (($row['user_extended_struct_type'] == 7) && ($currentUser[$user_extended_struct_name] == '0000-00-00'))
+			{
+				return TRUE;
 			}
 		}
 	}

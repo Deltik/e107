@@ -4,8 +4,8 @@
 |     e107 website system - Tiny MCE controller file.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/tiny_mce/wysiwyg.php $
-|     $Revision: 12152 $
-|     $Id: wysiwyg.php 12152 2011-04-20 20:43:49Z e107coders $
+|     $Revision: 12520 $
+|     $Id: wysiwyg.php 12520 2012-01-07 16:46:16Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -35,6 +35,7 @@ class wysiwyg
 		$mce_plugins[5]	= (ADMIN) ? "ibrowser" : "";				// Third party plugins - 'image' may not be a valid plugin name
 		//$mce_plugins[6]	= "compat2x";					// May well not be needed - mostly for if we have our own code
 		$mce_plugins[7]	= "paste";
+		$mce_plugins[8]	= "directionality";	
 
 		if(strstr(varset($_SERVER["HTTP_ACCEPT_ENCODING"],""), "gzip") && (ini_get("zlib.output_compression") == false) && file_exists(e_HANDLER."tiny_mce/tiny_mce_gzip.php"))
 		{
@@ -75,6 +76,7 @@ class wysiwyg
 		$text .= ",charmap,iespell,media";
 		$text .= (ADMIN) ? ",ibrowser" : ",image";
 		$text .= (ADMIN) ? ",code" : "";
+		$text .= ",|,ltr,rtl,|";
 		$text .= "',"; // end of buttons 2
 		
 		$text .= $this->tinyMce_config();

@@ -12,9 +12,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/sitelinks_class.php $
-|     $Revision: 12129 $
-|     $Id: sitelinks_class.php 12129 2011-04-12 00:34:14Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 12574 $
+|     $Id: sitelinks_class.php 12574 2012-01-23 16:11:13Z berckoff $
+|     $Author: berckoff $
 +---------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -27,8 +27,8 @@ include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/lan_sitelinks.php');
 
 class sitelinks
 {
-    var $eLinkList;
-	var $eSubLinkLevel=0;
+    var $eLinkList     = array();
+	var $eSubLinkLevel = 0;
 	
     function getlinks($cat=1)
     {
@@ -67,6 +67,8 @@ class sitelinks
         }
         $this->getlinks($cat);
 		
+        if (empty($this->eLinkList))  { return ''; }
+        
         // are these defines used at all ?
 
         if(!defined('PRELINKTITLE'))

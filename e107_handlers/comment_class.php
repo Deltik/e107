@@ -12,8 +12,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/comment_class.php $
-|     $Revision: 12377 $
-|     $Id: comment_class.php 12377 2011-10-21 21:32:24Z e107steved $
+|     $Revision: 12519 $
+|     $Id: comment_class.php 12519 2012-01-07 15:59:55Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -599,7 +599,7 @@ class comment {
 			}
 		}
 
-		if (($lock != '1') && ($this->getCommentPermissions() === 'rw'))
+		if ($lock != '1')
 		{
 			$comment = $this->form_comment($action, $table, $id, $subject, "", TRUE, $rate, $tablerender);
 		}
@@ -882,12 +882,15 @@ class comment {
 							$qryp = str_replace("{NID}", $row['comment_item_id'], $var['qry']);
 							if($sql2 -> db_Select_gen($qryp))
 							{
+								// SecretR - comment_itemurl, comment_category options added, see list_new/sections/list_comment.php 
 								$row2 = $sql2 -> db_Fetch();
 								$ret['comment_type']				= $var['plugin_name'];
 								$ret['comment_title']				= $tp -> toHTML($row2[$var['db_title']], TRUE,'emotes_off, no_make_clickable');
-								$ret['comment_url']					= str_replace("{NID}", $row['comment_item_id'], $var['reply_location']);
+								$ret['comment_itemurl']				= varset($var['comment_location']) ? str_replace(array('{NID}', '{TTL}'), array($row['comment_item_id'], rawurlencode($row2[$var['db_title']])), $var['comment_location']) : str_replace(array('{NID}', '{TTL}'), array($row['comment_item_id'], rawurlencode($row2[$var['db_title']])), $var['reply_location']);
+								$ret['comment_url']					= str_replace(array('{NID}', '{TTL}'), array($row['comment_item_id'], rawurlencode($row2[$var['db_title']])), $var['reply_location']);
 								$ret['comment_category_heading']	= $var['plugin_name'];
-								$ret['comment_category_url']		= e_PLUGIN_ABS.$var['plugin_name'].'/'.$var['plugin_name'].'.php';
+								$ret['comment_category_url']		= varset($var['comment_category']) ? $var['comment_category'] : e_PLUGIN_ABS.$var['plugin_name'].'/'.$var['plugin_name'].'.php';
+
 							}
 						}
 					//old method

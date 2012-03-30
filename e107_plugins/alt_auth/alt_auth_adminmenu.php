@@ -1,42 +1,82 @@
 <?php
+/*
++ ----------------------------------------------------------------------------+
+|     e107 website system
+|
+|     Steve Dunstan 2001-2002
+|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|
+|
+|     Released under the terms and conditions of the
+|     GNU General Public License (http://gnu.org).
+|
+|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/alt_auth/alt_auth_adminmenu.php $
+|     $Revision: 12556 $
+|     $Id: alt_auth_adminmenu.php 12556 2012-01-15 02:16:00Z e107coders $
+|     $Author: e107coders $
++----------------------------------------------------------------------------+
+*/
 
 function alt_auth_get_authlist()
 {
-	$authlist = array("e107");
-	$handle=opendir(e_PLUGIN."alt_auth");
+	$authlist = array('e107');
+	$handle   = opendir(e_PLUGIN.'alt_auth');
+	
 	while ($file = readdir($handle))
 	{
-		if(preg_match("/^(.*)_auth\.php/",$file,$match))
+		if (preg_match('/^(.*)_auth\.php/', $file, $match))
 		{
-			$authlist[] = $match[1];
-		}
+			$authlist[] = $match[1];	
+		}  
 	}
+	
 	closedir($handle);
+	
 	return $authlist;
 }
 
 function alt_auth_adminmenu()
 {
-	global $authlist;
-	echo " ";
-	if(!is_array($authlist))
+	include_lan(e_PLUGIN."alt_auth/languages/".e_LANGUAGE."/lan_alt_auth_conf.php");
+	
+	$authlist = alt_auth_get_authlist();
+	
+	if (!defined('ALT_AUTH_ACTION'))
 	{
-		$authlist = alt_auth_get_authlist();
-	}
-	define("ALT_AUTH_ACTION", "main");
+		define('ALT_AUTH_ACTION', 'main');	
+	}  
 
-	$var['main']['text'] = "Main config";
-	$var['main']['link'] = e_PLUGIN."alt_auth/alt_auth_conf.php";
-	show_admin_menu("alt auth", ALT_AUTH_ACTION, $var);
-	$var = array();
-	foreach($authlist as $a)
+	$var['main']['text'] = LAN_PREFS;
+	$var['main']['link'] = e_PLUGIN.'alt_auth/alt_auth_conf.php';
+		
+	
+	foreach ($authlist as $a)
 	{
-		if($a != 'e107')
+		if ('e107' != $a)
 		{
-			$var[$a]['text'] = "Config {$a}";
-			$var[$a]['link'] = e_PLUGIN."alt_auth/{$a}_conf.php";
+			$var[$a]['text'] = LAN_CONFIGURE." [ ".$a." ]";
+			$var[$a]['link'] = e_PLUGIN.'alt_auth/'.$a.'_conf.php';
 		}
 	}
-	show_admin_menu("Auth methods", ALT_AUTH_ACTION, $var);
+	
+	show_admin_menu(LAN_ALT_PAGE, ALT_AUTH_ACTION, $var);
 }
-?>
+
+
+#
+#	Admin menus for the different pages
+#
+function alt_auth_conf_adminmenu()
+{
+	alt_auth_adminmenu();
+}
+
+function ldap_conf_adminmenu()
+{
+	alt_auth_adminmenu();
+}
+
+function otherdb_conf_adminmenu()
+{
+	alt_auth_adminmenu();
+}

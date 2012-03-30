@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/debug_handler.php $
-|     $Revision: 12463 $
-|     $Id: debug_handler.php 12463 2011-12-17 04:14:49Z e107coders $
+|     $Revision: 12549 $
+|     $Id: debug_handler.php 12549 2012-01-13 06:55:24Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -149,11 +149,11 @@ class e107_debug {
 			{
 				if ($debug_param[3] == '+' || $debug_param[3] == 'stick')
 				{
-					cookie('e107_debug_level', 'level='.$dVal, time() + 86400);
+					cookie('e107_debug_level', 'level='.$dVal, time() + 86400,e_HTTP,e_DOMAIN);
 				}
 				if ($debug_param[3] == '-' || $debug_param[3] == 'unstick')
 				{
-					cookie('e107_debug_level', '', time() - 3600);
+					cookie('e107_debug_level', '', time() - 3600,e_HTTP,e_DOMAIN);
 				}
 			}
 
