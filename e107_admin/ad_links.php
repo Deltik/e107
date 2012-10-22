@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/ad_links.php $
-|     $Revision: 11732 $
-|     $Id: ad_links.php 11732 2010-09-02 07:15:29Z e107steved $
-|     $Author: e107steved $
+|     $Revision: 12903 $
+|     $Id: ad_links.php 12903 2012-07-23 07:37:12Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -363,6 +363,7 @@ $e_icon_array = array(
 	'banlist' => E_32_BANLIST,
 	'banner' => E_32_BANNER,
 	'cache' => E_32_CACHE,
+	'comments' => E_32_COMMENT,
 	'credits' => E_32_CREDITS,
 	'custom' => E_32_CUST,
 	'database' => E_32_DATAB,
@@ -457,10 +458,11 @@ $array_functions = array(
 	22 => array(e_ADMIN."upload.php", ADLAN_72, ADLAN_73, "V", 3, E_16_UPLOADS, E_32_UPLOADS),
 	23 => array(e_ADMIN."users.php", ADLAN_36, ADLAN_37, "4", 2, E_16_USER, E_32_USER),
 	24 => array(e_ADMIN."userclass2.php", ADLAN_38, ADLAN_39, "4", 2, E_16_USERCLASS, E_32_USERCLASS),
-	25 => array(e_ADMIN."language.php", ADLAN_132, ADLAN_133, "0", 1, E_16_LANGUAGE, E_32_LANGUAGE),
+	25 => array(e_ADMIN."language.php", ADLAN_132, ADLAN_133, "L", 1, E_16_LANGUAGE, E_32_LANGUAGE),
 	26 => array(e_ADMIN."mailout.php", ADLAN_136, ADLAN_137, "W", 2, E_16_MAIL, E_32_MAIL),
 	27 => array(e_ADMIN."users_extended.php", ADLAN_78, ADLAN_79, "4", 2, E_16_USER_EXTENDED, E_32_USER_EXTENDED),
 	28 => array(e_ADMIN."fileinspector.php", ADLAN_147, ADLAN_148, "Y", 4, E_16_INSPECT, E_32_INSPECT),
-	29 => array(e_ADMIN."notify.php", ADLAN_149, ADLAN_150, "O", 4, E_16_NOTIFY, E_32_NOTIFY)
+	29 => array(e_ADMIN."notify.php", ADLAN_149, ADLAN_150, "O", 4, E_16_NOTIFY, E_32_NOTIFY),
+	30 => array(e_ADMIN."modcomment.php", ADLAN_114, ADLAN_114, "B", 4, E_16_COMMENT, E_32_COMMENT)
 	);
 ?>

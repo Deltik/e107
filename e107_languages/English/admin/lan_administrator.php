@@ -4,8 +4,8 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_administrator.php $
-|     $Revision: 11678 $
-|     $Id: lan_administrator.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 12903 $
+|     $Id: lan_administrator.php 12903 2012-07-23 07:37:12Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -78,6 +78,9 @@ define("ADMSLAN_68", "Configure email notification");
 define("ADMSLAN_69", "is already an administrator and must be edited.");
 
 define("ADMSLAN_70", "Return to Administrator Listing");
-define("ADMSLAN_71", "Click here to display privileges");  
+define("ADMSLAN_71", "Click here to display privileges"); 
+
+//v1.0.2 and v2
+define("ADMSLAN_76", "Manage language-packs");
 
 ?>

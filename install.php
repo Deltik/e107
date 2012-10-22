@@ -8,7 +8,7 @@
  * GNU General Public License (http://gnu.org).
  * 
  * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/install_.php $
- * $Id: install_.php 12510 2012-01-04 22:10:37Z e107coders $
+ * $Id: install_.php 12938 2012-08-10 03:57:15Z e107coders $
  */
 
 define('MAKE_INSTALL_LOG', false);  # Set this to 'true' if you want a log file to be created during the installation process
@@ -36,7 +36,7 @@ define('e107_INIT',  TRUE);
 define('e_UC_ADMIN', 254);
 define('MIN_MYSQL_UTF8_VERSION', '4.1.2');
 
-error_reporting(E_ALL);
+error_reporting(0);
 
 if (!function_exists('file_get_contents'))  die('e107 requires PHP 4.3 or greater to work correctly.');
 if (!function_exists('mysql_connect'))      die('e107 requires PHP to be installed or compiled with the MySQL extension to work correctly, please see the MySQL manual for more information.');

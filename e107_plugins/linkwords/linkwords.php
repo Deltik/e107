@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/linkwords/linkwords.php $
-|     $Revision: 11678 $
-|     $Id: linkwords.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 12885 $
+|     $Id: linkwords.php 12885 2012-07-18 20:41:53Z e107coders $
 |     $Author: e107coders $
 |
 +----------------------------------------------------------------------------+
@@ -59,11 +59,12 @@ class e_linkwords
 	  // Will probably need linkwords on this page - so get the info
 	  $this->lw_enabled = TRUE;
 	  $link_sql = new db;
+	  mb_internal_encoding(CHARSET);
 	  if($link_sql -> db_Select("linkwords", "*", "linkword_active=0"))
 	  {
 		  while ($row = $link_sql->db_Fetch())
 		  {
-		    $lw = trim(strtolower($row['linkword_word']));
+		    $lw = trim(mb_convert_case($row['linkword_word'],MB_CASE_LOWER));
 			if (strpos($lw,','))
 			{  // Several words to same link
 			  $lwlist = explode(',',$lw);
@@ -126,17 +127,19 @@ class e_linkwords
 	
 	function linksproc($text,$first,$limit)
 	{  // This function is called recursively - it splits the text up into blocks - some containing a particular linkword
-	  while (($first < $limit) && (stripos($text,$this->word_list[$first]) === FALSE))   { $first++; };
+	  while (($first < $limit) && (mb_stripos($text,$this->word_list[$first]) === FALSE))   { $first++; };
 	  if ($first == $limit) return $text;		// Return if no linkword found
 	  
 	  // There's at least one occurrence of the linkword in the text
 	  $ret = '';
 	  $lw = $this->word_list[$first];
 	  // This splits the text into blocks, some of which will precisely contain a linkword
-	  $split_line = preg_split('#\b('.$lw.')\b#i', $text, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE );
+	  $split_line = preg_split('#\b('.$lw.')\b#iu', $text, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE );
+	  //$split_line = mb_split('\b('.$lw.')\b', $text, -1);
+	  //mb_eregi('#\b('.$lw.')\b#i', $text , $split_line);
 	  foreach ($split_line AS $sl)
 	  {
-	    if (strcasecmp($sl,$lw) == 0)
+	    if (strcmp(mb_convert_case($sl,MB_CASE_LOWER),mb_convert_case($lw,MB_CASE_LOWER)) == 0)
 		{  // Do linkword replace
 		  $ret .= " <a href='".$this->link_list[$first]."' rel='external'>{$sl}</a>";
 		}

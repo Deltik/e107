@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/db_debug_class.php $
-|     $Revision: 12560 $
-|     $Id: db_debug_class.php 12560 2012-01-16 00:24:43Z e107coders $
+|     $Revision: 12892 $
+|     $Id: db_debug_class.php 12892 2012-07-21 03:20:42Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -454,7 +454,7 @@ class e107_db_debug {
 		{
 			return FALSE;
 		}
-		global $e107;
+		global $e107,$sql;
 		$text = "<table class='fborder debug-footer' style='width: 100%'>
 			<tr><td class='fcaption debug-footer-caption' colspan='4'><b>Paths &amp; Variables</b></td></tr>
 			<tr>
@@ -468,10 +468,33 @@ class e107_db_debug {
 		$text .= "e_THEME: '".e_THEME."'<br />";
 		$text .= "e_MENU: '".e_MENU."'<br />";
 		$text .= "THEME: '".THEME."'<br />";
+		$text .= "THEME_LAYOUT: '".THEME_LAYOUT."'<br />";
+			
 		$text .= "<br />";
 		$text .= "e_LANGUAGE: '".e_LANGUAGE."'<br />";
 		$text .= "e_LAN: '".e_LAN."'<br />";
 		$text .= "e_LOCALE: '".e_LOCALE."'<br />";
+		
+		$text .= "<br />";
+		$text .= "META_OG: '".META_OG."'<br />";
+		$text .= "META_DESCRIPTION: '".META_DESCRIPTION."'<br />";
+		$text .= "<br />";
+		
+		$text .= "USERID: '".USERID."'<br />";
+		$text .= "USERNAME: '".USERNAME."'<br />";
+		$text .= "USERURL: '".USERURL."'<br />";
+		$text .= "USEREMAIL: '".USEREMAIL."'<br />";
+		$text .= "USERCLASS: '".USERCLASS."'<br />";
+		$text .= "USERREALM: '".USERREALM."'<br />";
+		$text .= "USERVIEWED: '".USERVIEWED."'<br />";
+		$text .= "USERVISITS: '".USERVISITS."'<br />";		
+		$text .= "USERIMAGE: '".USERIMAGE."'<br />";	
+		$text .= "USERSESS: '".USERSESS."'<br />";		
+		$text .= "USERJOINED: '".USERJOINED."'<br />";									
+	
+		$text .= "<br />";
+		
+		
 		$text .= "SQL Language: '".$sql->mySQLlanguage."'<br />";
 		$text .= "<br />";					
 		$text .= "\$_SERVER['PHP_SELF']: '".$_SERVER['PHP_SELF']."'<br />";

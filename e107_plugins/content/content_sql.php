@@ -11,12 +11,12 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/content/content_sql.php $
-|     $Revision: 12092 $
-|     $Id: content_sql.php 12092 2011-03-11 18:49:56Z e107steved $
-|     $Author: e107steved $
+|     $Revision: 12938 $
+|     $Id: content_sql.php 12938 2012-08-10 03:57:15Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
-header("location:../index.php");
+header("location:../../index.php");
 exit;
 ?>
 # Table structure for table `content`

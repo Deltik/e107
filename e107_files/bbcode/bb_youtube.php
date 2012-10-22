@@ -216,6 +216,9 @@ class bb_youtube extends e_bb_base
 
 		list($dimensions,$tmp) = explode('|', $parm, 2);
 		
+		
+		$code_text = str_replace("&amp;","&",$code_text); // Quick Fix. 
+		
 		if($tmp)
 		{
 			parse_str(varset($tmp, ''), $bbparm);
@@ -234,8 +237,13 @@ class bb_youtube extends e_bb_base
 		$code_text = $parms[0];
 			
 		parse_str(varset($parms[1], ''), $params);
+		/*
+				if(getperms('0'))
+				{
+					print_a($parms);	
+				}
+		*/
 		
-	//	print_a($params);
 
 		if(empty($dimensions)) $dimensions = 'medium'; // (default as per YouTube spec)
 		// formula: width x (height+25px)
@@ -284,12 +292,12 @@ class bb_youtube extends e_bb_base
 		$url = isset($bbparm['privacy']) ? 'http://www.youtube-nocookie.com/v/' : 'http://www.youtube.com/v/';
 		$url .= $yID.'?';
 
-		if(isset($params['nofull']) || !varset($params['fs'])) 
+		if(isset($params['nofull']) || varset($params['fs'])=='0') 
 		{
 			$fscr = 'false';
 			$url = $url.'fs='.intval($params['fs']);
 		} 
-		else 
+		else // fullscreen option enabled is the default. 
 		{
 			$fscr = 'true';
 			$url = $url.'fs=1';
@@ -341,19 +349,23 @@ class bb_youtube extends e_bb_base
 		{
 			$url .= "&amp;autoplay=".intval($params['autoplay']);
 		}
+
+		// Show Info by default. 
+		$url .= (isset($params['showinfo'])) ? "&amp;showinfo=".intval($params['showinfo']) : "&amp;showinfo=1";
+		
 		
 		$ret = '
 		
 <!-- Start YouTube --> 
 		
-		<object width="'.$params['w'].'" height="'.$params['h'].'" >
+		<object class="bbcode youtube" width="'.$params['w'].'" height="'.$params['h'].'" >
 			<param name="movie" value="'.$url.'"></param>
 			<param name="allowFullScreen" value="'.$fscr.'"></param>
 			<param name="allowscriptaccess" value="always"></param>
 			<param name="wmode" value="transparent"></param>
 		';		
 	// Not XHTML - but needed for compatibility. 
-		$ret .= '<embed src="'.$url.'" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="'.$fscr.'" wmode="transparent" width="'.$params['w'].'" height="'.$params['h'].'"></embed>';
+		$ret .= '<embed class="bbcode youtube" src="'.$url.'" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="'.$fscr.'" wmode="transparent" width="'.$params['w'].'" height="'.$params['h'].'"></embed>';
 		$ret .= '</object>';
 		$ret .= '
 <!-- End YouTube -->

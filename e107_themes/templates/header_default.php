@@ -6,8 +6,8 @@
 |     Released under the terms and conditions of the GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_themes/templates/header_default.php $
-|     $Revision: 12477 $
-|     $Id: header_default.php 12477 2011-12-28 03:12:22Z e107coders $
+|     $Revision: 12853 $
+|     $Id: header_default.php 12853 2012-07-01 05:25:24Z e107coders $
 |     $Author: e107coders $
 +-----------------------------------------------------------------------------------------------+
 */
@@ -250,7 +250,7 @@ function render_meta($type)
 	}
 	elseif($type == 'og')
 	{
-		if(!defined("META_OG") || !defined("XMLNS"))
+		if(!defined("META_OG") )
 		{
 			return;
 		}
@@ -261,7 +261,18 @@ function render_meta($type)
 		// FB will still utilize 'name' instead of 'property' (which is not valid XHTML)
 		foreach($tmp as $k=>$v)
 		{
-			$ret .= '<meta name="og:'.$k.'" content="'.$v.'" />'."\n";
+			if($k == 'image')
+			{
+				foreach($v as $img)
+				{
+					$ret .= '<meta name="og:image" content="'.$img.'" />'."\n";	
+				}
+			}
+			else
+			{
+				$ret .= '<meta name="og:'.$k.'" content="'.$v.'" />'."\n";	
+			}
+			
 		}
 
 		return $ret;		
@@ -275,15 +286,18 @@ function render_meta($type)
 echo "\n<!-- Core Meta Tags -->\n";
 echo (defined("META_DESCRIPTION")) ? "<meta name=\"description\" content=\"".$diz_merge.META_DESCRIPTION."\" />\n" : render_meta('description');
 echo (defined("META_KEYWORDS")) ? "<meta name=\"keywords\" content=\"".$key_merge.META_KEYWORDS."\" />\n" : render_meta('keywords');
+echo (defined("VIEWPORT")) ? "<meta name=\"viewport\" content=\"".VIEWPORT."\" />\n" : "";
+
 echo render_meta('copyright');
 echo render_meta('author');
-echo render_meta('tag');
 echo render_meta('og');
+echo render_meta('tag');
 
 
 unset($key_merge,$diz_merge);
 
 // ---------- Favicon ---------
+	echo "\n<!-- *FAV-ICONS* -->\n";
 if (file_exists(THEME."favicon.ico")) {
 	echo "<link rel='icon' href='".THEME_ABS."favicon.ico' type='image/x-icon' />\n<link rel='shortcut icon' href='".THEME_ABS."favicon.ico' type='image/xicon' />\n";
 }elseif (file_exists(e_BASE."favicon.ico")) {
@@ -443,6 +457,14 @@ if ($e107_popup != 1) {
 			}
 		}
 		parseheader(($e107ParseHeaderFlag ? $cust_header : $HEADER));
+		if($e107ParseHeaderFlag== TRUE)
+		{
+			define('THEME_LAYOUT',$key_extract);	
+		}
+		else
+		{
+			define('THEME_LAYOUT','default');	
+		}
 	}
 
 

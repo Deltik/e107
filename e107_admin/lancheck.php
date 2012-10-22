@@ -11,14 +11,14 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/lancheck.php $
-|     $Revision: 12561 $
-|     $Id: lancheck.php 12561 2012-01-16 10:21:47Z e107coders $
+|     $Revision: 12903 $
+|     $Id: lancheck.php 12903 2012-07-23 07:37:12Z e107coders $
 |     $Author: e107coders $
 |	  With code from Izydor and Lolo.
 +----------------------------------------------------------------------------+
 */
 require_once("../class2.php");
-if (!getperms("0")) {
+if (!getperms("L")) {
 	header("location:".e_BASE."index.php");
 	exit;
 }

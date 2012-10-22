@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/e_parse_class.php $
-|     $Revision: 12571 $
-|     $Id: e_parse_class.php 12571 2012-01-21 17:35:27Z e107steved $
-|     $Author: e107steved $
+|     $Revision: 12910 $
+|     $Id: e_parse_class.php 12910 2012-07-24 09:34:58Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -217,15 +217,14 @@ class e_parse
 		{
 			$checkTags = explode(',', $tagList);
 		}
-		$data = preg_replace('#\[code.*?\[\/code\]#i', '', $data);		// Ignore code blocks
+		$data = strtolower(preg_replace('#\[code.*?\[\/code\]#i', '', $data));		// Ignore code blocks. All lower case simplifies subsequent processing
 		foreach ($checkTags as $tag)
 		{
-			if (($pos = stripos($data, '</'.$tag)) !== FALSE)
+			$aCount = substr_count($data,  '<'.$tag);			// Count opening tags
+			$bCount = substr_count($data,  '</'.$tag);			// Count closing tags
+			if ($aCount != $bCount)
 			{
-				if ((($bPos = stripos($data, '<'.$tag )) === FALSE) || ($bPos > $pos))
-				{
-					return TRUE;		// Potentially abusive HTML found
-				}
+				return TRUE;		// Potentially abusive HTML found - tags don't balance
 			}
 		}
 		return FALSE;		// Nothing detected
@@ -235,7 +234,7 @@ class e_parse
 	/*
 	 * Filter User Input
 	*/
-	function dataFilter($data,$mode='bbcode')
+	function dataFilter($data, $mode='bbcode')
 	{
 		$ans = '';
 		$vetWords = array('<applet', '<body', '<embed', '<frame', '<script','%3Cscript',
@@ -1171,7 +1170,10 @@ class e_parse
 		return trim($text);
 	}
 
-
+	/**
+	 * Parse string into a format which is compatible with an html tag attribute. eg. name='$string' 
+	 * @param string $text 
+	 */
 	function toAttribute($text) {
 		$text = str_replace("&amp;","&",$text); // URLs posted without HTML access may have an &amp; in them.
 		$text = htmlspecialchars($text, ENT_QUOTES, CHARSET); // Xhtml compliance.
@@ -1184,6 +1186,9 @@ class e_parse
 		}
 	}
 
+	/**
+	 * Parse string into a JS compatible format. 
+	 */
 	function toJS($stringarray) {
 		$search = array("\r\n","\r","<br />","'");
 		$replace = array("\\n","","\\n","\'");
@@ -1196,6 +1201,11 @@ class e_parse
 		return strtr ($stringarray, $trans_tbl);
 	}
 
+	/**
+	 * Parse string to an RSS-compatible format
+	 * @param $text string 
+	 * @param $tags boolean - Set to TRUE to allow tags and bbcode in the result. 
+	 */
 	function toRss($text,$tags=FALSE)
 	{
 

@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_themes/templates/usersettings_template.php $
-|     $Revision: 11678 $
-|     $Id: usersettings_template.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 12891 $
+|     $Id: usersettings_template.php 12891 2012-07-20 20:46:04Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -74,6 +74,18 @@ $sc_style['PHOTO_UPLOAD']['pre'] = "
 <td style='width:60%' class='forumheader2'><span class='smalltext'>
 ";
 $sc_style['PHOTO_UPLOAD']['post'] = "</span></td></tr>";
+
+
+$sc_style['SIGNATURE']['pre']	= "	<tr><td colspan='2' class='forumheader'>".LAN_USET_8."</td></tr>
+	<tr>
+	<td style='width:40%;vertical-align:top' class='forumheader3'>".LAN_120.req($pref['signup_option_signature'])."</td>
+	<td style='width:60%' class='forumheader2'>";
+	
+	
+$sc_style['SIGNATURE']['post']	= "<br />";
+
+$sc_style['SIGNATURE_HELP']['pre']	= "";
+$sc_style['SIGNATURE_HELP']['post']	= "	</td></tr>";
 
 
 $sc_style['XUP']['pre'] = "
@@ -152,15 +164,10 @@ $USERSETTINGS_EDIT = "
 	{USERCLASSES}
 	{USEREXTENDED_ALL}
 
-	<tr><td colspan='2' class='forumheader'>".LAN_USET_8."</td></tr>
-	<tr>
-	<td style='width:40%;vertical-align:top' class='forumheader3'>".LAN_120.req($pref['signup_option_signature'])."</td>
-	<td style='width:60%' class='forumheader2'>
+
 	{SIGNATURE=cols=58&rows=4}
-	<br />
 	{SIGNATURE_HELP}
-	</td>
-	</tr>
+
 
 	<tr>
 	<td style='width:40%' class='forumheader3'>".LAN_122.req($pref['signup_option_timezone'])."</td>

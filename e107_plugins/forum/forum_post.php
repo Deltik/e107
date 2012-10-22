@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/forum/forum_post.php $
-|     $Revision: 12100 $
-|     $Id: forum_post.php 12100 2011-03-13 14:15:43Z e107steved $
+|     $Revision: 12631 $
+|     $Id: forum_post.php 12631 2012-04-12 19:30:41Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -59,6 +59,10 @@ if ($action == 'rp')
 	{
 	  $forum_info = FALSE;		// Someone fed us a dud forum id - should exist if replying
 	}
+	elseif ($thread_info['head']['thread_active'] == 0)
+	{	// Locked thread - posting not allowed
+		$forum_info = FALSE;
+	}
 	else
 	{
 		$forum_info = $forum->forum_get($thread_info['head']['thread_forum_id']);
@@ -79,7 +83,8 @@ elseif ($action == 'quote' || $action == 'edit')
 	}
 }
 
-if (($forum_info === FALSE) || !check_class($forum_info['forum_postclass']) || !check_class($forum_info['parent_postclass'])) {
+if (($forum_info === FALSE) || !check_class($forum_info['forum_postclass']) || !check_class($forum_info['parent_postclass'])) 
+{
 	require_once(HEADERF);
 	$ns->tablerender(LAN_20, "<div style='text-align:center'>".LAN_399."</div>");
 	require_once(FOOTERF);

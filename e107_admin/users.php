@@ -10,8 +10,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/users.php $
-|     $Revision: 12422 $
-|     $Id: users.php 12422 2011-11-29 23:36:57Z e107coders $
+|     $Revision: 12892 $
+|     $Id: users.php 12892 2012-07-21 03:20:42Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -163,6 +163,9 @@ if (isset($_POST['update_options']))
 	$pref['track_online'] = $_POST['track_online'];
 	$pref['force_userupdate'] = $_POST['force_userupdate'];
 	$pref['memberlist_access'] = $_POST['memberlist_access'];
+	$pref['signature_access']	= $_POST['signature_access'];
+	$pref['user_new_period']	= $_POST['user_new_period'];
+
 	save_prefs();
 	$user->show_message(USRLAN_1);
 }
@@ -1028,6 +1031,20 @@ class users
 			<td style='width:50%' class='forumheader3'>".r_userclass("memberlist_access",$pref['memberlist_access'], "off", "public,member,guest,admin,main,classes,nobody")."
 			</td>
 			</tr>
+			
+			<tr>
+			<td style='width:50%' class='forumheader3'>".USRLAN_194.":</td>
+			<td style='width:50%' class='forumheader3'>". 
+				r_userclass('signature_access',$pref['signature_access'],'off',"member,admin,main,classes,nobody")
+				."</td>
+			</tr>
+	
+			<tr>
+			<td style='width:50%' class='forumheader3'>".USRLAN_190.":<div class='smalltext field-help'>".USRLAN_191."</div></td>
+			<td style='width:50%' class='forumheader3'>
+			<input class='tbox' type='text' name='user_new_period' size='10' value='".varset($pref['user_new_period'],0)."' maxlength='5' /> ".LANDT_04s."
+			
+			</td></tr>
 
 			<tr>
 			<td colspan='2' style='text-align:center' class='forumheader'>

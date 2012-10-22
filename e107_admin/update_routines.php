@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/update_routines.php $
-|     $Revision: 12178 $
-|     $Id: update_routines.php 12178 2011-05-02 20:45:40Z e107steved $
-|     $Author: e107steved $
+|     $Revision: 12714 $
+|     $Id: update_routines.php 12714 2012-05-12 01:52:52Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -129,14 +129,21 @@ function update_check()
 		}
 	}
 
-	foreach($dbupdatep as $func => $rmks) {
-		if (function_exists("update_".$func)) {
-			if (!call_user_func("update_".$func, FALSE)) {
-				$update_needed = TRUE;
-				continue;
+	if(is_array($dbupdatep))
+	{
+		foreach($dbupdatep as $func => $rmks)
+		{
+			if (function_exists("update_".$func))
+			{
+				if (!call_user_func("update_".$func, FALSE))
+				{
+					$update_needed = TRUE;
+					continue;
+				}
 			}
-		}
+		}	
 	}
+
   	$e107cache->set("nq_admin_updatecheck", time().','.($update_needed ? '2,' : '1,').$e107info['e107_version'], TRUE);
   }
   else  

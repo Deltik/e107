@@ -8,7 +8,7 @@
  * GNU General Public License (http://gnu.org).
  * 
  * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_files/def_e107_prefs.php $
- * $Id: def_e107_prefs.php 12477 2011-12-28 03:12:22Z e107coders $
+ * $Id: def_e107_prefs.php 12892 2012-07-21 03:20:42Z e107coders $
  */
 
 
@@ -166,7 +166,9 @@ City, State, Country
   'check_updates' => '1',
   'user_tracking' => 'cookie',
   'cookie_name' => 'e107cookie',
-  'email_item_class' => '253'			// Members only
+  'email_item_class' => '253',			// Members only
+  'signature_access' => '253',
+  'user_new_period'	=> 3,
 );
 
 ?>

@@ -9,7 +9,7 @@
 * Site access logging - 'receiver'
 *
 * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/log/log.php $
-* $Id: log.php 12227 2011-05-28 09:05:07Z e107steved $
+* $Id: log.php 12938 2012-08-10 03:57:15Z e107coders $
 *
 */
 
@@ -23,6 +23,7 @@
 		err_referer - referrer if came via error page
 */
 define('log_INIT', TRUE);
+error_reporting(0);
 
 //define('STATS_LOG_DEBUG', TRUE);			// Enables separate logging of first reference of each page to a separate file
 

@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/newsfeed/newsfeed_functions.php $
-|     $Revision: 12021 $
-|     $Id: newsfeed_functions.php 12021 2010-12-31 01:04:42Z e107coders $
+|     $Revision: 12626 $
+|     $Id: newsfeed_functions.php 12626 2012-04-08 20:52:35Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -59,7 +59,7 @@ if(!function_exists("checkUpdate"))
 							echo NFLAN_48."<br /><br />".$serializedArray;
 						}
 					}
-					else
+					elseif(ADMIN)
 					{
 						echo $xml -> error;
 					}

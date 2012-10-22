@@ -10,8 +10,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/prefs.php $
-|     $Revision: 12295 $
-|     $Id: prefs.php 12295 2011-06-29 04:21:07Z e107coders $
+|     $Revision: 12892 $
+|     $Id: prefs.php 12892 2012-07-21 03:20:42Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -981,6 +981,18 @@ $text .= "<div id='comments' style='display:none; text-align:center'>
 	<input type='radio' name='comments_emoticons' value='0'".(!$pref['comments_emoticons'] ? " checked='checked'" : "")." /> ".PRFLAN_113."
 	</td>
 	</tr>
+	
+		<tr>
+	<td style='width:50%' class='forumheader3'>".PRFLAN_222.": <br />
+	<div class='smalltext'>".PRFLAN_223."</div></td>
+	<td style='width:50%; text-align:right' class='forumheader3'>
+	".r_userclass('comments_moderate',varset($pref['comments_moderate'],e_UC_NOBODY),'off','guest,new,admin,main,public,member,classes')."
+	</td>
+	</tr>
+	
+	
+	
+
 
 	<tr>
 	<td class='fcaption' style='text-align:left;' colspan='2'>".PRFLAN_209."</td>

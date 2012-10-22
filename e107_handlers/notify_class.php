@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/notify_class.php $
-|     $Revision: 12524 $
-|     $Id: notify_class.php 12524 2012-01-09 01:52:57Z e107coders $
+|     $Revision: 12892 $
+|     $Id: notify_class.php 12892 2012-07-21 03:20:42Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -214,6 +214,18 @@ function notify_newspost($data) {
 	
 	$nt -> send('newspost', $data['news_title'], $message);
 }
+
+
+function notify_commentpending($data)
+{
+	global $nt, $tp;
+	foreach($data as $key=>$val)
+	{
+		$message .= "<br /><b>".$key.":</b> ".$val;
+	}	
+	$nt -> send('commentpending', NT_LAN_CM_1.': '.$data['comment_subject'], $message);
+}
+
 
 function notify_newsupd($data) {
 	global $nt, $tp;

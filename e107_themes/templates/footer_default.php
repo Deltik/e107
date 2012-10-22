@@ -9,7 +9,7 @@
 * Default footer for user pages
 *
 * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_themes/templates/footer_default.php $
-* $Id: footer_default.php 12549 2012-01-13 06:55:24Z e107coders $
+* $Id: footer_default.php 12938 2012-08-10 03:57:15Z e107coders $
 *
 */
 
@@ -218,7 +218,7 @@ if(isset($footer_js) && is_array($footer_js))
 // see e107.js and class2.php
 // This must be done as late as possible in page processing.
 $_serverTime=time();
-$lastSet = isset($_COOKIE['e107_tdSetTime']) ? $_COOKIE['e107_tdSetTime'] : 0;
+$lastSet = isset($_COOKIE['e107_tdSetTime']) ? intval($_COOKIE['e107_tdSetTime']) : 0;
 if (abs($_serverTime - $lastSet) > 120) {
 	/* update time delay every couple of minutes.
 	* Benefit: account for user time corrections and changes in internet delays

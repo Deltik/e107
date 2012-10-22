@@ -9,7 +9,7 @@
  * Comment handling - language files
  *
  * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/lan_comment.php $
- * $Id: lan_comment.php 11687 2010-08-23 07:25:47Z e107steved $
+ * $Id: lan_comment.php 12892 2012-07-21 03:20:42Z e107coders $
  */
 
 define("COMLAN_0", "[blocked by admin]");
@@ -57,6 +57,7 @@ define("COMLAN_327", 'Rating');
 define("COMLAN_328", 'Comments are locked');
 define("COMLAN_329", 'Unauthorized');
 define("COMLAN_330", 'IP:');
+define("COMLAN_331", "Pending Approval");
 
 define("COMLAN_TYPE_1", "news");
 define("COMLAN_TYPE_2", "download");

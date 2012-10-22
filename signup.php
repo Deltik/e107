@@ -11,7 +11,7 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/signup.php $
-|     $Id: signup.php 12130 2011-04-12 21:09:45Z e107steved $
+|     $Id: signup.php 12985 2012-09-27 08:45:46Z secretr $
 +----------------------------------------------------------------------------+
 */
 
@@ -522,7 +522,18 @@ global $db_debug;
 	}
 	
 	// Always validate an email address if entered. If its blank, that's OK if checking disabled
-	$_POST['email'] = $tp->toDB(trim(varset($_POST['email'],'')));
+	//$_POST['email'] = $tp->toDB(trim(varset($_POST['email'],'')));
+	$_POST['email'] = trim(varset($_POST['email'],''));
+	if(!empty($_POST['email']))
+	{
+		$_POST['email'] = preg_replace('/[^_a-zA-Z0-9\-+@\.]/', '', $_POST['email']);
+	}
+	$_POST['email_confirm'] = trim(varset($_POST['email_confirm'],''));
+	if(!empty($_POST['email_confirm']))
+	{
+		$_POST['email_confirm'] = preg_replace('/[^_a-zA-Z0-9\-+@\.]/', '', $_POST['email_confirm']);
+	}
+	
 	$do_email_validate = !varset($pref['disable_emailcheck'],FALSE) || ($_POST['email'] !='');
 
 
@@ -802,6 +813,7 @@ function checkRemoteImage($imageName)
 
 		$username = $tp -> toDB(strip_tags($_POST['name']));
 		$loginname = $tp -> toDB(strip_tags($_POST['loginname']));
+		$signature = strip_tags($_POST['signature'],"<b><i><u><strong>"); // minimal html in signature during signup. Maybe be permitted in usersettings if admin so wishes.
 		$time = time();
 		$ip = $e107->getip();
 
@@ -818,7 +830,7 @@ function checkRemoteImage($imageName)
 		}
 
 		$u_key = md5(uniqid(rand(), 1));
-		$nid = $sql->db_Insert("user", "0, '{$username}', '{$loginname}', '', '".md5($_POST['password1'])."', '{$u_key}', '".$_POST['email']."', '".$tp -> toDB($_POST['signature'])."', '".$tp -> toDB($_POST['image'])."', '".$tp -> toDB($_POST['timezone'])."', '".$tp -> toDB($_POST['hideemail'])."', '".$time."', '0', '".$time."', '0', '0', '0', '0', '".$ip."', '2', '0', '', '', '0', '0', '".$tp -> toDB($_POST['realname'])."', '', '', '', '0', '".$tp -> toDB($_POST['xupexist'])."' ");
+		$nid = $sql->db_Insert("user", "0, '{$username}', '{$loginname}', '', '".md5($_POST['password1'])."', '{$u_key}', '".$_POST['email']."', '".$tp -> toDB($signature)."', '".$tp -> toDB($_POST['image'])."', '".$tp -> toDB($_POST['timezone'])."', '".$tp -> toDB($_POST['hideemail'])."', '".$time."', '0', '".$time."', '0', '0', '0', '0', '".$ip."', '2', '0', '', '', '0', '0', '".$tp -> toDB($_POST['realname'])."', '', '', '', '0', '".$tp -> toDB($_POST['xupexist'])."' ");
 		if(!$nid)
 		{
 			require_once(HEADERF);

@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/pdf/e107pdf.php $
-|     $Revision: 11678 $
-|     $Id: e107pdf.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 12938 $
+|     $Id: e107pdf.php 12938 2012-08-10 03:57:15Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -20,6 +20,7 @@
 // Debug option - adds entries to rolling log (only works in 0.8)
 //define ('PDF_DEBUG', TRUE);
 define ('PDF_DEBUG', FALSE);
+if (!defined('e107_INIT')) { exit; }
 
 //extend fpdf class from package with custom functions
 class e107PDF extends UFPDF{

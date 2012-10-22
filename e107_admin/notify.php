@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/notify.php $
-|     $Revision: 11695 $
-|     $Id: notify.php 11695 2010-08-23 18:12:30Z e107steved $
-|     $Author: e107steved $
+|     $Revision: 12892 $
+|     $Id: notify.php 12892 2012-07-21 03:20:42Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 require_once('../class2.php');
@@ -47,23 +47,25 @@ class notify_config {
 
 		$recalibrate = FALSE;
 		// load every e_notify.php file.
-        foreach($pref['e_notify_list'] as $val)
+		if(is_array($pref['e_notify_list']))
 		{
-				if (!isset($this -> notify_prefs['plugins'][$val]))
-				{
-					$this -> notify_prefs['plugins'][$val] = TRUE;
-					if (is_readable(e_PLUGIN.$val."/e_notify.php"))
+	        foreach($pref['e_notify_list'] as $val)
+			{
+					if (!isset($this -> notify_prefs['plugins'][$val]))
 					{
-						require_once(e_PLUGIN.$val.'/e_notify.php');
-						foreach ($config_events as $event_id => $event_text)
-				   		{
-							$this -> notify_prefs['event'][$event_id] = array('type' => 'off', 'class' => '254', 'email' => '');
+						$this -> notify_prefs['plugins'][$val] = TRUE;
+						if (is_readable(e_PLUGIN.$val."/e_notify.php"))
+						{
+							require_once(e_PLUGIN.$val.'/e_notify.php');
+							foreach ($config_events as $event_id => $event_text)
+					   		{
+								$this -> notify_prefs['event'][$event_id] = array('type' => 'off', 'class' => '254', 'email' => '');
+							}
+							$recalibrate = true;
 						}
-						$recalibrate = true;
 					}
-				}
+			}
 		}
-
 
 		if ($recalibrate) {
 			$s_prefs = $tp -> toDB($this -> notify_prefs);
@@ -112,20 +114,30 @@ class notify_config {
 		</tr>";
 
 		$text .= $this -> render_event('fileupload', NF_LAN_2);
+		
+		$text .= "<tr>
+		<td colspan='2' class='forumheader'>".CM_LAN_1."</td>
+		</tr>";
 
-		foreach ($this -> notify_prefs['plugins'] as $plugin_id => $plugin_settings) {
-            if(is_readable(e_PLUGIN.$plugin_id.'/e_notify.php'))
-			{
-				require(e_PLUGIN.$plugin_id.'/e_notify.php');
-				$text .= "<tr>
-				<td colspan='2' class='forumheader'>".$config_category."</td>
-				</tr>";
-				foreach ($config_events as $event_id => $event_text) {
-					$text .= $this -> render_event($event_id, $event_text);
+		$text .= $this -> render_event('commentpending', CM_LAN_2);
+		
+
+		if(is_array($this -> notify_prefs['plugins']))
+		{
+			foreach ($this -> notify_prefs['plugins'] as $plugin_id => $plugin_settings) {
+	            if(is_readable(e_PLUGIN.$plugin_id.'/e_notify.php'))
+				{
+					require(e_PLUGIN.$plugin_id.'/e_notify.php');
+					$text .= "<tr>
+					<td colspan='2' class='forumheader'>".$config_category."</td>
+					</tr>";
+					foreach ($config_events as $event_id => $event_text) {
+						$text .= $this -> render_event($event_id, $event_text);
+					}
 				}
 			}
 		}
-
+		
 		$text .= "<tr>
 		<td colspan='2' style='text-align:center' class='forumheader'>".$rs -> form_button('submit', 'update', LAN_UPDATE)."</td>
 		</tr>

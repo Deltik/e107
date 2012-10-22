@@ -4,8 +4,8 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_notify.php $
-|     $Revision: 11678 $
-|     $Id: lan_notify.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 12892 $
+|     $Id: lan_notify.php 12892 2012-07-21 03:20:42Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -34,5 +34,8 @@ define("NN_LAN_5", "News item deleted by admin");
 
 define("NF_LAN_1", "File Events");
 define("NF_LAN_2", "File uploaded by user");
+
+define("CM_LAN_1", "Comment Events");
+define("CM_LAN_2", "Comment posted by user which is pending approval");
 
 ?>

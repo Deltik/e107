@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_files/shortcode/batch/comment_shortcodes.php $
-|     $Revision: 11678 $
-|     $Id: comment_shortcodes.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 12892 $
+|     $Id: comment_shortcodes.php 12892 2012-07-21 03:20:42Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -56,7 +56,7 @@ SC_END
 SC_BEGIN REPLY
 global $REPLY, $comrow, $action, $pref, $table, $id, $thisaction, $thistable, $thisid;
 $REPLY = '';
-if($comrow['comment_lock'] != "1"){
+if($comrow['comment_lock'] != "1" && $comrow['comment_blocked'] != "2"){
 	if ($thisaction == "comment" && $pref['nested_comments']) {
 		$REPLY = "<a href='".SITEURL."comment.php?reply.".$thistable.".".$comrow['comment_id'].".".$thisid."'>".COMLAN_326."</a>";
 	}
@@ -97,6 +97,10 @@ SC_END
 
 SC_BEGIN COMMENT
 global $COMMENT, $comrow, $tp, $pref;
+if(varset($comrow['comment_blocked'])==2)
+{
+ 	return "[".COMLAN_331."]"; // Pending Approval
+}
 return (isset($comrow['comment_blocked']) && $comrow['comment_blocked'] ? COMLAN_0 : $tp->toHTML($comrow['comment_comment'], TRUE, FALSE, $comrow['user_id']));
 SC_END
 

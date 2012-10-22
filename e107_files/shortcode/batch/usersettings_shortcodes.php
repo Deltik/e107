@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_files/shortcode/batch/usersettings_shortcodes.php $
-|     $Revision: 11678 $
-|     $Id: usersettings_shortcodes.php 11678 2010-08-22 00:43:45Z e107coders $
+|     $Revision: 12891 $
+|     $Id: usersettings_shortcodes.php 12891 2012-07-20 20:46:04Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -133,7 +133,11 @@ return $ret;
 SC_END
 
 SC_BEGIN SIGNATURE
-global $curVal;
+global $curVal,$pref;
+if(!check_class($pref['signature_access']))
+{
+	return;
+}
 parse_str($parm);
 $cols = (isset($cols) ? $cols : 58);
 $rows = (isset($rows) ? $rows : 4);
@@ -141,6 +145,11 @@ return "<textarea class='tbox signature' name='signature' cols='{$cols}' rows='{
 SC_END
 
 SC_BEGIN SIGNATURE_HELP
+global $pref;
+if(!check_class($pref['signature_access']))
+{
+	return;
+}
 return display_help("", 2);
 SC_END
 

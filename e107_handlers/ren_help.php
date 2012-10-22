@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/ren_help.php $
-|     $Revision: 12055 $
-|     $Id: ren_help.php 12055 2011-01-22 02:14:27Z e107coders $
+|     $Revision: 12622 $
+|     $Id: ren_help.php 12622 2012-04-02 01:48:52Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -195,7 +195,7 @@ function PreImage_Select($formid)
 		$fl = new e_file;
 	}
 
-	$imagelist = $fl->get_files($path,"",'standard',2);
+	$imagelist = $fl->get_files($path,"",'standard',4);
     sort($imagelist);
 
 	$text ="<!-- Start of PreImage selector -->

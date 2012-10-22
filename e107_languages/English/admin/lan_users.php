@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_users.php $
-|     $Revision: 11897 $
-|     $Id: lan_users.php 11897 2010-10-16 20:13:13Z e107steved $
-|     $Author: e107steved $
+|     $Revision: 12892 $
+|     $Id: lan_users.php 12892 2012-07-21 03:20:42Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 define("USRLAN_1", "Options Saved.");
@@ -203,6 +203,10 @@ define("DUSRLAN_35", "Tracked threads");
 define("DUSRLAN_36", "Password Change");
 define("DUSRLAN_37", "XUP");
 
+define('USRLAN_190', 'New user probationary period (days)');
+define('USRLAN_191', '(admin can impose restrictions during this period in some areas)');
+
+define('USRLAN_194', 'Signature may be modified by');
 define('USRLAN_219', 'Older than 30 days');     
 
 ?>

@@ -10,8 +10,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/content/handlers/content_form_class.php $
-|     $Revision: 12289 $
-|     $Id: content_form_class.php 12289 2011-06-29 01:07:28Z e107coders $
+|     $Revision: 12884 $
+|     $Id: content_form_class.php 12884 2012-07-18 20:28:24Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -1310,11 +1310,11 @@ class contentform
 					<tr><td colspan='2' class='forumheader3'>";
 					for($i=0;$i<count($arrletters);$i++){
 						if($arrletters[$i]!= ""){
-							$text .= "<input class='button' style='width:20' type='submit' name='letter' value='".strtoupper($arrletters[$i])."' />";
+							$text .= "<input class='button' type='submit' name='letter' value='".strtoupper($arrletters[$i])."' />";
 						}
 					}
 					$text .= "
-					<input class='button' style='width:20' type='submit' name='letter' value='".CONTENT_LAN_ALL."' />
+					<input class='button' type='submit' name='letter' value='".CONTENT_LAN_ALL."' />
 					</td>
 					</tr>
 					</table>
