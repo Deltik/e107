@@ -4,8 +4,8 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_admin.php $
-|     $Revision: 12522 $
-|     $Id: lan_admin.php 12522 2012-01-09 01:50:50Z e107coders $
+|     $Revision: 13012 $
+|     $Id: lan_admin.php 13012 2012-10-28 23:54:26Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -193,6 +193,7 @@ define("ADLAN_LAT_5", "Submitted links");
 define("ADLAN_LAT_6", "Reported forum posts");
 define("ADLAN_LAT_7", "File uploads");
 define("ADLAN_LAT_8", "There are unmoderated administrator messages");
+define("ADLAN_LAT_9", "Comments pending");
 
 //LAN_WARNING define("ADLAN_ERR_1", "Warning!");
 define("ADLAN_ERR_2", "There are files on your server that are known to be exploitable. These must be removed <b>immediately</b>. The files are related to the older 0.6xx branch of e107. Please delete the following directories and all their contents:");

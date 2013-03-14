@@ -10,8 +10,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/login_menu/login_menu.php $
-|     $Revision: 11760 $
-|     $Id: login_menu.php 11760 2010-09-07 17:02:27Z e107steved $
+|     $Revision: 13069 $
+|     $Id: login_menu.php 13069 2013-01-24 20:51:28Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -19,7 +19,7 @@
 /**
 *	@package e107
 *	@subpackage	login_menu
-*	@version $Id: login_menu.php 11760 2010-09-07 17:02:27Z e107steved $;
+*	@version $Id: login_menu.php 13069 2013-01-24 20:51:28Z e107steved $;
 *
 */
 if (!defined('e107_INIT')) { exit; }
@@ -159,7 +159,7 @@ if (USER == TRUE || ADMIN == TRUE)
 			{
 				if(isset($pref['plug_installed']['list_new']))
 				{
-					$text .= '<br /><a href="'.e_PLUGIN.'list_new/list.php?new">'.LOGIN_MENU_L24.'</a>';
+					$text .= '<br /><a href="'.e_PLUGIN_ABS.'list_new/list.php?new">'.LOGIN_MENU_L24.'</a>';
 				}
 			}
 		}

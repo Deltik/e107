@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/newforumposts_main/newforumposts_main.php $
-|     $Revision: 11849 $
-|     $Id: newforumposts_main.php 11849 2010-10-05 07:13:09Z e107steved $
+|     $Revision: 13072 $
+|     $Id: newforumposts_main.php 13072 2013-02-02 13:47:23Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -23,7 +23,7 @@ $query = ($pref['nfp_posts'] ? 'thread_lastpost' : 'thread_datestamp');
 include_lan(e_PLUGIN.'newforumposts_main/languages/'.e_LANGUAGE.'.php');
 
 $path = e_PLUGIN.'forum/';
-global $sql, $ns;
+global $sql, $ns, $pref;
 // get template ...
 
 if (file_exists(THEME.'newforumpost.php')) {

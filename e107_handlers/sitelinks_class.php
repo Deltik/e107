@@ -12,9 +12,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/sitelinks_class.php $
-|     $Revision: 12761 $
-|     $Id: sitelinks_class.php 12761 2012-05-28 13:42:49Z berckoff $
-|     $Author: berckoff $
+|     $Revision: 13075 $
+|     $Id: sitelinks_class.php 13075 2013-02-20 21:30:13Z e107steved $
+|     $Author: e107steved $
 +---------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -116,6 +116,7 @@ class sitelinks
 			$aSubStyle = $style;
         }
 		
+		$text = '';
         if ($style['linkdisplay'] != 3) 
 		{
             foreach ($this->eLinkList['head_menu'] as $key => $link)

@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/modcomment.php $
-|     $Revision: 12910 $
-|     $Id: modcomment.php 12910 2012-07-24 09:34:58Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 13029 $
+|     $Id: modcomment.php 13029 2012-11-01 09:15:37Z nlstart $
+|     $Author: nlstart $
 +----------------------------------------------------------------------------+
 */
 
@@ -124,6 +124,7 @@ if ($editid)
 		$text .= "<tr><td><textarea class='tbox' name='comment_comment' cols='1' rows='15' style='width:100%;'>".$row['comment_comment']."</textarea></td></tr>";
 		$text .= "<tr><td colspan='6' class='forumheader' style='text-align:center'><input class='button' type='submit' name='moderate' value='".MDCLAN_8."' />
 		</td></tr>";
+		$text .= "<div><input type='hidden' name='e-token' value='".e_TOKEN."' /></div>";
 	}
 
 	$text .= "</table></form></div>";

@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/usertheme_menu/usertheme_menu.php $
-|     $Revision: 11678 $
-|     $Id: usertheme_menu.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 13075 $
+|     $Id: usertheme_menu.php 13075 2013-02-20 21:30:13Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -44,7 +44,7 @@ if ((USER == TRUE) && check_class(varset($pref['allow_theme_select'],FALSE)))
 	if (count($themelist))
 	{
 		$defaulttheme = $pref['sitetheme'];
-		$count = 0;
+		$themecount[$defaulttheme] = 0;
 
 		$totalct = $sql->db_Select("user", "user_prefs", "user_prefs REGEXP('sitetheme') ");
  

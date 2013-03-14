@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/rss_menu/admin_prefs.php $
-|     $Revision: 11678 $
-|     $Id: admin_prefs.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 13011 $
+|     $Id: admin_prefs.php 13011 2012-10-28 16:26:00Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 /*
@@ -29,7 +29,11 @@ Notes:
 */
 
 require_once("../../class2.php");
-if(!getperms("P")){ header("location:".e_BASE."index.php"); exit(); }
+if(!isset($pref['plug_installed']['rss_menu']) || !getperms("P"))
+{ 
+	header("location:".e_BASE."index.php"); 
+	exit(); 
+}
 
 include_lan(e_PLUGIN.'rss_menu/languages/'.e_LANGUAGE.'.php');
 

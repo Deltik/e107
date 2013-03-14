@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_files/shortcode/batch/usersettings_shortcodes.php $
-|     $Revision: 12891 $
-|     $Id: usersettings_shortcodes.php 12891 2012-07-20 20:46:04Z e107coders $
+|     $Revision: 13059 $
+|     $Id: usersettings_shortcodes.php 13059 2012-12-07 20:19:07Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -134,7 +134,7 @@ SC_END
 
 SC_BEGIN SIGNATURE
 global $curVal,$pref;
-if(!check_class($pref['signature_access']))
+if(!check_class(varset($pref['signature_access'],0)))
 {
 	return;
 }

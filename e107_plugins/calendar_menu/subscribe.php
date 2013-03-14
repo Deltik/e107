@@ -2,14 +2,14 @@
 /*
  * e107 website system
  *
- * Copyright (C) 2002-2010 e107 Inc (e107.org)
+ * Copyright (C) 2002-2012 e107 Inc (e107.org)
  * Released under the terms and conditions of the
  * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
  *
- * Event calendar - user email subscriptions management
+ * Event calendar - email subscriptions
  *
  * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/calendar_menu/subscribe.php $
- * $Id: subscribe.php 12440 2011-12-05 18:03:34Z e107steved $
+ * $Id: subscribe.php 13009 2012-10-27 15:19:55Z e107steved $
  */
 
 require_once("../../class2.php");

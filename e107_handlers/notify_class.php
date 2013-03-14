@@ -11,13 +11,15 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/notify_class.php $
-|     $Revision: 12892 $
-|     $Id: notify_class.php 12892 2012-07-21 03:20:42Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 13014 $
+|     $Id: notify_class.php 13014 2012-10-29 22:25:26Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
 if (!defined('e107_INIT')) { exit; }
+
+require_once(e_HANDLER.'date_handler.php');
 
 class notify {
 
@@ -221,7 +223,16 @@ function notify_commentpending($data)
 	global $nt, $tp;
 	foreach($data as $key=>$val)
 	{
-		$message .= "<br /><b>".$key.":</b> ".$val;
+		switch ($key)
+		{
+			case 'comment_subject' :	// Just ignore - its in the title
+				break;
+			case 'comment_time' :
+				$message .= "<br /><b>".$key.":</b> ".convert::convert_date($val, 'short');
+				break;
+			default :
+			$message .= "<br /><b>".$key.":</b> ".$val;
+		}
 	}	
 	$nt -> send('commentpending', NT_LAN_CM_1.': '.$data['comment_subject'], $message);
 }

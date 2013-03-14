@@ -11,7 +11,7 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/signup.php $
-|     $Id: signup.php 12985 2012-09-27 08:45:46Z secretr $
+|     $Id: signup.php 13080 2013-03-09 23:49:48Z e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -21,6 +21,13 @@ if((isset($_POST['newver']) || isset($_POST['register']) || isset($_POST['submit
 	// set e-token so it can be processed by class2
 	$_POST['e-token'] = '';
 }
+
+if(isset($_POST['email2']) && trim($_POST['email2']) != '') // Spam Thing. 
+{
+	exit;
+}
+
+
 define("e_NOCACHE",TRUE);
 require_once("class2.php");
 $qs = explode(".", e_QUERY);

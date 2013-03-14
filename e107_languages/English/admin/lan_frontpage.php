@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_frontpage.php $
-|     $Revision: 11678 $
-|     $Id: lan_frontpage.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 13002 $
+|     $Id: lan_frontpage.php 13002 2012-10-22 21:45:59Z e107moc $
+|     $Author: e107moc $
 +----------------------------------------------------------------------------+
 */
 
@@ -23,7 +23,7 @@ define("FRTLAN_18", "error: no content item selected");
 define("FRTLAN_19", "content main parent");
 define("FRTLAN_20", "content category");
 define("FRTLAN_21", "content item");
-// define("FRTLAN_22", "");
+define("FRTLAN_22", "Custom Page");
 // define("FRTLAN_23", "");
 // define("FRTLAN_24", "");
 // define("FRTLAN_25", "");

@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/secure_img_handler.php $
-|     $Revision: 12314 $
-|     $Id: secure_img_handler.php 12314 2011-07-08 02:55:07Z e107coders $
+|     $Revision: 13080 $
+|     $Id: secure_img_handler.php 13080 2013-03-09 23:49:48Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -103,7 +103,8 @@ class secure_image
 	function r_image()
 	{
 		$code = $this->create_code();
-		return "<img src='".e_HTTP.$this->HANDLERS_DIRECTORY."secure_img_render.php?{$code}' alt='' />";
+		return "<img src='".e_HTTP.$this->HANDLERS_DIRECTORY."secure_img_render.php?{$code}' alt='' />
+		<input type='text' id='email2' name='email2' value='' style='display:none' />";
 	}
 
 

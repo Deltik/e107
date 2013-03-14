@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/forum/forum_admin.php $
-|     $Revision: 12497 $
-|     $Id: forum_admin.php 12497 2012-01-01 05:46:54Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 13011 $
+|     $Id: forum_admin.php 13011 2012-10-28 16:26:00Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 $eplug_admin = true;
@@ -25,7 +25,7 @@ if(!empty($_POST) && !isset($_POST['e-token']))
 require_once("../../class2.php");
 include_lan(e_PLUGIN.'forum/languages/'.e_LANGUAGE.'/lan_forum_admin.php');
 
-if (!getperms("P"))
+if (!isset($pref['plug_installed']['forum']) || !getperms("P"))
 {
 	header("location:".e_BASE."index.php");
 	exit;
@@ -1561,6 +1561,8 @@ class forum
 	{
 		global $forum;
 		global $action;
+		global $pref;
+		if (!isset($pref['plug_installed']['forum'])) return '';
 		$forum->show_options($action);
 	}
 	?>

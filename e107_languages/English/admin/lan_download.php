@@ -4,9 +4,9 @@
 |     e107 website system - Language File.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_download.php $
-|     $Revision: 12599 $
-|     $Id: lan_download.php 12599 2012-02-27 14:31:16Z nlstart $
-|     $Author: nlstart $
+|     $Revision: 13037 $
+|     $Id: lan_download.php 13037 2012-11-02 20:55:54Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 define("DOWLAN_1", "Download added to database.");
@@ -152,4 +152,10 @@ define("DOWLAN_163", "User");
 define("DOWLAN_164", "IP");
 define("DOWLAN_165", "Date / time");
 define("DOWLAN_166", "Return to Downloads Front Page");
+
+define("DOWLAN_199", "Beware: after pruning the statistics for each download might not reflect their total history!");
+define("DOWLAN_200", "Number");
+define("DOWLAN_201", "Prune Log");
+define("DOWLAN_202", "Prune Log Details");
+
 ?>

@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/lancheck.php $
-|     $Revision: 12903 $
-|     $Id: lancheck.php 12903 2012-07-23 07:37:12Z e107coders $
+|     $Revision: 13068 $
+|     $Id: lancheck.php 13068 2013-01-23 04:52:35Z e107coders $
 |     $Author: e107coders $
 |	  With code from Izydor and Lolo.
 +----------------------------------------------------------------------------+
@@ -450,6 +450,7 @@ class lancheck
 				else
 				{
 					$this->checkLog('file',1);
+					$this->newFile(e_LANGUAGEDIR.$checklan."/".$subdir.$lnk,$checklan);
 					$text .= "<tr>
 					<td class='forumheader3' style='width:45%'>{$lnk}</td>
 					<td class='forumheader' style='width:50%'>".LAN_CHECK_4."</td>"; // file missing.
@@ -574,6 +575,10 @@ class lancheck
 				$ret['bom'][$key] = $fname;
 			}
 		}
+		elseif(substr($fname,-4) == ".php") 
+		{
+			file_put_contents($fname,"<?php\n\n?>");
+		}
 		
 	
 		return $ret;
@@ -598,6 +603,7 @@ class lancheck
 			sort($lang_array);
 		}
 	
+
 		$regexp = (strpos($comp_dir,e_LANGUAGEDIR) !== FALSE) ? "#.php#" : "#".$lang."#";
 	
 		foreach($lang_array as $f)
@@ -738,6 +744,8 @@ class lancheck
 			else
 			{
 				$this->checkLog('file',1);
+				$this->newFile($comp_dir."/languages/".$lnk,$target_lan);
+				
 				$text .= "<tr>
 				<td class='forumheader3' style='width:20%'>".$comp_name."</td>
 				<td class='forumheader3' style='width:25%'>".str_replace("English/","",$lnk)."</td>
@@ -755,6 +763,29 @@ class lancheck
 		return $text;
 	}
 	
+	function newFile($lnk,$target_lan)
+	{
+		if($target_lan == 'English') 
+		{
+			return;	
+		}
+				
+		$newfile = str_replace("English",$target_lan,$lnk);
+		$dir = dirname($newfile);
+				
+		if($dir != '.' && !is_dir($dir))
+		{
+		//	echo "<br />dir: ".$dir;
+			mkdir($dir,0755);	
+		} 
+		
+		if(!file_exists($newfile))
+		{
+		//	echo "<br />file: ".$newfile;
+			$data = chr(60)."?php\n\ndefine(\"EXAMPLE\",\"Generated Empty Language File\");";
+			file_put_contents($newfile,$data);	
+		}
+	}
 	
 	
 	function edit_lanfiles($dir1,$dir2,$f1,$f2,$lan)

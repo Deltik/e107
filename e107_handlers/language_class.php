@@ -4,8 +4,8 @@
 |     e107 website system - Language Class.
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/language_class.php $
-|     $Revision: 12076 $
-|     $Id: language_class.php 12076 2011-02-26 19:12:58Z e107coders $
+|     $Revision: 13015 $
+|     $Id: language_class.php 13015 2012-10-30 02:04:28Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -202,7 +202,7 @@ class language{
 			"Japanese"		=> "日本語",
 			"Korean"		=> "한국어",
 			"Lithuanian"	=> "Lietuvių",
-			"Mongolian"		=> "монгол",
+			"Mongolian"		=> "Монгол",
 			"Nepali"		=> "नेपाली",
 			"Norwegian"		=> "Norsk",
 			"Persian"	   	=> "فارسي",

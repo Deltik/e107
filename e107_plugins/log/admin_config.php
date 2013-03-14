@@ -11,13 +11,13 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/log/admin_config.php $
-|     $Revision: 12153 $
-|     $Id: admin_config.php 12153 2011-04-20 21:23:45Z e107steved $
+|     $Revision: 13011 $
+|     $Id: admin_config.php 13011 2012-10-28 16:26:00Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 require_once("../../class2.php");
-if (!getperms("P")) 
+if (!isset($pref['plug_installed']['log']) || !getperms("P")) 
 {
 	header("location:../../index.php");
 	exit;

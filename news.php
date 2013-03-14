@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/news.php $
-|     $Revision: 12705 $
-|     $Id: news.php 12705 2012-05-11 02:31:43Z e107coders $
+|     $Revision: 13066 $
+|     $Id: news.php 13066 2013-01-22 20:23:45Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -186,7 +186,7 @@ if ($action == 'cat' || $action == 'all')
 	{
     	$NEWSLISTTITLE = str_replace("{NEWSCATEGORY}",$tp->toHTML($category_name,FALSE,'TITLE'),$NEWSLISTTITLE);
 	}
-	$text .= "<div style='text-align:center;'><a href='".e_SELF."'>".LAN_NEWS_84."</a></div>";
+	$text .= "<div class='news-back-overview' style='text-align:center'><a href='".e_SELF."'>".LAN_NEWS_84."</a></div>";
 	ob_start();
 	$ns->tablerender($NEWSLISTTITLE, $text);
 	$cache_data = ob_get_flush();

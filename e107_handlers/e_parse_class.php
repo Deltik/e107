@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/e_parse_class.php $
-|     $Revision: 12910 $
-|     $Id: e_parse_class.php 12910 2012-07-24 09:34:58Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 13073 $
+|     $Id: e_parse_class.php 13073 2013-02-10 22:06:21Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -199,7 +199,8 @@ class e_parse
 
 
 	/**
-	 *	Check for HTML closing tag for input elements, without corresponding opening tag
+	 *	Check for umatched 'dangerous' HTML tags
+	 *		(these can destroy page layout where users are able to post HTML)
 	 *
 	 *	@param string $data
 	 *	@param string $tagList - if empty, uses default list of input tags. Otherwise a CSV list of tags to check (any type)
@@ -217,17 +218,41 @@ class e_parse
 		{
 			$checkTags = explode(',', $tagList);
 		}
-		$data = strtolower(preg_replace('#\[code.*?\[\/code\]#i', '', $data));		// Ignore code blocks. All lower case simplifies subsequent processing
-		foreach ($checkTags as $tag)
+		$tagArray = array_flip($checkTags);
+		foreach ($tagArray as &$v) { $v = 0; };		// Data fields become zero; keys are tag names.
+		$data = strtolower(preg_replace('#\[code\].*?\[\/code\]#i', '', $data));            // Ignore code blocks. All lower case simplifies the rest
+		$matches = array();
+		if (!preg_match_all('#<(\/|)([^<>]*?[^\/])>#', $data, $matches, PREG_SET_ORDER))
 		{
-			$aCount = substr_count($data,  '<'.$tag);			// Count opening tags
-			$bCount = substr_count($data,  '</'.$tag);			// Count closing tags
-			if ($aCount != $bCount)
-			{
-				return TRUE;		// Potentially abusive HTML found - tags don't balance
+			//echo "No tags found<br />";
+			return TRUE;				// No tags found; so all OK
+		}
+		//print_a($matches);
+		foreach ($matches as $m)
+		{
+			// $m[0] is the complete tag; $m[1] is '/' or empty; $m[2] is the tag and any attributes
+			list ($tag) = explode(' ', $m[2], 2);
+			if (!isset($tagArray[$tag])) continue;			// Not a tag of interest
+			if ($m[1] == '/')
+			{	// Closing tag
+				if ($tagArray[$tag] == 0) 
+				{
+					//echo "Close before open: {$tag}<br />";
+					return TRUE;		// Closing tag before we've had an opening tag
+				}
+				$tagArray[$tag]--;		// Obviously had at least one opening tag
+			}
+			else
+			{	// Opening tag
+				$tagArray[$tag]++;
 			}
 		}
-		return FALSE;		// Nothing detected
+		//print_a($tagArray);
+		foreach ($tagArray as $t)
+		{
+			if ($t > 0) return TRUE;		// More opening tags than closing tags
+		}
+		return FALSE;						// OK now
 	}
 
 
@@ -777,7 +802,11 @@ class e_parse
 
 
 
-
+	/**
+	 *	Truncate an html string to leave specified number of characters outside html tags
+	 *	Caution! May leave an unclosed html tag
+	 *	Caution! utf-8 patch not properly tested
+	 */
 	function html_truncate ($text, $len = 200, $more = ' ... ')
 	{
 		$pos = 0;
@@ -786,10 +815,10 @@ class e_parse
 		$intag = FALSE;
 		while($curlen < $len && $curlen < strlen($text))
 		{
-			switch($text{$pos})
+			switch($text[$pos])
 			{
 				case "<" :
-				if($text{$pos+1} == "/")
+				if($text[$pos+1] == "/")
 				{
 					$closing_tag = TRUE;
 				}
@@ -799,7 +828,7 @@ class e_parse
 				break;
 				
 				case ">" :
-				if($text{$pos-1} == "/")
+				if($text[$pos-1] == "/")
 				{
 					$closing_tag = TRUE;
 				}
@@ -813,7 +842,7 @@ class e_parse
 				break;
 				
 				case "&" :
-				if($text{$pos+1} == "#")
+				if($text[$pos+1] == "#")
 				{
 					$end = strpos(substr($text, $pos, 7), ";");
 					if($end !== FALSE)
@@ -830,9 +859,31 @@ class e_parse
 					break;
 				}
 				default:
-				$pos++;
-				if(!$intag) {$curlen++;}
-				break;
+					if (CHARSET == 'utf-8')
+					{
+						$c = ord($text[$pos]);		// Convert current character to an integer
+						if (($c & 0x80) === 0)
+						{
+							$pos++;					// Its a single-byte character
+						}
+						elseif (($c & 0xe0) === 0xc0)
+						{
+							$pos+= 2;				// Its a 2-byte character
+						}
+						elseif (($c & 0xf0) === 0xe0)
+						{
+							$pos+= 3;				// Its a 3-byte character
+						}
+						else
+						{
+							$pos+= 4;				// Assume ifs 4 bytes (could carry on = theoretically there are 5-byte and 6-byte sequences)
+						}
+					}
+					else
+					{
+						$pos++;
+					}
+					if(!$intag) {$curlen++;}
 			}
 		}
 		$ret = ($tmp_pos > 0 ? substr($text, 0, $tmp_pos+1) : substr($text, 0, $pos));

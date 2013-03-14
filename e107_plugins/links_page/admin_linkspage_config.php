@@ -10,14 +10,14 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/links_page/admin_linkspage_config.php $
-|     $Revision: 12570 $
-|     $Id: admin_linkspage_config.php 12570 2012-01-21 16:42:48Z e107steved $
+|     $Revision: 13011 $
+|     $Id: admin_linkspage_config.php 13011 2012-10-28 16:26:00Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
 require_once('../../class2.php');
-if (!getperms('P')) 
+if (!isset($pref['plug_installed']['links_page']) || !getperms('P')) 
 {
 	header('location:'.e_BASE.'index.php');
 	exit();
@@ -247,7 +247,9 @@ elseif (isset($qs[0]))
 // ##### Display options --------------------------------------------------------------------------
 function admin_linkspage_config_adminmenu()
 {
-	global $qs, $sql;
+	global $qs, $sql, $pref;
+	if (!isset($pref['plug_installed']['links_page'])) return '';
+	
 	$act = varset($qs[0],'cat');
 	if($act == 'cat' && isset($qs[1]))
 	{

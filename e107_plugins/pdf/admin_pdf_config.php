@@ -10,13 +10,19 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/pdf/admin_pdf_config.php $
-|     $Revision: 11678 $
-|     $Id: admin_pdf_config.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 13011 $
+|     $Id: admin_pdf_config.php 13011 2012-10-28 16:26:00Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
 require_once("../../class2.php");
+if (!isset($pref['plug_installed']['pdf']) || !getperms("P")) 
+{
+	header('location:'.e_BASE.'index.php');
+	exit;
+}
+
 require_once(e_ADMIN."auth.php");
 require_once(e_HANDLER."form_handler.php");
 $rs = new form;

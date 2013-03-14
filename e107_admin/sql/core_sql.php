@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/sql/core_sql.php $
-|     $Revision: 12063 $
-|     $Id: core_sql.php 12063 2011-02-07 22:25:44Z e107steved $
-|     $Author: e107steved $
+|     $Revision: 13081 $
+|     $Id: core_sql.php 13081 2013-03-10 00:07:40Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 header("location:../index.php");
@@ -277,7 +277,11 @@ CREATE TABLE news (
   news_summary text NOT NULL,
   news_thumbnail text NOT NULL,
   news_sticky tinyint(3) unsigned NOT NULL default '0',
-  PRIMARY KEY  (news_id)
+  PRIMARY KEY  (news_id),
+  KEY news_sticky (news_sticky),
+  KEY news_datestamp (news_datestamp),  
+  KEY news_start (news_start)    
+  
 ) ENGINE=MyISAM;
 
 

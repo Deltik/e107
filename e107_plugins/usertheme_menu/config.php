@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/usertheme_menu/config.php $
-|     $Revision: 11678 $
-|     $Id: config.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 13075 $
+|     $Id: config.php 13075 2013-02-20 21:30:13Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 $eplug_admin = TRUE;
@@ -22,7 +22,8 @@ include_lan(e_PLUGIN."usertheme_menu/languages/".e_LANGUAGE.".php");
 require_once(e_HANDLER.'userclass_class.php');
 
 
-if (!getperms("2")) 		// Same permissions as menu configuration
+//if (!isset($pref['plug_installed']['usertheme_menu']) || !getperms("2")) 		// Same permissions as menu configuration
+if (!getperms("2")) 		// Same permissions as menu configuration (this never gets 'installed')
 {
 	header("location:".e_BASE."index.php");
 	exit ;

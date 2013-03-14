@@ -12,9 +12,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/login.php $
-|     $Revision: 12065 $
-|     $Id: login.php 12065 2011-02-08 07:38:55Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 13070 $
+|     $Id: login.php 13070 2013-01-25 08:11:43Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -121,12 +121,29 @@ class userlogin {
 				$user_email = $lode['user_email'];
 
 				/* restrict more than one person logging in using same us/pw */
-				if($pref['disallowMultiLogin']) {
-					if($sql -> db_Select("online", "online_ip", "online_user_id='".$user_id.".".$user_name."'")) {
-						define("LOGINMESSAGE", LAN_304."<br /><br />");
-						$sql->db_Insert('generic', "0, 'failed_login', '".time()."', 0, '{$fip}', '$user_id', '".$tp->toDB(LAN_LOGIN_16.' ::: '.LAN_LOGIN_1.': '.$username.', '.LAN_LOGIN_17.': ').md5($ouserpass)."' ");
-						$this -> checkibr($fip);
-						return FALSE;
+				if($pref['disallowMultiLogin']) 
+				{
+					if($sql -> db_Select('online', 'online_ip, online_timestamp', "online_user_id='".$user_id.".".$user_name."'")) 
+					{
+					// Check whether user 'went away' quite a long time ago (I know this could be done in the db_Select(), but want to identify
+					// particular situation for debug).
+						global $online_timeout;
+						if(!isset($online_timeout)) 
+						{
+							$online_timeout = 300;
+						}
+						$row = $sql->db_Fetch(MYSQL_ASSOC);
+						if ($row['online_timestamp'] < (time() - $online_timeout))
+						{	// Allow the login (user probably went away quite a while ago) - leave option to log if next line uncommented
+							//$sql->db_Insert('generic', "0, 'failed_login', '".time()."', 0, '{$fip}', '$user_id', '".$tp->toDB('Debug - user already logged in'.' ::: '.LAN_LOGIN_1.': '.$username)."' ");
+						}
+						else
+						{
+							define('LOGINMESSAGE', LAN_304.'<br /><br />');
+							$sql->db_Insert('generic', "0, 'failed_login', '".time()."', 0, '{$fip}', '$user_id', '".$tp->toDB(LAN_LOGIN_16.' ::: '.LAN_LOGIN_1.': '.$username.', '.LAN_LOGIN_17.': ').md5($ouserpass)."' ");
+							$this -> checkibr($fip);
+							return FALSE;
+						}
 					}
 				}
 

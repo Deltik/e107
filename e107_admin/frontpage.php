@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/frontpage.php $
-|     $Revision: 11678 $
-|     $Id: frontpage.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 13002 $
+|     $Id: frontpage.php 13002 2012-10-22 21:45:59Z e107moc $
+|     $Author: e107moc $
 +----------------------------------------------------------------------------+
 */
 
@@ -33,7 +33,7 @@ $front_page['download'] = array('page' => 'download.php', 'title' => ADLAN_24);
 $front_page['wmessage'] = array('page' => 'index.php', 'title' => ADLAN_28);
 
 if ($sql -> db_Select("page", "*", "page_theme=''")) {
-	$front_page['custom']['title'] = 'Custom Page';
+	$front_page['custom']['title'] = FRTLAN_22;
 	while ($row = $sql -> db_Fetch()) {
 		$front_page['custom']['page'][] = array('page' => 'page.php?'.$row['page_id'], 'title' => $row['page_title']);
 	}
