@@ -10,8 +10,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/language.php $
-|     $Revision: 12903 $
-|     $Id: language.php 12903 2012-07-23 07:37:12Z e107coders $
+|     $Revision: 13102 $
+|     $Id: language.php 13102 2013-04-25 23:10:19Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -180,7 +180,7 @@ function share($newfile)
 {
 	global $pref;
 	
-	if(!$newfile)
+	if(!$newfile || E107_DEBUG_LEVEL > 0)
 	{
 		return;
 	}
@@ -698,7 +698,7 @@ function zip_up_lang($language)
 	$ret = array();
 	$ret['file'] = "";
 	
-	if($_SESSION['lancheck'][$language]['total'] > 0)
+	if($_SESSION['lancheck'][$language]['total'] > 0 && !E107_DEBUG_LEVEL)
 	{
 		$ret = array();
 		$ret['error'] = TRUE;

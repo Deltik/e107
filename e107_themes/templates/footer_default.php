@@ -9,7 +9,7 @@
 * Default footer for user pages
 *
 * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_themes/templates/footer_default.php $
-* $Id: footer_default.php 12938 2012-08-10 03:57:15Z e107coders $
+* $Id: footer_default.php 13102 2013-04-25 23:10:19Z e107coders $
 *
 */
 
@@ -237,6 +237,7 @@ echo "</body></html>";
 //
 // I Send the buffered page data, along with appropriate headers
 //
+header("X-Powered-By: e107", true); // no less secure than e107-specific html. 
 $page = ob_get_clean();
 
 $etag = md5($page);

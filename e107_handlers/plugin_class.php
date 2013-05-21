@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/plugin_class.php $
-|     $Revision: 13067 $
-|     $Id: plugin_class.php 13067 2013-01-22 21:15:54Z e107coders $
+|     $Revision: 13100 $
+|     $Id: plugin_class.php 13100 2013-04-17 21:07:05Z e107coders $
 |     $Author: e107coders $
 |
 +----------------------------------------------------------------------------+
@@ -372,6 +372,8 @@ class e107plugin
 			{
 				foreach($var as $tab) 
 				{
+					$tab = str_replace("TYPE=MyISAM","ENGINE=MyISAM",$tab);
+					
 					if(strtolower(CHARSET) == 'utf8' && !preg_match("/MyISAM.*CHARSET ?= ?utf8/i",$tab)) // Make all tables utf-8. 
 					{
 						$tab = str_replace("MyISAM", "MyISAM DEFAULT CHARSET=utf8", $tab);		

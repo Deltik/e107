@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_files/shortcode/batch/user_shortcodes.php $
-|     $Revision: 11956 $
-|     $Id: user_shortcodes.php 11956 2010-11-09 20:53:58Z e107steved $
-|     $Author: e107steved $
+|     $Revision: 13106 $
+|     $Id: user_shortcodes.php 13106 2013-05-17 23:33:50Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 if (!defined('e107_INIT')) { exit; }
@@ -228,6 +228,15 @@ SC_BEGIN USER_ID
 global $user;
 return $user['user_id'];
 SC_END
+
+SC_BEGIN USER_IP
+global $user;
+if(ADMIN)
+{
+	return $user['user_ip'];
+}
+SC_END 
+
 
 SC_BEGIN USER_NAME
 global $user;

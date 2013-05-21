@@ -11,14 +11,14 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/chatbox_menu/admin_chatbox.php $
-|     $Revision: 13011 $
-|     $Id: admin_chatbox.php 13011 2012-10-28 16:26:00Z e107steved $
+|     $Revision: 13085 $
+|     $Id: admin_chatbox.php 13085 2013-03-15 21:37:36Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 require_once("../../class2.php");
 
-if(!isset($pref['plug_installed']['chatbox']) || !getperms("P")) { header("location:".e_BASE."index.php"); exit; }
+if(!isset($pref['plug_installed']['chatbox_menu']) || !getperms("P")) { header("location:".e_BASE."index.php"); exit; }
 
 include_lan(e_PLUGIN."chatbox_menu/languages/".e_LANGUAGE."/".e_LANGUAGE."_config.php");
 

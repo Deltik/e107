@@ -9,7 +9,7 @@
  * Event calendar - event entry and display
  *
  * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/calendar_menu/calendar_shortcodes.php $
- * $Id: calendar_shortcodes.php 13009 2012-10-27 15:19:55Z e107steved $
+ * $Id: calendar_shortcodes.php 13095 2013-04-11 19:47:45Z e107steved $
  */
 
 
@@ -57,7 +57,7 @@ SC_BEGIN EC_MONTH_LIST
 	for ($ii = 0; $ii < 12; $ii++)
 	{
     	$m = $ii + 1;
-    	$monthjump = mktime(0, 0, 0, $m, 1, $year);
+    	$monthjump = gmmktime(0, 0, 0, $m, 1, $year);
 		$EC_MONTH_LIST .= "<a href='".e_SELF."?".$monthjump."'>".$monthabb[$ii]."</a> &nbsp;";
 	}
 	return $EC_MONTH_LIST;
@@ -277,7 +277,7 @@ SC_BEGIN EC_EVENTLIST_CAPTION
 	}
     elseif ($ds != 'event')
     {
-		$EC_EVENTLIST_CAPTION = EC_LAN_112.$months[date("m", $monthstart)-1];
+		$EC_EVENTLIST_CAPTION = EC_LAN_112.$months[gmdate("m", $monthstart)-1];
 	}
 	return $EC_EVENTLIST_CAPTION;
 SC_END

@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/update_routines.php $
-|     $Revision: 13081 $
-|     $Id: update_routines.php 13081 2013-03-10 00:07:40Z e107coders $
+|     $Revision: 13105 $
+|     $Id: update_routines.php 13105 2013-05-02 09:58:53Z e107coders $
 |     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
@@ -101,6 +101,7 @@ if($sql->db_Select("plugin", "plugin_version", "plugin_path = 'pm' AND plugin_in
 }
 
 // $dbupdate["701_to_702"] = LAN_UPDATE_8." .7.1 ".LAN_UPDATE_9." .7.2";
+$dbupdate["103_to_104"] = LAN_UPDATE_8." 1.0.3 ".LAN_UPDATE_9." 1.0.4";
 $dbupdate["10x_to_103"] = LAN_UPDATE_8." 1.0.x ".LAN_UPDATE_9." 1.0.3";
 $dbupdate["70x_to_706"] = LAN_UPDATE_8." .70x ".LAN_UPDATE_9." .706";
 $dbupdate["617_to_700"] = LAN_UPDATE_8." .617 ".LAN_UPDATE_9." .7";
@@ -174,6 +175,37 @@ function update_701_to_702($type='') {
 
 }
 */
+
+function update_103_to_104($type='')
+{
+	
+	global $sql; // , $e107cache;	
+	
+	$stripsan = array('amp;','[sanitised]','[/sanitised]','##xss##');
+ 
+ 	if($sql->db_Select('core','e107_value',"e107_name = 'SitePrefs' AND e107_value LIKE '%amp;amp;%' LIMIT 1"))
+	{
+		if($type == 'do')
+		{
+			$row = $sql->db_Fetch(MYSQL_ASSOC);
+			
+			if(trim($row['e107_value']) != '')
+			{
+				$newValue = str_replace($stripsan,'',$row['e107_value']);
+				$sql->db_Update('core',"e107_value = \"".$newValue."\" WHERE e107_name = 'SitePrefs' LIMIT 1");
+			}
+		}
+		
+		return update_needed('Prefs require cleaning');
+	}
+			
+	return TRUE; // No updates needed	
+ 		
+}
+
+
+
+
 
 function update_10x_to_103($type='')
 {
@@ -1754,13 +1786,15 @@ function update_extended_616() {
 	$ns->tablerender("Extended Users", "Updated extended user field data");
 }
 
-function update_needed()
+function update_needed($details='')
 {
 	global $ns;
 	if(E107_DEBUG_LEVEL)
 	{
 		$tmp = debug_backtrace();
-		$ns->tablerender("", "<div style='text-align:center'>Update required in ".basename(__FILE__)." on line ".$tmp[0]['line']."</div>");
+		$text = "Update required in ".basename(__FILE__)." on line ".$tmp[0]['line'];
+		$text .= ($details) ? " (".$details.") " : "";
+		$ns->tablerender("", "<div style='text-align:center'>".$text."</div>");
 	}
 	return FALSE;
 }

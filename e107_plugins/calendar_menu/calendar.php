@@ -9,7 +9,7 @@
  * Event calendar - full-page calendar display
  *
  * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/calendar_menu/calendar.php $
- * $Id: calendar.php 13074 2013-02-17 10:41:37Z e107steved $
+ * $Id: calendar.php 13092 2013-04-08 21:26:52Z e107steved $
  */
 
 
@@ -70,7 +70,6 @@ else
 {	// Get date from query
 	$datearray	= $ecal_class->gmgetdate($qs[0]);
 }
-
 
 // Note: A lot of the following variables are used within the shortcodes
 $month		= $datearray['mon'];							// Number of month being shown

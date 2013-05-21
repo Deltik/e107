@@ -10,9 +10,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/class2.php $
-|     $Revision: 12996 $
-|     $Id: class2.php 12996 2012-10-21 08:15:31Z e107steved $
-|     $Author: e107steved $
+|     $Revision: 13098 $
+|     $Id: class2.php 13098 2013-04-11 23:28:03Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 //
@@ -173,6 +173,19 @@ if(defset('e_DEBUG')==TRUE)
 {
 	$error_handler->debug = true;
 	error_reporting(E_ALL);	
+	$e107_debug = true;
+	list($majorVersion,$tmp) = explode(".",phpversion(),2);
+	
+	if($majorVersion == 4) // DEBUG ONLY - no need to translate. 
+	{
+		echo "<div style='border-radius: 10px; font-size:16px; margin:40px; padding:40px;background-color:#F2DEDE;color:#B94A48'>
+		<b>WARNING</b>: You are using PHP4 which is no longer maintained as of January 2008 and poses a high security risk if you should choose to continue to use it.<br />
+		Please ask your hosting provider or server administrator to upgrade to the latest stable version of PHP5. 
+		</div>";	
+	}
+	
+	unset($majorVersion,$tmp);
+	
 }
 
 if(isset($CLASS2_INCLUDE) && ($CLASS2_INCLUDE!=''))

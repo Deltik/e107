@@ -11,8 +11,8 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/e_parse_class.php $
-|     $Revision: 13073 $
-|     $Id: e_parse_class.php 13073 2013-02-10 22:06:21Z e107steved $
+|     $Revision: 13088 $
+|     $Id: e_parse_class.php 13088 2013-03-26 18:07:00Z e107steved $
 |     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
@@ -171,7 +171,7 @@ class e_parse
 			{
 				$no_encode = TRUE;
 			}
-			if (!isset($pref['html_abuse']) || $pref['html_abuse'])
+			if (($mod != 'pReFs') && ((!isset($pref['html_abuse']) || $pref['html_abuse'])))
 			{
 				if ($this->htmlAbuseFilter($data)) $no_encode = FALSE;
 			}

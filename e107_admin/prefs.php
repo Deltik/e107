@@ -10,9 +10,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/prefs.php $
-|     $Revision: 12892 $
-|     $Id: prefs.php 12892 2012-07-21 03:20:42Z e107coders $
-|     $Author: e107coders $
+|     $Revision: 13088 $
+|     $Id: prefs.php 13088 2013-03-26 18:07:00Z e107steved $
+|     $Author: e107steved $
 +----------------------------------------------------------------------------+
 */
 
@@ -90,7 +90,7 @@ if (isset($_POST['updateprefs']))
 	  }
 	  else
 	  {
-	    $pref[$key] = $tp->toDB($value);
+	    $pref[$key] = $tp->toDB($value, false, false, 'pReFs');
 	  }
 	}
 

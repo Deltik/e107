@@ -11,9 +11,9 @@
 |     GNU General Public License (http://gnu.org).
 |
 |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/xml_class.php $
-|     $Revision: 12986 $
-|     $Id: xml_class.php 12986 2012-09-29 14:48:56Z e107steved $
-|     $Author: e107steved $
+|     $Revision: 13094 $
+|     $Id: xml_class.php 13094 2013-04-11 18:18:40Z e107coders $
+|     $Author: e107coders $
 +----------------------------------------------------------------------------+
 */
 
@@ -40,7 +40,7 @@ class parseXml {
 	}
 
 
-    function getRemoteXmlFile($address, $timeout = 10)
+    function getRemoteXmlFile($address='', $timeout = 10)
 	{
 		// Could do something like: if ($timeout <= 0) $timeout = $pref['get_remote_timeout'];  here
 		$timeout = min($timeout, 120);
