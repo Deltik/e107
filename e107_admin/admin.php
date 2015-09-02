@@ -1,255 +1,351 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Steve Dunstan 2001-2002
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/admin.php $
-|     $Revision: 12316 $
-|     $Id: admin.php 12316 2011-07-08 04:16:58Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) 2008-2009 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ *
+ *
+ * $Source: /cvs_backup/e107_0.8/e107_admin/admin.php,v $
+ * $Revision$
+ * $Date$
+ * $Author$
+ */
+
 require_once('../class2.php');
+include_once(e107::coreTemplatePath('admin_icons')); // Needs to be loaded before infopanel AND in boot.php 
+
+if(vartrue($_GET['iframe']) == 1)
+{
+	define('e_IFRAME', true);
+}
+
 $e_sub_cat = 'main';
-require_once('auth.php');
-require_once(e_HANDLER.'admin_handler.php');
 
-// --- check for htmlarea.
-if (is_dir(e_ADMIN.'htmlarea') || is_dir(e_HANDLER.'htmlarea'))
+if (varset($pref['adminstyle'])=='cascade' || varset($pref['adminstyle'])=='beginner') // Deprecated Admin-include. 
 {
-	$text = "<table class='admin-warning' style='margin-left:0px;border:0px'>
-	<tr>
-	<td style='width:40px;vertical-align:top'>".ADMIN_WARNING_ICON."</td>
-	<td>".ADLAN_ERR_2."<br /><br /><ul><li>".
-	$HANDLERS_DIRECTORY."htmlarea/</li><li>".$ADMIN_DIRECTORY."htmlarea/</li></ul>
-	</td>
-	</tr></table>";
-	$ns ->tablerender(LAN_WARNING, $text);
+    $pref['adminstyle'] = 'infopanel'; 
 }
 
-// --- check for Malware/Trojans -----------
-
-$mal_paths = array(e_FILE."thumbs.php",e_FILE.'ok.txt',e_FILE."css.php",e_PLUGIN."css.php");
-$mal_list = array();
-foreach($mal_paths as $pth)
+if(strpos($pref['adminstyle'], 'infopanel') === 0)
 {
-	if(file_exists($pth))
+	require_once(e_ADMIN.'includes/'.$pref['adminstyle'].'.php');
+	$_class = 'adminstyle_'.$pref['adminstyle'];
+	if(class_exists($_class, false))
 	{
-		$mal_list[] = str_replace("../","",$pth);		
+		$adp = new $_class;	
 	}
+	else $adp = new adminstyle_infopanel;	
 }
 
-	$insp_srch = array('[',']');
-	$insp_repl = array("<a href='".e_ADMIN."fileinspector.php'>","</a>");
 
-if(count($mal_list))
+
+
+require_once(e_ADMIN.'boot.php');
+require_once(e_ADMIN.'auth.php');
+require_once(e_HANDLER.'upload_handler.php');
+
+
+new admin_start;
+
+
+$mes = e107::getMessage();
+
+if (!isset($pref['adminstyle'])) $pref['adminstyle'] = 'infopanel';		// Shouldn't be needed - but just in case
+
+
+
+
+
+class admin_start
 {
-	// Too important to rely on translations. ;-)
-	$ADLAN_ERR_7 = (defined("ADLAN_ERR_7")) ? ADLAN_ERR_7 : "Malicious files have been detected on your server. They should be deleted [b]immediately[/b].";
-	$ADLAN_ERR_8 = (defined("ADLAN_ERR_8")) ? ADLAN_ERR_8 : "Please run [File inspector] to check for core files that may have been modified.";
+	
+	private $incompat = array(
+			'banhelper'		=> 1.7,
+			'slir_admin'	=> 1.0,
+			'facebook_like'	=> 0.7,
+			'unanswered'	=> 1.4,
+			'lightwindow'	=> '1.0b',
+			'aa_jquery'		=> 1.2,
+			'who'			=> 1.0,
+			'ratings'		=> 4.2,
+			'lightbox'		=> 1.5,
+			'e107slider'	=> 0.1
+	);
 
-	$text = "<table class='admin-warning' style='margin-left:0px;border:0px'>
-	<tr>
-	<td style='width:40px;vertical-align:top'>".ADMIN_WARNING_ICON."</td>
-	<td>".$tp->toHtml($ADLAN_ERR_7,TRUE)."<br /><br /><ul><li>".implode("</li><li>",$mal_list)."</li></ul>
-	<br />".str_replace($insp_srch, $insp_repl, $ADLAN_ERR_8)."</td>
-	</tr></table>";
-	$ns -> tablerender(LAN_WARNING, $text);	
-}
 
+	private $allowed_types = null;
+	private $refresh  = false;
 
-
-
-// check for old modules.
-if(getperms('0') && isset($pref['modules']) && $pref['modules'] && $sql->db_Field("plugin",5) == "plugin_addons"){
-
-	$mods=explode(",", $pref['modules']);
-	$thef = "e_module.php";
-	foreach ($mods as $mod)
+	
+	
+	
+	function __construct()
 	{
-		if (is_readable(e_PLUGIN."{$mod}/module.php"))
+		$this->checkPaths();
+		$this->checkTimezone();
+		$this->checkWritable();
+		$this->checkHtmlarea();	
+		$this->checkIncompatiblePlugins();
+		$this->checkFileTypes();
+		$this->checkSuspiciousFiles();
+		$this->checkDeprecated();
+
+		if($this->refresh == true)
 		{
-			$mod_found[] = e_PLUGIN."{$mod}/module.php";
+			e107::getRedirect()->go(e_SELF);
 		}
-	}
 
-	if($mod_found)
+	}	
+
+	function checkPaths()
 	{
-    	$text = ADLAN_ERR_5." <b>".$thef."</b>:<br /><br /><ul>";
-		foreach($mod_found as $val)
+		$create_dir = array(e_MEDIA,e_SYSTEM,e_CACHE,e_CACHE_CONTENT,e_CACHE_IMAGE, e_CACHE_DB, e_LOG, e_BACKUP, e_CACHE_URL, e_TEMP, e_IMPORT);
+
+		$refresh = false;
+
+		foreach($create_dir as $dr)
 		{
-			$text .= "<li>".str_replace("../","",$val)."</li>\n";
-		}
-		$text .="</ul><br />
-		<form method='post' action='".e_ADMIN."db.php' id='upd'>
-		<a href='#' onclick=\"document.getElementById('upd').submit()\">".ADLAN_ERR_6."</a>
-		<input type='hidden' name='plugin_scan' value='1' />
-		</form>";
-		$ns -> tablerender(ADLAN_ERR_4,$text);
-	}
-}
-
-// check for file-types;
-if (is_readable(e_ADMIN.'filetypes.php')) {
-	$a_types = strtolower(trim(file_get_contents(e_ADMIN.'filetypes.php')));
-} else {
-	$a_types = 'zip, gz, jpg, png, gif';
-}
-
-$a_types = explode(',', $a_types);
-foreach ($a_types as $f_type) {
-	$allowed_types[] = '.'.trim(str_replace('.', '', $f_type));
-}
-
-// avatar check.
-$public = array(e_FILE.'public', e_FILE.'public/avatars');
-foreach ($public as $dir) {
-	if (is_dir($dir)) {
-		if ($dh = opendir($dir)) {
-			while (($file = readdir($dh)) !== false) {
-				if (is_dir($dir."/".$file) == FALSE && $file != '.' && $file != '..' && $file != '/' && $file != 'CVS' && $file != 'avatars' && $file != 'Thumbs.db' && $file !=".htaccess" && $file !="php.ini") {
-					$fext = substr(strrchr($file, "."), 0);
-					if (!in_array(strtolower($fext), $allowed_types) ) {
-						if ($file == 'index.html' || $file == "null.txt") {
-							if (filesize($dir.'/'.$file)) {
-								$potential[] = str_replace('../', '', $dir).'/'.$file;
-							}
-						} else {
-							$potential[] = str_replace('../', '', $dir).'/'.$file;
-						}
-					}
+			if(!is_dir($dr))
+			{
+				if(mkdir($dr, 0755))
+				{
+					$this->refresh = true;
 				}
 			}
-		closedir($dh);
 		}
+
 	}
-}
-
-if (isset($potential))
-{
-	$text = "<table class='admin-warning' style='margin-left:0px;border:0px'>
-	<tr>
-	<td style='width:40px;vertical-align:top'>".ADMIN_WARNING_ICON."</td>
-	<td>".$tp->toHtml(ADLAN_ERR_3,TRUE)."<br /><br /><ul><li>".implode("</li><li>",$potential)."</li></ul>
-	<br />".str_replace($insp_srch,$insp_repl,ADLAN_ERR_8)."</td>
-	</tr></table>";
-
-	$ns -> tablerender(LAN_WARNING, $text);
-}
-
-unset($insp_srch,$insp_repl,$text);
-// Moved to admin_template
-//echo $tp->parseTemplate('{ADMIN_UPDATE}', true);
 
 
-// update users using old layout names to their new names
-$update_prefs = FALSE;
-if (!$pref['adminstyle'] || $pref['adminstyle'] == 'default') {
-	$pref['adminstyle'] = 'compact';
-	$update_prefs = true;
-}
-if ($pref['adminstyle'] == 'adminb') {
-	$pref['adminstyle'] = 'cascade';
-	$update_prefs = true;
-}
-if ($pref['adminstyle'] == 'admin_etalkers') {
-	$pref['adminstyle'] = 'categories';
-	$update_prefs = true;
-}
-if ($pref['adminstyle'] == 'admin_combo') {
-	$pref['adminstyle'] = 'combo';
-	$update_prefs = true;
-}
-if ($pref['adminstyle'] == 'admin_classis') {
-	$pref['adminstyle'] = 'classis';
-	$update_prefs = true;
+
+	function checkTimezone()
+	{
+		$mes = e107::getMessage();
+		$timezone = e107::pref('core','timezone');
+
+		if(e107::getDate()->isValidTimezone($timezone) == false)
+		{
+			$mes->addWarning("Your timezone setting (".$timezone.") is invalid. It has been reset to UTC. To Modify, please go to Admin -> Preferences -> Date Display Options.", 'default', true);
+			e107::getConfig()->set('timezone','UTC')->save(false,true,false);
+			$this->refresh = true;
+		}
+
+	}
+
+
+	function checkWritable()
+	{
+		$mes = e107::getMessage();
+		
+		if(deftrue('e_MEDIA') && is_dir(e_MEDIA) && !is_writable(e_MEDIA))
+		{
+			$mes->addWarning("The folder ".e_MEDIA." is not writable. Please correct before proceeding.");			
+		}	
+		
+		if(deftrue('e_SYSTEM') && is_dir(e_SYSTEM) && !is_writable(e_SYSTEM))
+		{
+			$mes->addWarning("The folder ".e_SYSTEM." is not writable. Please correct before proceeding.");			
+		}			
+		
+	}
+
+
+	
+	
+	function checkHtmlarea()
+	{
+		$mes = e107::getMessage();
+		if (is_dir(e_ADMIN.'htmlarea') || is_dir(e_HANDLER.'htmlarea'))
+		{
+			$mes->addWarning($HANDLERS_DIRECTORY."htmlarea/<br />".$ADMIN_DIRECTORY."htmlarea/");
+		}	
+	}		
+	
+
+
+	function checkIncompatiblePlugins()
+	{
+		$mes = e107::getMessage();
+		
+		$installedPlugs = e107::getPref('plug_installed');
+	
+		$inCompatText = "";
+		$incompatFolders = array_keys($this->incompat);
+		
+		foreach($this->incompat as $folder => $version)
+		{
+			if(vartrue($installedPlugs[$folder]) && $version == $installedPlugs[$folder])
+			{
+				$inCompatText .= "<li>".$folder." v".$installedPlugs[$folder]."</li>";				
+			}	
+		}
+		
+		if($inCompatText)
+		{
+			$text = "<ul>".$inCompatText."</ul>";
+			$mes->addWarning("The following plugins are not compatible with this version of e107 and should be uninstalled: ".$text."<a class='btn btn-default' href='".e_ADMIN."plugin.php'>uninstall</a>");
+		}	
+		
+	}
+
+
+	function checkDeprecated()
+	{
+		$deprecated = array(
+			e_ADMIN."ad_links.php",
+			e_PLUGIN."tinymce4/e_meta.php",
+			e_THEME."bootstrap3/css/bootstrap_dark.css",
+			e_PLUGIN."search_menu/languages/English.php",
+			e_LANGUAGEDIR."English/lan_parser_functions.php",
+			e_HANDLER."np_class.php",
+			e_CORE."shortcodes/single/user_extended.sc",
+			e_ADMIN."download.php"
+		);
+
+		$found = array();
+		foreach($deprecated as $path)
+		{
+			if(file_exists($path))
+			{
+				$found[] = $path;
+			}
+
+
+		}
+
+		if(!empty($found))
+		{
+			$text = "The following old files can be safely deleted from your system: ";
+			$text .= "<ul><li>".implode("</li><li>", $found)."</li></ul>";
+
+			e107::getMessage()->addWarning($text);
+		}
+
+	}
+
+	
+	function checkFileTypes()
+	{
+		$mes = e107::getMessage();
+		
+		$this->allowed_types = get_filetypes();			// Get allowed types according to filetypes.xml or filetypes.php
+		if (count($this->allowed_types) == 0)
+		{
+			$this->allowed_types = array('zip' => 1, 'gz' => 1, 'jpg' => 1, 'png' => 1, 'gif' => 1);
+			$mes->addInfo("Setting default filetypes: ".implode(', ',array_keys($this->allowed_types)));
+		
+		}	
+	}
+	
+
+
+	function checkSuspiciousFiles()
+	{
+		$mes = e107::getMessage();
+		$public = array(e_UPLOAD, e_AVATAR_UPLOAD);
+		$tp = e107::getParser();
+		$exceptions = array(".","..","/","CVS","avatars","Thumbs.db",".ftpquota",".htaccess","php.ini",".cvsignore",'e107.htaccess');
+		
+		//TODO use $file-class to grab list and perform this check. 
+		foreach ($public as $dir)
+		{
+			if (is_dir($dir))
+			{
+				if ($dh = opendir($dir))
+				{
+					while (($file = readdir($dh)) !== false)
+					{
+						if (is_dir($dir."/".$file) == FALSE && !in_array($file,$exceptions))
+						{
+							$fext = substr(strrchr($file, "."), 1);
+							if (!array_key_exists(strtolower($fext),$this->allowed_types) )
+							{
+								if ($file == 'index.html' || $file == "null.txt")
+								{
+									if (filesize($dir.'/'.$file))
+									{
+										$potential[] = str_replace('../', '', $dir).'/'.$file;
+									}
+								}
+								else
+								{
+									$potential[] = str_replace('../', '', $dir).'/'.$file;
+								}
+							}
+						}
+					}
+					closedir($dh);
+				}
+			}
+		}
+		
+		if (isset($potential))
+		{
+			//$text = ADLAN_ERR_3."<br /><br />";
+			$mes->addWarning($tp->toHtml(ADLAN_ERR_3, true));
+			$text = '<ul>';
+			foreach ($potential as $p_file)
+			{
+				$text .= '<li>'.$p_file.'</li>';
+			}
+			$mes->addWarning($text);
+			//$ns -> tablerender(ADLAN_ERR_1, $text);
+		}	
+		
+		
+		
+		
+	}
+
+
+
+	
 }
 
-// temporary code to switch users using admin_jayya to jayya
 
-if ($pref['admintheme'] == 'admin_jayya') {
-	$pref['admintheme'] = 'jayya';
-	$update_prefs = true;
-}
-
-if ($pref['sitetheme'] == 'admin_jayya') {
-	$pref['sitetheme'] = 'jayya';
-	$update_prefs = true;
-}
 
 // ---------------------------------------------------------
 
 
-if ($update_prefs == true) {
-	save_prefs();
-}
-
 // auto db update
-if ('0' == ADMINPERMS) 
+if ('0' == ADMINPERMS)
 {
-	$sql->db_Mark_Time("Start: Db Update Check");
-	$dont_check_update = TRUE;		// This reduces frequency of checks
+	$sc = e107::getScBatch('admin');
+	echo $tp->parseTemplate('{ADMIN_COREUPDATE=alert}',true, $sc);
+	
 	require_once(e_ADMIN.'update_routines.php');
 	update_check();
 }
-// end auto db update
-$sql->db_Mark_Time("Start: Render Admin Panel");
 
-if (e_QUERY == 'purge' && getperms('0')) {
+
+
+// end auto db update
+
+/*
+if (e_QUERY == 'purge' && getperms('0'))
+{
 	$admin_log->purge_log_events(false);
 }
+*/
 
 $td = 1;
-if(!defined("ADLINK_COLS")){
-	define("ADLINK_COLS",5);
-}
-function render_links($link, $title, $description, $perms, $icon = FALSE, $mode = FALSE) {
-	global $td,$tp;
-	$text = '';
-	if (getperms($perms)) {
-		if ($mode == 'adminb') {
-			$text = "<tr><td class='forumheader3'>
-				<div class='td' style='text-align:left; vertical-align:top; width:100%'
-				onmouseover=\"eover(this, 'forumheader5')\" onmouseout=\"eover(this, 'td')\" onclick=\"document.location.href='".$link."'\">
-				".$icon." <b>".$title."</b> ".($description ? "[ <span class='smalltext'>".$description."</span> ]" : "")."</div></td></tr>";
-		} else {
-			if ($td == (ADLINK_COLS+1)) {
-				$text .= '</tr>';
-				$td = 1;
-			}
-			if ($td == 1) {
-				$text .= '<tr>';
-			}
-			if ($mode == 'default') {
-				$text .= "<td class='td' style='text-align:left; vertical-align:top; width:20%; white-space:nowrap'
-					onmouseover=\"eover(this, 'forumheader5')\" onmouseout=\"eover(this, 'td')\" onclick=\"document.location.href='".$link."'\">".$icon." ".$tp->toHTML($title,FALSE,"defs,emotes_off")."</td>";
-			}
-			else if ($mode == 'classis') {
-				$text .= "<td style='text-align:center; vertical-align:top; width:20%'><a href='".$link."' title=\"".$description."\">".$icon."</a><br />
-					<a href='".$link."' title=\"".$description."\"><b>".$tp->toHTML($title,FALSE,"defs,emotes_off")."</b></a><br /><br /></td>";
-			}elseif ($mode == 'beginner'){
-                $text .= "<td style='text-align:center; vertical-align:top; width:20%' ><a href='".$link."' >".$icon."</a>
-					<div style='padding:5px'>
-					<a href='".$link."' title=\"".$description."\" style='text-decoration:none'><b>".$tp->toHTML($title,FALSE,"defs,emotes_off")."</b></a></div><br /><br /><br /></td>";
-			}
-			$td++;
-		}
-	}
-	return $text;
+
+
+// DEPRECATED 
+function render_links($link, $title, $description, $perms, $icon = FALSE, $mode = FALSE)
+{
+	return e107::getNav()->renderAdminButton($link, $title, $description, $perms, $icon, $mode);
 }
 
-function render_clean() 
+
+function render_clean() // still used by classis, tabbed etc. 
 {
 	global $td;
-	$text = '';
-	while ($td <= ADLINK_COLS) 
+	$text = "";
+	while ($td <= ADLINK_COLS)
 	{
 		$text .= "<td class='td' style='width:20%;'></td>";
 		$td++;
@@ -259,11 +355,21 @@ function render_clean()
 	return $text;
 }
 
-$newarray = asortbyindex($array_functions, 1);
 
-require_once(e_ADMIN.'includes/'.$pref['adminstyle'].'.php');
 
-function admin_info() {
+if(is_object($adp))
+{
+	$adp->render();	
+}
+else
+{
+	require_once(e_ADMIN.'includes/'.$pref['adminstyle'].'.php');	
+}
+
+
+
+function admin_info()
+{
 	global $tp;
 
 	$width = (getperms('0')) ? "33%" : "50%";
@@ -291,33 +397,41 @@ function admin_info() {
 	return $tp->parseTemplate($ADMIN_INFO_TEMPLATE);
 }
 
-function status_request() {
+function status_request()
+{
 	global $pref;
-	if ($pref['adminstyle'] == 'classis' || $pref['adminstyle'] == 'cascade' || $pref['adminstyle'] == 'beginner') {
+	if ($pref['adminstyle'] == 'classis' || $pref['adminstyle'] == 'cascade' || $pref['adminstyle'] == 'beginner' || $pref['adminstyle'] == 'tabbed') {
 		return TRUE;
 	} else {
 		return FALSE;
 	}
 }
 
-function latest_request() {
+
+function latest_request()
+{
 	global $pref;
-	if ($pref['adminstyle'] == 'classis' || $pref['adminstyle'] == 'cascade' || $pref['adminstyle'] == 'beginner') {
+	if ($pref['adminstyle'] == 'classis' || $pref['adminstyle'] == 'cascade' || $pref['adminstyle'] == 'beginner' || $pref['adminstyle'] == 'tabbed') {
 		return TRUE;
 	} else {
 		return FALSE;
 	}
 }
 
-function log_request() {
+function log_request()
+{
 	global $pref;
-	if ($pref['adminstyle'] == 'classis' || $pref['adminstyle'] == 'cascade'|| $pref['adminstyle'] == 'beginner') {
+	if ($pref['adminstyle'] == 'classis' || $pref['adminstyle'] == 'cascade'|| $pref['adminstyle'] == 'beginner' || $pref['adminstyle'] == 'tabbed') {
 		return TRUE;
 	} else {
 		return FALSE;
 	}
 }
-$sql->db_Mark_Time("Start: Render Admin Footer");
+
+// getPlugLinks() - moved to sitelinks_class.php : pluginLinks();
+
+
+
 require_once("footer.php");
 
 ?>

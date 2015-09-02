@@ -1,13 +1,9 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system - Language File.
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_fileinspector.php $
-|     $Revision: 11717 $
-|     $Id: lan_fileinspector.php 11717 2010-08-30 07:36:37Z e107steved $
-|     $Author: e107steved $
-+----------------------------------------------------------------------------+
+ * Copyright (C) 2008-2013 e107 Inc (e107.org), Licensed under GNU GPL (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * Admin Language File
+ *
 */
 
 define("FC_LAN_1", "File Inspector");
@@ -31,6 +27,7 @@ define("FC_LAN_18", "Regular expression");
 define("FC_LAN_19", "Show line numbers");
 define("FC_LAN_20", "Show matched lines");
 define("FC_LAN_21", "Old Core Files");
+define("FC_LAN_22", "Highlight matched text");
 
 define("FR_LAN_1", "Scanning");
 define("FR_LAN_2", "Scan Results");
@@ -70,4 +67,20 @@ define("FR_LAN_26", "Warning! Known Insecurity Detected!");
 define("FR_LAN_27", "There are files on your server that are known to be exploitable and must be removed immediately.");
 define("FR_LAN_28", "Known insecure files");
 
+define("FR_LAN_29", "Total files matched");
+define("FR_LAN_30", "Total lines matched");
+define("FR_LAN_31", "Missing complete plugin folder");
+
+define("FS_LAN_1", "Create Snapshot");
+define("FS_LAN_2", "Absolute path of root directory to create image from");
+define("FS_LAN_3", "Create snapshot for plugin: (Your plugin will be listed when a writable e_inspect.php file exists in your plugins root directory.)");
+define("FS_LAN_4", "Select...");
+define("FS_LAN_5", "Create snapshot of current or deprecated files");
+define("FS_LAN_6", "Current");
+define("FS_LAN_7", "Deprecated");
+define("FS_LAN_8", "Create Snapshot");
+define("FS_LAN_9", "Snapshot");
+define("FS_LAN_10", "Snapshot Created");
+define("FS_LAN_11", "The snapshot was successfully created.");
+define("FS_LAN_12", "Return To Main Page");
 ?>

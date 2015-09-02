@@ -3,17 +3,17 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|     Copyright (C) 2008-2009 e107 Inc (e107.org)
+|     http://e107.org
 |
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/db_debug_class.php $
-|     $Revision: 12892 $
-|     $Id: db_debug_class.php 12892 2012-07-21 03:20:42Z e107coders $
-|     $Author: e107coders $
+|     $Source: /cvs_backup/e107_0.8/e107_handlers/db_debug_class.php,v $
+|     $Revision$
+|     $Date$
+|     $Author$
 +----------------------------------------------------------------------------+
 */
 
@@ -33,6 +33,14 @@ class e107_db_debug {
 	var $scbcount;
 	var $deprecated_funcs = array();
 	var $aLog = array();	// Generalized debug log (only seen during debug)
+	var $aIncList = array(); // Included files
+	
+	function __construct()
+    {
+       
+        
+        
+    }
 
 	function e107_db_debug() {
 		global $eTimingStart;
@@ -45,7 +53,8 @@ class e107_db_debug {
 		'%DB Count' => 0,
 		'Time' => ($eTimingStart),
 		'DB Time' => 0,
-		'DB Count' => 0
+		'DB Count' => 0,
+		'Memory'   => 0
 		);
 		
 		register_shutdown_function('e107_debug_shutdown');
@@ -56,21 +65,24 @@ class e107_db_debug {
 //
 	function Show_All() 
 	{
-		global $eTraffic;
-		
 		$this->ShowIf('Debug Log', $this->Show_Log());
-		$this->ShowIf('Traffic Counters', $eTraffic->Display());
+		$this->ShowIf('Traffic Counters', e107::getSingleton('e107_traffic')->Display());
 		$this->ShowIf('Time Analysis', $this->Show_Performance());
 		$this->ShowIf('SQL Analysis', $this->Show_SQL_Details());
 		$this->ShowIf('Shortcodes / BBCode',$this->Show_SC_BB());
 		$this->ShowIf('Paths', $this->Show_PATH());
 		$this->ShowIf('Deprecated Function Usage', $this->Show_DEPRECATED());
-		$this->ShowIf('Included Files', $this->Show_Includes());
+        if(E107_DBG_INCLUDES)
+        {
+            $this->aIncList = get_included_files(); 
+        }   
+		$this->ShowIf('Included Files: '.count($this->aIncList), $this->Show_Includes());
 	}
 	
 	function ShowIf($title,$str)
 	{
-		global $ns;
+		global $ns,$style;
+		$style='debug';
 		
 		if (!isset($ns)) {
 			echo "Why did ns go away?<br />";
@@ -98,7 +110,8 @@ class e107_db_debug {
 		'%DB Count' => 0,
 		'Time' => $timeNow,
 		'DB Time' => 0,
-		'DB Count' => 0
+		'DB Count' => 0,
+		'Memory'   => ((function_exists("memory_get_usage"))? memory_get_usage() : 0)
 		);
 	
 		$this->aOBMarks[$nMarks]=ob_get_level().'('.ob_get_length().')';
@@ -109,77 +122,106 @@ class e107_db_debug {
 		//$this->aMarkNotes[$nMarks] .= "verify start: ".$eTimingStart."<br />";
 	}
 
-	function Mark_Query($query, $rli, $origQryRes, $aTrace, $mytime, $curtable) {
-		global $sql;
 
-		// Explain the query, if possible...
-		list($qtype,$args) = explode(" ", ltrim($query), 2);
+	/**
+	 * @param $query
+	 * @param $rli
+	 * @param $origQryRes
+	 * @param $aTrace
+	 * @param $mytime
+	 * @param $curtable
+	 */
+	function Mark_Query($query, $rli, $origQryRes, $aTrace, $mytime, $curtable)
+	{
+	//  global $sql;
+		$sql = e107::getDb( $rli);
+
+		 // Explain the query, if possible...
+		list($qtype,$args) = explode(" ", ltrim($query), 2); 
 
 		$nFields=0;
 		$bExplained = FALSE;
-		if (!strcasecmp($qtype,'SELECT') || !strcasecmp($qtype,'(SELECT')) {
-			$sQryRes=is_null($rli) ? mysql_query("EXPLAIN $query") : mysql_query("EXPLAIN $query", $rli);
-
-			if ($sQryRes) { // There's something to explain
-			$nFields = mysql_num_fields($sQryRes);
-			$bExplained = TRUE;
+		$ExplainText = '';
+	  // Note the subtle bracket in the second comparison! Also, strcasecmp() returns zero on match
+		if (!strcasecmp($qtype,'SELECT') || !strcasecmp($qtype,'(SELECT'))
+		{	// It's a SELECT statement - explain it
+		// $rli should always be set by caller
+	//	$sQryRes = (is_null($rli) ? mysql_query("EXPLAIN {$query}") :  mysql_query("EXPLAIN {$query}", $rli));
+	
+		$sQryRes = $sql->gen("EXPLAIN {$query}");
+		
+			if ($sQryRes)  // There's something to explain
+			{ 
+				//$nFields = mysql_num_fields($sQryRes);
+				$nFields = $sql->columnCount($sQryRes); // mysql_num_fields($sQryRes);
+				$bExplained = TRUE;
 			}
-		} else {
-			$sQryRes = $origQryRes;
-			$bExplained = FALSE;
-			$nFields=0;
+		} 
+		else 
+		{	// Don't run 'EXPLAIN' on other queries
+			$sQryRes = $origQryRes;			// Return from original query could be TRUE or a link resource if success
 		}
 
 		// Record Basic query info
-		$sCallingFile=$aTrace[1]['file'];
-		$sCallingLine=$aTrace[1]['line'];
+		$sCallingFile	= varset($aTrace[2]['file']);
+		$sCallingLine	= varset($aTrace[2]['line']);
 
-		$t = &$this->aSQLdetails[$sql->db_QueryCount()];
-		$t['marker']=$this->curTimeMark;
-		$t['caller']="$sCallingFile($sCallingLine)";
-		$t['query']=$query;
-		$t['ok']=$sQryRes ? TRUE : FALSE;
-		$t['error']=$sQryRes ? '' : mysql_error();
-		$t['nFields']=$nFields;
-		$t['time']=$mytime;
+		$t 				= &$this->aSQLdetails[$sql->db_QueryCount()];
+		$t['marker']	= $this->curTimeMark;
+		$t['caller']	= "$sCallingFile($sCallingLine)";
+		$t['query']		= $query;
+		$t['ok']		= $sQryRes ? TRUE : FALSE;
+		$t['error']		= $sQryRes ? '' : mysql_error();
+		$t['nFields']	= $nFields;
+		$t['time']		= $mytime;
 
-		if ($bExplained) {
+		if ($bExplained) 
+		{
 			$bRowHeaders=FALSE;
-			while ($row = @mysql_fetch_assoc($sQryRes)) {
-				if (!$bRowHeaders) {
-					$bRowHeaders=TRUE;
-					$t['explain']="<tr><td class='forumheader3'><b>".implode("</b></td><td class='forumheader3'><b>", array_keys($row))."</b></td></tr>\n";
+		//  while ($row = @mysql_fetch_assoc($sQryRes))
+			while ($row = $sql->fetch())
+			{
+				if (!$bRowHeaders) 
+				{
+				  $bRowHeaders=TRUE;
+				  $t['explain']="<tr><td class='forumheader3'><b>".implode("</b></td><td class='forumheader3'><b>", array_keys($row))."</b></td></tr>\n";
 				}
-
 				$t['explain'] .= "<tr><td class='forumheader3'>".implode("&nbsp;</td><td class='forumheader3'>", array_values($row))."&nbsp;</td></tr>\n";
 			}
-		} else {
-			$t['explain'] = '';
+		} 
+		else 
+		{
+			$t['explain'] = $ExplainText;
 		}
 
 		$this->aTimeMarks[$this->nTimeMarks]['DB Time'] += $mytime;
 		$this->aTimeMarks[$this->nTimeMarks]['DB Count']++;
 
-		if (array_key_exists($curtable, $this->aDBbyTable)) {
+		if (array_key_exists($curtable, $this->aDBbyTable)) 
+		{
 			$this->aDBbyTable[$curtable]['DB Time'] += $mytime;
 			$this->aDBbyTable[$curtable]['DB Count']++;
-		} else {
-			$this->aDBbyTable[$curtable]['Table']=$curtable;
-			$this->aDBbyTable[$curtable]['%DB Time']=0;  // placeholder
-			$this->aDBbyTable[$curtable]['%DB Count']=0; // placeholder
-			$this->aDBbyTable[$curtable]['DB Time']=$mytime;
-			$this->aDBbyTable[$curtable]['DB Count']=1;
+		} 
+		else 
+		{
+			$this->aDBbyTable[$curtable]['Table']		= $curtable;
+			$this->aDBbyTable[$curtable]['%DB Time']	= 0;  // placeholder
+			$this->aDBbyTable[$curtable]['%DB Count']	= 0; // placeholder
+			$this->aDBbyTable[$curtable]['DB Time']		= $mytime;
+			$this->aDBbyTable[$curtable]['DB Count']	= 1;
 		}
 	}
 
-	function Show_SQL_Details() {
+
+
+	function Show_SQL_Details($force=false) {
 		global $sql;
 		//
 		// Show stats from aSQLdetails array
 		//
-		if (!E107_DBG_SQLQUERIES && !E107_DBG_SQLDETAILS)
+		if (!E107_DBG_SQLQUERIES && !E107_DBG_SQLDETAILS  && ($force === false))
 		{
-			return FALSE;
+			return false;
 		}
 
 
@@ -194,21 +236,26 @@ class e107_db_debug {
 		$badCount=0;
 		$okCount=0;
 
-		foreach ($this->aSQLdetails as $cQuery) {
-			if ($cQuery['ok']) {
+		foreach ($this->aSQLdetails as $cQuery) 
+		{
+			if ($cQuery['ok']==1) 
+			{
 				$okCount++;
-			} else {
+			} 
+			else 
+			{
 				$badCount++;
 			}
 		}
 
 		if ($badCount) {
-			$text .= "\n<table class='fborder debug-footer'>\n";
+			$text .= "\n<table class='fborder table table-striped table-bordered'>\n";
 			$text .= "<tr><td class='fcaption' colspan='2'><b>$badCount Query Errors!</b></td></tr>\n";
 			$text .= "<tr><td class='fcaption'><b>Index</b></td><td class='fcaption'><b>Query / Error</b></td></tr>\n";
 
 			foreach ($this->aSQLdetails as $idx => $cQuery) {
-				if (!$cQuery['ok']) {
+				if (!$cQuery['ok']) 
+				{
 					$text .= "<tr><td class='forumheader3' rowspan='2' style='text-align:right'>{$idx}&nbsp;</td>
     	       	        <td class='forumheader3'>".$cQuery['query']."</td></tr>\n<tr><td class='forumheader3'>".$cQuery['error']."</td></tr>\n";
 				}
@@ -219,20 +266,23 @@ class e107_db_debug {
 		//
 		// Optionally list good queries
 		//
+		
 		if ($okCount && E107_DBG_SQLDETAILS) {
-			$text .= "\n<table class='fborder debug-footer'>\n";
-			$text .= "<tr><td class='fcaption' colspan='3'><b>{$okCount[TRUE]} Good Queries</b></td></tr>\n";
+			$text .= "\n<table class='fborder table table-striped table-bordered'>\n";
+			$text .= "<tr><td class='fcaption' colspan='3'><b>".$this->countLabel($okCount)." Good Queries</b></td></tr>\n";
 			$text .= "<tr><td class='fcaption'><b>Index</b></td><td class='fcaption'><b>Qtime</b></td><td class='fcaption'><b>Query</b></td></tr>\n
 				 <tr><td class='fcaption'>&nbsp;</td><td class='fcaption'><b>(msec)</b></td><td class='fcaption'>&nbsp;</td></tr>\n
 				 ";
 
-			foreach ($this->aSQLdetails as $idx => $cQuery) {
+			foreach ($this->aSQLdetails as $idx => $cQuery) 
+			{
 				if ($cQuery['ok']) {
 					$text .= "<tr><td class='forumheader3' style='text-align:right'>{$idx}&nbsp;</td>
-	       	        <td class='forumheader3' style='text-align:right'>".number_format($cQuery['time'] * 1000.0, 4)."&nbsp;</td><td class='forumheader3'>".$cQuery['query'].'<br />['.$cQuery['marker']." - ".$cQuery['caller']."]</td></tr>\n";
+	       	        <td class='forumheader3' style='text-align:right'>".number_format($cQuery['time'] * 1000.0, 4)."&nbsp;</td>
+	       	        <td class='forumheader3'>".$cQuery['query'].'<br />['.$cQuery['marker']." - ".$cQuery['caller']."]</td></tr>\n";
 				}
 			}
-			$text .= "\n</table><br />\n";
+				$text .= "\n</table><br />\n";
 		}
 
 
@@ -241,7 +291,7 @@ class e107_db_debug {
 		//
 		if (E107_DBG_SQLDETAILS) {
 			foreach ($this->aSQLdetails as $idx => $cQuery) {
-				$text .= "\n<table class='fborder debug-footer' style='width: 100%;'>\n";
+				$text .= "\n<table class='fborder table table-striped table-bordered' style='width: 100%;'>\n";
 				$text .= "<tr><td class='forumheader3' colspan='".$cQuery['nFields']."'><b>".$idx.") Query:</b> [".$cQuery['marker']." - ".$cQuery['caller']."]<br />".$cQuery['query']."</td></tr>\n";
 				if (isset($cQuery['explain'])) {
 					$text .= $cQuery['explain'];
@@ -250,12 +300,33 @@ class e107_db_debug {
 					$text .= "<tr><td class='forumheader3' ><b>Error in query:</b></td></tr>\n<tr><td class='forumheader3'>".$cQuery['error']."</td></tr>\n";
 				}
 
-				$text .= "<tr><td class='forumheader3'  colspan='".$cQuery['nFields']."'><b>Query time:</b> ".number_format($cQuery['time'] * 1000.0, 4).' (ms)</td></tr></table><br />'."\n";
+				$text .= "<tr><td class='forumheader3'  colspan='".$cQuery['nFields']."'><b>Query time:</b> ".number_format($cQuery['time'] * 1000.0, 4).' (ms)</td></tr>';
+			
+				$text .= '</table><br />'."\n";
 			}
 		}
 
 		return $text;
 	}
+	
+	function countLabel($amount)
+	{
+		if($amount < 30)
+		{
+			$inc = 'label-success';
+		}
+		elseif($amount < 50)
+		{
+			$inc = 'label-warning';	
+		}	
+		elseif($amount > 49)
+		{
+			$inc = 'label-danger label-important';		
+		}
+		
+		return "<span class='label ".$inc."'>".$amount."</span>";
+	}
+	
 
 	function Show_Performance() {
 		//
@@ -263,22 +334,23 @@ class e107_db_debug {
 		//
 		global $db_time;
 		global $sql;
-		global $eTimingStart, $eTimingStop, $eTraffic;
+		global $eTimingStart, $eTimingStop;
 
 		$this->Mark_Time('Stop');
 
 		if (!E107_DBG_TIMEDETAILS) return '';
 
-		$totTime=$eTraffic->TimeDelta($eTimingStart, $eTimingStop);
-		$text = "\n<table class='fborder'>\n";
+		$totTime = e107::getSingleton('e107_traffic')->TimeDelta($eTimingStart, $eTimingStop);
+		$text = "\n<table class='fborder table table-striped table-condensed'>\n";
 		$bRowHeaders=FALSE;
 		reset($this->aTimeMarks);
 		$aSum=$this->aTimeMarks[0]; // create a template from the 'real' array
 		$aSum['Index']='';
 		$aSum['What']='Total';
 		$aSum['Time']=0;
-		$aSum['DB Count']=0;
 		$aSum['DB Time']=0;
+		$aSum['DB Count']=0;
+		$aSum['Memory']='';
 
 		while (list($tKey, $tMarker) = each($this->aTimeMarks)) {
 			if (!$bRowHeaders) {
@@ -298,9 +370,12 @@ class e107_db_debug {
 					}
 				}
 				$aUnits['OB Lev'] = 'lev(buf bytes)';
+				$aUnits['Memory'] = '(kb)';
 				$text .= "<tr><td class='fcaption' style='text-align:right'><b>".implode("</b>&nbsp;</td><td class='fcaption' style='text-align:right'><b>", $aUnits)."</b>&nbsp;</td></tr>\n";
 			}
 
+			$tMem = $tMarker['Memory'];
+			$tMarker['Memory'] = ($tMem ? number_format($tMem/1024.0, 1) : '?'); // display if known
 			if ($tMarker['What'] == 'Stop') {
 				$tMarker['Time']='&nbsp;';
 				$tMarker['%Time']='&nbsp;';
@@ -309,13 +384,13 @@ class e107_db_debug {
 				$tMarker['DB Time']='&nbsp;';
 				$tMarker['OB Lev']=$this->aOBMarks[$tKey];
 				$tMarker['DB Count']='&nbsp;';
-			} else {
+				} else {
 				// Convert from start time to delta time, i.e. from now to next entry
 				$nextMarker=current($this->aTimeMarks);
 				$aNextT=$nextMarker['Time'];
 				$aThisT=$tMarker['Time'];
 	
-				$thisDelta=$eTraffic->TimeDelta($aThisT, $aNextT);
+				$thisDelta = e107::getSingleton('e107_traffic')->TimeDelta($aThisT, $aNextT);
 				$aSum['Time'] += $thisDelta;
 				$aSum['DB Time'] += $tMarker['DB Time'];
 				$aSum['DB Count'] += $tMarker['DB Count'];
@@ -324,8 +399,10 @@ class e107_db_debug {
 				$tMarker['%DB Count']=number_format(100.0 * $tMarker['DB Count'] / $sql->db_QueryCount(), 0);
 				$tMarker['%DB Time']=$db_time ? number_format(100.0 * $tMarker['DB Time'] / $db_time, 0) : 0;
 				$tMarker['DB Time']=number_format($tMarker['DB Time']*1000.0, 1);
+				
 				$tMarker['OB Lev']=$this->aOBMarks[$tKey];
 			}
+
 			$text .= "<tr><td class='forumheader3' >".implode("&nbsp;</td><td class='forumheader3'  style='text-align:right'>", array_values($tMarker))."&nbsp;</td></tr>\n";
 
 			if (isset($this->aMarkNotes[$tKey])) {
@@ -348,7 +425,7 @@ class e107_db_debug {
 		// Stats by Table
 		//
 
-		$text .= "\n<table class='fborder debug-footer'>\n";
+		$text .= "\n<table class='fborder table table-striped table-condensed'>\n";
 
 		$bRowHeaders=FALSE;
 		$aSum=$this->aDBbyTable['core']; // create a template from the 'real' array
@@ -407,125 +484,156 @@ class e107_db_debug {
 
 	}
 
-	function logCode($type, $code, $parm, $postID)
+	function logCode($type, $code, $parm, $details)
 	{
 		if (!E107_DBG_BBSC)
 		{
 			return FALSE;
 		}
-		$this -> scbbcodes[$this -> scbcount]['type'] = $type;
-		$this -> scbbcodes[$this -> scbcount]['code'] = $code;
-		$this -> scbbcodes[$this -> scbcount]['parm'] = htmlentities($parm);
-		$this -> scbbcodes[$this -> scbcount]['postID'] = $postID;
-		$this -> scbcount ++;
+				
+		$this->scbbcodes[$this->scbcount]['type'] = $type;
+		$this->scbbcodes[$this->scbcount]['code'] = $code;
+		$this->scbbcodes[$this->scbcount]['parm'] = (string)$parm;
+		$this->scbbcodes[$this->scbcount]['details'] = $details;
+		$this->scbcount ++;
 	}
 
-	function Show_SC_BB()
+	function Show_SC_BB($force=false)
 	{
-		if (!E107_DBG_BBSC)
+		if (!E107_DBG_BBSC  && ($force === false))
 		{
-			return FALSE;
+			return false;
 		}
-		$text = "<table class='fborder debug-footer' style='width: 100%'>
-			<tr><td class='fcaption' colspan='4'><b>Shortcode / BBCode</b></td></tr>
+
+		$text = "<table class='fborder table table-striped table-condensed' style='width: 100%'>
+			
+			<thead>
 			<tr>
-			<td class='fcaption' style='width: 10%;'>Type</td>
-			<td class='fcaption' style='width: 10%;'>Code</td>
-			<td class='fcaption' style='width: 10%;'>Parm</td>
-			<td class='fcaption' style='width: 10%;'>Post ID</td>
-			</tr>\n";
+				<th class='fcaption' style='width: 10%;'>Type</th>
+				<th class='fcaption' style='width: 30%;'>Code</th>
+				<th class='fcaption' style='width: 20%;'>Parm</th>
+				<th class='fcaption' style='width: 40%;'>Details</th>
+			</tr>
+			</thead>
+			<tbody>\n";
 
  		foreach($this -> scbbcodes as $codes)
 		{
 			$text .= "<tr>
 				<td class='forumheader3' style='width: 10%;'>".($codes['type'] == 1 ? "BBCode" : "Shortcode")."</td>
-				<td class='forumheader3' style='width: 10%;'>".(isset($codes['code']) ? $codes['code'] : "&nbsp;")."</td>
-				<td class='forumheader3' style='width: 10%;'>".($codes['parm'] ? $codes['parm'] : "&nbsp;")."</td>
-				<td class='forumheader3' style='width: 10%;'>".($codes['postID'] ? $codes['postID'] : "&nbsp;")."</td>
+				<td class='forumheader3' style='width: auto;'>".(isset($codes['code']) ? $codes['code'] : "&nbsp;")."</td>
+				<td class='forumheader3' style='width: auto;'>".($codes['parm'] ? $codes['parm'] : "&nbsp;")."</td>
+				<td class='forumheader3' style='width: 40%;'>".($codes['details'] ? $codes['details'] : "&nbsp;")."</td>
 				</tr>\n";
 		}
-		$text .= "</table>";
+		$text .= "</tbody></table>";
 		return $text;
 	}
 
-	function Show_PATH()
+	function Show_PATH($force=false)
 	{
-		if (!E107_DBG_PATH)
+		if (!E107_DBG_PATH && ($force === false))
 		{
 			return FALSE;
 		}
-		global $e107,$sql;
-		$text = "<table class='fborder debug-footer' style='width: 100%'>
-			<tr><td class='fcaption debug-footer-caption' colspan='4'><b>Paths &amp; Variables</b></td></tr>
+		
+		global $e107;
+		$sql = e107::getDb();
+		
+		$text = "<table class='fborder table table-striped table-condensed debug-footer' style='width:100%'>
+		<colgroup>
+		<col style='width:20%' />
+		<col style='width:auto' />
+		</colgroup>
+		<thead>
 			<tr>
-			<td class='forumheader3'>\n";
-			
-		$text .= "e_DOMAIN: '".e_DOMAIN."'<br />";
-		$text .= "e_SUBDOMAIN: '".e_SUBDOMAIN."'<br />";
-		$text .= "e_HTTP: '".e_HTTP."'<br />";
-		$text .= "e_BASE: '".e_BASE."'<br />";
-		$text .= "e_PLUGIN: '".e_PLUGIN."'<br />";
-		$text .= "e_THEME: '".e_THEME."'<br />";
-		$text .= "e_MENU: '".e_MENU."'<br />";
-		$text .= "THEME: '".THEME."'<br />";
-		$text .= "THEME_LAYOUT: '".THEME_LAYOUT."'<br />";
-			
-		$text .= "<br />";
-		$text .= "e_LANGUAGE: '".e_LANGUAGE."'<br />";
-		$text .= "e_LAN: '".e_LAN."'<br />";
-		$text .= "e_LOCALE: '".e_LOCALE."'<br />";
-		
-		$text .= "<br />";
-		$text .= "META_OG: '".META_OG."'<br />";
-		$text .= "META_DESCRIPTION: '".META_DESCRIPTION."'<br />";
-		$text .= "<br />";
-		
-		$text .= "USERID: '".USERID."'<br />";
-		$text .= "USERNAME: '".USERNAME."'<br />";
-		$text .= "USERURL: '".USERURL."'<br />";
-		$text .= "USEREMAIL: '".USEREMAIL."'<br />";
-		$text .= "USERCLASS: '".USERCLASS."'<br />";
-		$text .= "USERREALM: '".USERREALM."'<br />";
-		$text .= "USERVIEWED: '".USERVIEWED."'<br />";
-		$text .= "USERVISITS: '".USERVISITS."'<br />";		
-		$text .= "USERIMAGE: '".USERIMAGE."'<br />";	
-		$text .= "USERSESS: '".USERSESS."'<br />";		
-		$text .= "USERJOINED: '".USERJOINED."'<br />";									
-	
-		$text .= "<br />";
-		
-		
-		$text .= "SQL Language: '".$sql->mySQLlanguage."'<br />";
-		$text .= "<br />";					
-		$text .= "\$_SERVER['PHP_SELF']: '".$_SERVER['PHP_SELF']."'<br />";
-		$text .= "\$_SERVER['DOCUMENT_ROOT']: '".$_SERVER['DOCUMENT_ROOT']."'<br />";
-		$text .= "\$_SERVER['HTTP_HOST']: '".$_SERVER['HTTP_HOST']."'<br />";
-		$text .= "\$_SERVER['REQUEST_URI']: '".$_SERVER['REQUEST_URI']."'<br />";
-		$text .= "</td></tr>
-		<tr><td class='forumheader3'>\n";
-			
-  	  	$text .= "<pre>".htmlspecialchars(print_r($e107,TRUE))."</pre>";
-  	  	$text .= "</td></tr>\n";
-		$text .= "<tr><td class='fcaption' colspan='4'><b>Session</b></td></tr>
-					<tr><td class='forumheader3'>\n";
-  	  	$text .= "<pre>".htmlspecialchars(print_r($_SESSION,TRUE))."</pre>";
+				<th class='fcaption debug-footer-caption left' colspan='2'><b>Paths &amp; Variables</b></th>
+			</tr>
+		</thead>
+		<tbody>\n";
 
-		$text .= "</td></tr></table>";
+
+		$inc = array(
+			'BOOTSTRAP','HEADERF','FOOTERF','FILE_UPLOADS','FLOODPROTECT','FLOODTIMEOUT','CHARSET',
+			'GUESTS_ONLINE','MEMBERS_ONLINE','PAGE_NAME','STANDARDS_MODE','TIMEOFFSET',
+			'TOTAL_ONLINE','THEME','THEME_ABS','THEME_LAYOUT','THEME_STYLE','META_OG','META_DESCRIPTION','MPREFIX','VIEWPORT','BODYTAG','CSSORDER'
+		);
+		
+		$userCon = get_defined_constants(true);
+		ksort($userCon['user']);
+		
+		foreach($userCon['user'] as $k=>$v)
+		{
+			if(E107_DBG_ALLERRORS || in_array($k,$inc) ||  substr($k,0,5) == 'ADMIN'  ||  substr($k,0,2) == 'E_' || substr($k,0,2) == 'e_' || substr($k,0,4) == 'E107' || substr($k,0,4) == 'SITE' ||  substr($k,0,4) == 'USER' || substr($k,0,4) == 'CORE')
+			{
+				$text .= "
+				<tr>
+					<td class='forumheader3'>".$k."</td>
+					<td class='forumheader3'>".htmlspecialchars($v)."</td>
+				</tr>";		
+			}
+		}
+				
+		$sess = e107::getSession();
+					
+		$text .= "
+			
+		
+			<tr>
+				<td class='forumheader3'>SQL Language</td>
+				<td class='forumheader3'>".$sql->mySQLlanguage."</td>
+			</tr>
+
+			<tr>
+				<td class='forumheader3' colspan='2'><pre>".htmlspecialchars(print_r($e107,TRUE))."</pre></td>
+			</tr>
+			<tr>
+				<td class='fcaption' colspan='2'><h2>Session</h2></td>
+			</tr>
+			<tr>
+				<td class='forumheader3'>Session lifetime</td>
+				<td class='forumheader3'>".$sess->getOption('lifetime')." seconds</td>
+			</tr>
+			<tr>
+				<td class='forumheader3'>Session domain</td>
+				<td class='forumheader3'>".$sess->getOption('domain')."</td>
+			</tr>
+			<tr>
+				<td class='forumheader3'>Session save method</td>
+				<td class='forumheader3'>".$sess->getSaveMethod()."</td>
+			</tr>
+			
+			
+			
+			<tr>
+				<td class='forumheader3' colspan='2'><pre>".htmlspecialchars(print_r($_SESSION,TRUE))."</pre></td>
+			</tr>
+			
+		</tbody>
+		</table>";
+
 		return $text;
 	}
 
 
-	function Show_DEPRECATED(){
-		if (!E107_DBG_DEPRECATED){
-			return FALSE;
-		} else {
-			$text = "<table class='fborder debug-footer' style='width: 100%'>
+	function Show_DEPRECATED($force=false)
+	{
+		if (!E107_DBG_DEPRECATED  && ($force === false))
+		{
+			return false;
+		} 
+		else 
+		{
+			$text = "<table class='fborder table table-striped table-condensed' style='width: 100%'>
 			<tr><td class='fcaption' colspan='4'><b>The following deprecated functions were used:</b></td></tr>
+			<thead>
 			<tr>
-			<td class='fcaption' style='width: 10%;'>Function</td>
-			<td class='fcaption' style='width: 10%;'>File</td>
-			<td class='fcaption' style='width: 10%;'>Line</td>
-			</tr>\n";
+			<th class='fcaption' style='width: 10%;'>Function</th>
+			<th class='fcaption' style='width: 10%;'>File</th>
+			<th class='fcaption' style='width: 10%;'>Line</th>
+			</tr>
+			</thead>
+			<tbody>\n";
 
 			foreach($this->deprecated_funcs as $funcs)
 			{
@@ -535,7 +643,7 @@ class e107_db_debug {
 				<td class='forumheader3' style='width: 10%;'>{$funcs['line']}</td>
 				</tr>\n";
 			}
-			$text .= "</table>";
+			$text .= "</tbody></table>";
 			return $text;
 		}
 	}
@@ -577,7 +685,7 @@ class e107_db_debug {
 		// Dump the debug log
 		//
 
-		$text .= "\n<table class='fborder debug-footer'>\n";
+		$text .= "\n<table class='fborder table table-striped'>\n";
 
 		$bRowHeaders=FALSE;
 		
@@ -596,22 +704,32 @@ class e107_db_debug {
 		return $text;
 	}
 	
-	function Show_Includes()
+	function Show_Includes($force=false)
 	{
-		if (!E107_DBG_INCLUDES) return FALSE;
+		if (!E107_DBG_INCLUDES  && ($force === false)) return false;
 
-		$aIncList = get_included_files();
-		$text = "<table class='fborder debug-footer'>\n";
+		
+        
+		$text = "<table class='fborder table table-striped'>\n";
 		$text .= "<tr><td class='forumheader3'>".
-							implode("&nbsp;</td></tr>\n<tr><td class='forumheader3'>", $aIncList).
+							implode("&nbsp;</td></tr>\n<tr><td class='forumheader3'>", $this->aIncList).
 							"&nbsp;</td></tr>\n";
 		$text .= "</table>\n";
 		return $text;
 	}
 }
 
+//
+// Helper functions (not part of the class)
+//
 function e107_debug_shutdown()
 {
+	if(e_AJAX_REQUEST) // extra output will break json ajax returns ie. comments 
+	{
+		return; 	
+	}
+	
+	
 	global $error_handler,$e107_Clean_Exit,$In_e107_Footer,$ADMIN_DIRECTORY;
 	if (isset($e107_Clean_Exit)) return;
 
@@ -620,24 +738,11 @@ function e107_debug_shutdown()
 		if (defset('ADMIN_AREA'))
 		{
 			$filewanted=realpath(dirname(__FILE__)).'/../'.$ADMIN_DIRECTORY.'footer.php';
-			
-		}
-		elseif(defset('USER_AREA'))
+			require_once($filewanted);
+		} else if (defset('USER_AREA'))
 		{
-			// $filewanted=realpath(dirname(__FILE__)).'/../'.FOOTERF;	(fails when in plugin dir)
-			$filewanted=realpath(FOOTERF);		
-		}
-		
-		if($filewanted)
-		{
-			if(is_readable($filewanted))
-			{
-				require_once($filewanted);	
-			}
-			else
-			{
-				trigger_error("Couldn't load ".$filewanted, E_USER_ERROR);
-			}
+			$filewanted=realpath(dirname(__FILE__)).'/../'.FOOTERF;
+			require_once($filewanted);
 		}
 	}
 // 
@@ -650,13 +755,21 @@ function e107_debug_shutdown()
 	while (ob_get_level() > 0) {
 		ob_end_flush();
 	}
+
 	if (isset($error_handler))
-	{		
-		echo "<br /><div><h3>PHP Errors:</h3><br />".$error_handler->return_errors()."</div>\n";
-	} else {
-		echo "<b>e107 Shutdown while no error_handler available!</b>";
+	{
+		if($error_handler->return_errors())
+		{
+	  		echo "<br /><div 'e107_debug php_err'><h3>PHP Errors:</h3><br />".$error_handler->return_errors()."</div>\n";
+			echo "</body></html>";
+		}
 	}
-	echo "</body></html>";
+	else
+	{
+   		echo "<b>e107 Shutdown while no error_handler available!</b>";
+			echo "</body></html>";       
+	}
+
 }
 
 ?>

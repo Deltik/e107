@@ -1,78 +1,120 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/updateadmin.php $
-|     $Revision: 11678 $
-|     $Id: updateadmin.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
+ * e107 website system
+ *
+ * Copyright (C) 2008-2009 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * Administration Area - Update Admin
+ *
+ *
 */
 
-// Experimental e-token
-if(!empty($_POST) && !isset($_POST['e-token']))
-{
-	// set e-token so it can be processed by class2
-	$_POST['e-token'] = '';
-}
-
 require_once('../class2.php');
-$e_sub_cat = 'admin_pass';
-require_once('auth.php');
 
-if (isset($_POST['update_settings']))
+// include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_'.e_PAGE);
+e107::lan('core','updateadmin',true);
+
+$e_sub_cat = 'admin_pass';
+
+require_once(e_ADMIN.'auth.php');
+// require_once(e_HANDLER.'user_handler.php'); //use e107::getUserSession() instead. 
+require_once(e_HANDLER.'validator_class.php');
+$userMethods = e107::getUserSession();
+$mes = e107::getMessage();
+$frm = e107::getForm();
+
+if (isset($_POST['update_settings'])) 
 {
-	if ($_POST['ac'] == md5(ADMINPWCHANGE)) {
-		if ($_POST['a_password'] != "" && $_POST['a_password2'] != "" && ($_POST['a_password'] == $_POST['a_password2'])) {
-			if (admin_update($sql -> db_Update("user", "user_password='".md5($_POST['a_password'])."', user_pwchange='".time()."' WHERE user_name='".ADMINNAME."'"), 'update', UDALAN_3." ".ADMINNAME)) {
-				$e_event -> trigger('adpword');
+	if ($_POST['ac'] == md5(ADMINPWCHANGE)) 
+	{
+		$userData = array();
+		$userData['data'] = array();
+		if ($_POST['a_password'] != '' && $_POST['a_password2'] != '' && ($_POST['a_password'] == $_POST['a_password2'])) 
+		{
+			$userData['data']['user_password'] = $sql->escape($userMethods->HashPassword($_POST['a_password'], $currentUser['user_loginname']), FALSE);
+			unset($_POST['a_password']);
+			unset($_POST['a_password2']);
+			if (vartrue($pref['allowEmailLogin']))
+			{
+				$user_prefs = e107::getArrayStorage()->unserialize($currentUser['user_prefs']);
+				$user_prefs['email_password'] = $userMethods->HashPassword($new_pass, $email);
+				$userData['data']['user_prefs'] = e107::getArrayStorage()->serialize($user_prefs);
 			}
-		} else {
-			$ns->tablerender(LAN_UPDATED_FAILED, "<div style='text-align:center'><b>".UDALAN_1."</b></div>");
+
+			$userData['data']['user_pwchange'] = time();
+			$userData['WHERE'] = 'user_id='.USERID;
+			validatorClass::addFieldTypes($userMethods->userVettingInfo,$userData, $userMethods->otherFieldTypes);
+	
+			$check = $sql->update('user',$userData);
+			if ($check) 
+			{
+				e107::getLog()->add('ADMINPW_01', '', E_LOG_INFORMATIVE, '');
+				$userMethods->makeUserCookie(array('user_id' => USERID,'user_password' => $userData['data']['user_password']), FALSE);		// Can't handle autologin ATM
+				$mes->addSuccess(UDALAN_3." ".ADMINNAME);
+				
+				e107::getEvent()->trigger('adpword'); //@deprecated
+				
+				$eventData = array('user_id'=> USERID, 'user_pwchange'=> $userData['data']['user_pwchange']); 
+				e107::getEvent()->trigger('admin_password_update',$eventData ); 
+				 
+				$ns->tablerender(UDALAN_2, $mes->render());
+			}
+			else 
+			{
+				$mes->addError(UDALAN_1.' '.LAN_UPDATED_FAILED);
+				$ns->tablerender(LAN_UPDATED_FAILED, $mes->render());
+			}
+		}
+		else 
+		{
+			$mes->addError(UDALAN_1.' '.LAN_UPDATED_FAILED);
+			$ns->tablerender(LAN_UPDATED_FAILED, $mes->render());
 		}
 	}
-} else {
-	$text = "<div style='text-align:center'>
-	<form method='post' action='".e_SELF."'>\n
-	<table style='".ADMIN_WIDTH."' class='fborder'>
-	<tr>
-	<td style='width:30%' class='forumheader3'>".UDALAN_4.": </td>
-	<td style='width:70%' class='forumheader3'>
-	".ADMINNAME."
-	</td>
-	</tr>
-	<tr>
-	<td style='width:30%' class='forumheader3'>".UDALAN_5.": </td>
-	<td style='width:70%' class='forumheader3'>
-	<input class='tbox' type='password' name='a_password' size='60' value='' maxlength='20' />
-	</td>
-	</tr>
-
-	<tr>
-	<td style='width:30%' class='forumheader3'>".UDALAN_6.": </td>
-	<td style='width:70%' class='forumheader3'>
-	<input class='tbox' type='password' name='a_password2' size='60' value='' maxlength='20' />
-	</td>
-	</tr>
-
-	<tr>
-	<td colspan='2' style ='text-align:center'  class='forumheader'>
-	<input type='hidden' name='e-token' value='".e_TOKEN."' />
-	<input class='button' type='submit' name='update_settings' value='".UDALAN_7."' />
-	<input type='hidden' name='ac' value='".md5(ADMINPWCHANGE)."' />
-	</td>
-	</tr>
-	</table>
-
+} 
+else 
+{
+	$text = "
+	<form method='post' action='".e_SELF."'>
+		<fieldset id='core-updateadmin'>
+			<legend class='e-hideme'>".UDALAN_8." ".ADMINNAME."</legend>
+			<table class='table adminform'>
+				<colgroup>
+					<col class='col-label' />
+					<col class='col-control' />
+				</colgroup>
+				<tbody>
+					<tr>
+						<td>".UDALAN_4.":</td>
+						<td>
+							".ADMINNAME."
+						</td>
+					</tr>
+					<tr>
+						<td>".LAN_PASSWORD.":</td>
+						<td>".$frm->password('a_password','',20,'generate=1&strength=1')."
+							
+						</td>
+					</tr>
+					<tr>
+						<td>".UDALAN_6.":</td>
+						<td>
+							<input class='tbox input-text' type='password' name='a_password2' size='60' value='' maxlength='20' />
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<div class='buttons-bar center'>
+				<input type='hidden' name='ac' value='".md5(ADMINPWCHANGE)."' />".
+				$frm->admin_button('update_settings','no-value','update',UDALAN_7)."
+				
+			</div>
+		</fieldset>
 	</form>
-	</div>";
+	
+	";
 
 	$ns->tablerender(UDALAN_8." ".ADMINNAME, $text);
 }

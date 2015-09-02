@@ -3,98 +3,130 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     Steve Dunstan 2001-2002
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|     Copyright (C) 2008-2009 e107 Inc 
+|     http://e107.org
 |
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/login.php $
-|     $Revision: 12296 $
-|     $Id: login.php 12296 2011-06-29 05:39:14Z e107coders $
-|     $Author: e107coders $
+|     $Source: /cvs_backup/e107_0.8/login.php,v $
+|     $Revision$
+|     $Date$
+|     $Author$
 +----------------------------------------------------------------------------+
 */
 
-// Experimental e-token
-if(isset($_POST['userlogin']) && !isset($_POST['e-token']))
-{
-	// set e-token so it can be processed by class2
-	$_POST['e-token'] = '';
-}
-
 require_once("class2.php");
+include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/lan_'.e_PAGE);
 
-if (USER || e_LOGIN !='login.php') // Disable page if user logged in, or some custom e_LOGIN value is used. 
+if ((USER || e_LOGIN != e_SELF || empty($pref['user_reg']) ) && e_QUERY !== 'preview' ) // Disable page if user logged in, or some custom e_LOGIN value is used.
 {
-	header('location:'.e_BASE.'index.php');
+	header('location:'.e_BASE.'index.php');      
 	exit();
 }
 
-$HEADER = "";
+define('e_IFRAME',true);
+//$HEADER = '';
+//$FOOTER='';				// Avoids strange displays when debug enabled! (But doesn't completely maintain XHTML formatting)
+
 require_once(HEADERF);
 $use_imagecode = ($pref['logcode'] && extension_loaded("gd"));
-if ($use_imagecode)
+
+define("LOGIN_CAPTCHA", $use_imagecode);
+
+//if (LOGIN_CAPTCHA) 
+//{
+	//require_once(e_HANDLER."secure_img_handler.php");
+	//$sec_img = new secure_image;
+//}
+
+if (!USER || getperms('0')) 
 {
-	require_once(e_HANDLER."secure_img_handler.php");
-	$sec_img = new secure_image;
-}
+	if (!defined('LOGINMESSAGE')) define('LOGINMESSAGE', '');		// LOGINMESSAGE only appears with errors
+	require_once(e_HANDLER.'form_handler.php'); // required for BC
+	$rs = new form; // required for BC
+	
+	
+//	$text = "";
+ //   $allowEmailLogin = varset($pref['allowEmailLogin'],0);
+ //   $ulabel = array(LAN_LOGIN_1,LAN_LOGIN_28,LAN_LOGIN_29);
 
-if (!USER)
-{
-	require_once(e_HANDLER."form_handler.php");
-	$rs = new form;
-	$text = "";
+//	$LOGIN_USERNAME_LABEL = $ulabel[$allowEmailLogin];
+//	$LOGIN_TABLE_LOGINMESSAGE = LOGINMESSAGE;
+//	$LOGIN_TABLE_USERNAME = "<input class='tbox' type='text' name='username' id='username' size='40' maxlength='100' />";
+//	$LOGIN_TABLE_PASSWORD = "<input class='tbox' type='password' name='userpass' id='userpass' size='40' maxlength='100' />";
+	
+	// if (!USER && e107::getSession()->is('challenge') && varset($pref['password_CHAP'],0)) 
+	// {
+	  // $LOGIN_TABLE_PASSWORD .= "<input type='hidden' name='hashchallenge' id='hashchallenge' value='".e107::getSession()->get('challenge')."' />\n\n";
+	// }
+	
+	
+	
+//	if ($use_imagecode)
+//	{
+//		$LOGIN_TABLE_SECIMG_LAN = LAN_LOGIN_13;
+//		$LOGIN_TABLE_SECIMG_HIDDEN = "<input type='hidden' name='rand_num' value='".$sec_img->random_number."' />";
+	//	$LOGIN_TABLE_SECIMG_SECIMG = $sec_img->r_image();
+//		$LOGIN_TABLE_SECIMG_TEXTBOC = "<input class='tbox' type='text' name='code_verify' size='15' maxlength='20' />";
+//	}
+//	$LOGIN_TABLE_AUTOLOGIN = "<input type='checkbox' name='autologin' value='1' />";
+//	$LOGIN_TABLE_AUTOLOGIN_LAN = LAN_LOGIN_8;
+//	$LOGIN_TABLE_SUBMIT = "<input class='btn btn-primary button' type='submit' name='userlogin' value=\"".LAN_LOGIN_9."\" />";
 
-	$LOGIN_TABLE_LOGINMESSAGE = LOGINMESSAGE;
-	$LOGIN_TABLE_USERNAME = "<input class='tbox' type='text' name='username' size='40' maxlength='100' />";
-	$LOGIN_TABLE_PASSWORD = "<input class='tbox' type='password' name='userpass' size='40' maxlength='100' />";
-	if ($use_imagecode)
-	{
-		$LOGIN_TABLE_SECIMG_LAN = LAN_LOGIN_13;
-		$LOGIN_TABLE_SECIMG_HIDDEN = "<input type='hidden' name='rand_num' value='".$sec_img->random_number."' />";
-		$LOGIN_TABLE_SECIMG_SECIMG = $sec_img->r_image();
-		$LOGIN_TABLE_SECIMG_TEXTBOC = "<input class='tbox' type='text' name='code_verify' size='15' maxlength='20' />";
-	}
-	$LOGIN_TABLE_AUTOLOGIN = "<input type='checkbox' name='autologin' value='1' />";
-	$LOGIN_TABLE_AUTOLOGIN_LAN = LAN_LOGIN_8;
-	$LOGIN_TABLE_SUBMIT = "<input class='button' type='submit' name='userlogin' value=\"".LAN_LOGIN_9."\" /><input type='hidden' name='e-token' value='".e_TOKEN."' />";
-
-	$login_message = LAN_LOGIN_3." | ".SITENAME;
 	if (!isset($LOGIN_TABLE) || !$LOGIN_TABLE)
 	{
-		if (file_exists(THEME.'login_template.php'))
+		if (file_exists(THEME.'templates/login_template.php')) //v2.x path 
+		{
+			require_once(THEME.'templates/login_template.php');
+		}
+		elseif (file_exists(THEME.'login_template.php'))
 		{
 			require_once(THEME.'login_template.php');
 		}
 		else
 		{
-			require_once(e_BASE.$THEMES_DIRECTORY."templates/login_template.php");
+			require_once(e_CORE."templates/login_template.php");
 		}
 	}
+	
+	$sc = e107::getScBatch('login');
+	
+	if((deftrue('BOOTSTRAP')) && isset($LOGIN_TEMPLATE['page']))
+	{
+		$LOGIN_TABLE_HEADER = $LOGIN_TEMPLATE['page']['header'];
+		$LOGIN_TABLE 		= "<form class='form-signin' method='post' action='".e_SELF."' onsubmit='hashLoginPassword(this)' >".$LOGIN_TEMPLATE['page']['body']."</form>";
+		$LOGIN_TABLE_FOOTER = $LOGIN_TEMPLATE['page']['footer'];
+	}
+	
+	
+	$text = $tp->parseTemplate($LOGIN_TABLE,true, $sc);
+	
+	
+	
 //	$text = preg_replace("/\{(.*?)\}/e", 'varset($\1,"\1")', $LOGIN_TABLE);
-	$tVars = false;
-	$text = $tp->simpleParse($LOGIN_TABLE, $tVars, false);
+	
+	if(getperms('0'))
+	{
+		echo "<div class='alert alert-block alert-error alert-danger center'> You are currently logged in.</div>";	
+	}
 	
 //	echo preg_replace("/\{(.*?)\}/e", 'varset($\1,"\1")', $LOGIN_TABLE_HEADER);
-	echo $tp->simpleParse($LOGIN_TABLE_HEADER, $tVars, false);
-	
+	$login_message = SITENAME; //	$login_message = LAN_LOGIN_3." | ".SITENAME;
+	echo LOGINMESSAGE;
+	echo $tp->parseTemplate($LOGIN_TABLE_HEADER, $sc);
 	$ns->tablerender($login_message, $text, 'login_page');
-
-	$LOGIN_TABLE_FOOTER_USERREG = '&nbsp;';		// In case no registration system enabled
-	if ($pref['user_reg'])
-	{
-		$LOGIN_TABLE_FOOTER_USERREG = "<a href='".e_SIGNUP."'>".LAN_LOGIN_11."</a>";
-	}
-//	echo preg_replace("/\{([^ ]*?)\}/e", 'varset($\1,"\1")', $LOGIN_TABLE_FOOTER);
-	echo $tp->simpleParse($LOGIN_TABLE_FOOTER, $tVars, false);
+	echo $tp->parseTemplate($LOGIN_TABLE_FOOTER, $sc);
+	
+	
+	// echo preg_replace("/\{([^ ]*?)\}/e", 'varset($\1,"\1")', $LOGIN_TABLE_FOOTER);
 }
 
-$FOOTER = "";
 require_once(FOOTERF);
+exit;
 //echo "</body></html>";
 
-$sql->db_Close();
+// $sql->db_Close();
 
 ?>

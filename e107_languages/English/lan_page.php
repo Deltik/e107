@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/lan_page.php $
-|     $Revision: 11678 $
-|     $Id: lan_page.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Source: /cvs_backup/e107_0.8/e107_languages/English/lan_page.php,v $
+|     $Revision$
+|     $Date$
+|     $Author$
 +----------------------------------------------------------------------------+
 */
 
@@ -18,10 +18,15 @@ define("LAN_PAGE_5", "Thank you for rating this page");
 define("LAN_PAGE_6", "You do not have permission to view this page");
 define("LAN_PAGE_7", "Incorrect password");
 define("LAN_PAGE_8", "Password Protected Page");
-define("LAN_PAGE_9", "Password");
+//define("LAN_PAGE_9", "Password");//LAN_PASSWORD
 define("LAN_PAGE_10", "Submit");
 define("LAN_PAGE_11", "Page List");
 define("LAN_PAGE_12", "Invalid page");
 define("LAN_PAGE_13", "Page");
+
+define("LAN_PAGE_14", "Other Articles");
+define("LAN_PAGE_15", "Articles");
+define("LAN_PAGE_16", "There are no chapters in this book");
+
 
 ?>

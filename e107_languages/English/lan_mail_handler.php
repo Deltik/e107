@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/lan_mail_handler.php $
-|     $Revision: 11678 $
-|     $Id: lan_mail_handler.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Source: /cvs_backup/e107_0.8/e107_languages/English/lan_mail_handler.php,v $
+|     $Revision$
+|     $Date$
+|     $Author$
 +----------------------------------------------------------------------------+
 */
 define("LANMAILH_1", "Produced by e107 website system");

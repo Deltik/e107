@@ -1,40 +1,37 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/poll/languages/English.php $
-|     $Revision: 11678 $
-|     $Id: English.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) 2008-2009 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ *
+ *
+ * $Source: /cvs_backup/e107_0.8/e107_plugins/poll/languages/English.php,v $
+ * $Revision$
+ * $Date$
+ * $Author$
+ */
 
-define("POLL_ADLAN01", "Poll");
-define("POLL_ADLAN02", "The poll plugin allows you to define polls in either a menu or forum post.");
-define("POLL_ADLAN03", "Configure polls");
-define("POLL_ADLAN04", "The poll plugin has been successfully installed. To add polls, click on the Polls icon in the plugin section of your admin front page, and remember to activate the menu item from your menus page.");
+//define("POLL_ADLAN01", "Poll");
+//define("POLL_ADLAN02", "The poll plugin allows you to define polls in either a menu or forum post.");
+//define("POLL_ADLAN03", "Configure polls");
+//define("POLL_ADLAN04", "The poll plugin has been successfully installed. To add polls, click on the Polls icon in the plugin section of your admin front page, and remember to activate the menu item from your menus page.");
 
-define("POLL_ADLAN05", "Main Poll: ");
-define("POLL_ADLAN06", "Forum Thread: ");
-define("POLL_ADLAN07", "Type");
+//define("POLL_ADLAN05", "Main Poll: ");
+//define("POLL_ADLAN06", "Forum Thread: ");
+//define("POLL_ADLAN07", "Type");
 
 define("POLLAN_MENU_CAPTION", "Poll");
 
 define("POLLAN_1", "Existing polls");
 define("POLLAN_2", "Create / edit polls");
 define("POLLAN_3", "Poll question");
-define("POLLAN_4", "Options");
-define("POLLAN_5", "Edit");
-define("POLLAN_6", "Delete");
-define("POLLAN_7", "No polls yet.");
+define("POLLAN_4", "Poll Options");
+//define("POLLAN_5", "Edit");
+//define("POLLAN_6", "Delete");
+//define("POLLAN_7", "No polls yet.");
 define("POLLAN_8", "Add another option");
 define("POLLAN_9", "Allow multiple choices?");
 define("POLLAN_10", "yes");
@@ -54,14 +51,14 @@ define("POLLAN_23", "Create Poll");
 define("POLLAN_24", "Preview");
 define("POLLAN_25", "Clear form");
 define("POLLAN_26", "votes");
-define("POLLAN_27", "Comments");
+// define("POLLAN_27", "Comments");
 define("POLLAN_28", "Previous polls");
 define("POLLAN_29", "posted by");
 define("POLLAN_30", "Submit");
 define("POLLAN_31", "Votes");
 define("POLLAN_32", "Click here to see results");
 define("POLLAN_33", "No previous polls yet.");
-define("POLLAN_34", "Title");
+//define("POLLAN_34", "Title");//LAN_TITLE
 define("POLLAN_35", "Posted by");
 define("POLLAN_36", "Active");
 define("POLLAN_37", "active from");
@@ -73,6 +70,17 @@ define("POLLAN_42", "This poll is restricted to administrators only");
 define("POLLAN_43", "You do not have the required permissions to vote in this poll");
 define("POLLAN_44", "Delete this poll?");
 define("POLLAN_45", "Poll successfully updated");
-define("POLLAN_46", "Field(s) left blank");
+//define("POLLAN_46", "Field(s) left blank");
 
-?>
+
+// TODO NEED TO BE RENAMED!
+
+define("LAN_FORUM_3029", "If you do not wish to add a poll to your topic, leave the fields blank."); // LAN_386
+define("LAN_FORUM_3030", "Poll question"); // LAN_5
+define("LAN_FORUM_3031", "Poll answer"); // LAN_391
+define("LAN_FORUM_3032", "Add another answer"); // LAN_6
+define("LAN_FORUM_3033", "Allow multiple choices?"); // LAN_506
+define("LAN_FORUM_3034", "Vote storage method"); // POLLAN_16
+define("LAN_FORUM_3035", "Cookie"); // POLLAN_17
+define("LAN_FORUM_3036", "IP address"); // POLLAN_18
+define("LAN_FORUM_3037", "User ID (only members can vote)"); // POLLAN_19

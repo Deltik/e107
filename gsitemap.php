@@ -1,30 +1,33 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/gsitemap.php $
-|     $Revision: 11678 $
-|     $Id: gsitemap.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
+ * e107 website system
+ *
+ * Copyright (C) 2008-2009 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * Plugin supporting file - gsitemap
+ *
+ * $Source: /cvs_backup/e107_0.8/gsitemap.php,v $
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
 */
 require_once("class2.php");
-include_lan(e_PLUGIN."gsitemap/languages/gsitemap_".e_LANGUAGE.".php");
+if(!e107::isInstalled('gsitemap'))
+{ 
+	header("location:".e_BASE."index.php"); 
+	exit();
+}
+
+e107::lan('gsitemap'); 
 
 if(e_QUERY == "show")
 {
 	require_once(HEADERF);
 
-	$sql -> db_Select("gsitemap", "*", "gsitemap_active IN (".USERCLASS_LIST.") ORDER BY gsitemap_order ");
-	$nfArray = $sql -> db_getList();
+	$nfArray = $sql ->retrieve("gsitemap", "*", "gsitemap_active IN (".USERCLASS_LIST.") ORDER BY gsitemap_order ",true);
 	$text = "<div style='text-align:left'><ul>";
 
 	foreach($nfArray as $nfa)
@@ -40,16 +43,17 @@ if(e_QUERY == "show")
 	exit;
 }
 
-
+header('Content-type: application/xml', TRUE);
 $xml = "<?xml version='1.0' encoding='UTF-8'?>
 <urlset xmlns='http://www.google.com/schemas/sitemap/0.84'
 xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'	xsi:schemaLocation='http://www.google.com/schemas/sitemap/0.84
 http://www.google.com/schemas/sitemap/0.84/sitemap.xsd'>";
 
-$sql -> db_Select("gsitemap", "*", "gsitemap_active IN (".USERCLASS_LIST.") ORDER BY gsitemap_order ");
-$smArray = $sql -> db_getList();
+$smArray = $sql ->retrieve("gsitemap", "*", "gsitemap_active IN (".USERCLASS_LIST.") ORDER BY gsitemap_order ",true);
+
 foreach($smArray as $sm)
 {
+	if($sm['gsitemap_url'][0] == '/') $sm['gsitemap_url'] = ltrim($sm['gsitemap_url'], '/');
 	$loc = (substr($sm['gsitemap_url'],0,4)== "http")? $sm['gsitemap_url'] : SITEURL.$tp->replaceConstants($sm['gsitemap_url'],TRUE);
 	$xml .= "
 	<url>

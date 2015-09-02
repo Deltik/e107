@@ -20,9 +20,9 @@ define("NFPM_L9", "Number of new posts to display?");
 define("NFPM_L10", "Display inside scrolling layer?");
 define("NFPM_L11", "Layer height");
 define("NFPM_L12", "New Forum Posts Configuration");
-define("NFPM_L13", "Update New Forum Posts Settings");
-define("NFPM_L14", "New Forum Posts settings updated.");
-define("NFPM_L15", "Check to display latest forum posts.<br />Default is latest topics.");
+define("NFPM_L13", "New Forum Posts settings updated.");
+define("NFPM_L14", "Display latest forum posts?");
+define("NFPM_L15", "By default, latest topics are shown.");
 define('NFPM_L16', '[user deleted]');
 define('NFPM_L17', 'New Posts on Popular Thread');
 define('NFPM_L18', 'New Posts');
@@ -31,6 +31,6 @@ define('NFPM_L20', 'No New Posts');
 define('NFPM_L21', 'Sticky Thread');
 define('NFPM_L22', 'Closed Sticky Thread');
 define('NFPM_L23', 'Announcement');
-define('NFPM_L24', 'Closed Thread');
+define('NFPM_L24', 'Closed Thread');	
 	
 ?>

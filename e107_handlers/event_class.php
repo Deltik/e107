@@ -1,156 +1,322 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/event_class.php $
-|     $Revision: 12062 $
-|     $Id: event_class.php 12062 2011-02-03 07:37:30Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
-*/
-	
+ * e107 website system
+ *
+ * Copyright (C) 2008-2015 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ */
+
+
 if (!defined('e107_INIT')) { exit; }
+
+
 
 class e107_event
 {
 	var $functions = array();
 	var $includes = array();
-	var $debug = FALSE;
-	
 
-	function e107_event()
+	protected $coreEvents;
+
+	protected $oldCoreEvents = array(
+
+		'usersup'		=> 'user_signup_submitted',
+		'userveri'		=> 'user_signup_activated',
+		'flood'			=> 'user_ban_flood',
+		'subnews'		=> 'user_news_submit',
+		'fileupload'	=> 'user_file_upload',
+		'newspost'		=> 'admin_news_created',
+		'newsupd'		=> 'admin_news_updated',
+		'newsdel'		=> 'admin_news_deleted'
+	);
+
+
+	function __construct()
 	{
-		// Fix for events triggered between plugins. 
-		// Events will register regardinless of the load order.  
-		
-		if(varset($_SESSION['e_EVENT_functions']))
-		{
-			$this->functions = $_SESSION['e_EVENT_functions'];					
-		}
-		if(varset($_SESSION['e_EVENT_includes']))
-		{
-			$this->includes = $_SESSION['e_EVENT_includes'];					
-		}			
+
+		//	e107::lan('core','notify'); //FIXME e_LANGUAGE is not defined at this point.
+
+		$this->coreEvents = array( // used by e_notify admin area.
+
+			'session'	=> array(
+
+				'user_signup_submitted'		=> NU_LAN_2,
+				'user_signup_activated'		=> NU_LAN_3,
+				'login' 					=> NU_LAN_4,
+				'logout'					=> NU_LAN_5,
+				'user_xup_login'			=> 'User social login',
+				'user_xup_signup'			=> 'User social signup',
+				'user_ban_flood'			=> NS_LAN_2,
+				'user_ban_failed_login'		=> 'IP banned for multiple failed login attempts',
+				'user_profile_display'      => "User views profile"
+
+			),
+
+			'administrators'	=> array(
+				'admin_password_update'		=> "Administrator updates their password",
+				'admin_user_created'		=> 'Administrator creates a new user',
+				'admin_user_activated'		=> "Administrator activates a new user"
+
+			),
+
+			'news'	=> array(
+
+				'admin_news_created'	=> NN_LAN_3,
+				'admin_news_updated'	=> NN_LAN_4,
+				'admin_news_deleted'	=> NN_LAN_5,
+				'admin_news_notify'     => "News notification triggered", // TODO LAN
+				'user_news_submit'		=> NN_LAN_2,
+
+			),
+
+			'mail'	=> array(
+
+				'maildone'			=> NM_LAN_2,
+			),
+
+			'file'	=> array(
+
+				//		'fileupload'		=> NF_LAN_2,
+				'user_file_upload'	=> NF_LAN_2,
+			),
+
+		);
+
 	}
 	
+
+
+	
+	
+	function coreList()
+	{
+		return $this->coreEvents; 	
+	}
+	
+	function oldCoreList()
+	{
+		return $this->oldCoreEvents; 	
+	}
+	
+
 	/**
-	 * Register an e107 Event
-	 * @param object $eventname
-	 * @param object $function
-	 * @param object $include [optional]
-	 * Include is required if the trigger is in a plugin that is loaded prior to the plugin that contains the function. 
-	 * @return 
+	 * Register event
+	 * 
+	 * @param string $eventname
+	 * @param array|string $function [class_name, method_name] or function name
+	 * @param string $include [optional] include path 
+	 * @return void
 	 */
 	function register($eventname, $function, $include='')
 	{
-		if(!$_SESSION) 
+		$this->includes[$eventname] = array();
+		if(!isset($this->functions[$eventname]) || !in_array($function, $this->functions[$eventname]))
 		{
-			$this->logData("There is no _SESSION");
-		}
-				
-		if(!isset($_SESSION['e_EVENT_functions'][$eventname])) // Notice removal
-		{
-			$_SESSION['e_EVENT_functions'][$eventname] = array();		
-		}
-		
-		if(!isset($_SESSION['e_EVENT_includes'][$eventname])) // Notice removal
-		{
-			$_SESSION['e_EVENT_includes'][$eventname] = array();		
-		}  
-		
-		if ($include!='')
-		{
-			$include = realpath($include); // make paths consistent to avoid duplicates
-			// $this->includes[$eventname][] = $include;
-			if(!in_array($include,$_SESSION['e_EVENT_includes'][$eventname]))
+			if (!empty($include))
 			{
-				$_SESSION['e_EVENT_includes'][$eventname][] = $include;		
-			}			
+				$this->includes[$eventname][] = $include;
+			}
+			$this->functions[$eventname][] = $function;
 		}
-		
-		// $this->functions[$eventname][] = $function;
-		if(!in_array($function,$_SESSION['e_EVENT_functions'][$eventname]))
-		{
-			$_SESSION['e_EVENT_functions'][$eventname][] = $function;
-		}		
 	}
-	
-	/**
-	 * Trigger an e107 Event
-	 * @param object $eventname
-	 * @param object $data
-	 * @return boolean
-	 */
-	function trigger($eventname, &$data)
+
+
+
+	function debug()
 	{
-		if (isset($this -> includes[$eventname]))
+		echo "<h3>Event Functions</h3>";
+		print_a($this->functions);
+		echo "<h3>Event Includes</h3>";
+		print_a($this->includes);	
+		
+	}
+
+
+	/**
+	 * Trigger event
+	 *
+	 * @param string $eventname
+	 * @param mixed $data
+	 * @return mixed
+	 */
+	function trigger($eventname, $data='')
+	{
+		/*if (isset($this->includes[$eventname]))
 		{
 			foreach($this->includes[$eventname] as $evt_inc)
 			{
 				if (file_exists($evt_inc))
 				{
-					if(!include_once($evt_inc))
+					include_once($evt_inc);
+				}
+			}
+		}*/
+		if (isset($this->functions[$eventname]))
+		{
+			foreach($this->functions[$eventname] as $i => $evt_func)
+			{
+				$location = '';
+				if(isset($this->includes[$eventname][$i])) //no checks
+				{
+					$location = $this->includes[$eventname][$i];
+					e107_include_once($location); 
+					unset($this->includes[$eventname][$i]);
+				}
+				if(is_array($evt_func)) //class, method
+				{
+					$class = $evt_func[0];
+					$method = $evt_func[1];
+						
+					try
 					{
-						$this->logData("Couldn't Include file: ".$evt_inc);		
+					
+						$tmp = new $class($eventname);
+						$ret = $tmp->{$method}($data, $eventname); //let callback know what event is calling it
+						unset($tmp);
+						if (!empty($ret))
+						{
+							break;
+						}
 					}
-					else
+					catch(Exception $e)
 					{
-						$this->logData("Included file: ".$evt_inc);		
+						e107::getLog()->add('Event Trigger failed',array('name'=>$eventname,'location'=>$location,'class'=>$class,'method'=>$method,'error'=>$e),E_LOG_WARNING,'EVENT_01'); 
+						continue;
+					}
+				}
+				elseif (function_exists($evt_func))
+				{
+					$ret = $evt_func($data, $eventname); //let callback know what event is calling it
+					if (!empty($ret))
+					{
+						break;
 					}
 				}
 				else
 				{
-					$this->logData("Couldn't find file: ".$evt_inc);	
+					e107::getLog()->add('Event Trigger failed',array('name'=>$eventname,'location'=>$location,'function'=>$evt_func), E_LOG_WARNING,'EVENT_01'); 
 				}
 				
 			}
 		}
-		if (isset($this -> functions[$eventname]))
+		return (isset($ret) ? $ret : false);
+	}
+
+
+
+
+	/**
+	 * @Deprecated
+	 */
+	function triggerAdminEvent($type, $parms=array())
+	{
+		global $pref;
+		if(!is_array($parms))
 		{
-			foreach($this->functions[$eventname] as $evt_func)
+			parse_str($parms, $parms);
+		}
+		if(isset($pref['e_admin_events_list']) && is_array($pref['e_admin_events_list']))
+		{
+			// $called = getcachedvars('admin_events_called');
+			$called = e107::getRegistry('core/cachedvars/admin_events_called', false);
+			if(!is_array($called)) { $called = array(); }
+			foreach($pref['e_admin_events_list'] as $plugin)
 			{
-				if (function_exists($evt_func))
+				if(e107::isInstalled($plugin))
 				{
-					$ret = $evt_func($data);
-					$this->logData($evt_func);
-					if ($ret!='')
+					$func = 'plugin_'.$plugin.'_admin_events';
+					if(!function_exists($func))
 					{
-						$this->logData("Stopped Processing during: ".$evt_func ."(".$ret.")");
-						break;
+						$fname = e_PLUGIN.$plugin.'/e_admin_events.php';
+						if(is_readable($fname)) { include_once($fname); }
+					}
+					if(function_exists($func))
+					{
+						$event_func = call_user_func($func, $type, $parms);
+						if ($event_func && function_exists($event_func) && !in_array($event_func, $called))
+						{
+							$called[] = $event_func;
+							// cachevars('admin_events_called', $called);
+							e107::setRegistry('core/cachedvars/admin_events_called', $called);
+							call_user_func($event_func);
+						}
 					}
 				}
 			}
-			
 		}
-		return (isset($ret) ? $ret : false);
 	}
-	
-	/**
-	 * Enable the event Log for debugging. 
-	 * @return 
-	 */
-	function debug()
+
+	/*
+	* triggerHook trigger a hooked in element
+	*   four methods are allowed hooks: form, create, update, delete
+	*   form : return array('caption'=>'', 'text'=>'');
+	*   create, update, delete : return string message
+	* @param array $data array containing
+	* @param string $method form,insert,update,delete
+	* @param string $table the table name of the calling plugin
+	* @param int $id item id of the record
+	* @param string $plugin identifier for the calling plugin
+	* @param string $function identifier for the calling function
+	* @return string $text string of rendered html, or message from db handler
+	*/
+	function triggerHook($data='')
 	{
-		$this->debug = TRUE;
-	}
-	
-	
-	function logData($message)
-	{
-		if($this->debug == FALSE){ return; }
-		if($fp = @fopen(e_HANDLER."event.log","a+"))
-		{	
-			$contents = @fwrite($fp, date('r')." :: ".$message ." \n");
-			@fclose($fp);
-		}			
+		$text = ''; 
+		$e_event_list = e107::getPref('e_event_list');
+		
+		if(is_array($e_event_list))
+		{
+			foreach($e_event_list as $hook)
+			{
+				if(e107::isInstalled($hook))
+				{
+					if(is_readable(e_PLUGIN.$hook."/e_event.php"))
+					{
+						require_once(e_PLUGIN.$hook."/e_event.php");
+						$name = "e_event_{$hook}";
+						if(class_exists($name))
+						{
+							$class = new $name();
+							
+							switch($data['method'])
+							{
+								//returns array('caption'=>'', 'text'=>'');
+								case 'form':
+									if(method_exists($class, "event_{$data['method']}"))
+									{
+										$ret = $class->event_form($data);
+										
+										if(!isset($ret[0]))
+										{
+											$text[$hook][0] = $ret;		
+										}
+										else 
+										{
+											$text[$hook] = $ret;
+										}
+										
+										
+									}
+									break;
+								//returns string message
+								case 'create':
+								case 'update':
+								case 'delete':
+									if(method_exists($class, "event_{$data['method']}"))
+									{
+										$text .= call_user_func(array($class, "event_{$data['method']}"), $data);
+									}
+									break;
+							}
+						}
+					}
+				}
+			}
+		}
+		return $text;
 	}
 }
-	
+
 ?>

@@ -1,14 +1,11 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system - Language File.
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_footer.php $
-|     $Revision: 12060 $
-|     $Id: lan_footer.php 12060 2011-01-30 19:22:47Z secretr $
-|     $Author: secretr $
-+----------------------------------------------------------------------------+
+ * Copyright (C) 2008-2013 e107 Inc (e107.org), Licensed under GNU GPL (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * Admin Language File
+ *
 */
+
 define("FOOTLAN_1", "Site");
 define("FOOTLAN_2", "Head Admin");
 define("FOOTLAN_3", "Version");
@@ -27,6 +24,6 @@ define("FOOTLAN_15", "Documentation");
 define("FOOTLAN_16", "Database");
 define("FOOTLAN_17", "Charset");
 define("FOOTLAN_18", "Site Theme");
-define("FOOTLAN_19", "Current Server Time");
+define("FOOTLAN_19", "Server Time");
 define("FOOTLAN_20", "Security level");
 ?>

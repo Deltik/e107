@@ -1,37 +1,36 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/meta.php $
-|     $Revision: 11678 $
-|     $Id: meta.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
+ * e107 website system
+ *
+ * Copyright (C) 2008-2013 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * Administration Area - Meta Tags
+ *
+ *
 */
 require_once("../class2.php");
 if (!getperms("T")) {
 	header("location:".e_BASE."index.php");
 	exit;
 }
+
+include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_'.e_PAGE);
+
 $e_sub_cat = 'meta';
 require_once("auth.php");
 
-//$current_lang = ($sql->mySQLlanguage != "") ? $sql->mySQLlanguage : $pref['sitelanguage'];
-$current_lang = e_LANGUAGE;
+$mes = e107::getMessage();
+$frm = e107::getForm();
+$ns = e107::getRender();
 
-if (isset($_POST['metasubmit'])) {
-
+if (isset($_POST['metasubmit']))
+{
 	$tmp = $pref['meta_tag'];
 	$langs = explode(",",e_LANLIST);
-	foreach($langs as $lan){
+	foreach($langs as $lan)
+	{
 		$meta_tag[$lan] = $tmp[$lan];
 		$meta_diz[$lan] = $pref['meta_description'][$lan];
 		$meta_keywords[$lan] = $pref['meta_keywords'][$lan];
@@ -45,7 +44,7 @@ if (isset($_POST['metasubmit'])) {
 	$meta_copyright[e_LANGUAGE] = strip_if_magic(chop($_POST['meta_copyright']));
 	$meta_author[e_LANGUAGE] = strip_if_magic(chop($_POST['meta_author']));
 
-    $pref['meta_news_summary'] = $_POST['meta_news_summary'];
+    $pref['meta_news_summary'] = intval($_POST['meta_news_summary']);
 	$pref['meta_tag'] = $meta_tag;
 	$pref['meta_description'] = $meta_diz;
 	$pref['meta_keywords'] = $meta_keywords;
@@ -57,85 +56,80 @@ if (isset($_POST['metasubmit'])) {
         unset($meta_tag[e_LANGUAGE]);
     }*/
 
+	e107::getLog()->add('META_01', 'meta_news_summary=>'.$pref['meta_news_summary'].'[!br!]'.e_LANGUAGE, E_LOG_INFORMATIVE, '');
 	save_prefs();
-	$message = METLAN_1;
 }
 
-if ($message) {
-	$ns->tablerender(METLAN_4, "<div style='text-align:center'>".METLAN_1." (".e_LANGUAGE.").</div>");
-}
+$meta 			= vartrue($pref['meta_tag']);
+$meta_diz 		= vartrue($pref['meta_description']);
+$meta_keywords 	= vartrue($pref['meta_keywords']);
+$meta_copyright = vartrue($pref['meta_copyright']);
+$meta_author 	= vartrue($pref['meta_author']);
 
-$meta = $pref['meta_tag'];
-$meta_diz = $pref['meta_description'];
-$meta_keywords = $pref['meta_keywords'];
-$meta_copyright = $pref['meta_copyright'];
-$meta_author = $pref['meta_author'];
-
-$text = "<div style='text-align:center'>
+$text = "
 	<form method='post' action='".e_SELF."' id='dataform'>
-	<table style='".ADMIN_WIDTH."' class='fborder'>
+		<fieldset id='core-meta-settings'>
+			<legend class='e-hideme'>".METLAN_00." (".e_LANGUAGE.")"."</legend>
+			<table class='table adminform'>
+				<colgroup>
+					<col class='col-label' />
+					<col class='col-control' />
+				</colgroup>
+				<tbody>
+					<tr>
+						<td>".LAN_DESCRIPTION."</td>
+						<td>";
+						$text .= $frm->textarea('meta_description',$tp->toForm(varset($meta_diz[e_LANGUAGE])),3);
+					//	$text .= "<textarea class='tbox textarea e-autoheight' id='meta_description' name='meta_description' cols='70' rows='4'>".$tp->toForm(varset($meta_diz[e_LANGUAGE]))."</textarea>";
+						$text .= "</td>
+					</tr>
+					<tr>
+						<td>".LAN_KEYWORDS."</td>
+						<td>";
+						$text .= $frm->tags('meta_keywords',$tp->toForm(varset($meta_keywords[e_LANGUAGE])));
+					//	$text .= "<textarea class='tbox textarea e-autoheight' id='meta_keywords' name='meta_keywords' cols='70' rows='4'>".$tp->toForm(varset($meta_keywords[e_LANGUAGE]))."</textarea>";
+						
+						$text .= "</td>
+					</tr>
+					<tr>
+						<td>".LAN_COPYRIGHT."</td>
+						<td><input class='tbox input-text' size='70' type='text' name='meta_copyright' value=\"".varset($meta_copyright[e_LANGUAGE])."\" /></td>
+					</tr>
 
-	<tr>
-    <td style='width:25%' class='forumheader3'>".METLAN_9."</td>
-    <td style='width:75%' class='forumheader3'>
-	<textarea class='tbox' title='meta_description' id='meta_description' name='meta_description' cols='70' rows='4' style='width:90%'>".$tp->toForm($meta_diz[e_LANGUAGE])."</textarea>
-	</td>
-	</tr>
+					<tr>
+						<td>".LAN_AUTHOR."</td>
+						<td><input class='tbox input-text' size='70' type='text' name='meta_author' value=\"".varset($meta_author[e_LANGUAGE])."\" /></td>
+					</tr>
 
-	<tr>
-	<td style='width:25%' class='forumheader3'>".METLAN_10."</td>
-    <td style='width:75%' class='forumheader3'>
-	<textarea class='tbox' title='meta_keywords' id='meta_keywords' name='meta_keywords' cols='70' rows='4' style='width:90%'>".$tp->toForm($meta_keywords[e_LANGUAGE])."</textarea>
-	</td>
-	</tr>
+					<tr>
+						<td>".METLAN_1."</td>
+						<td>";
+						$text .= $frm->textarea('meta',str_replace("<","&lt;",$tp->toForm(varset($meta[e_LANGUAGE]))),5,100,'size=block-level');
+						
+						$text .= "<span class='field-help'>".METLAN_2."</span>";
+						
+				//		$text .= "<textarea class='tbox textarea e-autoheight' id='meta' name='meta' cols='70' rows='10' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'>".str_replace("<","&lt;",$tp->toForm(varset($meta[e_LANGUAGE])))."</textarea><span class='field-help'>".METLAN_2."</span>";
+						
+						$text .= "</td>
+					</tr>
+					<tr>
+						<td>".METLAN_3."</td>
+						<td>
+							<div class='auto-toggle-area autocheck'>".
+								$frm->checkbox('meta_news_summary',1, varset($pref['meta_news_summary']))."
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<div class='buttons-bar center'>".
+				$frm->admin_button('metasubmit','no-value','update', LAN_UPDATE)."
+			</div>
+		</fieldset>
+	</form>
+";
 
-	<tr>
-	<td style='width:25%' class='forumheader3'>".METLAN_11."</td>
-    <td style='width:75%' class='forumheader3'>
-	<input class='tbox' style='width:90%' size='70' type='text' name='meta_copyright' value='".$meta_copyright[e_LANGUAGE]."' />
-	</td>
-	</tr>
-
-	<tr>
-	<td style='width:25%' class='forumheader3'>".METLAN_13."</td>
-    <td style='width:75%' class='forumheader3'>
-	<input class='tbox' style='width:90%' size='70' type='text' name='meta_author' value=\"".$meta_author[e_LANGUAGE]."\" />
-	</td>
-	</tr>
-
-	<tr>
-	<td style='width:25%' class='forumheader3'>".METLAN_2.":
-	<span class='smalltext'><br /><br />eg.
-	&lt;meta name='author' content='your name' /&gt; </span>
-	</td>
-	<td style='width:75%' class='forumheader3'>
-	<textarea class='tbox' title=\"eg. <meta name='author' content='your name' />\" id='meta' name='meta' cols='70'
-	rows='10' style='width:90%' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'>".str_replace("<","&lt;",$tp->toForm($meta[e_LANGUAGE]))."</textarea>
-	<br />";
-$text .= "</td>
-</tr>
-
-	<tr>
-	<td style='width:25%' class='forumheader3'>".METLAN_12."</td>
-    <td class='forumheader3' style='text-align:left;width:75%' >";
-    $checked = ($pref['meta_news_summary']) ? "checked='checked'" : "";
-	$text .= "
-	<input type='checkbox' name='meta_news_summary' value='1' {$checked} />
-	</td>
-	</tr>
-
-<tr><td colspan='2' style='text-align:center' class='forumheader'>
-
-<input class='button' type='submit' name='metasubmit' value='".METLAN_3."' />
-</td>
-</tr>
-</table>
-</form>
-</div>";
-
-
-
-$ns -> tablerender(METLAN_8." (".e_LANGUAGE.")", $text);
+$ns->tablerender(METLAN_00." (".e_LANGUAGE.")", $mes->render().$text);
 
 require_once("footer.php");
 

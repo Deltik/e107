@@ -1,90 +1,275 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     ?Steve Dunstan 2001-2002
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/newsfeed/newsfeed_functions.php $
-|     $Revision: 12626 $
-|     $Id: newsfeed_functions.php 12626 2012-04-08 20:52:35Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
+ * e107 website system
+ *
+ * Copyright (C) 2008-2009 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * Plugin - newsfeeds
+ *
+ * $Source: /cvs_backup/e107_0.8/e107_plugins/newsfeed/newsfeed_functions.php,v $
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
+*/
+
+/*
+If cache is disabled, first call to this object reads the complete database of active feeds, including the actual news feed. So all data is available for
+the rest of the page.
+
+If cache is enabled, only the feed list (excluding the news feed data) is loaded. Individual news feeds are stored in separate cache files, and loaded on demand. If the
+feed refresh time has expired, the cache is updated.
 */
 
 if (!defined('e107_INIT')) { exit; }
-
-if(!function_exists("checkUpdate"))
+if (!e107::isInstalled('newsfeed')) 
 {
-	function checkUpdate($query = "newsfeed_active=2 OR newsfeed_active=3")
+	return;
+}
+
+define('NEWSFEED_LIST_CACHE_TAG', 'nomd5_newsfeeds');
+define('NEWSFEED_NEWS_CACHE_TAG', 'nomd5_newsfeeds_news_');
+
+define('NEWSFEED_DEBUG', FALSE);
+
+
+class newsfeedClass
+{
+	var $validFeedList;					// True once feeds read
+	var	$feedList = array();			// List of available feeds read from DB - everything from DB apart from the actual news
+	var $feedIcon = array();			// Pre-calculated link to each feed's icon
+	var $newsList = array();			// Actual news element for each feed
+	var $lastProcessed;					// Note time when processFeeds() last run
+	var $truncateCount;					// Number of characters to show in feeds in menus
+	var $truncateMore;					// '...more' string
+	var	$useCache;						// Set if cache is available
+
+	// Constructor
+	function newsfeedClass()
 	{
-		global $sql, $tp;
-		require_once(e_HANDLER."xml_class.php");
-		$xml = new parseXml;
-		require_once(e_HANDLER."magpie_rss.php");
+		global $e107;
+		$this->validFeedList = FALSE;
+		$this->newsList = array();
+		$this->feedList = array();
+		$this->feedIcon = array();
+		$this->lastProcessed = 0;
+		$this->truncateCount = 150;			// Set a pref for these two later
+		$this->truncateMore = '...';
+		$this->useCache = $e107->ecache->UserCacheActive;		// Have our own local copy - should be faster to access
+	}
 
-		if ($sql -> db_Select("newsfeed", "*", $tp -> toDB($query, true)))
+	// Ensures the feed list is loaded - uses cache if available
+	function readFeedList($force=FALSE)
+	{
+		$sql = e107::getDb();
+		
+		if ($this->validFeedList && !$force)
 		{
-			$feedArray = $sql -> db_getList();
-			foreach($feedArray as $feed)
+			return;		// Already got list
+		}
+		if($this->useCache) // Cache enabled - try to read from that first
+		{	
+		
+			$eArrayStorage = e107::getArrayStorage();
+			
+			global $e107;
+			
+			
+			if (!$force && $temp = $e107->ecache->retrieve(NEWSFEED_LIST_CACHE_TAG))
 			{
-				extract ($feed);
-				if($newsfeed_timestamp + $newsfeed_updateint < time())
+				$this->feedList = e107::unserialize($temp);
+				return;
+			}
+		}
+
+		$fieldList = '*';
+		
+		if ($this->useCache)
+		{	// Get all fields except the actual news
+			$fieldList = 'newsfeed_id, newsfeed_name, newsfeed_url, newsfeed_timestamp, newsfeed_description, newsfeed_image, newsfeed_active, newsfeed_updateint';
+		}
+		
+		if ($sql->select("newsfeed", $fieldList, '`newsfeed_active` > 0'))		// Read in all the newsfeed info on the first go
+		{
+			while ($row = $sql->fetch(MYSQL_ASSOC))
+			{
+				$nfID = $row['newsfeed_id'];
+				
+				if (isset($row['newsfeed_data']))
 				{
-					if($rawData = $xml -> getRemoteXmlFile($newsfeed_url))
-					{
-						$rss = new MagpieRSS( $rawData );
-						$serializedArray = addslashes(serialize($rss));
+					$this->newsList[$nfID]['newsfeed_data'] = $row['newsfeed_data'];		// Pull out the actual news - might as well since we're here
+					$this->newsList[$nfID]['newsfeed_timestamp'] = $row['newsfeed_timestamp'];	
+					
+					unset($row['newsfeed_data']);			// Don't keep this in memory twice!
+				}
+				
+				$this->feedList[$nfID] = $row;						// Put the rest into the feed data
+			}
+			$this->validFeedList = TRUE;
+		}
+		
+		if ($this->useCache)
+		{	// Cache enabled - we need to save some updated info
+			$temp = e107::serialize($this->feedList, FALSE);
+			e107::getCache()->set(NEWSFEED_LIST_CACHE_TAG,$temp);
+		}
+	}
 
-						$newsfeed_des = FALSE;
-						if($newsfeed_description == "default")
+
+	// Returns the info for a single feed - from cache or memory as appropriate. If time expired, updates the feed.
+	function getFeed($feedID, $force = FALSE)
+	{
+		global $e107, $admin_log;
+		
+		$tp = e107::getParser();
+		$sql = e107::getDb();
+		$eArrayStorage = e107::getArrayStorage();
+
+		$this->readFeedList();				// Make sure we've got the feed data.
+
+		if (!isset($this->feedList[$feedID]))
+		{
+			if (NEWSFEED_DEBUG) echo "Invalid feed number: {$feedID}<br />";
+			return FALSE;
+		}
+		
+		if(strpos($this->newsList[$feedID]['newsfeed_data'],'MagpieRSS')) //BC Fix to update newsfeed_data from v1 to v2 spec. 
+		{
+			$force = true;
+		}
+		
+		if ($force || !isset($this->newsList[$feedID]['newsfeed_data']) || !$this->newsList[$feedID]['newsfeed_data'])
+		{	// No data already in memory
+			if ($force || !($this->newsList[$feedID]['newsfeed_data'] = $e107->ecache->retrieve(NEWSFEED_NEWS_CACHE_TAG.$feedID, $this->feedList[$feedID]['newsfeed_updateint']/60)))
+			{	// Need to re-read from source - either no cached data yet, or cache expired
+			
+				if (NEWSFEED_DEBUG)
+				{
+					 $admin_log->e_log_event(10,debug_backtrace(),"DEBUG","Newsfeed update","Refresh item: ".$feedID,FALSE,LOG_TO_ROLLING);
+				}
+				
+				require_once(e_HANDLER.'xml_class.php');
+				$xml = new xmlClass;
+				require_once(e_HANDLER.'magpie_rss.php');
+				
+				$dbData = array();		// In case we need to update DB
+				
+				if($rawData = $xml->getRemoteFile($this->feedList[$feedID]['newsfeed_url'])) // Need to update feed
+				{	
+					$rss = new MagpieRSS( $rawData );
+					list($newsfeed_image, $newsfeed_showmenu, $newsfeed_showmain) = explode("::", $this->feedList[$feedID]['newsfeed_image']);
+					
+					$temp['channel'] = $rss->channel;
+					
+					if (($newsfeed_showmenu == 0) || ($newsfeed_showmain == 0))
+					{
+						$temp['items'] = $rss->items;		// Unlimited items
+					}
+					else
+					{
+						$temp['items'] = array_slice($rss->items, 0, max($newsfeed_showmenu, $newsfeed_showmain));		// Limited items
+					}
+
+					$newsfeed_des = FALSE;
+					
+					if($this->feedList[$feedID]['newsfeed_description'] == 'default')
+					{
+						$temp['newsfeed_description'] = 'default';		// This prevents db writes if no better data found
+						
+						if($rss->channel['description'])
 						{
-							if($rss -> channel['description'])
+							$newsfeed_des = $tp -> toDB($rss->channel['description']);
+							$temp['newsfeed_description'] = $newsfeed_des;
+						}
+						elseif($rss->channel['tagline'])
+						{
+							$newsfeed_des = $tp -> toDB($rss -> channel['tagline']);
+							$temp['newsfeed_description'] = $newsfeed_des;
+						}
+					
+						if ($temp['newsfeed_description'] != $this->feedList[$feedID]['newsfeed_description'])
+						{	// Need to write updated feed name to DB
+							$this->feedList[$feedID]['newsfeed_description'] = $temp['newsfeed_description'];
+							$dbData['newsfeed_description'] = $temp['newsfeed_description'];
+							if ($this->useCache)
 							{
-								$newsfeed_des = $tp -> toDB($rss -> channel['description']);
-							}
-							else if($rss -> channel['tagline'])
-							{
-								$newsfeed_des = $tp -> toDB($rss -> channel['tagline']);
+								$e107->ecache->clear(NEWSFEED_LIST_CACHE_TAG);		// Clear the newsfeed cache so its re-read next time
 							}
 						}
+					}
 
-						if(!$sql->db_Update('newsfeed', "newsfeed_data='{$serializedArray}', newsfeed_timestamp=".time().($newsfeed_des ? ", newsfeed_description='{$newsfeed_des}'": "")." WHERE newsfeed_id=".intval($newsfeed_id)))
+					if ($newsfeed_image == 'default')
+					{
+						$temp['newsfeed_image_link'] =  "<a href='".$rss->image['link']."' rel='external'><img src='".$rss->image['url']."' alt='".$rss->image['title']."' style='vertical-align: middle;' /></a>";
+					}
+					else
+					{
+						$temp['newsfeed_image_link'] = "<img src='".$this->feedList[$feedID]['newsfeed_image']."' alt='' />";
+					}
+					
+					$serializedArray = $eArrayStorage->WriteArray($temp, FALSE);
+
+					$now = time();
+					$this->newsList[$feedID]['newsfeed_data'] = $serializedArray;
+					$this->newsList[$feedID]['newsfeed_timestamp'] = $now;
+
+					if ($this->useCache)
+					{
+						$e107->ecache->set(NEWSFEED_NEWS_CACHE_TAG.$feedID,$serializedArray);
+					}
+					else
+					{
+						$dbData['newsfeed_data'] =addslashes($serializedArray);
+						$dbData['newsfeed_timestamp'] = $now;
+					}
+					
+					if (count($dbData)) // Only write the feed data to DB if not using cache. Write description if changed
+					{	
+						if(FALSE === $sql->db_UpdateArray('newsfeed', $dbData, " WHERE newsfeed_id=".$feedID))
 						{
-							echo NFLAN_48."<br /><br />".$serializedArray;
+							if (NEWSFEED_DEBUG) echo NFLAN_48."<br /><br />".var_dump($dbData);
 						}
 					}
-					elseif(ADMIN)
-					{
-						echo $xml -> error;
-					}
+					unset($rss);
+				}
+				else
+				{
+					if (NEWSFEED_DEBUG) echo $xml -> error;
+					return FALSE;
 				}
 			}
 		}
-	}
-}
 
-if(!function_exists("newsfeed_info"))
-{
-	function newsfeed_info($which, $where = 'main')
+		return  e107::unserialize($this->newsList[$feedID]['newsfeed_data']);
+	}
+
+
+
+
+	// Return text for the required news feeds (loads info as necessary)
+	// Uses different templates for main and menu areas
+	function newsfeedInfo($which, $where = 'main')
 	{
-		global $tp, $sql;
+
+		$tp = e107::getParser();
+		$sql = e107::getDb();
+		
+		global $NEWSFEED_MAIN_START, $NEWSFEED_MAIN, $NEWSFEED_MAIN_END;
+		global $NEWSFEED_MENU_START, $NEWSFEED_MENU, $NEWSFEED_MENU_END;
+
 		if($which == 'all')
 		{
-			$qry = "newsfeed_active=1 OR newsfeed_active=3";
+			$filter = 0;
 		}
 		else
 		{
-			$qry = "newsfeed_id = ".intval($which);
+			$filter = intval($which);
 		}
 
 		$text = "";
-		checkUpdate($qry);
+		$this->readFeedList();			// Make sure we've got all the news feeds loaded
 
 		/* get template */
 		if (file_exists(THEME."newsfeed_menu_template.php"))
@@ -96,89 +281,106 @@ if(!function_exists("newsfeed_info"))
 			include(e_PLUGIN."newsfeed/templates/newsfeed_menu_template.php");
 		}
 
-		if ($feeds = $sql -> db_Select("newsfeed", "*", $qry))
+		foreach($this->feedList as $nfID => $feed)
 		{
-			while($row = $sql->db_Fetch())
+			if (($filter == 0) || ($filter == $feed['newsfeed_id']))
 			{
-
-				extract ($row);
-				list($newsfeed_image, $newsfeed_showmenu, $newsfeed_showmain) = explode("::", $newsfeed_image);
-				$numtoshow = ($where == 'main' ? $newsfeed_showmain : $newsfeed_showmenu);
-				$numtoshow = (intval($numtoshow) > 0 ? $numtoshow : 999);
-				$rss = unserialize($newsfeed_data);
-
-				$FEEDNAME = "<a class='newsfeed-name' href='".e_SELF."?show.$newsfeed_id'>$newsfeed_name</a>";
-				$FEEDDESCRIPTION = $newsfeed_description;
-				if($newsfeed_image == "default")
+				if (($rss = $this->getFeed($nfID)))	// Call ensures that feed is updated if necessary
 				{
-					if($file = fopen ($rss -> image['url'], "r"))
+					list($newsfeed_image, $newsfeed_showmenu, $newsfeed_showmain) = explode("::", $feed['newsfeed_image']);
+					
+					$numtoshow = intval($where == 'main' ? $newsfeed_showmain : $newsfeed_showmenu);
+					$numtoshow = ($numtoshow > 0 ? $numtoshow : 999);
+
+					$FEEDNAME = "<a href='".e_SELF."?show.{$feed['newsfeed_id']}'>".$tp->toHtml($feed['newsfeed_name'],false,'TITLE')."</a>";
+					$FEEDDESCRIPTION = $feed['newsfeed_description'];
+					$FEEDIMAGE = $rss['newsfeed_image_link'];
+					$FEEDLANGUAGE = $rss['channel']['language'];
+	
+					if($rss['channel']['lastbuilddate'])
 					{
-						/* remote image exists - use it! */
-						$FEEDIMAGE = "<a class='newsfeed-image' href='".$rss -> image['link']."' rel='external'><img src='".$rss -> image['url']."' alt='".$rss -> image['title']."' style='border: 0; vertical-align: middle;' /></a>";
+						$pubbed = $rss['channel']['lastbuilddate'];
+					}
+					else if($rss['channel']['dc']['date'])
+					{
+						$pubbed = $rss['channel']['dc']['date'];
 					}
 					else
 					{
-						/* remote image doesn't exist - ghah! */
-						$FEEDIMAGE = "";
+						$pubbed = NFLAN_34;
+					}
+	
+					$FEEDLASTBUILDDATE = NFLAN_33.$pubbed;
+					$FEEDCOPYRIGHT = $tp -> toHTML(vartrue($rss['channel']['copyright']), FALSE);
+					$FEEDTITLE = "<a href='".$rss['channel']['link']."' rel='external'>".vartrue($rss['channel']['title'])."</a>";
+					$FEEDLINK = $rss['channel']['link'];
+					
+					if($feed['newsfeed_active'] == 2 or $feed['newsfeed_active'] == 3)
+					{
+						$LINKTOMAIN = "<a href='".e_PLUGIN."newsfeed/newsfeed.php?show.".$feed['newsfeed_id']."'>".NFLAN_39."</a>";
+					}
+					else
+					{
+						$LINKTOMAIN = "";
+					}
+	
+					$data = "";
+	
+					$numtoshow = min($numtoshow, count($rss['items']));
+					$i = 0;
+					while($i < $numtoshow)
+					{
+						$item = $rss['items'][$i];
+						
+						$FEEDITEMLINK = "<a href='".$item['link']."' rel='external'>".$tp -> toHTML($item['title'], FALSE)."</a>\n";
+						$FEEDITEMLINK = str_replace('&', '&amp;', $FEEDITEMLINK);
+						$feeditemtext = preg_replace("#\[[a-z0-9=]+\]|\[\/[a-z]+\]|\{[A-Z_]+\}#si", "", strip_tags($item['description']));
+						$FEEDITEMCREATOR = $tp -> toHTML(vartrue($item['author']), FALSE);
+						
+						if ($where == 'main')
+						{
+							if($NEWSFEED_COLLAPSE)
+							{
+								$FEEDITEMLINK = "<a href='#' onclick='expandit(this)'>".$tp -> toHTML($item['title'], FALSE)."</a>
+								<div style='display:none' >
+								";
+								$FEEDITEMTEXT = preg_replace("/&#091;.*]/", "", $tp -> toHTML($item['description'], FALSE))."
+								<br /><br /><a href='".$item['link']."' rel='external'>".NFLAN_44."</a><br /><br />
+								</div>";
+							}
+							else
+							{
+								$FEEDITEMLINK = "<a href='".$item['link']."' rel='external'>".$tp -> toHTML($item['title'], FALSE)."</a>\n";
+								$FEEDITEMLINK = str_replace('&', '&amp;', $FEEDITEMLINK);
+								$feeditemtext = preg_replace("#\[[a-z0-9=]+\]|\[\/[a-z]+\]|\{[A-Z_]+\}#si", "", $item['description']);
+								$FEEDITEMTEXT = $tp -> toHTML($feeditemtext, FALSE)."\n";
+							}
+							$data .= preg_replace("/\{(.*?)\}/e", '$\1', $NEWSFEED_MAIN);
+						}
+						else
+						{
+							if ($this->truncateCount)
+							{
+								$FEEDITEMTEXT = $tp->text_truncate($feeditemtext, $this->truncateCount, $this->truncateMore);
+							}
+							else
+							{
+								$FEEDITEMTEXT = '';			// Might just want title
+							}
+							$data .= preg_replace("/\{(.*?)\}/e", '$\1', $NEWSFEED_MENU);
+						}
+						$i++;
 					}
 				}
-				else if ($newsfeed_image)
-				{
-					$FEEDIMAGE = "<img class='newsfeed-image' src='".$newsfeed_image."' alt='' />";
-				}
-				else
-				{
-					$FEEDIMAGE = "";
-				}
-				$FEEDLANGUAGE = $rss -> channel['language'];
+			}
 
-				if($rss -> channel['lastbuilddate'])
-				{
-					$pubbed = $rss -> channel['lastbuilddate'];
-				}
-				else if($rss -> channel['dc']['date'])
-				{
-					$pubbed = $rss -> channel['dc']['date'];
-				}
-				else
-				{
-					$pubbed = NFLAN_34;
-				}
-
-				$FEEDLASTBUILDDATE = NFLAN_33.$pubbed;
-				$FEEDCOPYRIGHT = $tp -> toHTML($rss -> channel['copyright'], TRUE);
-				$FEEDTITLE = "<a class='newsfeed-title' href='".$rss -> channel['link']."' rel='external'>".$rss -> channel['title']."</a>";
-				$FEEDLINK = $rss -> channel['link'];
-				if($newsfeed_active == 2 or $newsfeed_active == 3)
-				{
-					$LINKTOMAIN = "<a href='".e_PLUGIN."newsfeed/newsfeed.php?show.$newsfeed_id'>".NFLAN_39."</a>";
-				}
-				else
-				{
-					$LINKTOMAIN = "";
-				}
-
-				$data = "";
-
-				$amount = ($items) ? $items :  $numtoshow;
-
-				$item_total = array_slice($rss->items, 0, $amount);
-
-				$i = 0;
-				while($i < $numtoshow && $item_total[$i])
-				{
-					$item = $item_total[$i];
-					$FEEDITEMLINK = "<a class='newsfeed-itemlink' href='".$item['link']."' rel='external'>".$tp -> toHTML($item['title'], TRUE)."</a>\n";
-					$FEEDITEMLINK = str_replace('&', '&amp;', $FEEDITEMLINK);
-					$feeditemtext = preg_replace("#\[[a-z0-9=]+\]|\[\/[a-z]+\]|\{[A-Z_]+\}#si", "", strip_tags($item['description']));
-					$FEEDITEMTEXT = $tp->text_truncate($feeditemtext, $truncate, $truncate_string);
-
-					$FEEDITEMCREATOR = $tp -> toHTML($item['author'], TRUE);
-					$data .= preg_replace("/\{(.*?)\}/e", '$\1', $NEWSFEED_MENU);
-					$i++;
-				}
-
-				$BACKLINK = "<a class='newsfeed-backlink' href='".e_SELF."'>".NFLAN_31."</a>";
+			if ($where == 'main')
+			{
+				$BACKLINK = "<a href='".e_SELF."'>".NFLAN_31."</a>";
+				$text = preg_replace("/\{(.*?)\}/e", '$\1', $NEWSFEED_MAIN_START).$data.preg_replace("/\{(.*?)\}/e", '$\1', $NEWSFEED_MAIN_END);
+			}
+			else
+			{
 				$text .= preg_replace("/\{(.*?)\}/e", '$\1', $NEWSFEED_MENU_START) . $data . preg_replace("/\{(.*?)\}/e", '$\1', $NEWSFEED_MENU_END);
 			}
 		}
@@ -189,7 +391,7 @@ if(!function_exists("newsfeed_info"))
 		}
 		else
 		{
-			$ret['title'] = $newsfeed_name." ".$NEWSFEED_MAIN_CAPTION;
+			$ret['title'] = $feed['newsfeed_name']." ".$NEWSFEED_MAIN_CAPTION;
 		}
 		$ret['text'] = $text;
 

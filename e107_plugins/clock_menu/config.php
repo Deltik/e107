@@ -1,111 +1,106 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/clock_menu/config.php $
-|     $Revision: 11678 $
-|     $Id: config.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) 2008-2013 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * Plugin Administration - Clock menu
+ *
+ */
+
+
 $eplug_admin = TRUE;
-require_once("../../class2.php");
-if (!getperms("1")) {
-	header("location:".e_BASE."index.php");
+require_once('../../class2.php');
+if (!getperms('1')) 
+{
+	header('location:'.e_BASE.'index.php');
 	 exit ;
 }
-require_once(e_ADMIN."auth.php");
-include_lan(e_PLUGIN."clock_menu/languages/admin/".e_LANGUAGE.".php");
+require_once(e_ADMIN.'auth.php');
+include_lan(e_PLUGIN.'clock_menu/languages/admin/'.e_LANGUAGE.'.php');
 
-require_once(e_HANDLER."form_handler.php");
-$rs = new form;
+$frm = e107::getForm();
+$mes = e107::getMessage();
+$menu_pref = e107::getConfig('menu')->getPref('');
 	
-if (isset($_POST['update_menu'])) {
-	while (list($key, $value) = each($_POST)) {
-		if ($key != "update_menu") {
-			$menu_pref[$key] = $value;
+if (isset($_POST['update_menu'])) 
+{
+	$temp = array();
+	while (list($key, $value) = each($_POST)) 
+	{
+		if ($key != 'update_menu') 
+		{
+			$temp[$key] = $value;
 		}
 	}
-	if ($_POST['clock_format'] != 1) {
-		$menu_pref['clock_format'] = 0;
+	if ($_POST['clock_format'] != 1) 
+	{
+		$temp['clock_format'] = 0;
 	}
-	$tmp = addslashes(serialize($menu_pref));
-	$sql->db_Update("core", "e107_value='$tmp' WHERE e107_name='menu_pref' ");
-	$ns->tablerender("", "<div style=\"text-align:center\"><b>".CLOCK_AD_L1."</b></div>");
+	if ($admin_log->logArrayDiffs($temp,$menu_pref,'MISC_05'))
+	{
+		$menuPref = e107::getConfig('menu');
+		foreach ($temp as $k => $v)
+		{
+			$menuPref->setPref($k, $v);
+		}
+		$menuPref->save(false, true, false);
+	}
 }
 	
-$text = "<div style='text-align:center'>
-	<form method=\"post\" action=\"".e_SELF."?".e_QUERY."\" name=\"menu_conf_form\">
-	<table style=\"width:85%\" class=\"fborder\">";
+$ns->tablerender($caption, $mes->render(). $text);
+
+$text = "
+	<form method='post' action='".e_SELF."?".e_QUERY."' name='menu_conf_form'>
+	<table class='table adminform'>
+	<colgroup span='2'>
+    	<col class='col-label' />
+    	<col class='col-control' />
+    </colgroup>
+	<tr>
+		<td>".CLOCK_AD_L2.": </td>
+		<td><input class='tbox' type='text' name='clock_caption' size='20' value='".$menu_pref['clock_caption']."' maxlength='100' />	</td>
+	</tr>
 	
-//  Title
-$text .= "<tr>
-	<td style=\"width:40%\" class='forumheader3'>".CLOCK_AD_L2.": </td>
-	<td style=\"width:60%\" class='forumheader3'>
-	<input class=\"tbox\" type=\"text\" name=\"clock_caption\" size=\"20\" value=\"".$menu_pref['clock_caption']."\" maxlength=\"100\" />
-	</td>
-	</tr>";
+	<tr>
+		<td>".CLOCK_AD_L5.": </td>
+		<td>".$frm->checkbox('clock_format', 1, varset($menu_pref['clock_format'], 0))."<span class='field-help'>".CLOCK_AD_L6."</span></td>
+	</tr>
+
+	<tr>
+		<td>".CLOCK_AD_L7.": </td>
+		<td><input class='tbox' type='text' name='clock_dateprefix' size='10' value='".$menu_pref['clock_dateprefix']."' maxlength='50' /><span class='field-help'>".CLOCK_AD_L8."</span></td>
+	</tr>
 	
-// Format Time
-$text .= "<tr>
-	<td style=\"width:40%\" class='forumheader3'>".CLOCK_AD_L5.": </td>
-	<td style=\"width:60%\" class='forumheader3'>".($menu_pref['clock_format'] == 1 ? $rs->form_checkbox("clock_format", 1, 1) : $rs->form_checkbox("clock_format", 1, 0) )."
-	<br /><b class='smalltext'>".CLOCK_AD_L6."</b></td>
-	</tr>";
+	<tr>
+		<td>".CLOCK_AD_L9.": </td>
+		<td><input class='tbox' type='text' name='clock_datesuffix1' size='10' value='".$menu_pref['clock_datesuffix1']."' maxlength='50' /><span class='field-help'>".CLOCK_AD_L13."</span></td>
+	</tr>
 	
-//  Date Prefix
-$text .= "<tr>
-	<td style=\"width:40%\" class='forumheader3'>".CLOCK_AD_L7.": </td>
-	<td style=\"width:60%\" class='forumheader3'>
-	<input class=\"tbox\" type=\"text\" name=\"clock_dateprefix\" size=\"10\" value=\"".$menu_pref['clock_dateprefix']."\" maxlength=\"50\" />
-	<br /><b class='smalltext'>".CLOCK_AD_L8."</b></td>
-	</tr>";
+	<tr>
+		<td>".CLOCK_AD_L10.": </td>
+		<td><input class='tbox' type='text' name='clock_datesuffix2' size='10' value='".$menu_pref['clock_datesuffix2']."' maxlength='50' /><span class='field-help'>".CLOCK_AD_L13."</span></td>
+	</tr>
 	
-//  Date Suffix
-$text .= "<tr>
-	<td style=\"width:40%\" class='forumheader3'>".CLOCK_AD_L9.": </td>
-	<td style=\"width:60%\" class='forumheader3'>
-	1<input class=\"tbox\" type=\"text\" name=\"clock_datesuffix1\" size=\"10\" value=\"".$menu_pref['clock_datesuffix1']."\" maxlength=\"50\" />
-	<br /><b class='smalltext'>".CLOCK_AD_L13."</b></td>
-	</tr>";
+	<tr>
+		<td>".CLOCK_AD_L11.": </td>
+		<td><input class='tbox' type='text' name='clock_datesuffix3' size='10' value='".$menu_pref['clock_datesuffix3']."' maxlength='50' /><span class='field-help'>".CLOCK_AD_L13."</span></td>
+	</tr>
 	
-$text .= "<tr>
-	<td style=\"width:40%\" class='forumheader3'>".CLOCK_AD_L10.": </td>
-	<td style=\"width:60%\" class='forumheader3'>
-	2<input class=\"tbox\" type=\"text\" name=\"clock_datesuffix2\" size=\"10\" value=\"".$menu_pref['clock_datesuffix2']."\" maxlength=\"50\" />
-	<br /><b class='smalltext'>".CLOCK_AD_L13."</b></td>
-	</tr>";
-	
-$text .= "<tr>
-	<td style=\"width:40%\" class='forumheader3'>".CLOCK_AD_L11.": </td>
-	<td style=\"width:60%\" class='forumheader3'>
-	3<input class=\"tbox\" type=\"text\" name=\"clock_datesuffix3\" size=\"10\" value=\"".$menu_pref['clock_datesuffix3']."\" maxlength=\"50\" />
-	<br /><b class='smalltext'>".CLOCK_AD_L13."</b></td>
-	</tr>";
-	
-$text .= "<tr>
-	<td style=\"width:40%\" class='forumheader3'>".CLOCK_AD_L12.": </td>
-	<td style=\"width:60%\" class='forumheader3'>
-	4<input class=\"tbox\" type=\"text\" name=\"clock_datesuffix4\" size=\"10\" value=\"".$menu_pref['clock_datesuffix4']."\" maxlength=\"50\" />
-	<br /><b class='smalltext'>".CLOCK_AD_L13."</b></td>
-	</tr>";
-	
-$text .= "<tr style=\"vertical-align:top\">
-	<td colspan=\"2\"  style=\"text-align:center\" class='forumheader'>
-	<input class=\"button\" type=\"submit\" name=\"update_menu\" value=\"".CLOCK_AD_L3."\" />
-	</td>
+	<tr>
+		<td>".CLOCK_AD_L12.": </td>
+		<td><input class='tbox' type='text' name='clock_datesuffix4' size='10' value='".$menu_pref['clock_datesuffix4']."' maxlength='50' /><span class='field-help'>".CLOCK_AD_L13."</span></td>
 	</tr>
 	</table>
+	
+	<div class='buttons-bar center'>
+		".$frm->admin_button('update_menu', LAN_UPDATE, 'update')."
+	</div>
 	</form>
-	</div>";
+	";
+
 $ns->tablerender(CLOCK_AD_L4, $text);
 require_once(e_ADMIN."footer.php");
 ?>

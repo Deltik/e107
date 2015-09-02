@@ -15,17 +15,16 @@
 |
 | Released under the terms and conditions of the
 | GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/clock_menu/clock_menu.php $
-|     $Revision: 12012 $
-|     $Id: clock_menu.php 12012 2010-12-18 22:23:57Z e107steved $
-|     $Author: e107steved $
 +---------------------------------------------------------------+
 */
 
-if (!defined('e107_INIT')) { exit; }
+//FIXME looks pretty much to be 0.6 compatible
+if (!defined('e107_INIT')) { exit(); }
 
-global $menu_pref;
+e107::lan('clock_menu',e_LANGUAGE);
+
+$menu_pref = e107::getConfig('menu')->getPref('');
+
 $indexArray = array('clock_dateprefix','clock_format','clock_datesuffix1','clock_datesuffix2','clock_datesuffix3','clock_datesuffix4');
 foreach($indexArray as $ind)
 {
@@ -35,13 +34,8 @@ foreach($indexArray as $ind)
 	}
 }
 
-//$ec_dir = e_PLUGIN."clock_menu/";
+$ec_dir = e_PLUGIN.'clock_menu/';
 
-include_lan(e_PLUGIN."clock_menu/languages/".e_LANGUAGE.".php");
-
-if (!defined("e_HTTP")) {
-	exit;
-}
 $text = "\n\n<!-- ### clock ### //-->\n<div id='Clock'>&nbsp;</div>\n";
 if (!isset($clock_flat) || !$clock_flat) {
 	$ns->tablerender($menu_pref['clock_caption'], "<div style='text-align:center'>".$text."</div>", 'clock');

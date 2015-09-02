@@ -1,28 +1,80 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/user.php $
-|     $Revision: 11687 $
-|     $Id: user.php 11687 2010-08-23 07:25:47Z e107steved $
-|     $Author: e107steved $
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) 2008-2010 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * User information
+ *
+ * $URL$
+ * $Id$
+ *
+ */
+//HCL define('PAGE_NAME', 'Members');
+
 require_once("class2.php");
+include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/lan_'.e_PAGE);
 
 // Next bit is to fool PM plugin into doing things
 global $user;
 $user['user_id'] = USERID;
 
-require_once(e_FILE."shortcode/batch/user_shortcodes.php");
+// BC for v1.x template
+$bcList = array(
+	'LAN_112'   => 'LAN_USER_60',// Email Address
+	'LAN_138'   => 'LAN_USER_52', // Registered members
+	'LAN_139'   => 'LAN_USER_57', // Order
+	"LAN_142"   => "LAN_USER_58", // Member
+	"LAN_145"   => "LAN_USER_59", // Joined
+	"LAN_146"   => "LAN_USER_66", // Visits since...
+	"LAN_147"   => "LAN_USER_67", // Chatbox posts
+	"LAN_148"   => "LAN_USER_68", // Comments posted
+	"LAN_149"   => "LAN_USER_69", // Forum posts
+	"LAN_308"   => "LAN_USER_63", // Real Name
+	"LAN_403"   => "LAN_USER_64", // Site Stats
+	"LAN_404"   => "LAN_USER_65", // Last visit
+	"LAN_419"   => "LAN_USER_70", // Show
+	"LAN_425"   => "LAN_USER_62" // Send Private Message
+);
+
+e107::getLanguage()->bcDefs($bcList);
+
+
+
+if(e_AJAX_REQUEST)
+{
+	if(vartrue($_POST['q']))
+	{
+		$q = filter_var($_POST['q'], FILTER_SANITIZE_STRING);
+		$l = vartrue($_POST['l']) ? intval($_POST['l']) : 10;
+
+		$db = e107::getDb();
+
+		if($db->select("user", "user_id,user_name", "user_name LIKE '". $q."%' ORDER BY user_name LIMIT " . $l))
+		{
+			$data = array();
+			while($row = $db->fetch())
+			{
+				$data[] = array(
+					'value' => $row['user_id'],
+					'label' => $row['user_name'],
+				);
+			}
+
+			if(count($data))
+			{
+				header('Content-type: application/json');
+				echo json_encode($data);
+			}
+		}
+	}
+	exit;
+}
+
+
+// require_once(e_CORE."shortcodes/batch/user_shortcodes.php");
 require_once(e_HANDLER."form_handler.php");
 
 if (isset($_POST['delp']))
@@ -34,9 +86,10 @@ if (isset($_POST['delp']))
 	}
 	if (USERID == $tmp[1] || (ADMIN && getperms("4")))
 	{
-		$sql->db_Select("user", "user_sess", "user_id='". USERID."'");
-		@unlink(e_FILE."public/avatars/".$row['user_sess']);
-		$sql->db_Update("user", "user_sess='' WHERE user_id=".intval($tmp[1]));
+		$sql->select("user", "user_sess", "user_id='". USERID."'");
+		$row = $sql->db_Fetch();
+		@unlink(e_AVATAR_UPLOAD.$row['user_sess']);
+		$sql->update("user", "user_sess='' WHERE user_id=".intval($tmp[1]));
 		header("location:".e_SELF."?id.".$tmp[1]);
 		exit;
 	}
@@ -45,6 +98,33 @@ if (isset($_POST['delp']))
 $qs = explode(".", e_QUERY);
 $self_page =($qs[0] == 'id' && intval($qs[1]) == USERID);
 
+
+$USER_TEMPLATE = e107::getCoreTemplate('user');
+e107::scStyle($sc_style);
+
+if(empty($USER_TEMPLATE)) // BC Fix for loading old templates. 
+{
+	e107::getMessage()->addDebug( "Using v1.x user template");
+	include_once(e107::coreTemplatePath('user')); //correct way to load a core template.	
+}
+else
+{
+	$USER_FULL_TEMPLATE         = $USER_TEMPLATE['view'];
+	$USER_SHORT_TEMPLATE_START  = $USER_TEMPLATE['list']['start'] ;
+	$USER_SHORT_TEMPLATE        = $USER_TEMPLATE['list']['item'] ;
+	$USER_SHORT_TEMPLATE_END    = $USER_TEMPLATE['list']['end'];
+}
+
+$TEMPLATE = str_replace('{USER_EMBED_USERPROFILE}','{USER_ADDONS}', $TEMPLATE); // BC Fix
+
+$user_shortcodes = e107::getScBatch('user');
+$user_shortcodes->wrapper('user/view');
+
+
+
+
+
+/*
 if (file_exists(THEME."user_template.php"))
 {
 	require_once(THEME."user_template.php");
@@ -53,6 +133,8 @@ else
 {
 	require_once(e_BASE.$THEMES_DIRECTORY."templates/user_template.php");
 }
+  */
+
 $user_frm = new form;
 require_once(HEADERF);
 if (!defined("USER_WIDTH")){ define("USER_WIDTH","width:95%"); }
@@ -60,7 +142,7 @@ if (!defined("USER_WIDTH")){ define("USER_WIDTH","width:95%"); }
 $full_perms = getperms("0") || check_class(varset($pref['memberlist_access'], 253));		// Controls display of info from other users
 if (!$full_perms && !$self_page)
 {
-	$ns->tablerender(LAN_20, "<div style='text-align:center'>".USERLAN_2."</div>");
+	$ns->tablerender(LAN_ERROR, "<div style='text-align:center'>".LAN_USER_55."</div>");
 	require_once(FOOTERF);
 	exit;
 }
@@ -98,7 +180,7 @@ else
 		}
 	}
 }
-if ($records > 30)
+if (vartrue($records) > 30)
 {
 	$records = 30;
 }
@@ -107,24 +189,26 @@ if (isset($id))
 {
 	if ($id == 0)
 	{
-		$text = "<div style='text-align:center'>".LAN_137." ".SITENAME."</div>";
-		$ns->tablerender(LAN_20, $text);
+		$text = "<div style='text-align:center'>".LAN_USER_49." ".SITENAME."</div>";
+		$ns->tablerender(LAN_ERROR, $text);
 		require_once(FOOTERF);
 		exit;
 	}
 
 	$loop_uid = $id;
 
-	$ret = $e_event->trigger("showuser", $id);
-	if ($ret!='')
+	$ret = e107::getEvent()->trigger("showuser", $id);
+	$ret2 = e107::getEvent()->trigger('user_profile_display',$id);
+
+	if (!empty($ret) || !empty($ret2))
 	{
 		$text = "<div style='text-align:center'>".$ret."</div>";
-		$ns->tablerender(LAN_20, $text);
+		$ns->tablerender(LAN_ERROR, $text);
 		require_once(FOOTERF);
 		exit;
 	}
 
-	if($pref['profile_comments'])
+	if(vartrue($pref['profile_comments']))
 	{
 		require_once(e_HANDLER."comment_class.php");
 		$comment_edit_query = 'comment.user.'.$id;
@@ -138,12 +222,12 @@ if (isset($id))
 
 	if($text = renderuser($id))
 	{
-		$ns->tablerender(LAN_402, $text);
+		$ns->tablerender(LAN_USER_50, $text);
 	}
 	else
 	{
-		$text = "<div style='text-align:center'>".LAN_400."</div>";
-		$ns->tablerender(LAN_20, $text);
+		$text = "<div style='text-align:center'>".LAN_USER_51."</div>";
+		$ns->tablerender(LAN_ERROR, $text);
 	}
 	unset($text);
 	require_once(FOOTERF);
@@ -154,7 +238,7 @@ $users_total = $sql->db_Count("user","(*)", "WHERE user_ban = 0");
 
 if (!$sql->db_Select("user", "*", "user_ban = 0 ORDER BY user_id $order LIMIT $from,$records"))
 {
-	echo "<div style='text-align:center'><b>".LAN_141."</b></div>";
+	echo "<div style='text-align:center'><b>".LAN_USER_53."</b></div>";
 }
 else
 {
@@ -164,22 +248,25 @@ else
 	foreach ($userList as $row)
 	{
 		$loop_uid = $row['user_id'];
+		
 		$text .= renderuser($row, "short");
 	}
 	$text .= $tp->parseTemplate($USER_SHORT_TEMPLATE_END, TRUE, $user_shortcodes);
 }
 
-$ns->tablerender(LAN_140, $text);
+$ns->tablerender(LAN_USER_52, $text);
 
 $parms = $users_total.",".$records.",".$from.",".e_SELF.'?[FROM].'.$records.".".$order;
-echo "<div class='nextprev'>&nbsp;".$tp->parseTemplate("{NEXTPREV={$parms}}")."</div>";
+echo "<div class='nextprev form-inline'>&nbsp;".$tp->parseTemplate("{NEXTPREV={$parms}}")."</div>";
 
 
 function renderuser($uid, $mode = "verbose")
 {
-	global $sql, $pref, $tp, $sc_style, $user_shortcodes;
-	global $EXTENDED_START, $EXTENDED_TABLE, $EXTENDED_END, $USER_SHORT_TEMPLATE, $USER_FULL_TEMPLATE;
+	global $pref, $sc_style, $user_shortcodes;
+	global $EXTENDED_START, $EXTENDED_TABLE, $EXTENDED_END, $USER_SHORT_TEMPLATE, $USER_FULL_TEMPLATE, $USER_TEMPLATE;
 	global $user;
+
+	$tp = e107::getParser();
 
 	if(is_array($uid))
 	{
@@ -187,15 +274,17 @@ function renderuser($uid, $mode = "verbose")
 	}
 	else
 	{
-		if(!$user = get_user_data($uid))
+		if(!$user = e107::user($uid))
 		{
 			return FALSE;
 		}
 	}
+	
+	e107::getScBatch('user')->setVars($user);
 
 	if($mode == 'verbose')
 	{
-		return $tp->parseTemplate($USER_FULL_TEMPLATE, TRUE, $user_shortcodes);
+		return $tp->parseTemplate( $USER_FULL_TEMPLATE, TRUE, $user_shortcodes);
 	}
 	else
 	{

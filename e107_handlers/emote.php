@@ -1,23 +1,16 @@
 <?php
-/*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/emote.php $
-|     $Revision: 12317 $
-|     $Id: emote.php 12317 2011-07-08 06:54:21Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
-*/
-if (!defined('e107_INIT')) { exit; }
+/**
+ * e107 website system
+ *
+ * Copyright (C) 2008-2013 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * @DEPRECATED FILE
+ */
 
+if (!defined('e107_INIT')) { exit; }
+/*
 function r_emote()
 {
 	global $sysprefs, $pref, $tp;
@@ -38,11 +31,12 @@ function r_emote()
 		$value2 = substr($value, 0, strpos($value, " "));
 		$value = ($value2 ? $value2 : $value);
 		$value = ($value == '&|') ? ':((' : $value;
-
-		$str .= "\n<a href=\"javascript:addtext(' $value ',true)\"><img src='$key' style='border:0; padding-top:2px;' alt='' /></a> ";
+		$value = " ".$value." ";
+		//TODO CSS class
+		$str .= "\n<a href=\"javascript:addtext('$value',true)\"><img src='$key' alt='' /></a> ";
 	}
 
 	return "<div class='spacer'>".$str."</div>";
 }
-
+*/
 ?>

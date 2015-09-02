@@ -1,21 +1,26 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Steve Dunstan 2001-2002
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/bbcode_handler.php $
-|     $Revision: 12112 $
-|     $Id: bbcode_handler.php 12112 2011-03-21 11:57:50Z secretr $
-|     $Author: secretr $
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * $URL$
+ * $Id$
+ */
+
+/**
+ *
+ * @package     e107
+ * @category	e107_handlers
+ * @version     $Id$
+ * @author      e107inc
+ *
+ *	bbcode_handler - processes bbcodes within strings.
+ *
+ *	Separate processing (via class-based bbcodes) for pre-save and pre-display
+ */
 
 if (!defined('e107_INIT')) { exit; }
 
@@ -24,21 +29,25 @@ class e_bbcode
 	var $bbList;			// Caches the file contents for each bbcode processed
 	var $bbLocation;		// Location for each file - 'core' or a plugin name
 	var $preProcess = FALSE;	// Set when processing bbcodes prior to saving
+	var $core_bb = array();
+	var $class = FALSE;
 
-	function e_bbcode()
+	function __construct()
 	{
-		global $pref;
-		$core_bb = array(
+		$pref = e107::getPref();
+		
+		$this->core_bb = array(
 		'blockquote', 'img', 'i', 'u', 'center',
 		'_br', 'color', 'size', 'code',
-		'html', 'flash', 'link', 'email',
+		 'flash', 'link', 'email',
 		'url', 'quote', 'left', 'right',
 		'b', 'justify', 'file', 'stream',
-		'textarea', 'list', 'php', 'time',
-		'spoiler', 'hide', 'youtube', 'sanitised'
+		'textarea', 'list', 'time',
+		'spoiler', 'hide', 'youtube', 'sanitised', 
+		'p', 'h', 'nobr', 'block','table','th', 'tr','tbody','td','markdown','video','glyph'
 		);
 
-		foreach($core_bb as $c)
+		foreach($this->core_bb as $c)
 		{
 			$this->bbLocation[$c] = 'core';
 		}
@@ -60,22 +69,40 @@ class e_bbcode
 		krsort($this->bbLocation);
 	}
 
-	// If $bbStrip is TRUE (boolean or word), all bbcodes are stripped. If FALSE, none are stripped.
-	// If a comma separated (lower case) list is passed, only the listed codes are stripped (and the rest are processed)
-	// If the first word of $bbStrip is 'PRE', sets pre-save mode. Any other parameters follow, comma separated
-	function parseBBCodes($value, $p_ID, $force_lower = 'default', $bbStrip = FALSE)
+
+	/**
+	 *	Parse a string for bbcodes.
+	 *	Process using the 'pre-save' or 'display' routines as appropriate
+	 *
+	 *	@var string $value - the string to be processed
+	 *	@var int $p_ID - ID of a user (the 'post ID') needed by some bbcodes in display mode
+	 *	@var string|boolean $force_lower - determines whether bbcode detection is case-insensitive
+	 *			TRUE - case-insensitive
+	 *			'default' - case-insensitive
+	 *			FALSE - case-sensitive (only lower case bbcodes processed)
+	 *	@var string|boolean $bbStrip - determines action when a bbcode is encountered.
+	 *			TRUE (boolean or word), all bbcodes are stripped. 
+	 *			FALSE - normal display processing of all bbcodes
+	 *			comma separated (lower case) list - only the listed codes are stripped (and the rest are processed)
+	 *			If the first word is 'PRE', sets pre-save mode. Any other parameters follow, comma separated
+	 *
+	 *	@return string processed data
+	 *
+	 *	Code uses a crude stack-based syntax analyser to handle nested bbcodes (including nested 'size' bbcodes, for example)
+	 */
+	function parseBBCodes($value, $p_ID='', $force_lower = 'default', $bbStrip = FALSE)
 	{
 		global $postID;
 		$postID = $p_ID;
 
 
-		if (strlen($value) <= 6) return $value;   				// Don't waste time on trivia!
-		if ($force_lower == 'default') $force_lower = TRUE;		// Set the default behaviour if not overridden
-		$code_stack = array();									// Stack for unprocessed bbcodes and text
-		$unmatch_stack = array();								// Stack for unmatched bbcodes
-		$result = '';											// Accumulates fully processed text
-		$stacktext = '';										// Accumulates text which might be subject to one or more bbcodes
-		$nopro = FALSE;											// Blocks processing within [code]...[/code] tags
+		if (strlen($value) <= 6) return $value;     		// Don't waste time on trivia!
+		if ($force_lower == 'default') $force_lower = TRUE;	// Set the default behaviour if not overridden
+		$code_stack = array();								// Stack for unprocessed bbcodes and text
+		$unmatch_stack = array();							// Stack for unmatched bbcodes
+		$result = '';										// Accumulates fully processed text
+		$stacktext = '';									// Accumulates text which might be subject to one or more bbcodes
+		$nopro = FALSE;										// Blocks processing within [code]...[/code] tags
 		$this->preProcess = FALSE;
 
 		$strip_array = array();
@@ -84,9 +111,9 @@ class e_bbcode
 			$strip_array = explode(',',$bbStrip);
 			if ($strip_array[0] == 'PRE')
 			{
-				$this->preProcess = TRUE;
+				$this->preProcess = "toDB";
 				unset($strip_array[0]);
-				if (count($strip_array) == 0)
+				if (count($strip_array) == 0) 
 				{
 					$bbStrip = FALSE;
 				}
@@ -94,9 +121,12 @@ class e_bbcode
 				{
 					$bbStrip = TRUE;
 				}
-
+				
 			}
 		}
+		
+
+		
 		$pattern = '#^\[(/?)([A-Za-z_]+)(\d*)([=:]?)(.*?)]$#i';	// Pattern to split up bbcodes
 		// $matches[0] - same as the input text
 		// $matches[1] - '/' for a closing tag. Otherwise empty string
@@ -165,7 +195,7 @@ class e_bbcode
 											case 'bbcode' :
 												if (($code_stack[0]['code'] == $bbword) && ($code_stack[0]['numbers'] == $matches[3]))
 												{
-													$stacktext = $this->proc_bbcode($bbword,$code_stack[0]['param'],$stacktext,$bbparam, $code_stack[0]['bbsep'], $code_stack[0]['block'].$stacktext.$cont);
+													$stacktext = $this->proc_bbcode($bbword, $code_stack[0]['param'], $stacktext, $bbparam, $code_stack[0]['bbsep'], $code_stack[0]['block'].$stacktext.$cont);
 													array_shift($code_stack);
 													// Intentionally don't terminate here - may be some text we can clean up
 													$bbword='';    // Necessary to make sure we don't double process if several instances on stack
@@ -259,50 +289,28 @@ class e_bbcode
 		return $result;
 	}
 
+
 	/**
-	 * Filter bbcode Input
-	 * @param string $input [optional]
+	 *    Process a bbcode
+	 *
+	 * @var string $code - textual value of the bbcode (already begins with '_' if a single code)
+	 * @var string $param1 - any text after '=' in the opening code
+	 * @var string $code_text_par - text between the opening and closing codes
+	 * @var string $param2 - any text after '=' for the closing code
+	 * @var char $sep - character separating bbcode name and any parameters
+	 * @var string $full_text - the 'raw' text between, and including, the opening and closing bbcode tags
 	 * @return string
 	 */
-	function filter($input='')
-	{
-		if(!$input)
-		{
-			return;
-		}
-
-		// filter is breaking bbcodes with - input is modified with strtolower()
-		//$input = strtolower($input);
-		//$search = array('document.cookie','location.href','onload');
-		//return str_replace($search,"",$input);
-
-		// a quick fix attempt - basic filtering
-		return preg_replace('/(document\.cookie|location\.href|onload)/i', '', $input);
-	}
-
-
-	/**
-	 * Invoke the actual bbcode handler
-	 * @param string $code - textual value of the bbcode (already begins with '_' if a single code)
-	 * @param string $param1 - any text after '=' in the opening code
-	 * @param string $code_text_par - text between the opening and closing codes
-	 * @param string $param2 - any text after '=' for the closing code
-	 * @param string $sep - character separating bbcode name and any parameters
-	 * @param string $full_text - the 'raw' text between, and including, the opening and closing bbcode tags
-	 * @return
-	 */
-	function proc_bbcode($code, $param1='',$code_text_par='', $param2='', $sep='', $full_text='')
+	private function proc_bbcode($code, $param1='', $code_text_par='', $param2='', $sep='', $full_text='')
 	{
 		global $tp, $postID, $code_text, $parm;
-		$parm = $this->filter($param1);
+
+		$parm = $param1;
 
 		$code_text = $code_text_par;
 
-		if (E107_DEBUG_LEVEL)
-		{
-			global $db_debug;
-			$db_debug->logCode(1, $code, $parm, $postID);
-		}
+		$className = null;
+		$debugFile = null;
 
 		if (is_array($this->bbList) && array_key_exists($code, $this->bbList))
 		{	// Check the bbcode 'cache'
@@ -312,13 +320,15 @@ class e_bbcode
 		{	// Find the file
 			if ($this->bbLocation[$code] == 'core')
 			{
-				$bbPath = e_FILE.'bbcode/';
+				$bbPath = e_CORE.'bbcodes/';
 				$bbFile = strtolower(str_replace('_', '', $code));
+				$debugFile = $bbFile;
 			}
 			else
 			{	// Add code to check for plugin bbcode addition
 				$bbPath = e_PLUGIN.$this->bbLocation[$code].'/';
 				$bbFile = strtolower($code);
+				$debugFile = $bbFile;
 			}
 			if (file_exists($bbPath.'bb_'.$bbFile.'.php'))
 			{	// Its a bbcode class file
@@ -326,29 +336,50 @@ class e_bbcode
 				//echo "Load: {$bbFile}.php<br />";
 				$className = 'bb_'.$code;
 				$this->bbList[$code] = new $className();
+				$debugFile = $bbPath.'bb_'.$bbFile.'.php';
 			}
 			elseif (file_exists($bbPath.$bbFile.'.bb'))
 			{
 				$bbcode = file_get_contents($bbPath.$bbFile.'.bb');
 				$this->bbList[$code] = $bbcode;
+				$debugFile = $bbPath.$bbFile.'.bb';
 			}
 			else
 			{
 				$this->bbList[$code] = '';
+				//echo "<br />File not found: {$bbFile}.php<br />";
 				return false;
 			}
 		}
+		
+		if (E107_DEBUG_LEVEL)
+		{
+			global $db_debug;
+			
+			$info = array(
+				'class' =>$className,
+				'path'	=> $debugFile
+			);
+			
+			$db_debug->logCode(1, $code, $parm, print_a($info,true));
+		}
+		
 		global $e107_debug;
 
 		if (is_object($this->bbList[$code]))
 		{
-			if ($this->preProcess)
+			if ($this->preProcess == 'toDB')
 			{
+				//echo "Preprocess: ".htmlspecialchars($code_text).", params: {$param1}<br />";
 				return $this->bbList[$code]->bbPreSave($code_text, $param1);
+			}
+			if($this->preProcess == 'toWYSIWYG')//XXX FixMe NOT working - messes with default toHTML behavior. 
+			{
+			// 	return $this->bbList[$code]->bbWYSIWYG($code_text, $param1);					
 			}
 			return $this->bbList[$code]->bbPreDisplay($code_text, $param1);
 		}
-		if ($this->preProcess) return $full_text;		// No change
+		if ($this->preProcess == 'toDB') return $full_text;		// No change
 
 		/**
 		 *	@todo - capturing output deprecated
@@ -367,7 +398,364 @@ class e_bbcode
 		}
 		return $bbcode_output.$bbcode_return;
 	}
-}
+
+
+	/** Grab a list of bbcode content . ie. all [img]xxxx[/img] within a block of text. 
+	 * @var string $type  - bbcode eg. 'img' or 'youtube'
+	 * @var string $text  - text to be processed for bbcode content
+	 * @var string $path - optional path to prepend to output if http or {e_xxxx} is not found. 
+	 * @return array
+	 */
+	function getContent($type,$text,$path='')
+	{
+		if(!in_array($type,$this->core_bb))
+		{
+			return;
+		}
+		
+		preg_match_all("/\[".$type."(?:[^\]]*)?]([^\[]*)(?:\[\/".$type."])/im",$text,$mtch);
+		
+		$ret = array();
+		
+		if(is_array($mtch[1]))
+		{
+			$tp = e107::getParser();
+			foreach($mtch[1] as $i)
+			{
+				if(substr($i,0,4)=='http')
+				{
+					$ret[] = $i;
+				}
+				elseif(substr($i,0,3)=="{e_")
+				{
+					$ret[] = $tp->replaceConstants($i,'full');
+				}
+				else
+				{
+					$ret[] = $path.$i;	
+				}
+				
+			}			
+		}
+		
+		return $ret;
+	}
+	
+	//Set the class type for a bbcode eg. news | page | user | {plugin-folder}
+	function setClass($mode=false)
+	{
+		$this->class = $mode;	
+	}
+	
+	// return the Mode used by the class.  eg. news | page | user | {plugin-folder}
+	function getMode()
+	{
+		return $this->class; 	
+	}
+	
+	
+	function resizeWidth()
+	{
+		$pref = e107::getPref();
+		if($this->class && vartrue($pref['resize_dimensions'][$this->class.'-bbcode']['w']))
+		{
+			return $pref['resize_dimensions'][$this->class.'-bbcode']['w'];		
+		}
+		return false;	
+	}
+	
+	function resizeHeight()
+	{
+		$pref = e107::getPref();
+		if($this->class && vartrue($pref['resize_dimensions'][$this->class.'-bbcode']['h']))
+		{
+			return $pref['resize_dimensions'][$this->class.'-bbcode']['h'];		
+		}
+		return false;	
+	}	
+	
+	// return the class for a bbcode
+	function getClass($type='')
+	{
+				
+		$ret = "bbcode-".$type;
+		if($this->class)
+		{
+			$ret .= " bbcode-".$type."-".$this->class;
+		}
+		return $ret; 
+	}	
+	
+	
+	function clearClass()
+	{
+		$this->setClass();	
+	}
+	
+	
+	
+	
+	// NEW bbcode button rendering function. replacing displayHelp(); 
+	function renderButtons($template, $id='', $options=array())
+	{
+		
+		$tp = e107::getParser();
+		require(e107::coreTemplatePath('bbcode')); //correct way to load a core template.
+
+		$pref = e107::getPref('e_bb_list');
+		    
+		if (!empty($pref)) // Load the Plugin bbcode AFTER the templates, so they can modify or replace.
+		{
+			foreach($pref as $val)
+			{
+				if(is_readable(e_PLUGIN.$val."/e_bb.php"))
+				{
+					require(e_PLUGIN.$val."/e_bb.php");
+				}
+			}
+		}
+	
+		$temp = array();
+	    $temp['news'] 		= $BBCODE_TEMPLATE_NEWSPOST;
+		$temp['submitnews']	= $BBCODE_TEMPLATE_SUBMITNEWS;
+		$temp['extended']	= $BBCODE_TEMPLATE_NEWSPOST;
+		$temp['admin']		= $BBCODE_TEMPLATE_ADMIN;
+		$temp['mailout']	= $BBCODE_TEMPLATE_MAILOUT;
+		$temp['page']		= $BBCODE_TEMPLATE_CPAGE;
+		$temp['maintenance']= $BBCODE_TEMPLATE_ADMIN;
+		$temp['comment'] 	= $BBCODE_TEMPLATE_COMMENT;
+		$temp['signature'] 	= $BBCODE_TEMPLATE_SIGNATURE;
+	
+		if(isset($temp[$template]))
+		{
+	        $BBCODE_TEMPLATE = $temp[$template];
+		}
+		elseif(strpos($template,"{")!==false) // custom template provided manually. eg. $template = "<div class='btn-group inline-text'>{BB=link}{BB=b}{BB=i}{BB=u}{BB=img}{BB=format}</div>"
+		{
+			$BBCODE_TEMPLATE = $template;	
+			$template = 'comment';	
+		}
+		elseif(ADMIN_AREA)
+		{
+			$BBCODE_TEMPLATE = $BBCODE_TEMPLATE_ADMIN;	
+		}
+		else // Front-end
+		{
+			$BBCODE_TEMPLATE = $BBCODE_TEMPLATE;	
+		}
+	
+		
+		$bbcode_shortcodes = e107::getScBatch('bbcode');	
+				
+		$data = array(
+				'tagid'			=> $id,
+				'template'		=> $template,
+				'trigger'		=> vartrue($options['trigger']), // For BC
+		//		'hint_func'		=> $helpfunc, // deprecated and unused
+		//		'hint_active'	=> $bbcode_helpactive,  // deprecated and unused
+				'size'			=> vartrue($helpsize),
+				'eplug_bb'		=> varset($eplug_bb), //?XXX ?
+		);
+				
+		$bbcode_shortcodes->setVars($data);	
+		
+  		return "<div id='bbcode-panel-".$id."' class='mceToolbar bbcode-panel'>".$tp->parseTemplate($BBCODE_TEMPLATE,TRUE, $bbcode_shortcodes)."</div>";		
+	}
+	
+    
+
+   function processTag($tag, $html)
+    {
+        $html = "<html><body>".$html."</body></html>";
+        $doc = new DOMDocument();     
+        $doc->loadHTML($html);
+
+        $tmp = $doc->getElementsByTagName($tag);
+        
+        $var = array();
+
+        $attributes = array('class','style','width','height','src','alt','href');
+        
+        $params = array(
+            'img'   =>  array('style','width','height','alt')
+        );
+        
+        // Generate array for $var ($code_text) & $params ($parm);
+        foreach ($tmp as $tg)
+        {
+            $var = array();
+            $parm = array();
+            
+            foreach($attributes as $att)
+            {
+                $v = (string) $tg->getAttribute($att);  
+                         
+                if(trim($v) != '')
+                {
+                   $var[$att] = $v;
+                   if(in_array($att, $params[$tag]))
+                    {
+                        $parm[$att] = $att."=".str_replace(" ","",$var[$att]); 
+                    }
+                }                                
+            }
+     
+            $inc = ($parm) ? "  ".implode("&",$parm) : "";  // the parm - eg. [img $parm]whatever[/img]
+     
+            switch ($tag) 
+            {
+                case 'img':
+                    
+                    $e_http = str_replace("/",'\/',e_HTTP);
+                    $regex      = "/".$e_http."thumb.php\?src=[^>]*({e_MEDIA_IMAGE}[^&]*)(.*)/i";
+                //    echo "REGEX = ".$regex;
+                    $code_text = preg_replace($regex,"$1",$var['src']);
+                    $code_reg   = str_replace("/","\/",$code_text);
+     
+                    
+                    $search     = '/<img([^>]*)'.$code_reg.'([^>]*)>/i'; // Must match the specific line - not just the tag. 
+                    $replace    = "[img{$inc}]".$code_text."[/img]"; // bbcode replacement.  
+                break;
+                
+                default:
+                     echo "TAG = ".$tag;
+                break;
+            }
+           
+           $html = preg_replace($search,$replace,$html);  
+        }
+  
+        return str_replace(array("<html><body>","</body></html>"),"",$html); 
+    }
+        
+    
+    
+	/**
+	 * Convert HTML to bbcode. 
+	 */
+	function htmltoBBcode($text)
+	{
+	    
+       
+		$text = str_replace("<!-- bbcode-html-start -->","[html]",$text);
+		$text = str_replace("<!-- bbcode-html-end -->","[/html]",$text);
+	//	$text = str_replace('<!-- pagebreak -->',"[newpage=]",$text);
+    
+        
+
+		if(substr($text,0,6)=='[html]')
+		{
+			return $text;
+		}
+        
+       
+       
+        $text = $this->processTag('img', $text);
+        
+       
+       
+		// Youtube conversion (TinyMce)
+		
+	//	return $text;
+	
+	//   $text = preg_replace('/<img(?:\s*)?(?:class="([^"]*)")?(?:\s*)?(?:style="([^"]*)")?\s?(?:src="thumb.php\?src=([^"]*)&w=([\d]*)?&h=([\d]*)?")(?:\s*)?(?:\s*)?(?:width="([\d]*)")?\s*(?:height="([\d]*)")?(?:\s*)?(?:alt="([^"]*)")? \/>/i',"[img style=width:$4px;height:$5px; alt=$8]$3[/img]",$text ); 
+	
+		$text = preg_replace('/<img class="youtube-([\w]*)" style="([^"]*)" src="([^"]*)" alt="([^"]*)" \/>/i',"[youtube=$1]$4[/youtube]",$text);	
+		$text = preg_replace('/<!-- Start YouTube-([\w,]*)-([\w]*) -->([^!]*)<!-- End YouTube -->/i','[youtube=$1]$2[/youtube]',$text);	
+					
+		$text = preg_replace("/<a.*?href=\"(.*?)?request.php\?file=([\d]*)\".*?>(.*?)<\/a>/i","[file=$2]$3[/file]",$text);		
+					
+		$text = preg_replace("/<a.*?href=\"(.*?)\".*?>(.*?)<\/a>/i","[link=$1]$2[/link]",$text);
+		$text = preg_replace('/<div style="text-align: ([\w]*);">([\s\S]*)<\/div>/i',"[$1]$2[/$1]",$text); // verified
+		$text = preg_replace('/<div class="bbcode-(?:[\w]*).* style="text-align: ([\w]*);">([\s\S]*)<\/div>/i',"[$1]$2[/$1]",$text); // left / right / center
+	//	$text = preg_replace('/<img(?:\s*)?(?:style="([^"]*)")?\s?(?:src="([^"]*)")(?:\s*)?(?:alt="(\S*)")?(?:\s*)?(?:width="([\d]*)")?\s*(?:height="([\d]*)")?(?:\s*)?\/>/i',"[img style=width:$4px;height:$5px;$1]$2[/img]",$text );
+	//	$text = preg_replace('/<img class="(?:[^"]*)"(?:\s*)?(?:style="([^"]*)")?\s?(?:src="([^"]*)")(?:\s*)?(?:alt="(\S*)")?(?:\s*)?(?:width="([\d]*)")?\s*(?:height="([\d]*)")?(?:\s*)?\/>/i',"[img style=width:$4px;height:$5px;$1]$2[/img]",$text );
+	//	$text = preg_replace('/<span (?:class="bbcode-color" )?style=\"color: ?(.*?);\">(.*?)<\/span>/i',"[color=$1]$2[/color]",$text);
+		$text = preg_replace('/<span (?:class="bbcode underline bbcode-u)(?:[^>]*)>(.*?)<\/span>/i',"[u]$1[/u]",$text);
+	//	$text = preg_replace('/<table([^"]*)>/i', "[table $1]",$text);
+		$text = preg_replace('/<table style="([^"]*)"([\w ="]*)?>/i', "[table style=$1]",$text);
+		$text = preg_replace('/<table([\w :\-_;="]*)?>/i', "[table]",$text);
+		$text = preg_replace('/<tbody([\w ="]*)?>/i', "[tbody]",$text);
+		$text = preg_replace('/<code([\w :\-_;="]*)?>/i', "[code]\n",$text);
+		$text = preg_replace('/<strong([\w :\-_;="]*)?>/i', "[b]",$text);
+		$text = preg_replace('/<em([\w :\-_;="]*)?>/i', "[i]",$text);
+		$text = preg_replace('/<li([\w :\-_;="]*)?>/i', "[*]",$text);
+		$text = preg_replace('/<ul([\w :\-_;="]*)?>/i', "[list]",$text);
+		$text = preg_replace('/<ol([\w :\-_;="]*)?>/i', "[list=ol]",$text);		
+		$text = preg_replace('/<table([\w :\-_;="]*)?>/i', "[table]",$text);
+		$text = preg_replace('/<tbody([\w :\-_;="]*)?>/i', "[tbody]",$text);
+		$text = preg_replace('/<tr([\w :\-_;="]*)?>/i', "[tr]",$text);
+		$text = preg_replace('/<td([\w :\-_;="]*)?>/i', "\t[td]",$text);
+		$text = preg_replace('/<blockquote([\w :\-_;="]*)?>/i', "[blockquote]",$text);
+		$text = preg_replace('/<p([\w :\-_;="]*)?>/i', "",$text);  // Causes issues : [p] [/p] everywhere. 
+		
+	//	$ehttp = str_replace("/",'\/',e_HTTP);
+	//	$text = preg_replace('/thumb.php\?src='.$ehttp.'([^&]*)([^\[]*)/i', "$1",$text);
+	//	$text = preg_replace('/thumb.php\?src=([^&]*)([^\[]*)/i', "$1",$text);
+		
+			
+		// Mostly closing tags. 
+		$convert = array(		
+			array(	"\n",			'<br />'),
+		//	array(	"\n",			'<p>'),
+			array(	"\n",			"</p>\n"),
+			array(	"\n",			"</p>"),
+			array(	"[/list]",		'</ul>\n'),
+			array(	"[/list]",		'</ul>'),
+			array(	"[/list]",		'</ol>\n'),
+			array(	"[/list]",		'</ol>'),			
+			array(	"[h=2]",		'<h2 class="bbcode-center" style="text-align: center;">'), // e107 bbcode markup
+			array(	"[h=2]",		'<h2>'),
+			array(	"[/h]",			'</h2>'),
+			array(	"[h=3]",		'<h3 class="bbcode-center" style="text-align: center;">'), // e107 bbcode markup
+			array(	"[h=3]",		'<h3>'),
+			array(	"[/h]",			'</h3>'),
+			array(	"[/b]",			'</strong>'),
+			array(	"[/i]",			'</em>'),
+			array(	"[/block]",		'</div>'),
+			array(	"[/table]",	'</table>'),
+			array(	"[/tbody]",	'</tbody>'),
+			array(	"[/code]\n",	'</code>'),
+			array(	"[/tr]",	'</tr>'),
+			array(	"[/td]",		'</td>'),	
+			array(	"[/blockquote]",'</blockquote>'),
+			array(	"]",			' style=]')
+				
+		);
+		
+		foreach($convert as $arr)
+		{
+			$repl[] = $arr[0];
+			$srch[] = $arr[1];	
+		}
+		
+		$paths = array(
+			e107::getFolder('images'),
+			e107::getFolder('plugins'),
+		//	e107::getFolder('media_images'),
+			e107::getFolder('media_files'),
+			e107::getFolder('media_videos')
+		);
+		
+		$tp = e107::getParser();
+		foreach($paths as $k=>$path)
+		{
+			$srch[] = $path;
+			$repl[] = $tp->createConstants($path);
+		}
+		
+
+		$blank = array('</li>','width:px;height:px;');
+		$text = str_replace($blank,"",$text); // Cleanup 
+		
+		return str_replace($srch,$repl,$text);	
+		
+	}
+	
+	
+	
+	
+} // end Class 
 
 
 
@@ -375,13 +763,15 @@ class e_bbcode
  *	Base class for bbcode handlers
  *
  *	Contains core routines for entry, security, logging....
+ *
+ *	@todo add security
  */
 class e_bb_base
 {
 	/**
 	 *	Constructor
 	 */
-	function e_bb_base()
+	public function __construct()
 	{
 	}
 
@@ -391,12 +781,14 @@ class e_bb_base
 	 *	Called prior to save of user-entered text
 	 *
 	 *	Allows initial parsing of bbcode, including the possibility of removing or transforming the enclosed text (as is done by the youtube processing)
+	 *	Parameters passed by reference to minimise memory use
 	 *
-	 *	This is the 'new' facility
+	 *	@param string $code_text - text between the bbcode tags
+	 *	@param string $parm - any parameters specified for the bbcode
 	 *
-	 *	@todo - make 'final' for PHP5
+	 *	@return string for insertion into DB. (If a bbcode is to be inserted, the bbcode 'tags' must be included in the return string.)
 	 */
-	function bbPreSave(&$code_text, &$parm)
+	final public function bbPreSave(&$code_text, &$parm)
 	{
 		// Could add logging, security in here
 		return $this->toDB($code_text, $parm);
@@ -406,15 +798,35 @@ class e_bb_base
 
 	/**
 	 *	Process bbcode prior to display
-	 *
 	 *	Functionally this routine does exactly the same as the existing bbcodes
+	 *	Parameters passed by reference to minimise memory use
 	 *
-	 *	@todo - make 'final' for PHP5
+	 *	@param string $code_text - text between the bbcode tags
+	 *	@param string $parm - any parameters specified for the bbcode
+	 *
+	 *	@return string with $code_text transformed into displayable XHTML as necessary
 	 */
-	function bbPreDisplay(&$code_text, &$parm)
+	final public function bbPreDisplay(&$code_text, &$parm)
 	{
 		// Could add logging, security in here
 		return $this->toHTML($code_text, $parm);
+	}
+	
+	
+	/**
+	 *	Process bbcode prior to display in WYSIWYG
+	 *	Functionally this routine does exactly the same as the existing bbcodes
+	 *	Parameters passed by reference to minimise memory use
+	 *
+	 *	@param string $code_text - text between the bbcode tags
+	 *	@param string $parm - any parameters specified for the bbcode
+	 *
+	 *	@return string with $code_text transformed into displayable XHTML as necessary
+	 */
+	final public function bbWYSIWYG(&$code_text, &$parm)
+	{
+		// Could add logging, security in here
+		return $this->toWYSIWYG($code_text, $parm);
 	}
 }
 

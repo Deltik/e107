@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/lan_notify.php $
-|     $Revision: 12892 $
-|     $Id: lan_notify.php 12892 2012-07-21 03:20:42Z e107coders $
-|     $Author: e107coders $
+|     $Source: /cvs_backup/e107_0.8/e107_languages/English/lan_notify.php,v $
+|     $Revision$
+|     $Date$
+|     $Author$
 +----------------------------------------------------------------------------+
 */
 
@@ -28,11 +28,11 @@ define("NT_LAN_FL_2", "IP address banned for flooding");
 
 define("NT_LAN_SN_1", "News Item Submitted");
 
+define("NT_LAN_ML_1", "Bulk email send complete");
+
 define("NT_LAN_NU_1", "Updated");
 
 define("NT_LAN_ND_1", "News Item Deleted");
 define("NT_LAN_ND_2", "Deleted news item id");
-
-define("NT_LAN_CM_1", "User Comment Pending Approval");
 
 ?>

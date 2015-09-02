@@ -1,21 +1,18 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/emailprint_class.php $
-|     $Revision: 11941 $
-|     $Id: emailprint_class.php 11941 2010-11-01 22:10:28Z e107steved $
-|     $Author: e107steved $
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) 2008-2009 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ *
+ *
+ * $Source: /cvs_backup/e107_0.8/e107_handlers/emailprint_class.php,v $
+ * $Revision$
+ * $Date$
+ * $Author$
+ */
 
 if (!defined('e107_INIT')) { exit; }
 
@@ -24,11 +21,13 @@ include_lan(e_LANGUAGEDIR.e_LANGUAGE."/lan_email.php");
 
 class emailprint 
 {
-	function render_emailprint($mode, $id, $look = 0) 
+	function render_emailprint($mode, $id, $look = 0,$parm=array()) 
 	{
 		// $look = 0  --->display all icons
 		// $look = 1  --->display email icon only
 		// $look = 2  --->display print icon only
+		$tp = e107::getParser();
+
 		$text_emailprint = "";
 
 		//new method emailprint_class : (only news is core, rest is plugin: searched for e_emailprint.php which should hold $email and $print values)
@@ -56,16 +55,34 @@ class emailprint
 				}
 			}
 		}
+		
+
+		
+		if(deftrue('BOOTSTRAP'))
+		{
+			$genericMail = $tp->toGlyph('icon-envelope',false); // "<i class='icon-envelope'></i>"; 
+			$genericPrint = $tp->toGlyph('fa-print',false); // "<i class='icon-print'></i>"; 
+			$class = varset($parm['class']) ? $parm['class'] : "";
+		}
+		else // BC
+		{
+			$genericMail = "<img src='".e_IMAGE_ABS."generic/email.png'  alt='".LAN_EMAIL_7."'  />";
+			$genericPrint = "<img src='".e_IMAGE_ABS."generic/printer.png'  alt='".LAN_PRINT_1."'  />";	
+			$class = "";
+		}
+		
 
 		if ($look == 0 || $look == 1) 
 		{
-			$ico_mail = ((defined('ICONMAIL') && file_exists(THEME."images/".ICONMAIL)) ? THEME_ABS."images/".ICONMAIL : e_IMAGE_ABS."generic/".IMODE."/email.png");
-			$text_emailprint .= "<a href='".e_HTTP."email.php?".$email.".".$id."'><img src='".$ico_mail."' style='border:0' alt='".LAN_EMAIL_7."' title='".LAN_EMAIL_7."' /></a> ";
+			$ico_mail = (defined("ICONMAIL") && file_exists(THEME."images/".ICONMAIL) ? "<img src='".THEME_ABS."images/".ICONMAIL."'  alt='".LAN_EMAIL_7."'  />" : $genericMail);
+			//TDOD CSS class
+			$text_emailprint .= "<a class='e-tip ".$class."' href='".e_HTTP."email.php?".$email.".".$id."' title='".LAN_EMAIL_7."'>".$ico_mail."</a> ";
 		}
 		if ($look == 0 || $look == 2) 
 		{
-			$ico_print = ((defined('ICONPRINT') && file_exists(THEME."images/".ICONPRINT)) ? THEME_ABS."images/".ICONPRINT : e_IMAGE_ABS."generic/".IMODE."/printer.png");
-			$text_emailprint .= "<a href='".e_HTTP."print.php?".$print.".".$id."'><img src='".$ico_print."' style='border:0' alt='".LAN_PRINT_1."' title='".LAN_PRINT_1."' /></a>";
+			$ico_print = (defined("ICONPRINT") && file_exists(THEME."images/".ICONPRINT) ? "<img src='".THEME_ABS."images/".ICONPRINT."' alt='".LAN_PRINT_1."'  />" : $genericPrint);
+			//TODO CSS class
+			$text_emailprint .= "<a class='e-tip ".$class."' href='".e_HTTP."print.php?".$print.".".$id."' title='".LAN_PRINT_1."'>".$ico_print."</a>";
 		}
 		return $text_emailprint;
 	}

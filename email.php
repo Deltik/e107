@@ -3,33 +3,28 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     Steve Dunstan 2001-2002
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|     Copyright (C) 2008-2009 e107 Inc (e107.org)
+|     http://e107.org
 |
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/email.php $
-|     $Revision: 11948 $
-|     $Id: email.php 11948 2010-11-02 22:36:41Z e107steved $
-|     $Author: e107steved $
+|     $Source: /cvs_backup/e107_0.8/email.php,v $
+|     $Revision$
+|     $Date$
+|     $Author$
 +----------------------------------------------------------------------------+
 */
-
-// Experimental e-token
-if (isset($_POST['emailsubmit']) && !isset($_POST['e-token']))
-{
-	// set e-token so it can be processed by class2
-	$_POST['e-token'] = '';
-}
-
 require_once('class2.php');
 if (!check_class(varset($pref['email_item_class'],e_UC_MEMBER)))
 {
 	header('Location: '.e_BASE.'index.php');
 	exit();
 }
+
+include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/lan_'.e_PAGE);
+
 require_once(HEADERF);
 
 $use_imagecode = FALSE;
@@ -106,9 +101,9 @@ if (isset($_POST['emailsubmit']))
 	}
 	else
 	{
-//		$message .= $comments."\n";		// Added into message later
+//		$message .= $comments."\n";			// Added to message later on
 	}
-	$ip = $e107->getip();
+	$ip = e107::getIPHandler()->getIP(FALSE);
 	$message .= "\n\n".LAN_EMAIL_2." ".$ip."\n\n";
 
 	if (substr($source,0,7) == 'plugin:')
@@ -141,15 +136,13 @@ if (isset($_POST['emailsubmit']))
 	else
 	{
 		$emailurl = strip_tags($_POST['referer']);
-        $message = '';
-		$parms = intval($parms);
-        if($sql->db_Select('news', '*', 'news_id='.$parms))
-        {
-            list($news_id, $news_title, $news_body, $news_extended, $news_datestamp, $news_author, $news_source, $news_url, $news_category, $news_allow_comments) = $sql->db_Fetch();
-			$message = "<h3 class='email_heading'>".$news_title."</h3><br />".$news_body."<br />".$news_extended."<br /><br /><a href='{e_BASE}news.php?extend.".$parms."'>{e_BASE}news.php?extend.".$parms."</a><br />";
-            $message = $tp->toEmail($message);
-
-        }
+		$message = '';
+		if($sql->db_Select('news', 'news_title, news_body, news_extended', 'news_id='.((int)$parms)))
+		{
+			$row = $sql->db_Fetch();
+			$message = "<h3 class='email_heading'>".$row['news_title']."</h3><br />".$row['news_body']."<br />".$row['news_extended']."<br /><br /><a href='{e_BASE}news.php?extend.".$parms."'>{e_BASE}news.php?extend.".$parms."</a><br />";
+			$message = $tp->toEmail($message);
+		}
 
 		if($message == '')
 		{
@@ -160,29 +153,11 @@ if (isset($_POST['emailsubmit']))
 
 	if ($error == '')
 	{
-	    // Load Mail Handler and Email Template.
+		// Load Mail Handler and Email Template.
 		require_once(e_HANDLER.'mail.php');
-		if (file_exists(THEME.'email_template.php'))
-		{
-			require_once(THEME.'email_template.php');
-		}
-		else
-		{
-			require_once(e_THEME.'templates/email_template.php');
-		}
 
-		$email_body = '';
-		if(isset($EMAIL_HEADER))
-		{
-			$email_body = $tp->parseTemplate($EMAIL_HEADER);
-		}
-
-		$email_body .= (trim($comments) != '') ? $tp->toEmail($comments).'<hr />' : '';
+		$email_body = (trim($comments) != '') ? $tp->toEmail($comments).'<hr />' : '';
 		$email_body .= $tp->toEmail($message);
-		if (isset($EMAIL_FOOTER))
-		{
-			$email_body .= $tp->parseTemplate($EMAIL_FOOTER);
-		}
 
 		if (sendemail($email_send, LAN_EMAIL_3.SITENAME,$email_body))
 		{
@@ -196,7 +171,7 @@ if (isset($_POST['emailsubmit']))
 	}
 	else
 	{
-		$ns->tablerender(LAN_EMAIL_12, "<div style='text-align:center'>".$error."</div>");
+		$ns->tablerender(LAN_ERROR, "<div style='text-align:center'>".$error."</div>");
 	}
 }
 
@@ -211,18 +186,18 @@ $text = "<form method='post' action='".e_SELF."?".e_QUERY."'>\n
 if (USER != TRUE)
 {
 	$text .= "<tr>
-		<td style='width:25%'>".LAN_EMAIL_15."</td>
-		<td style='width:75%'>
-		<input class='tbox' type='text' name='author_name' size='60' style='width:95%' value='$author' maxlength='100' />
-		</td>
-		</tr>";
+	<td style='width:25%'>".LAN_EMAIL_15."</td>
+	<td style='width:75%'>
+	<input class='tbox' type='text' name='author_name' size='60' style='width:95%' value='$author' maxlength='100' />
+	</td>
+	</tr>";
 }
 
 $text .= "
 <tr>
-	<td style='width:25%'>".LAN_EMAIL_8."</td>
-	<td style='width:75%'>
-	<textarea class='tbox' name='comment' cols='70' rows='4' style='width:95%'>".LAN_EMAIL_6." ".SITENAME." (".$emailurl.")
+<td style='width:25%'>".LAN_EMAIL_8."</td>
+<td style='width:75%'>
+<textarea class='tbox' name='comment' cols='70' rows='4' style='width:95%'>".LAN_EMAIL_6." ".SITENAME." (".$emailurl.")
 ";
 
 if (USER == TRUE)
@@ -231,36 +206,35 @@ if (USER == TRUE)
 }
 
 $text .= "</textarea>
-	</td>
-	</tr>
+</td>
+</tr>
 
-	<tr>
-	<td style='width:25%'>".LAN_EMAIL_187."</td>
-	<td style='width:75%'>
-	<input class='tbox' type='text' name='email_send' size='60' value='$email_send' style='width:95%' maxlength='100' />
-	</td>
-	</tr>
-	";
+<tr>
+<td style='width:25%'>".LAN_EMAIL_187."</td>
+<td style='width:75%'>
+<input class='tbox' type='text' name='email_send' size='60' value='$email_send' style='width:95%' maxlength='100' />
+</td>
+</tr>
+";
 
 if($use_imagecode)
 {
 	$text .= "<tr><td>".LAN_EMAIL_190."</td><td>";
 	$text .= $sec_img->r_image();
 	$text .= " <input class='tbox' type='text' name='code_verify' size='15' maxlength='20' />
-		<input type='hidden' name='rand_num' value='".$sec_img->random_number."' /></td></tr>";
+	<input type='hidden' name='rand_num' value='".$sec_img->random_number."' /></td></tr>";
 }
 
 $text .= "
-	<tr style='vertical-align:top'>
-	<td style='width:25%'></td>
-	<td style='width:75%'>
-	<input class='button' type='submit' name='emailsubmit' value='".LAN_EMAIL_4."' />
-	<input type='hidden' name='referer' value='".$referrer."' />
-	<input type='hidden' name='e-token' value='".e_TOKEN."' />
+<tr style='vertical-align:top'>
+<td style='width:25%'></td>
+<td style='width:75%'>
+<input class='btn btn-default button' type='submit' name='emailsubmit' value='".LAN_EMAIL_4."' />
+<input type='hidden' name='referer' value='".$referrer."' />
 </td>
-	</tr>
-	</table>
-	</form>";
+</tr>
+</table>
+</form>";
 
 $ns->tablerender(LAN_EMAIL_5, $text);
 

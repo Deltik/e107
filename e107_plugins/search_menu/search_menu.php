@@ -1,24 +1,24 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/search_menu/search_menu.php $
-|     $Revision: 11678 $
-|     $Id: search_menu.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) 2008-2009 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ *
+ *
+ * $Source: /cvs_backup/e107_0.8/e107_plugins/search_menu/search_menu.php,v $
+ * $Revision$
+ * $Date$
+ * $Author$
+ */
+
 if (!defined('e107_INIT')) { exit; }
 
-@include(e_PLUGIN."search_menu/languages/".e_LANGUAGE.".php");
+// include_lan(e_PLUGIN."search_menu/languages/".e_LANGUAGE.".php");
+
+
 if (strstr(e_PAGE, "news.php")) {
 	 $page = 0;
 } elseif(strstr(e_PAGE, "comment.php")) {
@@ -43,13 +43,16 @@ if (strstr(e_PAGE, "news.php")) {
 	 $page = 99;
 }
 
-if (isset($custom_query[1]) && $custom_query[1] != '') {
-	$image_file = ($custom_query[1] != 'default') ? $custom_query[1] : e_PLUGIN_ABS.'search_menu/images/search.png';
-	$width = (isset($custom_query[2]) && $custom_query[2]) ? $custom_query[2] : '16';
-	$height = (isset($custom_query[3]) && $custom_query[3]) ? $custom_query[3] : '16';
-		$search_button = "<input type='image' src='".$image_file."' value='".LAN_180."' style='width: ".$width."px; height: ".$height."px; border: 0px; vertical-align: middle' name='s' />";
-} else {
-	$search_button = "<input class='button search' type='submit' name='s' value='".LAN_180."' />";
+if (isset($custom_query[1]) && $custom_query[1] != '') 
+{
+	$image_file 	= ($custom_query[1] != 'default') ? $custom_query[1] : e_PLUGIN_ABS.'search_menu/images/search.png';
+	$width 			= (isset($custom_query[2]) && $custom_query[2]) ? $custom_query[2] : '16';
+	$height 		= (isset($custom_query[3]) && $custom_query[3]) ? $custom_query[3] : '16';
+	$search_button 	= "<input type='image' src='".$image_file."' value='".LAN_SEARCH."' style='width: ".$width."px; height: ".$height."px; border: 0px; vertical-align: middle' name='s' />";
+} 
+else 
+{
+	$search_button = "<input class='btn btn-default button search' type='submit' name='s' value='".LAN_SEARCH."' />";
 }
 
 if (isset($custom_query[5]) && $custom_query[5]) {
@@ -58,21 +61,55 @@ if (isset($custom_query[5]) && $custom_query[5]) {
 	$value_text = "value=''";
 }
 
-$text = "<form method='get' action='".e_HTTP."search.php'>
+
+	
+if(deftrue('BOOTSTRAP'))
+{
+	$text = '
+	<form class="form-inline" method="get" action="'.e_HTTP.'search.php">
+	<div class="input-group">
+		<input class="form-control search" type="text" name="q" size="20" maxlength="50" '.$value_text.' />
+		<input type="hidden" name="r" value="0" />';
+	
+	if (isset($custom_query[4]) && $custom_query[4] != '') 
+	{
+		$text .= "<input type='hidden' name='ref' value='".$custom_query[4]."' />";
+	}	
+		
+	$text .= '
+         <span class="input-group-btn">
+         <button class="btn btn-default" type="submit" name="s">'.$tp->toGlyph('search').'</button>
+         </span>
+    </div>
+    </form>';
+}	
+else // Legacy v1 code. 
+{
+	$text = "<form class='form-inline' method='get' action='".e_HTTP."search.php'>";
+
+	$text .= "
 	<div>
 	<input class='tbox search' type='text' name='q' size='20' ".$value_text." maxlength='50' />
 	<input type='hidden' name='r' value='0' />";
 	
-	if (isset($custom_query[4]) && $custom_query[4] != '') {
+	
+	
+	if (isset($custom_query[4]) && $custom_query[4] != '') 
+	{
 		$text .= "<input type='hidden' name='ref' value='".$custom_query[4]."' />";
 	}
 	
 	$text .= $search_button."
 	</div>
-	</form>";
-if (isset($searchflat) && $searchflat) {
+	</form>";		
+}
+	
+	
+	
+if (isset($searchflat) && $searchflat)
+{
 	echo $text;
 } else {
-	$ns->tablerender(LAN_180." ".SITENAME, "<div style='text-align:center'>".$text."</div>", 'search');
+	$ns->tablerender(LAN_SEARCH." ".SITENAME, "<div style='text-align:center'>".$text."</div>", 'search');
 }
 ?>

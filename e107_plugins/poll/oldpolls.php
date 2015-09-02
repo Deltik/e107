@@ -1,22 +1,25 @@
 <?php
 /*
- + ----------------------------------------------------------------------------+
- |     e107 website system
- |
- |     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
- |     Copyright (C) 2008-2010 e107 Inc (e107.org)
- |
- |
- |     Released under the terms and conditions of the
- |     GNU General Public License (http://gnu.org).
- |
- |     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/poll/oldpolls.php $
- |     $Revision: 11678 $
- |     $Id: oldpolls.php 11678 2010-08-22 00:43:45Z e107coders $
- |     $Author: e107coders $
- +----------------------------------------------------------------------------+
+ * e107 website system
+ *
+ * Copyright (C) 2008-2009 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ *
+ *
+ * $Source: /cvs_backup/e107_0.8/e107_plugins/poll/oldpolls.php,v $
+ * $Revision$
+ * $Date$
+ * $Author$
  */
+
 require_once("../../class2.php");
+if (!e107::isInstalled('poll'))
+{
+	header("Location: ".e_BASE."index.php");
+	exit;
+}
 require_once(HEADERF);
 require_once(e_HANDLER."comment_class.php");
 $cobj = new comment;
@@ -74,16 +77,15 @@ if(e_QUERY)
 			<tr>
 			<td style='width:40%; text-align: right' class='mediumtext'><b>".$tp -> toHTML($option, TRUE, 'TITLE')."</b>&nbsp;&nbsp;</td>
 			<td class='smalltext'>
-				<div style='background-image: url($barl); width: 5px; height: 14px; float: left;'>
-				</div>
-				<div style='background-image: url($bar); width: ".(floor($percentage[$count]) != 100 ? floor($percentage[$count]) : 95)."%; height: 14px; float: left;'>
-				</div>
-				<div style='background-image: url($barr); width: 5px; height: 14px; float: left;'>
-				</div>
-				".$percentage[$count]."% [".POLLAN_31.": ".$voteArray[$count]."]
+			<div style='background-image: url($barl); width: 5px; height: 14px; float: left;'>
+			</div>
+			<div style='background-image: url($bar); width: ".(floor($percentage[$count]) != 100 ? floor($percentage[$count]) : 95)."%; height: 14px; float: left;'>
+			</div>
+			<div style='background-image: url($barr); width: 5px; height: 14px; float: left;'>
+			</div>
+			".$percentage[$count]."% [".POLLAN_31.": ".$voteArray[$count]."]
 			</td>
-			</tr>
-			";
+			</tr>\n";
 			$count++;
 
 		}
@@ -158,3 +160,5 @@ foreach($oldpollArray as $oldpoll)
 $text .= "</table>";
 $ns->tablerender(POLLAN_28, $text);
 require_once(FOOTERF);
+
+?>

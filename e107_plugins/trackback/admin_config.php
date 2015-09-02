@@ -1,79 +1,64 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/trackback/admin_config.php $
-|     $Revision: 13011 $
-|     $Id: admin_config.php 13011 2012-10-28 16:26:00Z e107steved $
-|     $Author: e107steved $
-+----------------------------------------------------------------------------+
+ * e107 website system
+ *
+ * Copyright (C) 2008-2013 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * Plugin administration - Trackback
+ *
+ * $URL$
+ * $Id$
+ *
 */
 require_once("../../class2.php");
-if (!isset($pref['plug_installed']['trackback']) || !getperms("P")) {
+if (!getperms("P") || !e107::isInstalled('trackback')) 
+{
 	header("location:".e_BASE."index.php");
-	 exit ;
+	exit() ;
 }
 
-include_lan(e_PLUGIN."trackback/languages/".e_LANGUAGE.".php");
+include_lan(e_PLUGIN."trackback/languages/".e_LANGUAGE."_admin_trackback.php");
 	
 require_once(e_ADMIN."auth.php");
+$frm = e107::getForm();
+$mes = e107::getMessage();
 	
 if (isset($_POST['updatesettings'])) 
 {
-  if ($pref['trackbackEnabled'] != $_POST['trackbackEnabled'])
-  {
-	$pref['trackbackEnabled'] = $_POST['trackbackEnabled'];
-	$e107cache->clear("news.php");
-  }
-  $pref['trackbackString'] = $tp->toDB($_POST['trackbackString']);
-  save_prefs();
-  $message = TRACKBACK_L4;
-}
-
+	$temp = array();
+	if ($pref['trackbackEnabled'] != $_POST['trackbackEnabled'])
+	{
+		$temp['trackbackEnabled'] = $_POST['trackbackEnabled'];
+		$e107cache->clear('news.php');
+	}
+	$temp['trackbackString'] = $tp->toDB($_POST['trackbackString']);
 	
-if (isset($message)) {
-	$ns->tablerender("", "<div style='text-align:center'><b>".$message."</b></div>");
+	e107::getConfig('core')->setPref($temp)->save(false);
+	
 }
 	
+$ns->tablerender($caption, $mes->render() . $text);
 
 $text = "
-<div style='text-align:center'>
 <form method='post' action='".e_SELF."'>
-<table style='".ADMIN_WIDTH."' class='fborder'>
+<table class='table adminform'>
 <tr>
-<td style='width:50%' class='forumheader3'>".TRACKBACK_L7."</td>
-<td style='width:50%; text-align:right' class='forumheader3'>
-<input type='radio' name='trackbackEnabled' value='1'".($pref['trackbackEnabled'] ? " checked='checked'" : "")." /> ".TRACKBACK_L5."&nbsp;&nbsp;
-<input type='radio' name='trackbackEnabled' value='0'".(!$pref['trackbackEnabled'] ? " checked='checked'" : "")." /> ".TRACKBACK_L6."
-</td>
+	<td>".TRACKBACK_L7."</td>
+	<td>".$frm->radio_switch('trackbackEnabled', $pref['trackbackEnabled'])."</td>
 </tr>
 
 <tr>
-<td style='width:50%' class='forumheader3'>".TRACKBACK_L8."</td>
-<td style='width:50%; text-align:right' class='forumheader3'>
-<input  size='50' class='tbox' type='text' name='trackbackString' value='".$pref['trackbackString']."' />
-</td>
-</tr>
-
-<td colspan='2' style='text-align:center' class='forumheader'>
-<input class='button' type='submit' name='updatesettings' value='".TRACKBACK_L9."' />
-</td>
-</tr>
-
+	<td>".TRACKBACK_L8."</td>
+	<td><input  size='50' class='tbox' type='text' name='trackbackString' value='".$pref['trackbackString']."' />	</td>
 </table>
+<div class='buttons-bar center'>
+	".$frm->admin_button('updatesettings', LAN_UPDATE, 'update')."
+</div>
 </form>
 </div>
 ";
-
-
 
 $ns->tablerender(TRACKBACK_L10, $text);
 	

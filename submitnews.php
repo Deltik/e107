@@ -1,31 +1,22 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Steve Dunstan 2001-2002
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/submitnews.php $
-|     $Revision: 12027 $
-|     $Id: submitnews.php 12027 2011-01-05 09:38:55Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) 2008-2013 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ */
 
-// Experimental e-token
+ 
 if(!empty($_POST) && !isset($_POST['e-token']))
 {
 	// set e-token so it can be processed by class2
 	$_POST['e-token'] = '';
-}
-
+} 
 require_once("class2.php");
-$e_wysiwyg = varsettrue($pref['subnews_htmlarea']) ? "submitnews_item" : "";
+include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/lan_'.e_PAGE);
+
 require_once(HEADERF);
 
 if (!isset($pref['subnews_class']))
@@ -33,27 +24,18 @@ if (!isset($pref['subnews_class']))
 	$pref['subnews_class'] = e_UC_MEMBER;
 }
 
+
+
 if (!check_class($pref['subnews_class']))
 {
-	$ns->tablerender(NWSLAN_12, NWSLAN_11);
+	$ns->tablerender(LAN_UI_403_TITLE_ERROR, LAN_UI_403_BODY_ERROR);
 	require_once(FOOTERF);
 	exit;
 }
 
-
-		$newsCat = array();
-		if($sql->db_Select('news_category'))
-		{
-			while($row = $sql->db_Fetch())
-			{
-				$newsCat[$row['category_id']] = $row['category_name'];
-			}	
-		}
-		
-
 if (isset($_POST['submitnews_submit']) && $_POST['submitnews_title'] && $_POST['submitnews_item'])
 {
-	$ip = $e107->getip();
+	$ip = e107::getIPHandler()->getIP(FALSE);
 	$fp = new floodprotect;
 	if ($fp->flood("submitnews", "submitnews_datestamp") == FALSE)
 	{
@@ -75,117 +57,124 @@ if (isset($_POST['submitnews_submit']) && $_POST['submitnews_title'] && $_POST['
 	}
 
 	// ==== Process File Upload ====
-	if (FILE_UPLOADS && $_FILES['file_userfile'] && varsettrue($pref['subnews_attach']) && varsettrue($pref['upload_enabled']) && check_class($pref['upload_class']))
+	if (FILE_UPLOADS && $_FILES['file_userfile'] && vartrue($pref['subnews_attach']) && vartrue($pref['upload_enabled']) && check_class($pref['upload_class']))
 	{
 		require_once(e_HANDLER.'upload_handler.php');
-		$uploaded = process_uploaded_files(e_IMAGE . 'newspost_images/', FALSE, array('file_mask' => 'jpg,gif,png', 'max_file_count' => 1));
-
-/*	
-		if ($filename && $fileext != "jpg" && $fileext != "gif" && $fileext != "png")
-		{
-			$message = SUBNEWSLAN_3;
-			$submitnews_error = TRUE;
-		}
+		$uploaded = process_uploaded_files(e_UPLOAD, FALSE, array('file_mask' => 'jpg,gif,png', 'max_file_count' => 1));
 	
-		if (!$pref['upload_maxfilesize'])
-		{
-			$pref['upload_maxfilesize'] = ini_get('upload_max_filesize') * 1048576;
-		}
-
-		if ($filesize > $pref['upload_maxfilesize'])
-		{
-			$message = SUBNEWSLAN_4;
-			$submitnews_error = TRUE;
-		}
-*/
 		if (($uploaded === FALSE) || !is_array($uploaded))
 		{	// Non-specific error
 			$submitnews_error = TRUE;
 			$message = SUBNEWSLAN_8;
 		}
-		elseif (varset($uploaded[0]['error'],0) != 0)
-		{
-			$submitnews_error = TRUE;
-			$message = handle_upload_messages($uploaded);
-		}
 		else
 		{
-			if (isset($uploaded[0]['name']) && isset($uploaded[0]['type']) && isset($uploaded[0]['size']))
-			{
-				$filename = $uploaded[0]['name'];
-				$filetype = $uploaded[0]['type'];
-				$filesize = $uploaded[0]['size'];
-				$fileext  = substr(strrchr($filename, "."), 1);
-				$today = getdate();
-				$submitnews_file = USERID."_".$today[0]."_".str_replace(" ", "_", substr($submitnews_title, 0, 6)).".".$fileext;
-				if (is_numeric($pref['subnews_resize']) && ($pref['subnews_resize'] > 30)  && ($pref['subnews_resize'] < 5000))
-				{
-					require_once(e_HANDLER.'resize_handler.php');
+			$submitnews_filearray = array();
 			
-					if (!resize_image(e_IMAGE.'newspost_images/'.$filename, e_IMAGE.'newspost_images/'.$submitnews_file, $pref['subnews_resize']))
+			foreach($uploaded as $c=>$v)
+			{
+				if (varset($uploaded[$c]['error'],0) != 0)
+				{
+					$submitnews_error = TRUE;
+					$message = handle_upload_messages($uploaded);
+				}
+				else
+				{
+					if (isset($uploaded[$c]['name']) && isset($uploaded[$c]['type']) && isset($uploaded[$c]['size']))
 					{
-					  rename(e_IMAGE.'newspost_images/'.$filename, e_IMAGE.'newspost_images/'.$submitnews_file);
+						$filename = $uploaded[$c]['name'];
+						$filetype = $uploaded[$c]['type'];
+						$filesize = $uploaded[$c]['size'];
+						$fileext  = substr(strrchr($filename, "."), 1);
+						$today = getdate();
+						$submitnews_file = USERID."_".$today[0]."_".$c."_".str_replace(" ", "_", substr($submitnews_title, 0, 6)).".".$fileext;
+								
+						if (is_numeric($pref['subnews_resize']) && ($pref['subnews_resize'] > 30)  && ($pref['subnews_resize'] < 5000))
+						{
+							require_once(e_HANDLER.'resize_handler.php');
+					
+							if (!resize_image(e_UPLOAD.$filename, e_UPLOAD.$submitnews_file, $pref['subnews_resize']))
+							{
+							  rename(e_UPLOAD.$filename, e_UPLOAD.$submitnews_file);
+							}
+						}
+						elseif ($filename)
+						{
+							rename(e_UPLOAD.$filename, e_UPLOAD.$submitnews_file);
+						}
 					}
 				}
-				elseif ($filename)
+	
+				if ($filename && file_exists(e_UPLOAD.$submitnews_file))
 				{
-					rename(e_IMAGE.'newspost_images/'.$filename, e_IMAGE.'newspost_images/'.$submitnews_file);
+					$submitnews_filearray[] = $submitnews_file;	
 				}
+				
 			}
 		}
-	
-		if ($filename && !file_exists(e_IMAGE."newspost_images/".$submitnews_file))
-		{
-			$submitnews_file = "";
-		}
+		
 	}
 
 	if ($submitnews_error === FALSE)
 	{
-		$id = $sql->db_Insert("submitnews", "0, '$submitnews_user', '$submitnews_email', '$submitnews_title', '".intval($_POST['cat_id'])."', '$submitnews_item', '".time()."', '$ip', '0', '$submitnews_file' ");
-		$edata_sn = array("user" => $submitnews_user, "email" => $submitnews_email,"itemid"=>$id, "itemtitle" => $submitnews_title, "catid" => intval($_POST['cat_id']),"catname" => $newsCat[$_POST['cat_id']], "item" => $submitnews_item, "image" => $submitnews_file, "ip" => $ip);
-		$e_event->trigger("subnews", $edata_sn);
-		$ns->tablerender(LAN_133, "<div class='submitnews-submitted' style='text-align:center'>".LAN_134."</div>");
+		$sql->insert("submitnews", "0, '$submitnews_user', '$submitnews_email', '$submitnews_title', '".intval($_POST['cat_id'])."', '$submitnews_item', '".time()."', '$ip', '0', '".implode(',',$submitnews_filearray)."' ");
+		
+		$edata_sn = array("user" => $submitnews_user, "email" => $submitnews_email, "itemtitle" => $submitnews_title, "catid" => intval($_POST['cat_id']), "item" => $submitnews_item, "image" => $submitnews_file, "ip" => $ip);
+
+		e107::getEvent()->trigger("subnews", $edata_sn); // bc
+		e107::getEvent()->trigger("user_news_submit", $edata_sn);
+		
+		$mes = e107::getMessage();
+		$mes->addSuccess(LAN_134);
+		echo $mes->render();
+		
+		// $ns->tablerender(LAN_133, "<div style='text-align:center'>".LAN_134."</div>");
 		require_once(FOOTERF);
 		exit;
 	}
 	else
 	{
-		require_once(e_HANDLER."message_handler.php");
 		message_handler("P_ALERT", $message);
 	}
 }
 
+$text = "";
+
 if (!defined("USER_WIDTH")) { define("USER_WIDTH","width:95%"); }
 
-$text = "
-<div style='text-align:center'>
-  <form id='dataform' method='post' action='".e_SELF."' enctype='multipart/form-data' onsubmit='return frmVerify()'>
-    <table style='".USER_WIDTH."' class='fborder'>";
 
-if (!empty($pref['news_subheader']))
-{
-  $text .= "
-  <tr>
-    <td colspan='2' class='forumheader3'>".$tp->toHTML($pref['news_subheader'], TRUE, "TITLE")."<br /></td>
-  </tr>";
-}
+
+	if (!empty($pref['news_subheader']))
+	{
+		$text .= "
+	  <div class='alert alert-block alert-info '>
+	    ".$tp->toHTML($pref['news_subheader'], true, "BODY")."
+	  </div>";
+	}
+
+
+$text .= "
+<div>
+  <form id='dataform' method='post' action='".e_SELF."' enctype='multipart/form-data' onsubmit='return frmVerify()'>
+    <table class='table fborder'>";
+
+
 
 if (!USER)
 {
-  $text .= "
-  <tr>
-    <td style='width:20%' class='forumheader3'>".LAN_7."</td>
-    <td style='width:80%' class='forumheader3'>
-      <input class='tbox' type='text' name='submitnews_name' size='60' value='".$tp->toHTML($submitnews_user,FALSE,'USER_TITLE')."' maxlength='100' />
-    </td>
-  </tr>
-  <tr>
-    <td style='width:20%' class='forumheader3'>".LAN_112."</td>
-    <td style='width:80%' class='forumheader3'>
-      <input class='tbox' type='text' name='submitnews_email' size='60' value='".$tp->toHTML($submitnews_email, FALSE, 'LINKTEXT')."' maxlength='100' />
-    </td>
-  </tr>";
+	  $text .= "
+	  <tr>
+	    <td style='width:20%' class='forumheader3'>".LAN_7."</td>
+	    <td style='width:80%' class='forumheader3'>
+	      <input class='tbox' type='text' name='submitnews_name' size='60' value='".$tp->toHTML($submitnews_user,FALSE,'USER_TITLE')."' maxlength='100' required />
+	    </td>
+	  </tr>
+	  <tr>
+	    <td style='width:20%' class='forumheader3'>".LAN_112."</td>
+	    <td style='width:80%' class='forumheader3'>
+	      <input class='tbox' type='text' name='submitnews_email' size='60' value='".$tp->toHTML($submitnews_email, FALSE, 'LINKTEXT')."' maxlength='100' required />
+	    </td>
+	  </tr>";
 }
 
 $text .= "
@@ -193,17 +182,15 @@ $text .= "
   <td style='width:20%' class='forumheader3'>".NWSLAN_6.": </td>
 	<td style='width:80%' class='forumheader3'>";
 
-if (!count($newsCat))
+if (!$sql->select("news_category"))
 {
 	$text .= NWSLAN_10;
 }
 else
 {
 	$text .= "
-		<select name='cat_id' class='tbox'>
-		<option value=''>&nbsp;</option>\n";
-		foreach($newsCat as $cat_id=>$cat_name)
-	// while (list($cat_id, $cat_name, $cat_icon) = $sql->db_Fetch())
+		<select name='cat_id' class='tbox form-control'>";
+	while (list($cat_id, $cat_name, $cat_icon) = $sql->db_Fetch(MYSQL_NUM))
 	{
 		$sel = (varset($_POST['cat_id'],'') == $cat_id) ? "selected='selected'" : "";
 		$text .= "<option value='{$cat_id}' {$sel}>".$tp->toHTML($cat_name, FALSE, "defs")."</option>";
@@ -215,36 +202,18 @@ $text .= "
   </td>
 </tr>
 <tr>
-  <td style='width:20%' class='forumheader3'>".LAN_62."</td>
+  <td style='width:20%' class='forumheader3'>".LAN_TITLE."</td>
 	<td style='width:80%' class='forumheader3'>
-    <input class='tbox' type='text' id='submitnews_title' name='submitnews_title' size='60' value='".$tp->toHTML($_POST['submitnews_title'],TRUE,'USER_TITLE')."' maxlength='200' style='width:90%' />
+    <input class='tbox form-control' type='text' id='submitnews_title' name='submitnews_title' size='60' value='".$tp->toHTML(vartrue($_POST['submitnews_title']),TRUE,'USER_TITLE')."' maxlength='200' style='width:90%' required />
 	</td>
-</tr>";
-
-if (e_WYSIWYG)
-{
-  $insertjs = "rows='25'";
-}
-else
-{
-  require_once(e_HANDLER."ren_help.php");
-  $insertjs = "rows='15' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'";
-}
-
-$text .= "
+</tr>
 <tr>
-  <td style='width:20%' class='forumheader3'>".LAN_135."</td>
+  	<td style='width:20%' class='forumheader3'>".LAN_135."</td>
 	<td style='width:80%' class='forumheader3'>
-    <textarea class='tbox' id='submitnews_item' name='submitnews_item' cols='80' style='max-width:95%' {$insertjs}>".$tp->toHTML($_POST['submitnews_item'],TRUE,'USER_BODY')."</textarea><br />";
-
-if (!e_WYSIWYG)
-{
-  $text .= display_help("helpb","submitnews");
-}
-
-$text .= "
-  </td>
-</tr>";
+		".e107::getForm()->bbarea('submitnews_item', $tp->toForm(vartrue($_POST['submitnews_item'])),null, null, 'large', 'required=1')."
+	</td>
+</tr>
+";
 
 if ($pref['subnews_attach'] && $pref['upload_enabled'] && check_class($pref['upload_class']) && FILE_UPLOADS)
 {
@@ -252,7 +221,7 @@ if ($pref['subnews_attach'] && $pref['upload_enabled'] && check_class($pref['upl
   <tr>
     <td style='width:20%' class='forumheader3'>".SUBNEWSLAN_5."<br /><span class='smalltext'>".SUBNEWSLAN_6."</span></td>
     <td style='width:80%' class='forumheader3'>
-      <input class='tbox' type='file' name='file_userfile[]' style='width:90%' />
+      <input class='tbox' type='file' name='file_userfile[]' style='width:90%' multiple='multiple' />
     </td>
   </tr>";
 }
@@ -260,8 +229,8 @@ if ($pref['subnews_attach'] && $pref['upload_enabled'] && check_class($pref['upl
 $text .= "
       <tr>
         <td colspan='2' style='text-align:center' class='forumheader'>
-          <input class='button' type='submit' name='submitnews_submit' value='".LAN_136."' />
-		  <input type='hidden' name='e-token' value='".e_TOKEN."' />
+          <input class='btn btn-success button' type='submit' name='submitnews_submit' value='".LAN_136."' />
+           <input type='hidden' name='e-token' value='".e_TOKEN."' />
         </td>
       </tr>
     </table>
@@ -269,31 +238,16 @@ $text .= "
 </div>";
 
 $ns->tablerender(LAN_136, $text);
+
+
+
+	if(!vartrue($pref['subnews_htmlarea'])) // check after bbarea is called.
+	{
+		e107::wysiwyg(false);
+	}
+
 require_once(FOOTERF);
 
-function headerjs()
-{
-  $adder = "";
-  if (e_WYSIWYG) $adder = 'tinyMCE.triggerSave();';
-  $script = "
-  <script type=\"text/javascript\">
-  function frmVerify()
-  {
-    {$adder}
-    if(document.getElementById('submitnews_title').value == \"\")
-    {
-    alert('".SUBNEWSLAN_1."');
-    return false;
-    }
 
-    if(document.getElementById('submitnews_item').value == \"\")
-    {
-    alert('".SUBNEWSLAN_2."');
-    return false;
-    }
-  }
-  </script>";
-  return $script;
-}
 
 ?>

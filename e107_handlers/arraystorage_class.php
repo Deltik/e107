@@ -1,34 +1,45 @@
 <?php
-
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/arraystorage_class.php $
-|     $Revision: 11678 $
-|     $Id: arraystorage_class.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) 2008-2009 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ */
 
 if (!defined('e107_INIT')) { exit; }
 
 /**
-* Allows Storage of arrays without use of serialize functions
+* @DEPRECATED: Allows Storage of arrays without use of serialize functions
 *
 */
 class ArrayData {
 
+
+    function __construct()
+    {
+        // DO Not translate - debug info only. 
+        
+        $log = e107::getAdminLog();
+   
+       if(E107_DEBUG_LEVEL > 0 || e107::getPref('developer'))
+       { 
+           $dep = debug_backtrace(false);
+		   
+           foreach($dep as $d)
+           {
+             $log->addDebug("Deprecated ArrayStorage Class called by ".str_replace(e_ROOT,"",$d['file'])." on line ".$d['line']);
+           }
+		   
+	       $log->save('DEPRECATED',E_LOG_NOTICE,'',false, LOG_TO_ROLLING);
+		   
+           e107::getMessage()->addDebug("Please remove references to <b>arraystorage_class.php</b> and use e107::serialize() and e107::unserialize() instead."); 
+       }
+    }
 	/**
 	* Return a string containg exported array data.
-	*
+	* @DEPRECATED use e107::serialize() instead. 
 	* @param array $ArrayData array to be stored
 	* @param bool $AddSlashes default true, add slashes for db storage, else false
 	* @return string
@@ -46,14 +57,24 @@ class ArrayData {
 
 	/**
 	* Returns an array from stored array data.
-	*
+	* @DEPRECATED use e107::unserialize() instead. 
 	* @param string $ArrayData
 	* @return array stored data
 	*/
-	function ReadArray($ArrayData) {
+	function ReadArray($ArrayData) 
+	{
 		if ($ArrayData == ""){
 			return false;
 		}
+		
+		// Saftety mechanism for 0.7 -> 0.8 transition. 
+		if(substr($ArrayData,0,2)=='a:' || substr($ArrayData,0,2)=='s:')
+		{
+			$dat = unserialize($ArrayData);
+			$ArrayData = $this->WriteArray($dat,FALSE);
+		}
+		
+		
 		$data = "";
 		$ArrayData = '$data = '.trim($ArrayData).';';
 		@eval($ArrayData);

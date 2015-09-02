@@ -1,34 +1,36 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/includes/compact.php $
-|     $Revision: 11678 $
-|     $Id: compact.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) 2008-2013 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * $URL$
+ * $Id$
+ */
 
 if (!defined('e107_INIT')) { exit; }
+
+
+$mes = e107::getMessage();
+
+
+$newarray = e107::getNav()->adminLinks('core');
+
 $buts = "";
 $text = "<div style='text-align:center'>
-	<table style='".ADMIN_WIDTH."'>";
+	<table class='table'>";
 
-while (list($key, $funcinfo) = each($newarray)) {
-	$buts .= render_links($funcinfo[0], $funcinfo[1], $funcinfo[2], $funcinfo[3], $funcinfo[5], 'default');
+while (list($key, $funcinfo) = each($newarray)) 
+{
+	$buts .= e107::getNav()->renderAdminButton($funcinfo[0], $funcinfo[1], $funcinfo[2], $funcinfo[3], $funcinfo[5], 'default');
 }
 $text .= $buts;
 
 $text_cat = '';
-while ($td <= 5) {
+while ($td <= 5) 
+{
 	$text_cat .= "<td class='td' style='width:20%;' ></td>";
 	$td++;
 }
@@ -36,32 +38,17 @@ $td = 1;
 
 $text .= "</tr></table></div>";
 
-if($buts !=""){
-	$ns->tablerender(ADLAN_47." ".ADMINNAME, $text);
+if($buts !="")
+{
+	$ns->tablerender(ADLAN_47." ".ADMINNAME, $mes->render().$text);
 }
 
 $text = "<div style='text-align:center'>
-	<table style='".ADMIN_WIDTH."'>";
+	<table class='table'>";
 
-$text .= render_links(e_ADMIN."plugin.php", ADLAN_98, ADLAN_99, "Z", E_16_PLUGMANAGER, 'default');
 
-if ($sql->db_Select("plugin", "*", "plugin_installflag=1")) {
-	while ($row = $sql->db_Fetch()) {
-		extract($row);
-		include(e_PLUGIN.$plugin_path."/plugin.php");
-		if ($eplug_conffile) {
-			$eplug_name = $tp->toHTML($eplug_name,FALSE,"defs, emotes_off");
-			$plugin_icon = $eplug_icon_small ? "<img src='".e_PLUGIN.$eplug_icon_small."' alt='' style='border:0px; vertical-align:bottom; width: 16px; height: 16px' />" : E_16_PLUGIN;
-			$plugin_array[ucfirst($eplug_name)] = array('link' => e_PLUGIN.$plugin_path."/".$eplug_conffile, 'title' => $eplug_name, 'caption' => $eplug_caption, 'perms' => "P".$plugin_id, 'icon' => $plugin_icon);
-		}
-		unset($eplug_conffile, $eplug_name, $eplug_caption, $eplug_icon_small);
-	}
-}
+$text .= e107::getNav()->pluginLinks( E_16_PLUGMANAGER, 'default');
 
-ksort($plugin_array, SORT_STRING);
-foreach ($plugin_array as $plug_key => $plug_value) {
-	$text .= render_links($plug_value['link'], $plug_value['title'], $plug_value['caption'], $plug_value['perms'], $plug_value['icon'], 'default');
-}
 
 $text .= "</tr>
 	</table></div>";

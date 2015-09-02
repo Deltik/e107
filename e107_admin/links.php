@@ -1,852 +1,886 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_admin/links.php $
-|     $Revision: 12474 $
-|     $Id: links.php 12474 2011-12-27 14:24:21Z secretr $
-|     $Author: secretr $
-|
-| links.php?debug shows stored data for each link after name (before constant conversion)
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) 2008-2012 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * Site navigation administration
+ *
+ * $URL$
+ * $Id$
+ */
 
-require_once('../class2.php');
-if (!getperms('I'))
+/**
+ * @package e107
+ * @subpackage	admin
+ * @version $Id$
+ *
+ * Manage site navigation links
+ */
+
+require_once("../class2.php");
+if (!getperms("I"))
 {
-  header('location:'.e_BASE.'index.php');
-  exit;
+	header("location:".e_BASE."index.php");
+	exit;
 }
 
-$e_sub_cat = 'links';
+e107::coreLan('links', true);
 
-if (!is_object($tp)) $tp = new e_parse;
 
-// ----- Presets.----------
-require_once(e_HANDLER."preset_class.php");
-$pst = new e_preset;
-$pst->form = "linkform";
-$pst->page = "links.php?create";
-$pst->id = "admin_links";
 
-$action = '';
-if (e_QUERY)
+
+class links_admin extends e_admin_dispatcher
 {
-  $tmp = explode('.', e_QUERY);
-  $action = $tmp[0]; // must be set before auth.php is loaded. 
-  $sub_action = $tmp[1];
-  $id = $tmp[2];
-  unset($tmp);
+
+	protected $modes = array(
+		'main'		=> array(
+			'controller' 	=> 'links_admin_ui',
+			'path' 			=> null,
+			'ui' 			=> 'links_admin_form_ui',
+			'uipath' 		=> null
+		)
+	);
+
+	protected $adminMenu = array(
+		'main/list'		=> array('caption'=> LAN_MANAGE, 'perm' => 'I'),
+		'main/create' 	=> array('caption'=> LAN_CREATE, 'perm' => 'I'),
+		'main/prefs' 	=> array('caption'=> LAN_OPTIONS, 'perm' => 'I'),
+		'main/tools'	=> array('caption'=> LINKLAN_4, 'perm' => 'I')
+	);
+
+	protected $adminMenuAliases = array(
+		'main/edit'	=> 'main/list'
+	);
+
+	protected $menuTitle = 'Links';
 }
 
-require_once('auth.php');
-// --------------------
-$pst->save_preset();
-
-require_once(e_HANDLER.'userclass_class.php');
-require_once(e_HANDLER.'form_handler.php');
-
-$rs = new form;
-$linkpost = new links;
-
-
-
-define("URL_SEPARATOR",'X');		// Used in names of 'inc' and 'dec' fields
-
-$incdec_action = '';
-foreach(array_keys($_POST) as $k)
+class links_admin_ui extends e_admin_ui
 {
-  if (preg_match("#(.*?)_delete_(\d+)(.*)#", $k, $matches))
-  {
-	$delete = $matches[1];
-	$del_id = $matches[2];
-  }
-  elseif (!$incdec_action && (preg_match("#^(inc|dec)".URL_SEPARATOR."(\d+)".URL_SEPARATOR."(\d+)_[x|y]#", $k, $matches)))
-  {
-    $incdec_action = $matches[1];
-	$linkid = intval($matches[2]);
-	$link_order = intval($matches[3]);
-  }
-}
+	protected $pluginTitle 	= "Site links";
+	protected $pluginName 	= 'core';
+	protected $table 		= "links";
+	protected $listQry 		= '';
+	protected $pid 			= "link_id";
+	protected $perPage 		= 0;
+	protected $batchDelete 	= true;
+	protected $batchCopy 	= true;
+	protected $listOrder = 'link_category,link_order ASC';
+	protected $sortField	= 'link_order';
+    
+    //FIXME TOOD - Filter out 'unassigned' entries by default. 
 
-if(isset($_POST['generate_sublinks']) && isset($_POST['sublink_type']) && $_POST['sublink_parent'] !="" )
-{
-	$subtype = $_POST['sublink_type'];
-	$sublink = $linkpost->sublink_list($subtype);
-    if(!is_object($sql2))
+	public $current_parent = 0;
+	public $sublink_data = null;
+
+	protected $fields = array(
+		'checkboxes' 		=> array('title'=> '',				'width' => '3%','forced' => true, 'thclass' => 'center first','class' => 'center first'),
+		'link_button'		=> array('title'=> LAN_ICON, 		'type'=>'icon',			'width'=>'5%', 'thclass' => 'center', 'class'=>'center', 'writeParms'=>'glyphs=1'),
+		'link_id'			=> array('title'=> LAN_ID, 			'type'=>'method','readParms'=>'','noedit'=>TRUE),
+		'link_name'	   		=> array('title'=> LCLAN_15,		'width'=>'auto','type'=>'text', 'inline'=>true, 'required' =>false, 'validate' => false), // not required as only an icon may be used.
+	    'link_category'     => array('title'=> LAN_TEMPLATE,    'type' => 'dropdown', 'inline'=>true, 'batch'=>true, 'filter'=>true, 'width' => 'auto'),
+    
+    	'link_parent' 		=> array('title'=> LCLAN_104, 	'type' => 'method', 'data'=>'int', 'width' => 'auto', 'batch'=>true, 'filter'=>true, 'thclass' => 'left first'),
+		'link_url'	   		=> array('title'=> LAN_URL, 		'width'=>'auto', 'type'=>'method', 'inline'=>true, 'required'=>true,'validate' => true, 'writeParms'=>'size=xxlarge'),
+		'link_sefurl' 		=> array('title'=> LAN_SEFURL, 		'type' => 'method', 'inline'=>false, 'width' => 'auto', 'help'=>LCLAN_107),
+		'link_class' 		=> array('title'=> LAN_USERCLASS, 	'type' => 'userclass','inline'=>true, 'writeParms' => 'classlist=public,guest,nobody,member,classes,admin,main', 'batch'=>true, 'filter'=>true, 'width' => 'auto'),
+		'link_description' 	=> array('title'=> LAN_DESCRIPTION,	'type' => 'textarea', 'width' => 'auto'), // 'method'=>'tinymce_plugins',  ?
+		'link_order' 		=> array('title'=> LAN_ORDER, 		'type' => 'number', 'width' => 'auto', 'nolist'=>false, 'inline' => true),
+		'link_open'			=> array('title'=> LCLAN_19, 		'type' => 'dropdown', 'inline'=>true, 'width' => 'auto', 'batch'=>true, 'filter'=>true, 'thclass' => 'left first'),
+		'link_function'		=> array('title'=> LCLAN_105, 		'type' => 'method', 'data'=>'str', 'width' => 'auto', 'thclass' => 'left first'),
+		'link_owner'		=> array('title'=> LCLAN_106,		'type' => 'hidden', 'data'=>'str'),
+		'options' 			=> array('title'=> LAN_OPTIONS, 	'type'	=> null, 'forced'=>TRUE, 'width' => '10%', 'thclass' => 'center last', 'class'=>'center','readParms'=>'sort=1') // quick workaround
+	);
+
+	protected $fieldpref =  array('checkboxes','link_button', 'link_id','link_name','link_sefurl','link_class','link_category','options');
+
+	protected $prefs = array(
+		'linkpage_screentip'	=> array('title'=>LCLAN_78,	'type'=>'boolean', 'help'=>LCLAN_79),
+		'sitelinks_expandsub'	=> array('title'=>LCLAN_80,	'type'=>'boolean', 'help'=>LCLAN_81)
+	);
+
+
+	/**
+	 * Runtime cache of all links array
+	 * @var array
+	 */
+	protected $_link_array	= null;
+	
+	
+	function afterCreate($newdata,$olddata, $id) //FIXME needs to work after inline editing too. 
 	{
-      $sql2 = new db;
+		e107::getCache()->clearAll('content');	
 	}
-
-	$sql -> db_Select("links", "*", "link_id = '".$_POST['sublink_parent']."'");
-	$par = $sql-> db_Fetch();
-	extract($par);
-
-	$sql -> db_Select($sublink['table'], "*", $sublink['query']);
-	$count = 1;
-	while($row = $sql-> db_Fetch()){
-		$subcat = $row[($sublink['fieldid'])];
-		$name = $row[($sublink['fieldname'])];
-		$subname = $name;  // eliminate old embedded hierarchy from names. (e.g. 'submenu.TopName.name')
-		$suburl = str_replace("#",$subcat,$sublink['url']);
-		$subicon = ($sublink['fieldicon']) ? $row[($sublink['fieldicon'])] : $link_button;
-		$subdiz = ($sublink['fielddiz']) ? $row[($sublink['fielddiz'])] : $link_description;
-		$subparent = $_POST['sublink_parent'];
-
-		if($sql2->db_Insert("links", "0, '$subname', '$suburl', '$subdiz', '$subicon', '$link_category', '$count', '$subparent', '$link_open', '$link_class' ")){
-			$message .= LAN_CREATED. " ($name)<br />";
-		}else{
-			$message .= LAN_CREATED_FAILED. " ($name)<br />";
-		}
-		$count++;
-	}
-
-    if($message){
-		$ns -> tablerender(LAN_CREATED, $message);
-	}
-}
-
-if ($incdec_action == 'inc')
-{
-  $sql->db_Update("links", "link_order=link_order+1 WHERE link_order='".intval($link_order-1)."'");
-  $sql->db_Update("links", "link_order=link_order-1 WHERE link_id='".intval($linkid)."'");
-}
-elseif ($incdec_action =='dec')
-{
-  $sql->db_Update("links", "link_order=link_order-1 WHERE link_order='".intval($link_order+1)."'");
-  $sql->db_Update("links", "link_order=link_order+1 WHERE link_id='".intval($linkid)."'");
-}
-
-if (isset($_POST['update']))
-{
-	foreach ($_POST['link_order'] as $loid)
+	
+	function afterUpdate($newdata,$olddata, $id) //FIXME needs to work after inline editing too. 
 	{
-	  $tmp = explode(".", $loid);
-	  $sql->db_Update("links", "link_order=".intval($tmp[1])." WHERE link_id=".intval($tmp[0]));
-	}
-	foreach ($_POST['link_class'] as $lckey => $lcid)
+		e107::getCache()->clearAll('content');
+	}	
+	
+	
+
+	function init()
 	{
-	 	$sql->db_Update("links", "link_class='".$lcid."' WHERE link_id=".intval($lckey));
+		$this->fields['link_category']['writeParms'] = array(
+			1	=> "1 - Main",
+			2	=> "2 - Sidebar",
+			3	=> "3 - Footer",
+			4	=> "4 - Alt",
+			5	=> "5 - Alt",
+			6	=> "6 - Alt", // If more than 6 are required, then something is not right with the themeing method. 
+	//		7	=> "7 - Alt",
+	//		8	=> "8 - Alt",
+	//		9	=> "9 - Alt",
+	//		10	=> "10 - Alt"
+	       255 => "(Unassigned)",
+		);
+
+		$this->fields['link_open']['writeParms'] = array(
+			0 => LCLAN_20, // 0 = same window
+			1 => LCLAN_23, // new window
+			4 => LCLAN_24, // 4 = miniwindow  600x400
+			5 => LINKLAN_1 // 5 = miniwindow  800x600
+		);
+
+
+
+
+
 	}
-	$e107cache->clear("sitelinks");
-	$linkpost->show_message(LAN_UPDATED);
-}
 
-if (isset($_POST['updateoptions'])) {
-	$pref['linkpage_screentip'] = $_POST['linkpage_screentip'];
-	$pref['sitelinks_expandsub'] = $_POST['sitelinks_expandsub'];
-	save_prefs();
-	$e107cache->clear("sitelinks");
-	$linkpost->show_message(LCLAN_1);
-}
 
-if ($delete == 'main')
-{
-	if ($sql->db_Select("links", "link_id, link_name, link_order, link_parent", "link_id=".intval($del_id)))
+
+
+
+
+
+	public function handleListLinkParentBatch($selected, $value)
 	{
-		$row = $sql->db_Fetch();
-		$msg = $linkpost->delete_link($row);
-
-		if ($msg)
+		$field = 'link_parent';
+		$ui = $this->getUI();
+		$found = false;
+		foreach ($selected as $k => $id)
 		{
-			$e107cache->clear("sitelinks");
-			$linkpost->show_message($msg);
+			// var_dump($ui->_has_parent($value, $id, $this->getLinkArray()));
+			if($ui->_has_parent($value, $id, $this->getLinkArray()))
+			{
+				unset($selected[$k]);
+				$found = true;
+			}
 		}
-	}
-}
-
-if (isset($_POST['add_link'])) {
-	$linkpost->submit_link($sub_action, $_POST['link_id']);
-	unset($id);
-}
-
-$linkArray = $linkpost->getLinks();
-
-if ($action == 'create') {
-	$linkpost->create_link($sub_action, $id);
-}
-
-
-if (!e_QUERY || $action == 'main') {
-	$linkpost->show_existing_items();
-}
-
-if ($action == 'debug')
-{
-  $linkpost->show_existing_items(TRUE);
-}
-
-if ($action == 'opt') {
-	$linkpost->show_pref_options();
-}
-
-if($action == "sublinks"){
-  $linkpost->show_sublink_generator();
-}
-
-require_once(e_ADMIN.'footer.php');
-exit;
-
-// End ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-class links
-{
-	var $link_total;
-	var $aIdOptPrep, $aIdOptData, $aIdOptTest;
-	var $debug_dis = FALSE;
-
-	function getLinks()
-	{
-		global $sql;
-		if($this->link_total = $sql->db_Select("links", "*", "ORDER BY link_category,link_order, link_id ASC", "nowhere"))
+		if($found) e107::getMessage()->addWarning(LCLAN_108);
+		if(!$selected) return;
+		
+		if(parent::handleListBatch($selected, $field, $value))
 		{
+			$this->_link_array = null; // reset batch/filters
+			return true;
+		}
+		return false;
+	}
+
+	public function ListObserver()
+	{
+		$searchFilter = $this->_parseFilterRequest($this->getRequest()->getQuery('filter_options', ''));
+
+		if($searchFilter && in_array('link_parent', $searchFilter))
+		{
+			$this->getTreeModel()->current_id = intval($searchFilter[1]);
+			$this->current_parent = intval($searchFilter[1]);
+		}
+		parent::ListObserver();
+
+	}
+	public function ListAjaxObserver()
+	{
+		$searchFilter = $this->_parseFilterRequest($this->getRequest()->getQuery('filter_options', ''));
+
+		if($searchFilter && in_array('link_parent', $searchFilter))
+		{
+			$this->getTreeModel()->current_id = intval($searchFilter[1]);
+			$this->current_parent = intval($searchFilter[1]);
+		}
+		parent::ListAjaxObserver();
+	}
+
+	/**
+	 * Form submitted - 'etrigger_generate_sublinks' POST variable caught
+	 */
+	public function SublinksGenerateSublinksTrigger()
+	{
+		$this->generateSublinks();
+	}
+
+	public function sublinksObserver()
+	{
+		$this->getTreeModel()->load();
+	}
+
+	/**
+	 * Sublinks generator
+	 */
+	public function toolsPage()
+	{
+		$sublinks = $this->sublink_data();
+		$ui = $this->getUI();
+		// TODO - use UI create form
+		$sql = e107::getDb();
+		$text = "
+		<form method='post' action='".e_REQUEST_URL."'>
+			<fieldset id='core-links-generator'>
+				<legend class='e-hideme'>".LINKLAN_4."</legend>
+				<table class='table adminform'>
+					<colgroup>
+						<col class='col-label' />
+						<col class='col-control' />
+					</colgroup>
+					<tbody>
+						<tr>
+							<td>".LINKLAN_6.":</td>
+							<td>
+		";
+
+		foreach($sublinks as $key => $type)
+		{
+			$optarrayp[$key] = $type['title'];
+			//$selected = $this->getPosted('sublink_type') == $key ? ' selected="selected"' : '';
+			/*$text .= "
+									<option value='{$key}'{$selected}>".$type['title']."</option>
+					";*/
+		}
+		$text .= $ui->selectbox('sublink_type', $optarrayp, $this->getPosted('sublink_type'), '', true);
+
+		$text .= "
+							</td>
+						</tr>
+						<tr>
+							<td>".LINKLAN_7."</td>
+							<td>
+								";
+		$text .= $ui->link_parent($this->getPosted('link_parent'), 'write');
+		$text .= "
+
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				<div class='buttons-bar center'>
+					".$ui->admin_button('etrigger_generate_sublinks', 'no-value', 'submit', LINKLAN_5)."
+				</div>
+			</fieldset>
+		</form>
+		";
+
+		//$e107->ns->tablerender(LINKLAN_4, $emessage->render().$text);
+	//	$this->addTitle(LINKLAN_4);
+
+		return $text;
+
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+	function sublink_data($name = "")
+	{
+		if(null !== $this->sublink_data) return ($name ? $this->sublink_data[$name] : $this->sublink_data);
+		$sublink_type = array();
+		$sublink_type['news']['title'] = LINKLAN_8; // "News Categories";
+		$sublink_type['news']['table'] = "news_category";
+		$sublink_type['news']['query'] = "category_id !='-2' ORDER BY category_name ASC";
+		$sublink_type['news']['url'] = "news.php?cat.#";
+		$sublink_type['news']['fieldid'] = "category_id";
+		$sublink_type['news']['fieldname'] = "category_name";
+		$sublink_type['news']['fieldicon'] = "category_icon";
+
+		$sublink_type['downloads']['title'] = LINKLAN_9; //"Download Categories";
+		$sublink_type['downloads']['table'] = "download_category";
+		$sublink_type['downloads']['query'] = "download_category_parent ='0' ORDER BY download_category_name ASC";
+		$sublink_type['downloads']['url'] = "download.php?list.#";
+		$sublink_type['downloads']['fieldid'] = "download_category_id";
+		$sublink_type['downloads']['fieldname'] = "download_category_name";
+		$sublink_type['downloads']['fieldicon'] = "download_category_icon";
+
+		// fixed - sql query not needed
+		$plugins = array_keys(e107::getConfig()->get('plug_installed'));
+
+		foreach ($plugins as $plugin)
+		{
+			if(is_readable(e_PLUGIN.$plugin.'/e_linkgen.php'))
+			{
+				require_once (e_PLUGIN.$plugin.'/e_linkgen.php');
+			}
+		}
+		$this->sublink_data = $sublink_type;
+		if($name)
+		{
+			return $sublink_type[$name];
+		}
+
+		return $sublink_type;
+	}
+
+	function generateSublinks($sublink)
+	{
+
+		$mes = e107::getMessage();
+		$subtype = $this->getPosted('sublink_type');//$_POST['sublink_type'];
+		$pid = intval($this->getPosted('link_parent'));
+		$sublink = $this->sublink_data($subtype);
+
+		if(!$pid)
+		{
+			$mes->warning(LCLAN_109);
+			return;
+		}
+		if(!$subtype)
+		{
+			$mes->warning(LCLAN_110);
+			return;
+		}
+		if(!$sublink)
+		{
+			$mes->error(LCLAN_111);
+			return;
+		}
+
+		$sublink = $this->sublink_data($subtype);
+
+
+		$sql = e107::getDb();
+		$sql2 = e107::getDb('sql2');
+
+
+		$sql->db_Select("links", "*", "link_id=".$pid);
+		$par = $sql->db_Fetch();
+
+		//extract($par);
+		// Added option for passing of result array
+		if(vartrue($sublink['result']))
+		{
+			$count = 1;
+			foreach ($sublink['result'] as $row)
+			{
+				$subcat = $row[($sublink['fieldid'])];
+				$name = $row[($sublink['fieldname'])];
+				$subname = $name; // eliminate old embedded hierarchy from names. (e.g. 'submenu.TopName.name')
+				$suburl = str_replace("#", $subcat, $sublink['url']);
+				$subicon = ($sublink['fieldicon']) ? $row[($sublink['fieldicon'])] : $par['link_button'];
+				$subdiz = ($sublink['fielddiz']) ? $row[($sublink['fielddiz'])] : $par['link_description'];
+				$subparent = $pid;
+
+				$insert_array = array(
+						'link_name'			=> $subname,
+						'link_url'			=> $suburl,
+						'link_description'	=> $subdiz,
+						'link_button'		=> $subicon,
+						'link_category'		=> $par['link_category'],
+						'link_order'		=> $count,
+						'link_parent'		=> $subparent,
+						'link_open'			=> $par['link_open'],
+						'link_class'		=> $par['link_class'],
+						'link_function'		=> ''
+				);
+				$count++;
+			}
+		}
+		else
+		{
+			$sql->db_Select($sublink['table'], "*", $sublink['query']);
+			$count = 1;
 			while($row = $sql->db_Fetch())
 			{
-				$ret[$row['link_parent']][] = $row;
+				$subcat = $row[($sublink['fieldid'])];
+				$name = $row[($sublink['fieldname'])];
+				$subname = $name; // eliminate old embedded hierarchy from names. (e.g. 'submenu.TopName.name')
+				$suburl = str_replace("#", $subcat, $sublink['url']);
+				$subicon = ($sublink['fieldicon']) ? $row[($sublink['fieldicon'])] : $par['link_button'];
+				$subdiz = ($sublink['fielddiz']) ? $row[($sublink['fielddiz'])] : $par['link_description'];
+				$subparent = $pid;
+
+				$insert_array = array(
+						'link_name'			=> $subname,
+						'link_url'			=> $suburl,
+						'link_description'	=> $subdiz,
+						'link_button'		=> $subicon,
+						'link_category'		=> $par['link_category'],
+						'link_order'		=> $count,
+						'link_parent'		=> $subparent,
+						'link_open'			=> $par['link_open'],
+						'link_class'		=> $par['link_class'],
+						'link_function'		=> ''
+				);
+
+				if($sql2->db_Insert("links",$insert_array))
+				{
+					$message .= LAN_CREATED." ({$name})[!br!]";
+					$mes->success(LAN_CREATED." ({$name})");
+				} else
+				{
+					$message .= LAN_CREATED_FAILED." ({$name})[!br!]";
+					$mes->error(LAN_CREATED_FAILED." ({$name})");
+				}
+				$count++;
 			}
 		}
-		return $ret;
+
+		if($message) // TODO admin log
+		{
+			// sitelinks_adminlog('01', $message); // 'Sublinks generated'
+		}
 	}
 
-
-	function linkName($text)
+	/**
+	 * Product tree model
+	 * @return links_model_admin_tree
+	 */
+	public function _setTreeModel()
 	{
-		// This function is ONLY needed for link databases that have been upgraded from
-		// before 0.7+ -- all new link collections make use of link_parent instead
-		// of hierarchy embedded in the link_name. (Unfortunately, the upgraded
-		// data still includes embedded coding.)
+		$this->_tree_model = new links_model_admin_tree();
+		return $this;
+	}
 
-		if(substr($text, 0, 8) == "submenu.") // for backwards compatibility only.
+	/**
+	 * Link ordered array
+	 * @return array
+	 */
+	public function getLinkArray($current_id = 0)
+	{
+		if(null === $this->_link_array)
 		{
-			$tmp = explode(".",$text);
-			switch (count($tmp)) {
-			case 3: // submenu.parent.node
-				$tmp = $tmp[2]; break;
-			case 5: // submenu.parent.midlev.child.node
-				$tmp = $tmp[4]; break;
-			case 2: // submenu.parent (invalid?)
-			default:
-				$parentLen = strlen($tmp[1]);
-				$tmp = substr($text,8+$parentLen+1); // Skip submenu.parent.
+			if($this->getAction() != 'list')
+			{
+				$this->getTreeModel()->setParam('order', 'ORDER BY '.$this->listOrder)->load();
 			}
-			return $tmp;
+			$tree = $this->getTreeModel()->getTree();
+			$this->_link_array = array();
+			foreach ($tree as $id => $model)
+			{
+				if($current_id == $id) continue;
+				$this->_link_array[$model->get('link_parent')][$id] = $model->get('link_name');
+			}
+			asort($this->_link_array);
+		}
+
+		return $this->_link_array;
+	}
+}
+
+class links_model_admin_tree extends e_admin_tree_model
+{
+	public $modify = false;
+	public $current_id = 0;
+
+	protected $_db_table = 'links';
+	protected $_link_array	= null;
+	protected $_link_array_modified	= null;
+
+	protected $_field_id = 'link_id';
+
+
+	/**
+	 * Get array of models
+	 * Custom tree order
+	 * @return array
+	 */
+	function getTree($force = false)
+	{
+		return $this->getOrderedTree($this->modify);
+	}
+
+	/**
+	 * Get ordered by their parents models
+	 * @return array
+	 */
+	function getOrderedTree($modified = false)
+	{
+		$var = !$modified ? '_link_array' : '_link_array_modified';
+		if(null === $this->$var)
+		{
+			$tree = $this->get('__tree', array());
+
+			$this->$var = array();
+			$search = array();
+			foreach ($tree as $id => $model)
+			{
+				$search[$model->get('link_parent')][$id] = $model;
+			}
+			asort($search);
+			$this->_tree_order($this->current_id, $search, $this->$var, 0, $modified);
+		}
+		//$this->buildTreeIndex();
+		return $this->$var;
+	}
+
+	/**
+	 * Reorder current tree
+	 * @param $parent_id
+	 * @param $search
+	 * @param $src
+	 * @param $level
+	 * @return void
+	 */
+	function _tree_order($parent_id, $search, &$src, $level = 0, $modified = false)
+	{
+		if(!isset($search[$parent_id]))
+		{
+			return;
+		}
+
+		$level_image = $level ? '<img src="'.e_IMAGE_ABS.'generic/branchbottom.gif" class="icon" alt="" style="margin-left: '.($level * 20).'px" />&nbsp;' : '';
+		foreach ($search[$parent_id] as $model)
+		{
+			$id = $model->get('link_id');
+			$src[$id] = $model;
+			if($modified)
+			{
+				$model->set('link_name', $this->bcClean($model->get('link_name')))
+					->set('link_indent', $level_image);
+			}
+			$this->_tree_order($id, $search, $src, $level + 1, $modified);
+		}
+	}
+	
+	
+	function bcClean($link_name)
+	{
+		if(substr($link_name, 0,8) == 'submenu.') // BC Fix. 
+		{
+			list($tmp,$tmp2,$link) = explode('.', $link_name, 3);	
 		}
 		else
 		{
-			return $text;
+			$link = $link_name;	
 		}
+		
+		return $link;		
 	}
-
-	function dropdown($curval="", $lid=0, $indent=0)
-	{   // Drop-down list using on the parent_id. :)
-		global $linkArray,$id,$sub_action;
-
-		if(0 == $indent) {$ret = "<option value=''>".LINKLAN_3."</option>\n";}
-		foreach($linkArray[$lid] as $l)
-		{
-			$s = ($l['link_id'] == $curval ? " selected='selected' " : "" );
-			$thename = $this->linkName($l['link_name']);
-			 // prevent making self the parent.
-			if ($l['link_id'] == $id) { $thename = "(".$thename.")"; }
-			if($sub_action == "sub")
-			{
-				$thelink = ($l['link_id'] != $lid) ? $l['link_id'] : $l['link_parent'] ;
-            }
-			else
-			{
-            	$thelink = ($l['link_id'] != $id) ? $l['link_id'] : $l['link_parent'] ;
-			}
-			$ret .= "<option value='".$thelink."' {$s}>".str_pad("", $indent*36, "&nbsp;").$thename." </option>\n";
-
-			if(array_key_exists($l['link_id'], $linkArray))
-			{
-				$ret .= $this->dropdown($curval, $l['link_id'], $indent+1);
-			}
-		}
-		return $ret;
-	}
+	
+}
 
 
-	function existing($id=0, $level=0)
+class links_admin_form_ui extends e_admin_form_ui
+{
+	protected $current_parent = null;
+	
+	private $linkFunctions;
+
+	function init()
 	{
-		global $linkArray;
-		$ret = "";
-		foreach($linkArray[$id] as $l)
+		
+		$tp = e107::getParser();
+		$tmp = e107::getAddonConfig('e_sitelink','sitelink');
+					
+		foreach($tmp as $cat=> $array)
 		{
-			$s = ($l['link_parent'] == $curval ? " selected='selected' " : "" );
-			$ret .= $this->display_row($l, $level);
-			if(array_key_exists($l['link_id'], $linkArray))
+			$func = array();
+			foreach($array as $val)
 			{
-				$ret .= $this->existing($l['link_id'], $level+1);
+				$newkey = $cat.'::'.$val['function'];
+				if(vartrue($val['parm']))
+				{
+					$newkey .= "(".$val['parm'].")";	
+				}
+				$func[$newkey] = $tp->toHtml($val['name'],'','TITLE');
 			}
+			$this->linkFunctions[$cat] = $func;
 		}
-		return $ret;
 	}
-
-	function show_existing_items($dbg_display=FALSE)
+	
+	function link_parent($value, $mode)
 	{
-		global $sql, $rs, $ns, $tp, $linkArray;
-		$this->debug_dis = $dbg_display;
-
-		if (count($linkArray))
+		switch($mode)
 		{
+			case 'read':
+				$current = $this->getController()->current_parent;
+				if($current) // show only one parent
+				{
+					if(null === $this->current_parent)
+					{
+						if(e107::getDb()->db_Select('links', 'link_name', 'link_id='.$current))
+						{
+							$tmp = e107::getDb()->db_Fetch();
+							$this->current_parent = $tmp['link_name'];
+						}
+					}
+				}
+				$cats	= $this->getController()->getLinkArray();
+				$ret	= array();
+				$this->_parents($value, $cats, $ret);
+				if($this->current_parent) array_unshift($ret, $this->current_parent);
+				return ($ret ? implode('&nbsp;&raquo;&nbsp;', $ret) : '-');
+			break;
 
-			$this->prepIdOpts(); // Prepare the options list for all links
-			$text = $rs->form_open("post", e_SELF, "myform_{$link_id}", "", "");
-			$text .= "<div style='text-align:center'>
-				<table class='fborder' style='".ADMIN_WIDTH."'>
-				<colgroup>
-      		<col width=\"5%\" />
-      		<col width=\"60%\" />
-      		<col width=\"15%\" />
-      		<col width=\"10%\" />
-      		<col width=\"5%\" />
-      		<col width=\"5%\" />
-				</colgroup>
-				<tr>
-				<td class='fcaption'>".LCLAN_89."</td>
-				<td class='fcaption'>".LCLAN_15."</td>
-				<td class='fcaption'>".LAN_OPTIONS."</td>
-				<td class='fcaption'>".LCLAN_95."</td>
-				<td class='fcaption'>".LCLAN_91."</td>
-				<td class='fcaption'>".LAN_ORDER."</td>
-				</tr>";
-				$text .= $this->existing(0);
+			case 'write':
+				$catid	= $this->getController()->getId();
+				$cats	= $this->getController()->getLinkArray($catid);
+				$ret	= array();
+				$this->_parent_select_array(0, $cats, $ret);
+				return $this->selectbox('link_parent', $ret, $value, array('default' => LAN_SELECT));
+			break;
 
-			$text .= "<tr>
-				<td class='forumheader' colspan='6' style='text-align:center'><input class='button' type='submit' name='update' value='".LAN_UPDATE."' /></td>
-				</tr>";
-			$text .= "</table></div>";
-			$text .= $rs->form_close();
-		} else {
-			$text .= "<div style='text-align:center'>".LCLAN_61."</div>";
+			case 'batch':
+			case 'filter':
+				$cats	= $this->getController()->getLinkArray();
+
+				$ret[0]	= $mode == 'batch' ? 'REMOVE PARENT' : 'Main Only';
+				$this->_parent_select_array(0, $cats, $ret);
+				return $ret;
+			break;
 		}
-		$ns->tablerender(LCLAN_8, $text);
 	}
 
-	function prepIdOpts() {
-		for($a = 1; $a <= $this->link_total; $a++) {
-			$sTxt = "".$a;
-			$this->aIdOptData[] = array('val'=>'|||.'.$a, 'txt'=>$sTxt);	// Later, ||| becomes Id
-			$this->aIdOptTest[] = $sTxt;
-		}
-		$this->aIdOptPrep = $this->prepOpts($this->aIdOptData);
-	}
-
-	function display_row($row2, $indent = FALSE)
+	function link_function($curVal,$mode)
 	{
-		global $sql, $rs, $ns, $tp, $linkArray, $previous_cat;
-		extract($row2);
-
-		if($link_category > 1 && $link_category != $previous_cat)
+		if($mode == 'read')
 		{
-        	$text .= "
-				<tr>
-					<td class='fcaption'>".LCLAN_89."</td>
-					<td class='fcaption'>".LCLAN_15." (".LCLAN_12.": ".$link_category.")</td>
-					<td class='fcaption'>".LAN_OPTIONS."</td>
-					<td class='fcaption'>".LCLAN_95."</td>
-					<td class='fcaption'>".LCLAN_91."</td>
-					<td class='fcaption'>".LAN_ORDER."</td>
-				</tr>";
-			$previous_cat = $link_category;
+			return $curVal; //  $this->linkFunctions[$curVal];
 		}
 
-		if(strpos($link_name, "submenu.") !== FALSE || $link_parent !=0) // 'submenu' for upgrade compatibility only.
-		{
-			$link_name = $this->linkName( $link_name );
+		if($mode == 'write')
+		{			
+			return $this->selectbox('link_function',$this->linkFunctions,$curVal,array('default'=> "(".LAN_OPTIONAL.")"));
 		}
 
-		if ($this->debug_dis)
-		{
-		  $link_name.= ' ['.$link_url.']';
-		}
-
-		if ($indent)
-		{
-		  $subimage = "<img src='".e_IMAGE."admin_images/sublink.png' alt='' />";
-		  $subspacer = ($indent > 1) ? " style='padding-left: ".(($indent - 1) * 16)."px'" : "";
-		  $subindent = "<td".$subspacer.">".$subimage."</td>";
-		}
-
-		$text .= "<tr><td class='forumheader3' style='text-align: center; vertical-align: middle' title='".$link_description."'>";
-		$text .= $link_button ? "<img src='".e_IMAGE."icons/".$link_button."' alt='' /> ":
-		"";
-		$text .= "</td><td class='forumheader3' title='".$link_description."'>
-				<table cellspacing='0' cellpadding='0' border='0' style='width: 100%'>
-				<tr>
-			".$subindent."
-				<td style='".($indent ? "" : "font-weight:bold;")."width: 100%'><a href='".$tp->replaceConstants(e_BASE.$row2['link_url'], true, true)."'>".$link_name."</a></td>
-				</tr>
-				</table>
-				</td>";
-		$text .= "<td style='text-align:center; white-space: nowrap' class='forumheader3'>";
-		$text .= "<a href='".e_SELF."?create.sub.{$link_id}'><img src='".e_IMAGE."admin_images/sublink_16.png' title='".LINKLAN_10."' alt='".LINKLAN_10."' /></a>&nbsp;";
-		$text .= "<a href='".e_SELF."?create.edit.{$link_id}'>".ADMIN_EDIT_ICON."</a>&nbsp;";
-		$text .= "<input type='image' title='".LAN_DELETE."' name='main_delete_{$link_id}' src='".ADMIN_DELETE_ICON_PATH."' onclick=\"return jsconfirm('".$tp->toJS(LCLAN_58." [ $link_name ]")."') \" />";
-		$text .= "</td>";
-		$text .= "<td style='text-align:center' class='forumheader3'>".r_userclass("link_class[".$link_id."]", $link_class, "off", "public,guest,nobody,main,member,admin,classes")."</td>";
-		$text .= "<td style='text-align:center; white-space: nowrap' class='forumheader3'>";
-		$name_suffix = URL_SEPARATOR.$link_id.URL_SEPARATOR.$link_order;
-		$text .= "<input name='inc".$name_suffix."' type='image' src='".e_IMAGE."admin_images/up.png' title='".LCLAN_30."' />";
-		$text .= "<input name='dec".$name_suffix."' type='image' src='".e_IMAGE."admin_images/down.png' title='".LCLAN_31."' />";
-		$text .= "</td>";
-		$text .= "<td style='text-align:center' class='forumheader3'>";
-		$text .= "<select name='link_order[]' class='tbox'>\n";
-		$text .= $this->genOpts( $this->aIdOptPrep, $this->aIdOptTest, $link_order, $link_id );
-		$text .= "</select>";
-		$text .= "</td>";
-		$text .= "</tr>";
-
-	  return $text;
-	}
-
-
-	function show_message($message) {
-		global $ns;
-		$ns->tablerender(LAN_UPDATE, "<div style='text-align:center'><b>".$message."</b></div>");
-	}
-
-
-
-	function create_link($sub_action, $id) {
-		global $sql, $rs, $ns, $pst,$tp;
-		$preset = $pst->read_preset("admin_links");
-		extract($preset);
-
-		if ($sub_action == "edit" && !$_POST['submit'])
-		{
-			if ($sql->db_Select("links", "*", "link_id='$id' "))
-			{
-				$row = $sql->db_Fetch();
-				extract($row);
-			}
-		}
-
-		if("sub" == $sub_action)
-		{
-			$link_parent = $id;
-		}
-
-		if(strpos($link_name, "submenu.") !== FALSE){  // 'submenu' for upgrade compatibility only.
-			$link_name = $this->linkName( $link_name );
-		}
-
-        require_once(e_HANDLER."file_class.php");
-        $fl = new e_file;
-
-        if($iconlist = $fl->get_files(e_IMAGE."icons/", ".jpg|.gif|.png|.JPG|.GIF|.PNG")){
-        	sort($iconlist);
-        }
-
-		$text = "<div style='text-align:center'>
-			<form method='post' action='".e_SELF."' id='linkform'>
-			<table style='".ADMIN_WIDTH."' class='fborder'>";
-
-		$text .= "<tr>
-			<td style='width:30%' class='forumheader3'>".LINKLAN_2.": </td>
-			<td style='width:70%' class='forumheader3'>
-			<select class='tbox' name='link_parent' >";
-			$text .= $this->dropdown($link_parent);
-
-		$text .= "</select></td>
-			</tr>
-			<tr>
-			<td style='width:30%' class='forumheader3'>".LCLAN_15.": </td>
-			<td style='width:70%' class='forumheader3'>
-			<input class='tbox' type='text' name='link_name' size='60' value='$link_name' maxlength='100' />
-			</td>
-			</tr>
-
-			<tr>
-			<td style='width:30%' class='forumheader3'>".LCLAN_16.": </td>
-			<td style='width:70%' class='forumheader3'>
-			<input class='tbox' type='text' name='link_url' size='60' value='".$tp->replaceConstants($link_url,TRUE)."' maxlength='200' />";
-            if(e_MENU == "debug")
-			{
-				$text .= $link_url;
-			}
-			$text .= "
-            </td>
-			</tr>
-
-			<tr>
-			<td style='width:30%' class='forumheader3'>".LCLAN_17.": </td>
-			<td style='width:70%' class='forumheader3'>
-			<textarea class='tbox' name='link_description' cols='59' rows='3'>$link_description</textarea>
-			</td>
-			</tr>
-
-			<tr>
-			<td style='width:30%' class='forumheader3'>".LCLAN_18.": </td>
-			<td style='width:70%' class='forumheader3'>
-			<input class='tbox' type='text' id='link_button' name='link_button' size='42' value='$link_button' maxlength='100' />
-
-					<input class='button' type ='button' style='cursor:pointer' size='30' value='".LCLAN_39."' onclick='expandit(this)' />
-			<div id='linkicn' style='display:none;{head}'>";
-
-		foreach($iconlist as $icon)
-		{
-			$filepath = str_replace(e_IMAGE."icons/","",$icon['path'].$icon['fname']);
-			$text .= "<a href=\"javascript:insertext('".$filepath."','link_button','linkicn')\"><img src='".$icon['path'].$icon['fname']."' style='border:0' alt='' /></a> ";
-		}
-
-		// 1 = _blank
-		// 2 = _parent   not in use.
-		// 3 = _top   not in use.
-		$linkop[0] = LCLAN_20;  // 0 = same window
-		$linkop[1] = LCLAN_23;
-		$linkop[4] = LCLAN_24;  // 4 = miniwindow  600x400
-		$linkop[5] = LINKLAN_1;  // 5 = miniwindow  800x600
-
-		$text .= "</div></td>
-			</tr>
-			<tr>
-			<td style='width:30%' class='forumheader3'>".LCLAN_19.": </td>
-			<td style='width:70%' class='forumheader3'>
-			<select name='linkopentype' class='tbox'>\n";
-			foreach($linkop as $key=>$val){
-				$selectd = ($link_open == $key) ? "selected='selected'" : "";
-				$text .= "<option value='$key' $selectd>".$val."</option>\n";
-			}
-
-			$text .="</select>
-			</td>
-			</tr>
-			<tr>
-			<td style='width:30%' class='forumheader3'>".LCLAN_12.": </td>
-			<td style='width:70%' class='forumheader3'>
-			<select name='linkrender' class='tbox'>";
-			$rentype = array("","Main","Alt","Alt", "Alt","Alt","Alt", "Alt","Alt","Alt", "Alt");
-			for ($i=1; $i<count($rentype); $i++) {
-				$sel = ($link_category == $i) ? "selected='selected'" : "";
-				$text .="<option value='$i' $sel>$i - ".$rentype[$i]."</option>";
-			};
-
-			$text .="</select><span class='smalltext'> ".LCLAN_96." {SITELINKS=flat:[rendertype number]}</span>
-			</td>
-			</tr>
-			<tr>
-			<td style='width:30%' class='forumheader3'>".LCLAN_25.":<br /><span class='smalltext'>(".LCLAN_26.")</span></td>
-			<td style='width:70%' class='forumheader3'>".r_userclass("link_class", $link_class, "off", "public,guest,nobody,member,main,admin,classes")."
-			</td></tr>
-
-			<tr style='vertical-align:top'>
-			<td colspan='2' style='text-align:center' class='forumheader'>";
-		if ($id && $sub_action == "edit") {
-			$text .= "<input class='button' type='submit' name='add_link' value='".LCLAN_27."' />\n
-						<input type='hidden' name='link_id' value='$link_id' />";
-		} else {
-			$text .= "<input class='button' type='submit' name='add_link' value='".LCLAN_28."' />";
-		}
-		$text .= "</td>
-			</tr>
-			</table>
-			</form>
-			</div>";
-		$ns->tablerender(LCLAN_29, $text);
-	}
-
-
-	function submit_link($sub_action, $id)
-	{
-		global $sql, $e107cache, $tp;
-		if(!is_object($tp))
-		{
-		  $tp=new e_parse;
-		}
-
-		$id = intval($id);
-		$parent_id = ($_POST['link_parent']) ? intval($_POST['link_parent']) : 0;
-
-		$link_name = $tp->toDB($_POST['link_name']);
-		$link_url = $tp->createConstants($_POST['link_url']);
-		$link_url = str_replace("&","&amp;",$link_url); // xhtml compliant links.
-
-		$link_description = $tp->toDB($_POST['link_description']);
-		$link_button = $tp->toDB($_POST['link_button']);
-		$link_render = intval($_POST['linkrender']);
-		$link_open = intval($_POST['linkopentype']);
-		$link_class = $tp->toDB($_POST['link_class']);
-
-		$link_t = $sql->db_Count("links", "(*)");
-		if ($id)
-		{
-		  $sql->db_Update("links", "link_parent='{$parent_id}', link_name='{$link_name}', link_url='{$link_url}', link_description='{$link_description}', link_button= '{$link_button}', link_category='{$link_render}', link_open='{$link_open}', link_class='{$link_class}' WHERE link_id='{$id}'");
-			//rename all sublinks to eliminate old embedded 'submenu' etc hierarchy.
-		    // this is for upgrade compatibility only. Current hierarchy uses link_parent.
-		  $e107cache->clear("sitelinks");
-		  $this->show_message(LCLAN_3);
-		}
 		else
 		{
-		  $sql->db_Insert("links", "0, '$link_name', '$link_url', '$link_description', '$link_button', ".$link_render.", ".($link_t+1).", ".$parent_id.", ".$link_open.", ".$link_class);
-		  $e107cache->clear("sitelinks");
-		  $this->show_message(LCLAN_2);
+			return $this->linkFunctions;
+		}
+	}
+
+	function link_id($curVal,$mode)
+	{
+		if($mode == 'read')
+		{
+			$linkUrl = $this->getController()->getListModel()->get('link_url');
+			$linkUrl = e107::getParser()->replaceConstants($linkUrl,'abs');
+			$url = $this->link_url($linkUrl,$mode);
+			return "<a href='".$url."' rel='external'>".$curVal."</a>"; //  $this->linkFunctions[$curVal];
 		}
 	}
 
 
+	function link_sefurl($curVal,$mode)
+	{
+		if($mode == 'read')
+		{
+			$plugin = $this->getController()->getModel()->get('link_owner');
+			return $curVal; //  $this->linkFunctions[$curVal];
+		}
 
-	function show_pref_options() {
-		global $pref, $ns;
-		$text = "<div style='text-align:center'>
-			<form method='post' action='".e_SELF."?".e_QUERY."'>\n
-			<table style='".ADMIN_WIDTH."' class='fborder'>
-			<tr>
-			<td style='width:70%' class='forumheader3'>
-			".LCLAN_78."<br />
-			<span class='smalltext'>".LCLAN_79."</span>
-			</td>
-			<td class='forumheader3' style='width:30%;text-align:center'>". ($pref['linkpage_screentip'] ? "<input type='checkbox' name='linkpage_screentip' value='1' checked='checked' />" : "<input type='checkbox' name='linkpage_screentip' value='1' />")."
-			</td>
-			</tr>
+		if($mode == 'write')
+		{
+			$plugin = $this->getController()->getModel()->get('link_owner');
+			$obj    = e107::getAddon($plugin,'e_url');
+			$config = e107::callMethod($obj,'config');
+			$opts   = array();
 
-			<tr>
-			<td style='width:70%' class='forumheader3'>
-			".LCLAN_80."<br />
-			<span class='smalltext'>".LCLAN_81."</span>
-			</td>
-			<td class='forumheader3' style='width:30%;text-align:center'>". ($pref['sitelinks_expandsub'] ? "<input type='checkbox' name='sitelinks_expandsub' value='1' checked='checked' />" : "<input type='checkbox' name='sitelinks_expandsub' value='1' />")."
-			</td>
-			</tr>
+			if(empty($config))
+			{
+				return $this->hidden('link_sefurl','')."<span class='label label-warning'>".LAN_NOT_AVAILABLE."</span>";
+			}
+
+			foreach($config as $k=>$v)
+			{
+				if(strpos($v['regex'],')')===false) // only provide urls without dynamic elements.
+				{
+					$opts[] = $k;
+				}
+			}
 
 
+			return $this->select('link_sefurl', $opts, $curVal, array('useValues'=>true,'defaultValue'=>'','default'=>'('.LAN_DISABLED.')'));
+		}
 
-			<tr style='vertical-align:top'>
-			<td colspan='2' style='text-align:center' class='forumheader'>
-			<input class='button' type='submit' name='updateoptions' value='".LAN_UPDATE."' />
-			</td>
-			</tr>
-
-			</table>
-			</form>
-			</div>";
-		$ns->tablerender(LCLAN_88, $text);
 	}
 
-
-
-	// Delete link
-	// We need to update the 'order' number of other links with the same parentage - may be top level or a sub-level
-	function delete_link($linkInfo)
+	function link_url($curVal,$mode)
 	{
-		global $sql;
-
-		if ($sql->db_Select("links", "link_id", "link_order > '{$linkInfo['link_order']}' AND `link_parent`={$linkInfo['link_parent']} "))
+		if($mode == 'read')
 		{
-			$linkList = $sql->db_getList();
-			foreach($linkList as $l)
+			$owner = $this->getController()->getListModel()->get('link_owner');
+			$sef =  $this->getController()->getListModel()->get('link_sefurl');
+
+			if(!empty($owner) && !empty($sef))
 			{
-				$sql->db_Update("links", "link_order = link_order -1 WHERE link_id = '{$l['link_id']}'");
+				$curVal = str_replace(e_HTTP,'',e107::url($owner,$sef));
+			}
+
+			return $curVal; //  $this->linkFunctions[$curVal];
+		}
+
+		if($mode == 'write')
+		{
+			$owner = $this->getController()->getModel()->get('link_owner');
+			$sef =  $this->getController()->getModel()->get('link_sefurl');
+
+			if(!empty($owner) && !empty($sef))
+			{
+
+				$text = str_replace(e_HTTP,'',e107::url($owner,$sef)); // dynamically created.
+				$text .= $this->hidden('link_url',$curVal);
+				$text .= " <span class='label label-warning'>".LAN_AUTO_GENERATED."</span>";
+
+				return $text;
+
+			}
+
+			return $this->text('link_url', $curVal, 255,  array('size'=>'xxlarge'));
+		}
+
+		if($mode == 'inline')
+		{
+			$sef =  $this->getController()->getListModel()->get('link_sefurl');
+
+			if(empty($sef))
+			{
+				return array('inlineType'=>'text');
+			}
+
+			return false;
+		}
+
+	}
+
+	/**
+	 *
+	 * @param integer $category_id
+	 * @param array $search
+	 * @param array $src
+	 * @param boolean $titles
+	 * @return array
+	 */
+	function _parents($link_id, $search, &$src, $titles = true)
+	{
+		foreach ($search as $parent => $cat)
+		{
+			if($cat && array_key_exists($link_id, $cat))
+			{
+				array_unshift($src, ($titles ? $cat[$link_id] : $link_id));
+				if($parent > 0)
+				{
+					$this->_parents($parent, $search, $src, $titles);
+				}
 			}
 		}
+	}
 
-
-		if ($sql->db_Delete("links", "link_id='".$linkInfo['link_id']."'"))
+	function _parent_select_array($parent_id, $search, &$src, $strpad = '&nbsp;&nbsp;&nbsp;', $level = 0)
+	{
+		if(!isset($search[$parent_id]))
 		{
-			// Update orphaned sublinks - just hide them, and make them top level. And delete any obsolete naming while we're there
-			$sql->db_Update("links", "link_name = SUBSTRING_INDEX(link_name, '.', -1) , link_parent = '0', link_class='255' WHERE link_parent= '".$linkInfo['link_id']."'");
-
-			return LCLAN_53." #".$linkInfo['link_id']." ".LCLAN_54."<br />";
-		}else{
-        	return DELETED_FAILED;
+			return;
 		}
 
-
-	}
-
-// -------------------------- Sub links generator ------------->
-
-function show_sublink_generator()
-{
-	global $ns,$sql;
-
-    $sublinks = $this->sublink_list();
-
-	$text = "<div style='text-align:center'>
-	<form method='post' action='".e_SELF."?".e_QUERY."'>\n
-	<table style='".ADMIN_WIDTH."' class='fborder'>
-
-	<tr>
-	<td style='width:50%' class='forumheader3'>
-	".LINKLAN_6."<br />
-	</td>
-	<td class='forumheader3' style='width:50%;text-align:center'>
-	<select name='sublink_type' class='tbox'>\n
-	<option value=''></option>";
-    foreach($sublinks as $key=>$type){
-    	$text .= "<option value='$key'>".$type['title']."</option>\n";
-	}
-	$text .="</select>\n
-	</td>
-	</tr>
-
-    	<tr>
-	<td style='width:50%' class='forumheader3'>
-	".LINKLAN_7."<br />
-	</td>
-	<td class='forumheader3' style='width:50%;text-align:center'>
-	<select name='sublink_parent' class='tbox'>\n
-	<option value=''></option>";
-    $sql -> db_Select("links", "*", "link_parent='0' ORDER BY link_name ASC");
-	while($row = $sql-> db_Fetch()){
-		$text .= "<option value='".$row['link_id']."'>".$row['link_name']."</option>\n";
-	}
-	$text .="</select>\n
-	</td>
-	</tr>
-
-	<tr style='vertical-align:top'>
-	<td colspan='2' style='text-align:center' class='forumheader'>
-	<input class='button' type='submit' name='generate_sublinks' value='".LINKLAN_5."' />
-	</td>
-	</tr>
-
-	</table>
-	</form>
-	</div>";
-	$ns->tablerender(LINKLAN_4, $text);
-}
-
-
-
-function sublink_list($name="")
-{
-    global $sql,$PLUGINS_DIRECTORY;
-	$sublink_type['news']['title'] = LINKLAN_8; // "News Categories";
-	$sublink_type['news']['table'] = "news_category";
-	$sublink_type['news']['query'] = "category_id !='-2' ORDER BY category_name ASC";
-	$sublink_type['news']['url'] = "news.php?cat.#";
-	$sublink_type['news']['fieldid'] = "category_id";
-	$sublink_type['news']['fieldname'] = "category_name";
-	$sublink_type['news']['fieldicon'] = "category_icon";
-
-	$sublink_type['downloads']['title'] = LINKLAN_9; //"Download Categories";
-	$sublink_type['downloads']['table'] = "download_category";
-	$sublink_type['downloads']['query'] = "download_category_parent ='0' ORDER BY download_category_name ASC";
-	$sublink_type['downloads']['url'] =   "download.php?list.#";
-	$sublink_type['downloads']['fieldid'] = "download_category_id";
-	$sublink_type['downloads']['fieldname'] = "download_category_name";
-	$sublink_type['downloads']['fieldicon'] = "download_category_icon";
-
-
-	if ($sql -> db_Select("plugin", "plugin_path", "plugin_installflag = '1'"))
-	{
-		while ($row = $sql -> db_Fetch())
+		foreach ($search[$parent_id] as $id => $title)
 		{
-			$sublink_plugs[] = $row['plugin_path'];
+			$src[$id] = str_repeat($strpad, $level).($level != 0 ? '-&nbsp;' : '').$title;
+			$this->_parent_select_array($id, $search, $src, $strpad, $level + 1);
 		}
 	}
 
-	foreach ($sublink_plugs as $plugin_id)
+	function _has_parent($link_id, $parent_id, $cats)
 	{
-		if (is_readable(e_PLUGIN.$plugin_id.'/e_linkgen.php'))
-		{
-		  	require_once(e_PLUGIN.$plugin_id.'/e_linkgen.php');
-		}
+		$path = array();
+		$this->_parents($link_id, $cats, $path, false);
+		return in_array($parent_id, $path);
 	}
-    if($name){
-    	return $sublink_type[$name];
-	}
-
-	return $sublink_type;
-
-}
-
-function prepOpts($aData)
-{
-//
-// Prepare an array that can rapidly (no looping)
-// generate an HTML option string, with one item possibly selected.
-// prepOpts returns a prepared array containing the possible values in this form:
-//
-// <option value="xxxxx"
-// >text for first</option><option value="yyyy"
-// >text for next</option>
-//
-// $aData is an array containing value/text pairs:
-// each entry is array( 'val'=>value, 'txt'=>text )
-//
-
-	$i=0;
-	foreach($aData as $aVal)
+	
+	/**
+	 * New core feature - triggered before values are rendered
+	 */
+	function renderValueTrigger(&$field, &$value, &$params, $id)
 	{
-		$sVal = $aVal['val'];
-		$sTxt = $aVal['txt'];
-		$sOut="";
-
-		if ($i) $sOut = '>'.$sTxtPrev.'</option>';
-		$sOut .= '<option value="'.$sVal.'"';
-
-		$aPrep[$i++] = $sOut;
-		$sTxtPrev = $sTxt;
+		if($field !== 'link_name') return;
+		$tree = $this->getController()->getTreeModel();
+		// notify we need modified tree
+		$tree->modify = true;
+		
+		//retrieve array of data models
+		$data = $tree->getTree();
+		// retrieve the propper model by id
+		$model = varset($data[$id]);
+		
+		if(!$model) return;
+		
+		// Add indent as 'pre' parameter
+		$params['pre'] = $model->get('link_indent');
 	}
-	if ($i)
-	{  // terminate final option
-		$aPrep[$i] = '>'.$sTxtPrev.'</option>';
-	}
 
-	return $aPrep;
-}
-
-function genOpts($aPrep, $aTest,$sSelected, $sId)
-{
-//
-// Generate an HTML option string, with one item possibly selected.
-// aGen is a prepared array containing the possible values in this form.
-// if sSelected matches an aTest entry, that entry is selected.
-// aTest can be any array that matches one-for-one with the options
-//
-// if $sId is nonblank, a global search/replace is done to change all "|||" to $sId.
-
-  $iKey = array_search( $sSelected, $aTest);
-  if ($iKey !== FALSE) {
-  	$aNew = $aPrep;
-  	$aNew[$iKey] .= " selected='selected'";
-  	$sOut = implode($aNew);
-  }
-  else {
-		$sOut = implode($aPrep);
-	}
-	if (strlen($sId)) $sOut = str_replace("|||",$sId,$sOut);
-	return $sOut;
-}
-
-
-}
-
-function links_adminmenu()
-{
-	global $action;
-	if ($action == "")
+	/**
+	 * Override Create list view
+	 *
+	 * @return string
+	 */
+	public function getList($ajax = false)
 	{
-		$action = "main";
+		$tp = e107::getParser();
+		$controller = $this->getController();
+
+		$request = $controller->getRequest();
+		$id = $this->getElementId();
+		$tree = $options = array();
+		$tree[$id] = clone $controller->getTreeModel();
+		$tree[$id]->modify = true;
+		
+		// if going through confirm screen - no JS confirm
+		$controller->setFieldAttr('options', 'noConfirm', $controller->deleteConfirmScreen);
+
+		$options[$id] = array(
+			'id' => $this->getElementId(), // unique string used for building element ids, REQUIRED
+			'pid' => $controller->getPrimaryName(), // primary field name, REQUIRED
+			//'url' => e_SELF, default
+			//'query' => $request->buildQueryString(array(), true, 'ajax_used'), - ajax_used is now removed from QUERY_STRING - class2
+			'head_query' => $request->buildQueryString('field=[FIELD]&asc=[ASC]&from=[FROM]', false), // without field, asc and from vars, REQUIRED
+			'np_query' => $request->buildQueryString(array(), false, 'from'), // without from var, REQUIRED for next/prev functionality
+			'legend' => $controller->getPluginTitle(), // hidden by default
+			'form_pre' => !$ajax ? $this->renderFilter($tp->post_toForm(array($controller->getQuery('searchquery'), $controller->getQuery('filter_options'))), $controller->getMode().'/'.$controller->getAction()) : '', // needs to be visible when a search returns nothing
+			'form_post' => '', // markup to be added after closing form element
+			'fields' => $controller->getFields(), // see e_admin_ui::$fields
+			'fieldpref' => $controller->getFieldPref(), // see e_admin_ui::$fieldpref
+			'table_pre' => '', // markup to be added before opening table element
+			'table_post' => !$tree[$id]->isEmpty() ? $this->renderBatch($controller->getBatchDelete(),$controller->getBatchCopy()) : '',
+			'fieldset_pre' => '', // markup to be added before opening fieldset element
+			'fieldset_post' => '', // markup to be added after closing fieldset element
+			'perPage' => $controller->getPerPage(), // if 0 - no next/prev navigation
+			'from' => $controller->getQuery('from', 0), // current page, default 0
+			'field' => $controller->getQuery('field'), //current order field name, default - primary field
+			'asc' => $controller->getQuery('asc', 'desc'), //current 'order by' rule, default 'asc'
+		);
+		//$tree[$id]->modify = false;
+		return $this->renderListForm($options, $tree, $ajax);
 	}
-	$var['main']['text'] = LCLAN_62;
-	$var['main']['link'] = e_SELF;
-
-	$var['create']['text'] = LCLAN_63;
-	$var['create']['link'] = e_SELF."?create";
-
-	$var['opt']['text'] = LAN_OPTIONS;
-	$var['opt']['link'] = e_SELF."?opt";
-
-	$var['sublinks']['text'] = LINKLAN_4;
-	$var['sublinks']['link'] = e_SELF."?sublinks";
-
-//	$var['debug']['text'] = "List DB";
-//	$var['debug']['link'] = e_SELF."?debug";
-
-	show_admin_menu(LCLAN_68, $action, $var);
 }
+
+new links_admin();
+
+
+require_once(e_ADMIN."auth.php");
+
+e107::getAdminUI()->runPage();
+// TODO Link Preview. (similar to userclass preview)
+/*
+echo "<h2>Preview (To-Do)</h2>";
+echo $tp->parseTemplate("{SITELINKS_ALT}");
+*/
+require_once(e_ADMIN."footer.php");
+exit;
+
+
+
+
+
+
 
 ?>

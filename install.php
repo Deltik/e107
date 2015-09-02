@@ -1,69 +1,95 @@
 <?php
-/**
- * e107 website system
- * 
- * Copyright (C) e107 Inc (e107.org)
- * 
- * Released under the terms and conditions of the
- * GNU General Public License (http://gnu.org).
- * 
- * $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/install_.php $
- * $Id: install_.php 12938 2012-08-10 03:57:15Z e107coders $
- */
+/*
+* e107 website system
+*
+* Copyright (C) 2008-2012 e107 Inc (e107.org)
+* Released under the terms and conditions of the
+* GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+*
+* e107 v2.x Installation file
+*
+*/
 
-define('MAKE_INSTALL_LOG', false);  # Set this to 'true' if you want a log file to be created during the installation process
+// minimal software version
+define('MIN_PHP_VERSION',   '5.3');
+define('MIN_MYSQL_VERSION', '4.1.2');
+define('MAKE_INSTALL_LOG', false);
 
-#
-# Default Options and Paths for Installer
-#
+// ensure CHARSET is UTF-8 if used
+//define('CHARSET', 'utf-8');
 
-$e107_paths['MySQLPrefix']	        = 'e107_';
-$e107_paths['ADMIN_DIRECTORY']     = 'e107_admin/';
-$e107_paths['FILES_DIRECTORY']     = 'e107_files/';
-$e107_paths['IMAGES_DIRECTORY']    = 'e107_images/';
-$e107_paths['THEMES_DIRECTORY']    = 'e107_themes/';
-$e107_paths['PLUGINS_DIRECTORY']   = 'e107_plugins/';
-$e107_paths['HANDLERS_DIRECTORY']  = 'e107_handlers/';
-$e107_paths['LANGUAGES_DIRECTORY'] = 'e107_languages/';
-$e107_paths['HELP_DIRECTORY']      = 'e107_docs/help/';
-$e107_paths['DOWNLOADS_DIRECTORY'] = 'e107_files/downloads/';
+/* Default Options and Paths for Installer */
+$MySQLprefix	     = 'e107_';
+$HANDLERS_DIRECTORY  = "e107_handlers/"; // needed for e107 class init
 
-#
-# --- End of configurable variables ---
-#
+define("e107_INIT", TRUE);
+require_once("e107_admin/ver.php");
 
-define('e107_INIT',  TRUE);
-define('e_UC_ADMIN', 254);
-define('MIN_MYSQL_UTF8_VERSION', '4.1.2');
+define("e_VERSION", $e107info['e107_version']);
 
-error_reporting(0);
+/*define("e_UC_PUBLIC", 0);
+define("e_UC_MAINADMIN", 250);
+define("e_UC_READONLY", 251);
+define("e_UC_GUEST", 252);
+define("e_UC_MEMBER", 253);
+define("e_UC_ADMIN", 254);
+define("e_UC_NOBODY", 255);*/
 
-if (!function_exists('file_get_contents'))  die('e107 requires PHP 4.3 or greater to work correctly.');
-if (!function_exists('mysql_connect'))      die('e107 requires PHP to be installed or compiled with the MySQL extension to work correctly, please see the MySQL manual for more information.');
+define("E107_INSTALL",TRUE);
+
+if($_SERVER['QUERY_STRING'] != "debug")
+{
+	error_reporting(0); // suppress all errors unless debugging. 
+}
+else
+{
+	error_reporting(E_ALL);	
+}
+
+//error_reporting(E_ALL);
 
 function e107_ini_set($var, $value)
 {
-	if (function_exists('ini_set'))  ini_set($var, $value);
+	if (function_exists('ini_set'))
+	{
+		ini_set($var, $value);
+	}
 }
 
-# Setup some PHP options
-e107_ini_set('magic_quotes_sybase',      0);
+// setup some php options
 e107_ini_set('magic_quotes_runtime',     0);
+e107_ini_set('magic_quotes_sybase',      0);
 e107_ini_set('arg_separator.output',     '&amp;');
-e107_ini_set('session.use_trans_sid',    0);
 e107_ini_set('session.use_only_cookies', 1);
+e107_ini_set('session.use_trans_sid',    0);
 
-
-# Ensure that '.' is the first part of the include path
-$inc_path = explode(PATH_SEPARATOR, ini_get('include_path'));
-if ($inc_path[0] != '.')
+if (function_exists('date_default_timezone_set'))
 {
-	array_unshift($inc_path, '.');
+	date_default_timezone_set('UTC');
+}
+
+define('MAGIC_QUOTES_GPC', (ini_get('magic_quotes_gpc') ? true : false));
+
+$php_version = phpversion();
+if(version_compare($php_version, MIN_PHP_VERSION, "<"))
+{
+	die_fatal_error('A minimum version of PHP '.MIN_PHP_VERSION.' is required');
+}
+
+//  Ensure that '.' is the first part of the include path
+$inc_path = explode(PATH_SEPARATOR, ini_get('include_path'));
+if($inc_path[0] != ".")
+{
+	array_unshift($inc_path, ".");
 	$inc_path = implode(PATH_SEPARATOR, $inc_path);
-	e107_ini_set('include_path', $inc_path);
+	e107_ini_set("include_path", $inc_path);
 }
 unset($inc_path);
 
+if(!function_exists("mysql_connect")) //FIXME Adjust this once PDO is fully functional. 
+{
+	die_fatal_error("e107 requires PHP to be installed or compiled with the MySQL extension to work correctly, please see the MySQL manual for more information.");
+}
 
 # Check for the realpath(). Some hosts (I'm looking at you, Awardspace) are totally dumb and
 # they think that disabling realpath() will somehow (I'm assuming) help improve their pathetic
@@ -71,1173 +97,1099 @@ unset($inc_path);
 # checks. So, we refuse to work with these people.
 $functions_ok = true;
 $disabled_functions = ini_get('disable_functions');
-
 if (trim($disabled_functions) != '')
 {
 	$disabled_functions = explode( ',', $disabled_functions );
-	
-	foreach ($disabled_functions as $function)  if (trim($function) == 'realpath')  $functions_ok = false;
-}
-
-if (false === $functions_ok || false === function_exists('realpath'))
-{
-	die('e107 requires the realpath() function to be enabled and your host appears to have disabled it. This function is required for some <b>important</b> security checks and <b>There is NO workaround</b>. Please contact your host for more information.');
-}
-
-if (!function_exists('print_a'))
-{
-	function print_a($var)
+	foreach ($disabled_functions as $function)
 	{
-		return '<pre>'.htmlentities(print_r($var, true), null, 'UTF-8').'</pre>';
+		if(trim($function) == "realpath")
+		{
+			$functions_ok = false;
+		}
 	}
 }
+if($functions_ok == true && function_exists("realpath") == false)
+{
+	$functions_ok = false;
+}
+if($functions_ok == false)
+{
+	die_fatal_error("e107 requires the realpath() function to be enabled and your host appears to have disabled it. This function is required for some <b>important</b> security checks and there is <b>NO workaround</b>. Please contact your host for more information.");
+}
 
-if (!isset($_POST['stage']))  $_POST['stage'] = 1;
+//obsolete $installer_folder_name = 'e107_install';
+include_once("./{$HANDLERS_DIRECTORY}core_functions.php");
+include_once("./{$HANDLERS_DIRECTORY}e107_class.php");
+
+function check_class($whatever='')
+{
+	return true;
+}
+
+$override = array();
+
+if(isset($_POST['previous_steps']))
+{
+	$tmp = unserialize(base64_decode($_POST['previous_steps']));
+	$override = (isset($tmp['paths']['hash'])) ? array('site_path'=>$tmp['paths']['hash']) : array();
+	unset($tmp);
+}
+
+//$e107_paths = compact('ADMIN_DIRECTORY', 'FILES_DIRECTORY', 'IMAGES_DIRECTORY', 'THEMES_DIRECTORY', 'PLUGINS_DIRECTORY', 'HANDLERS_DIRECTORY', 'LANGUAGES_DIRECTORY', 'HELP_DIRECTORY', 'CACHE_DIRECTORY', 'DOWNLOADS_DIRECTORY', 'UPLOADS_DIRECTORY', 'MEDIA_DIRECTORY', 'LOGS_DIRECTORY', 'SYSTEM_DIRECTORY', 'CORE_DIRECTORY');
+$e107_paths = array();
+$e107 = e107::getInstance();
+$ebase = realpath(dirname(__FILE__));
+if($e107->initInstall($e107_paths, $ebase, $override)===false)
+{
+	die_fatal_error("Error creating the following empty file: <b>".$ebase.DIRECTORY_SEPARATOR."e107_config.php</b><br />Please create it manually and then run the installation again.");
+}
+	
+unset($e107_paths,$override,$ebase);
+
+
+
+### NEW Register Autoload - do it asap
+if(!function_exists('spl_autoload_register'))
+{
+	// PHP >= 5.1.2 required
+	die_fatal_error('Fatal exception - spl_autoload_* required.');
+}
+
+// register core autoload
+e107::autoload_register(array('e107', 'autoload'));
+
+// NEW - session handler
+require_once(e_HANDLER.'session_handler.php');
+define('e_SECURITY_LEVEL', e_session::SECURITY_LEVEL_NONE);
+define('e_COOKIE', 'e107install');
+e107::getSession(); // starts session, creates default namespace
+// session_start();
+
+function include_lan($path, $force = false)
+{
+	return e107::includeLan($path, $force);
+}
+//obsolete $e107->e107_dirs['INSTALLER'] = "{$installer_folder_name}/";
+
+if(isset($_GET['create_tables']))
+{
+	create_tables_unattended();
+	exit;
+}
 
 header('Content-type: text/html; charset=utf-8');
 
-$e_install = new e_install($e107_paths);
-$e_install->run_stage(intval($_POST['stage']));
-$e_install->set_messages();
+$e_install = new e_install();
+$e_forms = new e_forms();
 
-echo $e_install->template->ParseTemplate($e_install->stage_template());
+$e_install->template->SetTag("installer_css_http", $_SERVER['PHP_SELF']."?object=stylesheet");
+//obsolete $e_install->template->SetTag("installer_folder_http", e_HTTP.$installer_folder_name."/");
+$e_install->template->SetTag("files_dir_http", e_FILE_ABS);
 
-#
-#	End of installation handler		------------
-#
+$e_install->renderPage();
+
+/**
+ * Set Cookie
+ * @param string $name
+ * @param string $value
+ * @param integer $expire seconds
+ * @param string $path
+ * @param string $domain
+ * @param boolean $secure
+ * @return void
+ */
+function cookie($name, $value, $expire=0, $path = e_HTTP, $domain = '', $secure = 0)
+{
+	setcookie($name, $value, $expire, $path, $domain, $secure);
+}
 
 class e_install
 {
-	var		$e107;
-	var		$stage;
-	var		$logFile        = '';
-	var		$template;
-	var		$post_data      = array();
-	var		$debug_info     = '';
-	var		$required_php   = '4.3';
-	var		$previous_steps = array();
-	var 	$required_field;
-	
-	var	$_error         = '';
-	var	$_messages      = array('error'=>array(), 'info'=>array(), 'debug'=>array());
-	var	$_mark_required = false;
-	var	$_prefix_accept = false;
-	
-	
-	public function __construct($e107_paths)
+	var $paths;
+	var $template;
+	var $debug_info;
+	var $debug_db_info;
+	var $e107;
+	var $previous_steps;
+	var $stage;
+	var $post_data;
+	var $required = ""; 		//TODO - use for highlighting required fields with css/js.
+	var $logFile;			// Name of log file, empty string if logging disabled
+	var	$dbLink = NULL;		// DB link - needed for PHP5.3 bug
+	var $session = null;
+
+	//	public function __construct()
+	function e_install()
 	{
-		include_once "./{$e107_paths['HANDLERS_DIRECTORY']}e107_class.php";
+		// notice removal, required from various core routines
+		define('USERID', 1);
+		define('USER', true);
+		define('ADMIN', true);
+
+		$tp = e107::getParser();
 		
+		// session instance
+		$this->session = e107::getSession();
+
+		$this->logFile = '';
+		if (MAKE_INSTALL_LOG)
+		{
+			if(is_writable(dirname(__FILE__)))
+			{
+				$this->logFile = dirname(__FILE__).'/e107InstallLog.log';
+			}
+		}
+		// $this->logLine('Query string: ');
+		$this->template = new SimpleTemplate();
 		while (@ob_end_clean());
-		
-		if (MAKE_INSTALL_LOG)  $this->logFile = dirname(__FILE__).'/e107InstallLog.log';
-		
-		if (isset($_POST['previous_steps']))
+		global $e107;
+		$this->e107 = $e107;
+		if(isset($_POST['previous_steps']))
 		{
 			$this->previous_steps = unserialize(base64_decode($_POST['previous_steps']));
+			$this->previous_steps = $tp->toDB($this->previous_steps);
 			unset($_POST['previous_steps']);
 		}
-		
-		$this->e107      = new e107($e107_paths, realpath(dirname(__FILE__)));
-		$this->template  = new SimpleTemplate();
-		$this->post_data = $_POST;
-		
-		$e107info = array();
-		include_once "./{$e107_paths['ADMIN_DIRECTORY']}ver.php";
-		
-		//$this->e107->e107_dirs['INSTALLER'] = $install_folder.'/';
-		$this->template->SetTag('files_dir_http',        e_FILE_ABS);
-		$this->template->SetTag('image_dir_http',        e_FILE_ABS.'install/images/');
-		$this->template->SetTag('app_version',       	 $e107info['e107_version']);
-		//$this->template->SetTag('installer_css_http',    $_SERVER['PHP_SELF'].'?object=stylesheet');
-		//$this->template->SetTag('installer_folder_http', e_HTTP.$install_folder.'/');
-		
-		$this->required_field = '<span class="rfield">*&nbsp;</span>';
-	}
-	
-	public function e_install($e107_paths)
-	{	# PHP 4 compat
-		$this->__construct($e107_paths);
-	}
-	
-	public function run_stage($stage)
-	{
-		$stage = 'stage_'.$stage;
-		
-		if (!method_exists($this, $stage))  $stage='stage_invalid';
-		
-		$this->$stage();
-	}
-	
-	public function stage_1()
-	{
-		$this->stage = 1;
+		else
+		{
+			$this->previous_steps = array();
+		}
 		$this->get_lan_file();
-//		$this->logLine("\n".LANINS_002.' '.LANINS_003.' [ '.LANINS_004.' ]: --- '.LANINS_109.' ---');
-		
-		# Prepare HTML
-		$this->set_message(LANINS_005);
-		$html =			'<form method="post" id="language_select" action="'.$_SERVER['PHP_SELF'].('debug' == $_SERVER['QUERY_STRING'] ? '?debug' : '').'">
-							<table>
-								<colgroup>
-									<col style="width: 50%;" />
-									<col style="width: 50%;" />
-								</colgroup>
-								<tbody>
-									<tr>
-										<td class="stage right v-mid">
-											'.LANINS_004.'
-										</td>
-										<td class="stage">
-											<select name="language" id="language" class="tbox focusme">';
-		foreach ($this->get_languages() as $v)  $html.= '
-												<option value="'.$v.'"'.('English' == $v ? ' selected="selected"' : '').'>'.$v.'&nbsp;</option>';
-		$html.= '
-											</select>
-										</td>
-									</tr>
-								</tbody>
-							</table>
-							<div class="navigation">
-								<input type="hidden" name="stage" value="'.($this->stage+1).'" />'.(!$this->previous_steps ? '' : '
-								<input type="hidden" name="previous_steps" value="'.base64_encode(serialize($this->previous_steps)).'" />').'
-								<input type="submit" id="submit" class="button" value="'.LANINS_006.'" />
-							</div>
-						</form>';
-		
-		# Set contents
-		$this->template->SetTag('installation_heading', sprintf(LANINS_001, $this->template->getTag('app_version')));
-		$this->template->SetTag('stage_num',            LANINS_003);
-		$this->template->SetTag('stage',            	$this->stage);
-		$this->template->SetTag('stage_step',           sprintf(LANINS_002a, LANINS_003));
-		$this->template->SetTag('stage_title',          LANINS_004);
-		$this->template->SetTag('static_title',         LANINS_004b);
-		$this->template->SetTag('stage_content',        $html);
+		$this->post_data = $tp->toDB($_POST);
+
+
+
+		$this->template->SetTag('required', '');
+		if(isset($this->previous_steps['language']))
+		{
+			define("e_LANGUAGE", $this->previous_steps['language']);
+			include_lan(e_LANGUAGEDIR.e_LANGUAGE."/".e_LANGUAGE.".php");
+			include_lan(e_LANGUAGEDIR.e_LANGUAGE."/admin/lan_admin.php");
+		}
 	}
-	
-	public function stage_2()
+
+	/**
+	 *	Write a line of text to the log file (if enabled) - prepend time/date, append \n
+	 *	Can always call this routine - it will return if logging disabled
+	 *
+	 *	@param	string $logLine - text to log
+	 *	@return none
+	 */
+	protected function logLine($logLine)
 	{
-		$this->stage = 2;
+		if (!MAKE_INSTALL_LOG || ($this->logFile == '')) return;
+		$logfp = fopen($this->logFile, 'a+');
+		fwrite($logfp, ($now = time()).', '.gmstrftime('%y-%m-%d %H:%M:%S',$now).'  '.$logLine."\n");
+		fclose($logfp);
+	}
+
+
+
+	function add_button($id, $title='', $align = "right", $type = "submit")
+	{
+
+		global $e_forms;
+
+		$e_forms->form .= "<div class='buttons-bar inline' style='text-align: {$align}; z-index: 10;'>";
+		if($id != 'start')
+		{
+			//		$this->form .= "<a class='btn btn-large ' href='javascript:history.go(-1)'>&laquo; ".LAN_BACK."</a>&nbsp;";
+			$prevStage = ($this->stage - 1);
+			$e_forms->form .= "<button class='btn btn-default btn-large no-validate ' name='back' value='".$prevStage."' type='submit'>&laquo; ".LAN_BACK."</button>&nbsp;";
+		}
+		if($id != 'back')
+		{
+			$e_forms->form .= "<input type='{$type}' id='{$id}' name='{$id}' value='{$title} &raquo;' class='btn btn-large btn-primary' />";
+		}
+		$e_forms->form .= "</div>\n";
+	}
+
+	function renderPage()
+	{
+		if(!isset($_POST['stage']))
+		{
+			$_POST['stage'] = 1;
+		}
+		$_POST['stage'] = intval($_POST['stage']);
+
+		if(!empty($_POST['back']))
+		{
+			$_POST['stage'] = intval($_POST['back']);
+		}
+
+		switch ($_POST['stage'])
+		{
+			case 1:
+				$this->stage_1();
+				break;
+			case 2:
+				$this->stage_2();
+				break;
+			case 3:
+				$this->stage_3();
+				break;
+			case 4:
+				$this->stage_4();
+				break;
+			case 5:
+				$this->stage_5();
+				break;
+			case 6:
+				$this->stage_6();
+				break;
+			case 7:
+				$this->stage_7();
+				break;
+			case 8:
+				$this->stage_8();
+				break;
+			default:
+				$this->raise_error("Install stage information from client makes no sense to me.");
+		}
+
+		if($_SERVER['QUERY_STRING'] == "debug")
+		{
+			$this->template->SetTag("debug_info", print_a($this->previous_steps,TRUE));
+		}
+		else
+		{
+			$this->template->SetTag("debug_info", (count($this->debug_info) ? print_a($this->debug_info,TRUE)."Backtrace:<br />".print_a($this,TRUE) : ""));
+		}
+
+		echo $this->template->ParseTemplate(template_data(), TEMPLATE_TYPE_DATA);
+	}
+
+	function raise_error($details)
+	{
+		$this->debug_info[] = array (
+		'info' => array (
+			'details' => $details,
+			'backtrace' => debug_backtrace()
+			)
+		);
+	}
+
+	function display_required()
+	{
+		if(!$this->required)
+		{
+			return;
+		}
+		$this->required = array_filter($this->required);
+		if(vartrue($this->required))
+		{
+			$this->template->SetTag("required","<div class='message'>". implode("<br />",$this->required)."</div>");
+			$this->required = array();
+		}
+	}
+
+	private function stage_1()
+	{
+		global $e_forms;
+		$this->stage = 1;
+		$this->logLine('Stage 1 started');
+
+
 		
-		if (!$this->_error)
+		$this->template->SetTag("installation_heading", LANINS_001);
+		$this->template->SetTag("stage_pre", LANINS_002);
+		$this->template->SetTag("stage_num", LANINS_003);
+		$this->template->SetTag("stage_title", LANINS_004);
+		$this->template->SetTag("percent", 10);
+		$this->template->SetTag("bartype", 'warning');
+		
+		$e_forms->start_form("language_select", $_SERVER['PHP_SELF'].($_SERVER['QUERY_STRING'] == "debug" ? "?debug" : ""));
+		$e_forms->add_select_item("language", $this->get_languages(), "English");
+		$this->finish_form();
+		$this->add_button("start", LAN_CONTINUE);
+		$output = "
+			<div style='text-align: center;'>
+				<div class='alert alert-info alert-block text-center'>
+					<label for='language'>".LANINS_005."</label>
+				</div>\n
+				<br />\n
+				<div class='col-md-offset-4 col-md-6'>
+				".$e_forms->return_form()."
+				</div><br />
+			</div>";
+		$this->template->SetTag("stage_content", $output);
+		$this->logLine('Stage 1 completed');
+	}
+
+	private function stage_2()
+	{
+		global $e_forms;
+		$this->stage = 2;
+		$this->logLine('Stage 2 started');
+
+		if(!empty($_POST['language']))
 		{
 			$this->previous_steps['language'] = $_POST['language'];
-			$this->get_lan_file();
-//			$this->logLine("\t\t".LANINS_004a.': '.$_POST['language']."\n".LANINS_002.' '.LANINS_003.' [ '.LANINS_004.' ]: --- '.LANINS_110.' ---'."\n\n".LANINS_002.' '.LANINS_021.' [ '.LANINS_022.' ]: --- '.LANINS_109.' ---');
-			$this->set_message(nl2br(LANINS_023));
 		}
-		else
+		$this->template->SetTag("installation_heading", LANINS_001);
+		$this->template->SetTag("stage_pre", LANINS_002);
+		$this->template->SetTag("stage_num", LANINS_021);
+		$this->template->SetTag("stage_title", LANINS_022);
+		$this->template->SetTag("percent", 25);
+		$this->template->SetTag("bartype", 'warning');
+		
+		if(!isset($this->previous_steps['mysql']['createdb']))
 		{
-	//		$this->logLine("\t\t".LANINS_011.":\n\t\t\t".implode(":\n\t\t\t", $this->_messages['error']));
+			$this->previous_steps['mysql']['createdb'] = 1; // default to yes. 	
 		}
 		
-		# Prepare HTML
-		$html =			'<form method="post" id="versions" action="'.$_SERVER['PHP_SELF'].('debug' == $_SERVER['QUERY_STRING'] ? '?debug' : '').'">
-							<table>
-								<colgroup>
-									<col style="width: 20%;" />
-									<col style="width: 40%;" />
-									<col style="width: 40%;" />
-								</colgroup>
-								<tbody>
-									<tr>
-										<td class="stage">'.$this->required_field.LANINS_024.'</td>
-										<td class="stage"><input class="tbox focusme'.($this->_mark_required && !$_POST['server'] ? ' required' : '').'" id="server" name="server" size="40" value="localhost" maxlength="100" type="text" /></td>
-										<td class="stage"><div class="hint">'.LANINS_030.'</div></td>
-									</tr>
-									<tr>
-										<td class="stage">'.$this->required_field.LANINS_025.'</td>
-										<td class="stage"><input class="tbox'.($this->_mark_required && !$_POST['name'] ? ' required' : '').'" id="name" name="name"'.(isset($_POST['name']) ? 'value="'.$this->previous_steps['mysql']['user'].'"' : '').' size="40" maxlength="100" type="text" /></td>
-										<td class="stage"><div class="hint">'.LANINS_031.'</div></td>
-									</tr>
-									<tr>
-										<td class="stage">'.LANINS_026.'</td>
-										<td class="stage"><input class="tbox" id="password" name="password" size="40"'.(isset($_POST['password']) ? 'value="'.$this->previous_steps['mysql']['password'].'"' : '').' maxlength="100" type="password" /></td>
-										<td class="stage"><div class="hint">'.LANINS_032.'</div></td>
-									</tr>
-									<tr>
-										<td class="stage">'.$this->required_field.LANINS_027.'</td>
-										<td class="stage"><input class="tbox'.($this->_mark_required && !$_POST['db'] ? ' required' : '').'" name="db"'.(isset($_POST['db']) ? 'value="'.$this->previous_steps['mysql']['db'].'"' : '').' size="40" id="db" maxlength="100" type="text" /><br /><label class="defaulttext"><input name="createdb" value="1" type="checkbox" '.(isset($_POST['createdb']) && $this->previous_steps['mysql']['createdb'] ? ' checked="checked"' : '').' /> '.LANINS_028.'</label></td>
-										<td class="stage"><div class="hint">'.LANINS_033.'</div></td>
-									</tr>
-									<tr>
-										<td class="stage">'.LANINS_DB_UTF8_CAPTION.'</td>
-										<td class="stage"><label class="defaulttext"><input class="MT05" id="db_utf8" name="db_utf8" value="1" type="checkbox"'.(!isset($this->previous_steps['mysql']['db_utf8']) || true === $this->previous_steps['mysql']['db_utf8'] ? ' checked="checked"' : '').' /> '.LANINS_DB_UTF8_LABEL.'</label></td>
-										<td class="stage"><div class="hint">'.LANINS_DB_UTF8_TOOLTIP.'</div></td>
-									</tr>
-									<tr>
-										<td class="stage">'.LANINS_029.'</td>
-										<td class="stage"><input class="tbox'.($this->_mark_required && false === $this->_prefix_accept ? ' required' : '').'" name="prefix" size="40" id="prefix" value="'.(isset($_POST['prefix']) ? $this->previous_steps['mysql']['prefix'] : 'e107_').'" maxlength="100" type="text" /></td>
-										<td class="stage"><div class="hint">'.($this->_mark_required && false === $this->_prefix_accept ? LANINS_105 : LANINS_034).'</div></td>
-									</tr>
-								</tbody>
-							</table>
-							<div class="navigation">
-								<input type="hidden" name="stage" value="'.($this->stage+1).'" />'.(!$this->previous_steps ? '' : '
-								<input type="hidden" name="previous_steps" value="'.base64_encode(serialize($this->previous_steps)).'" />').'
-								<input type="submit" id="submit" class="button" value="'.LANINS_035.'" />
-							</div>
-						</form>';
-		
-		# Set contents
-		$this->template->SetTag('installation_heading', sprintf(LANINS_001, $this->template->getTag('app_version')));
-		$this->template->SetTag('stage_num',            LANINS_021);
-		$this->template->SetTag('stage',            	$this->stage);
-		$this->template->SetTag('stage_step',           sprintf(LANINS_002a, LANINS_021));
-		$this->template->SetTag('stage_title',          LANINS_022);
-		$this->template->SetTag('static_title',         LANINS_022a);
-		$this->template->SetTag('stage_content',        $html);
+		// $this->template->SetTag("onload", "document.getElementById('name').focus()");
+		// $page_info = nl2br(LANINS_023);
+		$page_info = "<div class='alert alert-block alert-info'>Please fill in the form below with your MySQL details. If you do not know this information, please contact your hosting provider. You may hover over each field for additional information.</div>";
+		$e_forms->start_form("versions", $_SERVER['PHP_SELF'].($_SERVER['QUERY_STRING'] == "debug" ? "?debug" : ""));
+		$isrequired = (($_SERVER['SERVER_ADDR'] == "127.0.0.1") || ($_SERVER['SERVER_ADDR'] == "localhost") || ($_SERVER['SERVER_ADDR'] == "::1") || preg_match('^192\.168\.\d{1,3}\.\d{1,3}$',$_SERVER['SERVER_ADDR'])) ? "" :  "required='required'"; // Deals with IP V6, and 192.168.x.x address ranges, could be improved to validate x.x to a valid IP but for this use, I dont think its required to be that picky.
+
+		$output = "
+			<div style='width: 100%; padding-left: auto; padding-right: auto;'>
+			<table class='table table-striped table-bordered' >
+				<tr>
+					<td style='border-top: 1px solid #999;'><label for='server'>".LANINS_024."</label></td>
+					<td style='border-top: 1px solid #999;'>
+						<input class='form-control input-large' type='text' id='server' name='server' autofocus size='40' value='localhost' maxlength='100' required='required' />
+						<span class='field-help'>".LANINS_030."</span>
+					</td>
+				</tr>
+				
+				<tr>
+					<td><label for='name'>".LANINS_025."</label></td>
+					<td>
+						<input class='form-control input-large' type='text' name='name' id='name' value='".varset($this->previous_steps['mysql']['user'])."' size='40' value='' maxlength='100' required='required' />
+						<span class='field-help'>".LANINS_031."</span>
+					</td>
+				</tr>
+				
+				<tr>
+					<td><label for='password'>".LANINS_026."</label></td>
+					<td>
+						<input class='form-control input-large' type='password' name='password' size='40' id='password' value='".varset($this->previous_steps['mysql']['password'])."' maxlength='100' {$isrequired}  pattern='[^\x22]+' />
+						<span class='field-help'>".LANINS_032."</span>
+					</td>
+				</tr>
+				
+				<tr>
+					<td><label for='db'>".LANINS_027."</label></td>
+					<td class='form-inline'>
+						<input class='form-control input-large' type='text' name='db' size='20' id='db' value='' maxlength='100' required='required' pattern='^[a-zA-Z0-9_-]*' />
+						<label class='checkbox-inline'><input type='checkbox' name='createdb' value='1' ".($this->previous_steps['mysql']['createdb'] ==1 ? "checked='checked'" : "")." /><small>".LANINS_028."</small></label>
+						<span class='field-help'>".LANINS_033."</span>
+					</td>
+				</tr>
+				
+				<tr>
+					<td><label for='prefix'>".LANINS_029."</label></td>
+					<td>
+						<input class='form-control input-large' type='text' name='prefix' size='20' id='prefix' value='e107_'  pattern='[a-z0-9]*_$' maxlength='100' required='required' />
+						<span class='field-help'>".LANINS_034."</span>
+					</td>
+				</tr>
+			</table>
+			<br /><br />
+			</div>
+			\n";
+			
+		$e_forms->add_plain_html($output);
+
+
+
+		$this->finish_form();
+		$this->add_button("submit", LAN_CONTINUE);
+		$this->template->SetTag("stage_content", $page_info.$e_forms->return_form());
+		$this->logLine('Stage 2 completed');
 	}
-	
-	public function stage_3()
+
+	/**
+	 *	Replace hash paths and create folders if needed.
+	 *
+	 *	@param	none
+	 *	@return none
+	 */	
+	private function updatePaths()
 	{
+		$hash = $this->e107->makeSiteHash($this->previous_steps['mysql']['db'],$this->previous_steps['mysql']['prefix']);
+		$this->e107->site_path = $hash;	
+		
+		$this->previous_steps['paths']['hash'] = $hash;
+
+		$omit = array('FILES_DIRECTORY','WEB_IMAGES_DIRECTORY');
+		
+		foreach($this->e107->e107_dirs as $dir => $p)
+		{
+			if(in_array($dir, $omit)) { continue; }	
+			
+			$this->e107->e107_dirs[$dir] = str_replace("[hash]", $hash, $this->e107->e107_dirs[$dir]);
+					
+			if(!is_dir($this->e107->e107_dirs[$dir]))
+			{
+				@mkdir($this->e107->e107_dirs[$dir]);	
+			}					
+		}
+	}
+
+	private function stage_3()
+	{
+
+		global $e_forms;
+		$success = TRUE;
 		$this->stage = 3;
-		$this->get_lan_file();
-		
-		$this->previous_steps['mysql']['db']       = trim($_POST['db']);
-		$this->previous_steps['mysql']['user']     = trim($_POST['name']);
-		$this->previous_steps['mysql']['server']   = trim($_POST['server']);
-		$this->previous_steps['mysql']['prefix']   = trim($_POST['prefix']);
-		$this->previous_steps['mysql']['db_utf8']  = (isset($_POST['db_utf8'])  && $_POST['db_utf8']  ? true : false);
-		$this->previous_steps['mysql']['createdb'] = (isset($_POST['createdb']) && $_POST['createdb'] ? true : false);
-		$this->previous_steps['mysql']['password'] = $_POST['password'];
-		
-		$success = $this->_check_name($this->previous_steps['mysql']['db']) && $this->_check_name($this->previous_steps['mysql']['prefix']) ? $this->_checkDbFields($this->previous_steps['mysql']) : false;
-		
-		if (!$success || '' == $this->previous_steps['mysql']['server'] || '' == $this->previous_steps['mysql']['db'] || '' == $this->previous_steps['mysql']['user'])
-		{	# Required fields empty - gettings back to step 2
-			$this->_error         = true;
-			$this->_mark_required = true;
-			$this->_prefix_accept = $success;
-			$this->set_message(LANINS_039, 'error');
-			
-			$this->stage_2();
-			
-			$this->template->SetTag('stage_title',      LANINS_022.' - '.LANINS_040);
-			
-			return;
+		$this->logLine('Stage 3 started');
+
+		$this->template->SetTag("installation_heading", LANINS_001);
+		$this->template->SetTag("stage_pre", LANINS_002);
+		$this->template->SetTag("stage_num", LANINS_036);
+		$this->template->SetTag("onload", "document.getElementById('name').focus()");
+		$this->template->SetTag("percent", 40);
+		$this->template->SetTag("bartype", 'warning');
+		$tp = e107::getParser();
+	
+		if(!empty($_POST['server']))
+		{
+			$this->previous_steps['mysql']['server']    = trim($tp->filter($_POST['server']));
+			$this->previous_steps['mysql']['user']      = trim($tp->filter($_POST['name']));
+			$this->previous_steps['mysql']['password']  = trim($tp->filter($_POST['password']));
+			$this->previous_steps['mysql']['db']        = trim($tp->filter($_POST['db']));
+			$this->previous_steps['mysql']['createdb']  = (isset($_POST['createdb']) && $_POST['createdb'] == true ? true : false);
+			$this->previous_steps['mysql']['prefix']    = trim($tp->filter($_POST['prefix']));
 		}
 		
-		if (!@mysql_connect($this->previous_steps['mysql']['server'], $this->previous_steps['mysql']['user'], $this->previous_steps['mysql']['password']))
-		{	# Invalid mySQL credentials
-			$this->_error         = true;
-			$this->_mark_required = true;
-			$this->_prefix_accept = true;
-			$this->set_message(LANINS_041.'<br /><br /><b>'.LANINS_083.':</b><br /><i>'.mysql_error().'</i>', 'error');
-			
-			$this->stage_2();
-			
-			$this->template->SetTag('stage_title',      LANINS_022.' - '.LANINS_040);
-			
-			return;
+		if(!empty($_POST['overwritedb']))
+		{
+			$this->previous_steps['mysql']['overwritedb'] = 1;
+		}
+					
+		$success = $this->check_name($this->previous_steps['mysql']['db'], FALSE) && $this->check_name($this->previous_steps['mysql']['prefix'], TRUE);
+		
+		if ($success)
+		{
+			$success = $this->checkDbFields($this->previous_steps['mysql']);		// Check for invalid characters
 		}
 		
-		$query = '';
-		
-		preg_match('/^(.*?)($|-)/', mysql_get_server_info(), $mysql_version);
-		
-		if (version_compare($mysql_version[1], MIN_MYSQL_UTF8_VERSION, '>='))
-		{	# Attempt to create utf8 database if requested
-			$db_utf8 = '';
-			if ($this->previous_steps['mysql']['db_utf8'])
+		if(!$success || $this->previous_steps['mysql']['server'] == "" || $this->previous_steps['mysql']['user'] == "")
+		{
+			$this->stage = 3;
+			$this->template->SetTag("stage_num", LANINS_021);
+			$e_forms->start_form("versions", $_SERVER['PHP_SELF'].($_SERVER['QUERY_STRING'] == "debug" ? "?debug" : ""));
+			$head = LANINS_039."<br /><br />\n";
+			$output = "
+			<div style='width: 100%; padding-left: auto; padding-right: auto;'>
+			<table cellspacing='0'>
+				<tr>
+					<td style='border-top: 1px solid #999;'><label for='server'>".LANINS_024."</label></td>
+					<td style='border-top: 1px solid #999;'><input class='form-control' type='text' id='server' name='server' size='40' value='{$this->previous_steps['mysql']['server']}' maxlength='100' required /></td>
+					<td style='width: 40%; border-top: 1px solid #999;'>".LANINS_030."</td>
+				</tr>
+
+				<tr>
+					<td><label for='name'>".LANINS_025."</label></td>
+					<td><input class='form-control' type='text' name='name' id='name' size='40' value='{$this->previous_steps['mysql']['user']}' maxlength='100' onload='this.focus()'  /></td>
+					<td>".LANINS_031."</td>
+				</tr>
+
+				<tr>
+					<td><label for='password'>".LANINS_026."</label></td>
+					<td><input class='form-control' type='password' name='password' id='password' size='40' value='{$this->previous_steps['mysql']['password']}' maxlength='100' /></td>
+					<td>".LANINS_032."</td>
+				</tr>
+
+				<tr>
+					<td><label for='db'>".LANINS_027."</label></td>
+					<td><input type='text' name='db' id='db' size='20' value='{$this->previous_steps['mysql']['db']}' maxlength='100' />
+						<br /><label class='defaulttext'><input type='checkbox' name='createdb'".($this->previous_steps['mysql']['createdb'] == 1 ? " checked='checked'" : "")." value='1' />".LANINS_028."</label></td>
+					<td>".LANINS_033."</td>
+				</tr>
+
+				<tr>
+					<td><label for='prefix'>".LANINS_029."</label></td>
+					<td><input type='text' name='prefix' id='prefix' size='20' value='{$this->previous_steps['mysql']['prefix']}'  maxlength='100' /></td>
+					<td>".LANINS_034."</td>
+				</tr>";
+				
+			if (!$success)
 			{
-				$db_utf8 = ' CHARACTER SET `utf8` ';
-				@mysql_query('SET NAMES `utf8`');
+				$output .= "<tr><td colspan='3'>".LANINS_105."</td></tr>";
 			}
 			
-			if ($this->previous_steps['mysql']['createdb'])
-			{	# Create new UTF-8 DB
-				$query = 'CREATE DATABASE '.$this->previous_steps['mysql']['db'].$db_utf8;
-			}
-			elseif($db_utf8)
-			{	# Set existing non-UTF-8 DB to UTF-8 charset
-				$query = 'ALTER DATABASE '.$this->previous_steps['mysql']['db'].$db_utf8;
-			}
-		}
-		else
-		{	# MySQL is not UTF-8 compatible - reset db_utf8
-			$this->previous_steps['mysql']['db_utf8'] = 0;
-			
-			if ($this->previous_steps['mysql']['createdb'] == 1)
-			{	# Create non-UTF-8 DB
-				$query = 'CREATE DATABASE '.$this->previous_steps['mysql']['db'];
-			}
-		}
-		
-		$success = (bool) ($query ? mysql_query($query) : mysql_select_db($this->previous_steps['mysql']['db']));
-		
-		if (!$success)
-		{
-			$this->_error         = true;
-			$this->_mark_required = true;
-			$this->_prefix_accept = true;
-			$this->set_message(($this->previous_steps['mysql']['createdb'] ? LANINS_043.'<br /><br />' : '').nl2br('<b>'.LANINS_083.':</b><br /><i>'.mysql_error().'</i>'), 'error');
-			
-			$this->stage_2();
-			
-			$this->template->SetTag('stage_title',      LANINS_022.' - '.LANINS_040);
-			
-			return;
-		}
-		
-	//	$this->logLine("\t\t\t".print_a($this->previous_steps['mysql'])."\n".LANINS_002.' '.LANINS_021.' [ '.LANINS_022.' ]: --- '.LANINS_110.' ---'."\n\n".LANINS_002.' '.LANINS_036.' [ '.LANINS_037.LANINS_038.' ]: --- '.LANINS_109.' ---');
-		
-		$this->set_message(LANINS_042.'<br /><br />
-						'.($this->previous_steps['mysql']['createdb'] ? LANINS_044 : LANINS_054).'<br /><br />
-						'.LANINS_045);
-		
-		$html =			'<form method="post" id="language_select" action="'.$_SERVER['PHP_SELF'].('debug' == $_SERVER['QUERY_STRING'] ? '?debug' : '').'">
-							<div class="navigation-top"><!-- --></div>
-							<div class="navigation">
-								<input type="hidden" name="stage" value="'.($this->stage+1).'" />'.(!$this->previous_steps ? '' : '
-								<input type="hidden" name="previous_steps" value="'.base64_encode(serialize($this->previous_steps)).'" />').'
-								<input type="submit" class="button" value="'.LANINS_035.'" />
-							</div>
-						</form>';
-		
-		# Set contents
-		$this->template->SetTag('installation_heading', sprintf(LANINS_001, $this->template->getTag('app_version')));
-		$this->template->SetTag('stage_num',            LANINS_036);
-		$this->template->SetTag('stage',            	$this->stage);
-		$this->template->SetTag('stage_step',           sprintf(LANINS_002a, LANINS_036));
-		$this->template->SetTag('stage_title',          LANINS_037.(isset($this->previous_steps['mysql']['createdb']) && $this->previous_steps['mysql']['createdb'] ? LANINS_038 : ''));
-		$this->template->SetTag('static_title',         LANINS_038a);
-		$this->template->SetTag('stage_content',        $html);
-	}
-	
-	public function stage_4()
-	{
-		$this->stage = 4;
-		$this->get_lan_file();
-		
-		if (!isset($_POST['retest_perms']))  $this->logLine("\n".LANINS_002.' '.LANINS_036.' [ '.LANINS_037.LANINS_038.' ]: --- '.LANINS_110.' ---'."\n\n".LANINS_002.' '.LANINS_007.' [ '.LANINS_008.' ]: --- '.LANINS_109.' ---');
-		else                                 $this->logLine("\n\t\t".LANINS_009);
-		
-		$version_fail = false;
-		$perms_errors = array();
-		$not_writable = $this->_check_writable_perms('must_write');	# Some directories MUST be writable
-		$opt_writable = $this->_check_writable_perms('can_write');	# Some directories CAN optionally be writable
-		
-		if ($not_writable)
-		{
-			$perms_pass   = false;
-			$perms_notes  = '<div class="error">'.LANINS_018.'</div>';
-			foreach ($not_writable as $file)  $perms_errors[] = (substr($file, -1) == '/' ? LANINS_010a : LANINS_010).'<br /><b>'.$file.'</b>';
-		}
-		elseif ($opt_writable)
-		{
-			$perms_pass   = true;
-			$perms_notes  = '<div class="warning">'.LANINS_106.'</div>';
-			foreach ($opt_writable as $file)  $perms_errors[] = (substr($file, -1) == '/' ? LANINS_010a : LANINS_010).'<br /><b>'.$file.'</b>';
-		}
-		elseif (filesize('e107_config.php') > 1)
-		{	# Must start from an empty e107_config.php
-			$perms_pass   = false;
-			$perms_notes  = '<div class="error">'.LANINS_122.'</div>';
-			$perms_errors = '<div class="error-text">'.LANINS_121.'</div>';
+			$output .= "
+			</table>
+			<br /><br />
+			</div>
+			\n";
+			$e_forms->add_plain_html($output);
+			$this->add_button("submit", LAN_CONTINUE);
+			$this->template->SetTag("stage_title", LANINS_040);
 		}
 		else
 		{
-			$perms_pass   = true;
-			$perms_notes  = '<div class="success">'.LANINS_017.'</div>';
-			$perms_errors = LANINS_104;
-		}
-		
-		if (!function_exists('mysql_connect'))
-		{
-			$version_fail = true;
-			$mysql_note   = '<div class="error-text">'.LANINS_011.'</div>';
-			$mysql_help   = '<div class="error">'.LANINS_012.'</div>';
-		}
-		elseif (!@mysql_connect($this->previous_steps['mysql']['server'], $this->previous_steps['mysql']['user'], $this->previous_steps['mysql']['password']))
-		{
-			$mysql_note   = '<div class="error-text">'.LANINS_011.'</div>';
-			$mysql_help   = '<div class="error">'.LANINS_013.'</div>';
-		}
-		else
-		{
-			$mysql_note   = mysql_get_server_info();
-			$mysql_help   = '<div class="success">'.LANINS_017.'</div>';
-		}
-		
-		if (is_array($perms_errors))  $perms_errors = '<div class="error-text">'.implode($perms_errors).'</div>';
-		
-		$xml_installed    = function_exists('utf8_encode');
-		$php_version      = phpversion();
-		$php_help         = version_compare($php_version, $this->required_php, '>=') ? '<div class="success">'.LANINS_017.'</div>' : '<div class="error">'.LANINS_019.'</div>';
-		
-//		if (!$perms_pass)     $this->logLine("\n\t\t".LANINS_011.': '.$perms_errors);
-//		if ($version_fail)    $this->logLine("\n\t\t".LANINS_011.': '.$mysql_help);
-//		if (!$xml_installed)  $this->logLine("\n\t\t".LANINS_011.': '.LANINS_053);
-		
-		$html             =
-						'<form method="post" id="versions" action="'.$_SERVER['PHP_SELF'].('debug' == $_SERVER['QUERY_STRING'] ? '?debug' : '').'">
-							<table>
-								<tbody>
-									<colgroup>
-										<col style="width: 20%;" />
-										<col style="width: 40%;" />
-										<col style="width: 40%;" />
-									</colgroup>
-									<tr>
-										<td class="stage v-mid">'.LANINS_014.':</td>
-										<td class="stage v-mid">'.$perms_errors.'</td>
-										<td class="stage v-mid">'.$perms_notes.'</td>
-									</tr>
-									<tr>
-										<td class="stage v-mid">'.LANINS_015.':</td>
-										<td class="stage v-mid">'.$php_version.'</td>
-										<td class="stage v-mid">'.$php_help.'</td>
-									</tr>
-									<tr>
-										<td class="stage v-mid">'.LANINS_016.':</td>
-										<td class="stage v-mid">'.$mysql_note.'</td>
-										<td class="stage v-mid">'.$mysql_help.'</td>
-									</tr>
-									<tr>
-										<td class="stage v-mid">'.LANINS_050.':</td>
-										<td class="stage v-mid">'.($xml_installed ? LANINS_051 : '<div class="error-text">'.LANINS_052.'</div>').'</td>
-										<td class="stage v-mid"><div class="'.($xml_installed ? 'success">'.LANINS_017 : 'error">'.LANINS_053).'</div></td>
-									</tr>
-								</tbody>
-							</table>
-							<div class="navigation">
-								<input type="hidden" name="stage" value="'.($perms_pass ? $this->stage+1 : $this->stage).'" />'.(!$this->previous_steps ? '' : '
-								<input type="hidden" name="previous_steps" value="'.base64_encode(serialize($this->previous_steps)).'" />').''.($perms_pass && !$version_fail && $xml_installed ? '
-								<input type="submit" name="continue_install" class="button" value="'.LANINS_020.'" />' : '
-								<input type="submit" name="retest_perms" class="button" value="'.LANINS_009.'" />').'
-							</div>
-						</form>';
-		
-		# Set contents
-		$this->template->SetTag('installation_heading', sprintf(LANINS_001, $this->template->getTag('app_version')));
-		$this->template->SetTag('stage_num',            LANINS_007);
-		$this->template->SetTag('stage',            	$this->stage);
-		$this->template->SetTag('stage_step',           sprintf(LANINS_002a, LANINS_007));
-		$this->template->SetTag('stage_title',          LANINS_008);
-		$this->template->SetTag('static_title',         LANINS_008a);
-		$this->template->SetTag('stage_content',        $html);
-	}
-	
-	public function stage_5()
-	{
-		$this->stage = 5;
-		$this->get_lan_file();
-		
-		if (!$this->_error)  $this->logLine("\n".LANINS_002.' '.LANINS_007.' [ '.LANINS_008.' ]: --- '.LANINS_110.' ---'."\n\n".LANINS_002.' '.LANINS_046.' [ '.LANINS_047.' ]: --- '.LANINS_109.' ---');
-		else                 { $this->logLine("\n\t\t".LANINS_011.": \n\t\t\t".implode("\n\t\t\t", $this->_messages['error'])); $this->_mark_required = true; } 
-		
-		$html =			'<form method="post" id="admin_info" action="'.$_SERVER['PHP_SELF'].('debug' == $_SERVER['QUERY_STRING'] ? '?debug' : '').'">
-							<table cellspacing="0">
-								<tbody>
-									<colgroup>
-										<col style="width: 25%;" />
-										<col style="width: 25%;" />
-										<col style="width: 50%;" />
-									</colgroup>
-									<tr>
-										<td class="stage"><label for="u_name">'.$this->required_field.LANINS_072.'</label></td>
-										<td class="stage"><input class="tbox'.($this->_mark_required && !$_POST['u_name'] ? ' focusme required' : '').'" name="u_name" id="u_name" size="30" value="'.(isset($_POST['u_name']) ? $this->previous_steps['admin']['user'] : 'admin').'" maxlength="60" type="text" /></td>
-										<td class="stage">'.LANINS_073.'</td>
-									</tr>
-									<tr>
-										<td class="stage"><label for="d_name">'.$this->required_field.LANINS_074.'</label></td>
-										<td class="stage"><input class="tbox'.($this->_mark_required && !$_POST['d_name'] ? ' required' : '').'" name="d_name" id="d_name" size="30" value="'.(isset($_POST['d_name']) ? $this->previous_steps['admin']['display'] : 'Administrator').'" maxlength="60" type="text" /></td>
-										<td class="stage">'.LANINS_075.'</td>
-									</tr>
-									<tr>
-										<td class="stage"><label for="pass1">'.$this->required_field.LANINS_076.'</label></td>
-										<td class="stage"><input class="tbox focusme'.($this->_mark_required && !$_POST['pass1'] ? ' required' : '').'" name="pass1" size="30" id="pass1" value="" maxlength="60" type="password" /></td>
-										<td class="stage">'.LANINS_077.'</td>
-									</tr>
-									<tr>
-										<td class="stage"><label for="pass2">'.$this->required_field.LANINS_078.'</label></td>
-										<td class="stage"><input class="tbox'.($this->_mark_required && !$_POST['pass2'] ? ' required' : '').'" name="pass2" size="30" id="pass2" value="" maxlength="60" type="password" /></td>
-										<td class="stage">'.LANINS_079.'</td>
-									</tr>
-									<tr>
-										<td class="stage"><label for="email">'.$this->required_field.LANINS_080.'</label></td>
-										<td class="stage"><input class="tbox'.($this->_mark_required && !$_POST['email'] ? ' required' : '').'" name="email" size="30" id="email" value="'.(isset($_POST['email']) ? $this->previous_steps['admin']['email'] : LANINS_082).'" maxlength="100" type="text" /></td>
-										<td class="stage">'.LANINS_081.'</td>
-									</tr>
-								</tbody>
-							</table>
-							<div class="navigation">
-								<input type="hidden" name="stage" value="'.($this->stage+1).'" />'.(!$this->previous_steps ? '' : '
-								<input type="hidden" name="previous_steps" value="'.base64_encode(serialize($this->previous_steps)).'" />').'
-								<input id="submit" class="button" value="'.LANINS_035.'" type="submit" />
-							</div>
-						</form>';
-		
-		# Set contents
-		$this->template->SetTag('installation_heading', sprintf(LANINS_001, $this->template->getTag('app_version')));
-		$this->template->SetTag('stage_num',            LANINS_046);
-		$this->template->SetTag('stage',            	$this->stage);
-		$this->template->SetTag('stage_step',           sprintf(LANINS_002a, LANINS_046));
-		$this->template->SetTag('stage_title',          LANINS_047);
-		$this->template->SetTag('static_title',         LANINS_047a);
-		$this->template->SetTag('stage_content',        $html);
-	}
-	
-	public function stage_6()
-	{
-		$this->stage = 6;
-		$this->get_lan_file();
-		
-		$_POST['u_name'] = str_replace(array("'", '"'), '', $_POST['u_name']);
-		$_POST['d_name'] = str_replace(array("'", '"'), '', $_POST['d_name']);
-		
-		$this->previous_steps['admin']['user']     = $_POST['u_name'];
-		$this->previous_steps['admin']['display']  = $_POST['d_name'] ? $_POST['d_name'] : $_POST['u_name'];
-		$this->previous_steps['admin']['email']    = $_POST['email'];
-		$this->previous_steps['admin']['password'] = $_POST['pass1'];
-		
-		if ('' == trim($_POST['u_name']) || '' == trim($_POST['email']) || '' == trim($_POST['pass1']))
-		{
-			if ('debug' == $_SERVER['QUERY_STRING'])  $this->set_message(print_a($_POST, true), 'debug');
+			$this->template->SetTag("stage_title", LANINS_037.($this->previous_steps['mysql']['createdb'] == 1 ? LANINS_038 : ""));		
 			
-			$this->_error = true;
-			$this->set_message(LANINS_086, 'error');
-			
-			$this->stage_5();
-			
-			$this->template->SetTag('stage_title',      LANINS_047.' - '.LANINS_040);
-			
-			return;
-		}
-		elseif($_POST['pass1'] != $_POST['pass2'])
-		{
-			if ('debug' == $_SERVER['QUERY_STRING'])  $this->set_message(print_a($_POST, true), 'debug');
-			
-			$this->_error = true;
-			$this->set_message(LANINS_049, 'error');
-			
-			$this->stage_5();
-			
-			$this->template->SetTag('stage_title',      LANINS_047.' - '.LANINS_040);
-			
-			return;
-		}
-		
-		$this->logLine("\n".LANINS_002.' '.LANINS_046.' [ '.LANINS_047.' ]: --- '.LANINS_110.' ---'."\n\n".LANINS_002.' '.LANINS_056.' [ '.LANINS_055.' ]: --- '.LANINS_109.' ---');
-		
-		$this->set_message(LANINS_057);
-		
-		$html = 		'<form method="post" id="admin_info" action="'.$_SERVER['PHP_SELF'].('debug' == $_SERVER['QUERY_STRING'] ? '?debug' : '').'">
-							<div class="navigation-top"><!-- --></div>
-							<div class="navigation">
-								<input type="hidden" name="stage" value="'.($this->stage+1).'" />'.(!$this->previous_steps ? '' : '
-								<input type="hidden" name="previous_steps" value="'.base64_encode(serialize($this->previous_steps)).'" />').'
-								<input id="submit" class="button" value="'.LANINS_035.'" type="submit" />
-							</div>
-						</form>';
-		
-		# Set contents
-		$this->template->SetTag('installation_heading', sprintf(LANINS_001, $this->template->getTag('app_version')));
-		$this->template->SetTag('stage_num',            LANINS_056);
-		$this->template->SetTag('stage',            	$this->stage);
-		$this->template->SetTag('stage_step',           sprintf(LANINS_002a, LANINS_056));
-		$this->template->SetTag('stage_title',          LANINS_055);
-		$this->template->SetTag('static_title',         LANINS_055a);
-		$this->template->SetTag('stage_content',        $html);
-	}
-	
-	public function stage_7()
-	{
-		$this->stage = 7;
-		$this->get_lan_file();
-	//	$this->logLine("\n".LANINS_002.' '.LANINS_056.' [ '.LANINS_055.' ]: --- '.LANINS_109.' ---'."\n\n".LANINS_002.' '.LANINS_058.' [ '.LANINS_071.' ]: --- '.LANINS_109.' ---');
-		
-		$config_result = $this->_write_config();
-		
-		if ($config_result) 
-		{
-			$html = '';
-			$this->set_message($config_result, 'error'); 
-			$this->_error = true;
-	//		$this->logLine("\t".'Error writing e107_config.php config file: '.$config_result);
-		} 
-		else 
-		{
-	//		$this->logLine("\t".'The e107_config.php config file is written successfully');
-			$errors = $this->_create_tables();
-			
-			if ($errors) 
+			if (!$res = @mysql_connect($this->previous_steps['mysql']['server'], $this->previous_steps['mysql']['user'], $this->previous_steps['mysql']['password']))
 			{
-				$this->set_message($errors, 'error');
-				$html = '';
-				$this->_error = true;
-		//		$this->logLine("\t".'Error writing database content: '.$errors);
+				$success = FALSE;
+				$e_forms->start_form("versions", $_SERVER['PHP_SELF'].($_SERVER['QUERY_STRING'] == "debug" ? "?debug" : ""));
+				$page_content = LANINS_041.nl2br("\n\n<b>".LANINS_083."\n</b><i>".mysql_error()."</i>");
+				
+				$alertType = 'error';
+			}
+			elseif(($this->previous_steps['mysql']['createdb'] == 1) && empty($this->previous_steps['mysql']['overwritedb']) && mysql_select_db($this->previous_steps['mysql']['db'], $res))
+			{
+				$success = false; 
+				$e_forms->start_form("versions", $_SERVER['PHP_SELF'].($_SERVER['QUERY_STRING'] == "debug" ? "?debug" : ""));
+				$head = str_replace('[x]', '<b>'.$this->previous_steps['mysql']['db'].'</b>', "<div class='alert alert-warning'>". LANINS_127."</div>");
+				$alertType = 'error';
+				$this->add_button('overwritedb', LANINS_128);
+			/*	$e_forms->add_plain_html("
+				<input type='submit' id='overwritedb' name='overwritedb' value=\"".LANINS_128." &raquo;\" class='btn btn-large btn-primary' />"
+				
+				);*/
+
+				$this->finish_form(3);
+				$this->template->SetTag("stage_content", "<div class='alert alert-block alert-{$alertType}'>".$head."</div>".$e_forms->return_form());
+				$this->logLine('Stage 3 completed');
+				return; 
+			}
+			else
+			{
+				$e_forms->start_form("versions", $_SERVER['PHP_SELF'].($_SERVER['QUERY_STRING'] == "debug" ? "?debug" : ""));
+				$page_content = "<span class='glyphicon glyphicon-ok'></span> ".LANINS_042;
+				// @TODO Check database version here?
+/*
+				$mysql_note = mysql_get_server_info();
+				if (version_compare($mysql_note, MIN_MYSQL_VERSION, '>='))
+				{
+				    $success = FALSE;
+
+				}
+*/
+				// Do brute force for now - Should be enough
+				
+				if(!empty($this->previous_steps['mysql']['overwritedb']))
+				{
+					if($this->dbqry('DROP DATABASE `'.$this->previous_steps['mysql']['db'].'` '))
+					{
+						$page_content .= "<br /><span class='glyphicon glyphicon-ok'></span> Deleted existing database";
+					}
+					else 
+					{
+						$success = false;
+						$page_content .= "<br /><br />".LANINS_043.nl2br("\n\n<b>".LANINS_083."\n</b><i>".mysql_error()."</i>");	
+					}
+						
+				}
+				
+				if($this->previous_steps['mysql']['createdb'] == 1)
+				{
+					$notification = "<br /><span class='glyphicon glyphicon-ok'></span> ".LANINS_044;
+				    $query = 'CREATE DATABASE `'.$this->previous_steps['mysql']['db'].'` CHARACTER SET `utf8` ';
+					
+				}
+				else
+				{
+					$notification = "<br /><span class='glyphicon glyphicon-ok'></span> Found existing database";
+				    $query = 'ALTER DATABASE `'.$this->previous_steps['mysql']['db'].'` CHARACTER SET `utf8` ';
+				}
+
+				if (!$this->dbqry($query))
+				{
+					$success = false;
+					$alertType = 'error';
+					$page_content .= "<br /><br />";
+					$page_content .= (empty($this->previous_steps['mysql']['createdb'])) ? LANINS_129 : LANINS_043;
+
+
+					$page_content .= nl2br("\n\n<b>".LANINS_083."\n</b><i>".mysql_error()."</i>");
+				}
+				else
+				{
+                    $this->dbqry('SET NAMES `utf8`');
+
+					$page_content .= $notification; // "
+				}
+			}
+			
+			if($success)
+			{
+
+				// $page_content .= "<br /><br />".LANINS_045."<br /><br />";
+				$this->add_button("submit", LAN_CONTINUE);
+				$alertType = 'success';
 			}
 			else 
 			{
-	//			$this->logLine("\t".'Database content successfully created');
-				$this->set_message(LANINS_069);
-				
-				$html = '<form method="post" id="confirmation" action="index.php">
-							<div class="navigation-top"><!-- --></div>
-							<div class="navigation">
-								<input type="hidden" name="stage" value="'.($this->stage+1).'" />'.(!$this->previous_steps ? '' : '
-								<input type="hidden" name="previous_steps" value="'.base64_encode(serialize($this->previous_steps)).'" />').'
-								<input type="submit" id="submit" class="button" value="'.LANINS_035.'" />
-							</div>
-						</form>';
+				$this->add_button("back", LAN_CONTINUE);
+			}
+			$head = $page_content;
+		}
+		if ($success)
+			$this->finish_form();
+		else
+		{
+			$this->finish_form(3);
+		}
+		$this->template->SetTag("stage_content", "<div class='alert alert-block alert-{$alertType}'>".$head."</div>".$e_forms->return_form());
+		$this->logLine('Stage 3 completed');
+	}
+
+	private function stage_4()
+	{
+		global $e_forms;
+
+		$this->stage = 4;
+		$this->logLine('Stage 4 started');
+
+		$this->template->SetTag("installation_heading", LANINS_001);
+		$this->template->SetTag("stage_pre", LANINS_002);
+		$this->template->SetTag("stage_num", LANINS_007);
+		$this->template->SetTag("stage_title", LANINS_008);
+		$this->template->SetTag("percent", 50);
+		$this->template->SetTag("bartype", 'warning');
+		$not_writable = $this->check_writable_perms('must_write');		// Some directories MUST be writable
+		$opt_writable = $this->check_writable_perms('can_write');		// Some directories CAN optionally be writable
+		$version_fail = false;
+		$perms_errors = "";
+		$mysql_pass = false;
+		
+		if(count($not_writable))
+		{
+			$perms_pass = false;
+			foreach ($not_writable as $file)
+			{
+				$perms_errors .= (substr($file, -1) == "/" ? LANINS_010a : LANINS_010)."<br /><b>{$file}</b><br />\n";
+			}
+			$perms_notes = LANINS_018;
+		}
+		elseif (count($opt_writable))
+		{
+			$perms_pass = true;
+			foreach ($opt_writable as $file)
+			{
+				$perms_errors .= (substr($file, -1) == "/" ? LANINS_010a : LANINS_010)."<br /><b>{$file}</b><br />\n";
+			}
+			$perms_notes = LANINS_106;
+		}
+		elseif (filesize('e107_config.php') > 1)
+		{	// Must start from an empty e107_config.php
+			$perms_pass = FALSE;
+			$perms_errors = LANINS_121;
+			$perms_notes = "<span class='glyphicon glyphicon-remove'></span> ".LANINS_122;
+		}
+		else
+		{
+			$perms_pass = true;
+			$perms_errors = "&nbsp;";
+			$perms_notes = "<span class='glyphicon glyphicon-ok'></span> ".LANINS_017;
+		}
+
+		if(!function_exists("mysql_connect"))
+		{
+			$version_fail = true;
+			$mysql_note = LAN_ERROR;
+			$mysql_help = LANINS_012;
+		}
+		elseif (!@mysql_connect($this->previous_steps['mysql']['server'], $this->previous_steps['mysql']['user'], $this->previous_steps['mysql']['password']))
+		{
+			$mysql_note = LAN_ERROR;
+			$mysql_help = LANINS_013;
+		}
+		else
+		{
+			$mysql_note = mysql_get_server_info();
+			if (version_compare($mysql_note, MIN_MYSQL_VERSION, '>='))
+			{
+				$mysql_help = "<span class='glyphicon glyphicon-ok'></span> ".LANINS_017;
+				$mysql_pass = true;
+			}
+			else
+			{
+				$mysql_help = "<span class='glyphicon glyphicon-remove'></span> ".LANINS_105;
 			}
 		}
-		
-		# Set contents
-		$this->template->SetTag('installation_heading', sprintf(LANINS_001, $this->template->getTag('app_version')));
-		$this->template->SetTag('stage_num',            LANINS_058);
-		$this->template->SetTag('stage',            	$this->stage);
-		$this->template->SetTag('stage_step',           sprintf(LANINS_002a, LANINS_058));
-		$this->template->SetTag('stage_title',          $this->_error ? LANINS_071b : LANINS_071);
-		$this->template->SetTag('static_title',         $this->_error ? LANINS_071c : LANINS_071a);
-		$this->template->SetTag('stage_content',        $html);
-		
-//		$this->logLine("\n".LANINS_002.' '.LANINS_058.' [ '.LANINS_071.' ]: --- '.LANINS_110.' ---');
-	}
-	
-	public function stage_invalid()
-	{
-		$this->set_message(LANINS_000, 'error');
-		
-		$this->template->SetTag('installation_heading', LANINS_001);
-		$this->template->SetTag('stage_num',            LANINS_011);
-		$this->template->SetTag('stage',            	0);
-		$this->template->SetTag('stage_step',           '');
-		$this->template->SetTag('stage_title',          LANINS_125);
-		$this->template->SetTag('static_title',         LANINS_125a);
-		$this->template->SetTag('stage_content',        '');
-	}
-	
-	public function stage_template()
-	{ 
-		// <span class="tinytext">{stage_step}</span>
-		//{stage_num}
-		//<h1>{installation_heading}</h1>
-		return 
-'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-	<title>'.LANINS_TITLE.' {installation_heading} - {static_title}</title>
-	<link rel="icon" href="'.e_HTTP.'favicon.ico" type="image/x-icon" />
-	<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-	<meta http-equiv="content-style-type" content="text/css" />
-	<style type="text/css">
-		html, body					{ width:100%; }
-		html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr,
-		acronym, address, big, cite, code, del, dfn, em, font, img, ins, kbd, q, s, samp, small, strike, strong, sub,
-		sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead,
-		tr, th, td					{ margin:0; padding:0; border:0; }
-		h1, h2, h3, h4, h5, h6		{ line-height:normal; }
-		ol, ul						{ list-style:none; }
-		body						{ line-height:1; }
-		q:before, q:after,
-		blockquote:before,
-		blockquote:after			{ content:\'\'; content:none; }
-		:focus						{ outline:0; }
-		ins							{ text-decoration:none; }
-		del							{ text-decoration:line-through; }
-		table						{ border-collapse:collapse; border-spacing:0; }
-		textarea.tbox,
-		input.input-text			{ width:auto; padding:5px; color:#111111; background-color:#FFFFFF; border:1px solid #CCCCCC; }
-		textarea.tbox:focus,
-		input.input-text:focus		{ background-color:#EEEEEE; border:1px solid #CCCCCC; }
-		body						{ background:#FFFFFF url(e107_files/install/images/mainbg.png) repeat-x 0 0; font:12px/16px Arial,Helvetica,sans-serif; color:#656565; }
-		h1							{ font:normal 26px Arial,Helvetica,sans-serif; }
-		h2							{ font:normal 22px Arial,Helvetica,sans-serif; }
-		h3							{ font:normal 18px Arial,Helvetica,sans-serif; }
-		h4							{ font:normal 16px Arial,Helvetica,sans-serif; }
-		img							{ border:0; }
-		a							{ color:#3399CC; text-decoration:none; cursor:pointer; }
-		a:hover						{ color:#333333; text-decoration:underline; }
-		*							{ margin:0; padding:0; }
-		* .clearfix					{ display:block; }
-		* html .clearfix			{ height:1%; }
-		.MT05						{ margin-top:5px; }
-		.MT20						{ margin-top:15px; }
-		.clear						{ clear:both; }
-		.clearfix					{ display:inline-block; }
-		.clearfix:after				{ width:0; height:0; clear:both; content:\' \'; display:block; font-size:0; line-height:0; visibility:hidden; }
-		.tbold						{ font-weight:bold; }
-		.tnormal					{ font-weight:normal; }
-		.fitalic					{ font-style:italic; }
-		.fnormal					{ font-style:normal; }
-		.right						{ text-align:right !important; }
-		.smalltext					{ font-size:12px; font-weight:normal; }
-		.smallblacktext				{ font-size:12px; font-weight:bold; }
-		.f-left					{ float:left; }
-		.caption,
-		.bodytable,
-		.mediumtext,
-		.defaulttext				{ font-size:13px; font-weight:normal; }
-		.fborder					{ padding:3px; margin-top:3px; text-align:left; background-color:transparent; border:0px none; }
-		.v-top						{ vertical-align:top; }
-		.v-mid						{ vertical-align:middle; }
-		.install-logo				{ padding:38px 0px 15px 25px; }
-		.install-heading			{ font-size:14px; margin-top:117px; margin-left:125px; }
-		.wrapper					{ width:1000px; margin:0 auto; }
-		.headerbg 					{ background:url(e107_files/install/images/headerbg.png) repeat-x scroll 0 0 transparent; height:238px; width:100%; position:relative; z-index:10; }
-		.stage-1					{ height:300px; position:relative; z-index:10; background:url(e107_files/install/images/1.png) no-repeat 100% 0; }
-		.stage-2					{ height:300px; position:relative; z-index:10; background:url(e107_files/install/images/2.png) no-repeat 100% 0; }
-		.stage-3					{ height:300px; position:relative; z-index:10; background:url(e107_files/install/images/3.png) no-repeat 100% 0; }
-		.stage-4					{ height:300px; position:relative; z-index:10; background:url(e107_files/install/images/4.png) no-repeat 100% 0; }
-		.stage-5					{ height:300px; position:relative; z-index:10; background:url(e107_files/install/images/5.png) no-repeat 100% 0; }
-		.stage-6					{ height:300px; position:relative; z-index:10; background:url(e107_files/install/images/6.png) no-repeat 100% 0; }
-		.stage-7					{ height:300px; position:relative; z-index:10; background:url(e107_files/install/images/7.png) no-repeat 100% 0; }
-		.stage-7-finished			{ height:300px; position:relative; z-index:10; background:url(e107_files/install/images/8.png) no-repeat 100% 0; }
-		.hint						{ background-color:#FFFFD5; border:1px solid #FFCC00; font-size:12px; padding:7px; margin-top:5px; -webkit-border-radius:5px; -moz-border-radius:5px; border-radius:5px; }
-		.info						{ font-size:14px; padding:10px 25px 15px 25px; }
-		.orange						{ font-size:22px; color:#ED7700; font-style:italic; }
-		.tinytext					{ font-size:12px; margin-top:10px; padding:0px 35px; }
-		.smalltext					{ font-size:14px; }
-		.headerbg h1 				{ padding-left:0px;  font-style:italic; font-weight:bold; font-size: 20px }
-		.stage-title				{ margin:30px 35px 0px 40px; font-size:22px;}
-		.main-container				{ background:#FFFFFF url(e107_files/install/images/contentbg.png) repeat-x 0 0; margin:0 auto ; width:100%; margin:10px 0; padding:20px 0px; }
-		.main-content				{ padding:0 0px 10px; }
-		.main-content table			{ width:100%; margin:0 auto ; }
-		.top-content				{ margin:0 20px 30px 20px; background-color:#FFFFFF; padding:20px 20px; display:block; }
-		.top-content-title			{ font-size:16px; font-weight:bold; padding-bottom:10px; margin-bottom:10px; text-shadow:2px 2px 2px #CCCCCC; background:url(e107_files/install/images/rightbox_title_bg.png) repeat-x 0 100%; }
-		.stage						{ padding:10px 5px 10px; text-align:left; background-color:transparent; border-bottom:1px solid #CCCCCC; }
-		.tbox						{ margin:5px 5px; padding:5px 10px; font-size:14px; font-weight:normal; color:#111111; background-color:#FFFFFF; border:1px solid #CCCCCC; border-radius:3px; -moz-border-radius:3px; -webkit-border-radius:3px; }
-		.tbox:focus					{ border:1px solid #CCCCCC; background-color:#EEEEEE; }
-		.button, .button:focus		{ margin:5px 0; padding:5px 10px; text-align:center; font-weight:bold; cursor:pointer; background-color:#FFFFFF; border:1px #CCCCCC solid; border-radius:3px; -moz-border-radius:3px; -webkit-border-radius:3px; }
-		.button:hover				{ color:#3399CC; border:1px #EEEEEE solid; }
-		.error						{ color:#FF5C5C; background-color:#FFCECE; border:1px solid #FF5C5C; padding:10px 20px; -webkit-border-radius:5px; -moz-border-radius:5px; border-radius:5px; }
-		.warning					{ color:#FF9900 }
-		.rfield						{ color:#FF9900; font-weight: bolder !important; }
-		.success					{ color:green; }
-		.required					{ border:1px solid #FF5C5C; }
-		.error-text					{ color:#FF5C5C; }
-		.navigation					{ padding:8px 3px; font-weight:bold; text-align:center; vertical-align:middle; border:1px solid #CCCCCC; border-top:0px none; background-color:#F9F9F9; z-index:10; }
-		.navigation-top				{ width:100%; height:1px; background-color:#CCCCCC; }
-		select.tbox, option.tbox	{ padding:3px; margin: 3px 5px }
-		checkbox, label				{ margin:0 5px; }
-		blockquote, q				{ quotes:none; }
-	</style>
-</head>
-<body>
-	<div class="wrapper">
-		<div class="headerbg">
-			<div class="stage-{stage}'.(!$this->_error && 7 == $this->template->getTag('stage') ? '-finished' : '').'">
-				<div class="install-logo f-left"><img src="e107_files/install/images/e_logo.png" alt="" /></div>
-				<div class="install-heading f-left">{installation_heading}</div>
-				<div class="clear"><!-- --></div>
-				<div class="stage-title">'.LANINS_002.' / <span class="orange">{static_title}</span></div>
-			</div>
-		</div>
-		<div class="main-container">
-			<div id="content" class="top-content clearfix">
-				<div class="top-content-title clearfix">
-					{stage_title}
-				</div>
-				{stage_errors}
-				{stage_info}
-				<div class="main-content">
-					{stage_content}
-				</div>
-				{debug_info}
-			</div>
-		</div>
-	</div>
-	<script type="text/javascript">
-		var e107_install = {
-		   init: function() {
-		      // Focus the first available to be focused element on the page
-		      if (document.getElementsByClassName(\'focusme\')[\'length\']) {
-		         document.getElementsByClassName(\'focusme\')[0].focus();
-		      }
-		   }
+		if(!function_exists('utf8_encode'))
+		{
+			$xml_installed = false;
 		}
-		
-		e107_install.init();
-	</script>
-</body>
-</html>';
-	}
-	
-	
-	/**
-	 * Language loader - loads the language file or raises an error on failure
-	 * 
-	 * @return	void
-	 */
-	public function get_lan_file()
-	{
-		if (!isset($this->previous_steps['language']))
-			$this->previous_steps['language'] = 'English';
-		
-		$this->lan_file = $this->e107->e107_dirs['LANGUAGES_DIRECTORY'].$this->previous_steps['language'].'/lan_installer.php';
-		
-		if (is_readable($this->lan_file))
-			include_once $this->lan_file;
-		elseif (is_readable($this->e107->e107_dirs['LANGUAGES_DIRECTORY'].'English/lan_installer.php'))
-			include_once $this->e107->e107_dirs['LANGUAGES_DIRECTORY'].'English/lan_installer.php';
 		else
-			$this->set_message('Fatal: Could not get valid language file for installation.', 'error');
-	}
-	
-	/**
-	 * Available languages getter
-	 *
-	 * @return	array	Available languages array
-	 */
-	public function get_languages()
-	{
-		$handle  = opendir($this->e107->e107_dirs['LANGUAGES_DIRECTORY']);
-		$lan_dir = $this->e107->e107_dirs['LANGUAGES_DIRECTORY'];
-		
-		while ($file = readdir($handle))
 		{
-			if (!in_array($file, array('.','..','/','CVS','.svn')) && file_exists("./{$lan_dir}{$file}/lan_installer.php"))
-				$lanlist[] = $file;
+			$xml_installed = true;
 		}
-		closedir($handle);
-		return $lanlist;
-	}
-	
-	/**
-	 * Log writer - writes a line to the log file
-	 *
-	 * @param	string	$logLine
-	 * @return	void
-	 */
-	public function logLine($logLine)
-	{
-		if (!MAKE_INSTALL_LOG || '' == $this->logFile)  return;
-		
-		if (!is_file($this->logFile))  file_put_contents($this->logFile, '[ '.($now = time()).', '.gmstrftime('%y-%m-%d %H:%M:%S', $now)."]\n");
-		
-		$logfp = fopen($this->logFile, 'a+');
-		fwrite($logfp, $logLine."\n");
-		fclose($logfp);
-	}
-	
-	/**
-	 * Messages handler
-	 *
-	 * @param	string	$message	The message
-	 * @param	string	$type		Type of the message - defines where should it go and how to be shown
-	 * @return	void
-	 */
-	public function set_message($message, $type='info')
-	{
-		if (!in_array($type, array_keys($this->_messages)))  return;
-		
-		if ('debug' != $type)  $this->_messages[$type][] = $message;
-		
-		$this->_messages['debug'][] = array (
-			'info'      => $message,
-			'backtrace' => debug_backtrace(),
-		);
-	}
-	
-	/**
-	 * Prepares and sets debug info for output
-	 * 
-	 * @return	void
-	 */
-	public function set_messages()
-	{
-		$this->template->SetTag('stage_errors', (empty($this->_messages['error']) ? '' :
-				'<div class="error">
-					'.implode("\n\t\t\t\t\t", $this->_messages['error']).'
-				</div>'
-		));
-		$this->template->SetTag('stage_info', (empty($this->_messages['info']) ? '' :
-				'<div class="info">
-					'.implode("\n\t\t\t\t\t", $this->_messages['info']).'
-				</div>'
-		));
-		$this->template->SetTag('debug_info', ('debug' != $_SERVER['QUERY_STRING'] ? '' :
-				'<div class="debug-container">
-					<div class="debug-info">
-						<h3>'.LANINS_123.':</h3>
-						'.print_a($e_install->debug_info).'
-					</div>
-					<div class="backtrace-info">
-						<h3>'.LANINS_124.':</h3>
-						'.print_a($e_install).'
-					</div>
-				</div>'
-		));
-	}
-	
-	/**
-	 * DB name or table prefix validator - anything starting with a numeric followed by 'e' causes problems
-	 *
-	 * @param	string	$str		The name to be checked
-	 * @param	bool	$blank_ok	Whether to accept blank value (should be set TRUE for prefix, FALSE for DB name)
-	 * @return	bool				Valid or not
-	 */
-	protected function _check_name($str, $blank_ok=false)
-	{
-		if ('' == $str)                       return $blank_ok;
-		if (preg_match('#^\d+[e|E]#', $str))  return false;
-		return true;
-	}
-	
-	/**
-	 * Check an array of db-related fields for illegal characters
-	 *
-	 * @param	array	$fields
-	 * @return	bool	true=OK, false=invalid char
-	 */
-	protected function _checkDbFields($fields)
-	{
-		if (!is_array($fields))  return false;
-		
-		foreach (array('db', 'user', 'server', 'prefix') as $key)
-		{
-			if (isset($fields[$key]) && strtr($fields[$key], "';", '    ') != $fields[$key])  return false; # Invalid character found
-		}
-		
-		return true;
-	}
-	
-	/**
-	 * Check whether files/directories are writable
-	 * 
-	 * @param	str		$list	List type [can_write|must_write]
-	 * @return	array			Failed files/directories list
-	 */
-	protected function _check_writable_perms($list='must_write')
-	{
-		$bad_files = array();
-		$data['must_write'] = 'e107_config.php';
-		$data['can_write']  = '{$FILES_DIRECTORY}cache/|{$FILES_DIRECTORY}public/|{$FILES_DIRECTORY}public/avatars/|{$PLUGINS_DIRECTORY}|{$THEMES_DIRECTORY}';
-		
-		if (!isset($data[$list]))  return $bad_files;
-		
-		foreach ($this->e107->e107_dirs as $dir_name=>$value) 
-		{
-			$find[]    = "{\${$dir_name}}";
-			$replace[] = './'.$value;
-		}
-		
-		$data[$list] = str_replace($find, $replace, $data[$list]);
-		$files       = explode('|', trim($data[$list]));
-		
-		foreach ($files as $file)  if (!is_writable($file))  $bad_files[] = str_replace('./', '', $file);
-		
-		return $bad_files;
-	}
-	
-	/**
-	 * DB tables creator - creates all necessary DB tables and content
-	 *
-	 * @return	mixed	bool false on success (no errors) | string (error message) on error
-	 */
-	protected function _create_tables()
-	{
-		$link = mysql_connect($this->previous_steps['mysql']['server'], $this->previous_steps['mysql']['user'], $this->previous_steps['mysql']['password']);
-		
-		if (!$link)  return nl2br(LANINS_084."\n\n<b>".LANINS_083.":\n</b><i>".mysql_error($link)."</i>");
-		
-		$db_selected = mysql_select_db($this->previous_steps['mysql']['db'], $link);
-		
-		if (!$db_selected)  return nl2br(LANINS_085." '{$this->previous_steps['mysql']['db']}'\n\n<b>".LANINS_083.":\n</b><i>".mysql_error($link).'</i>');
-		
-		$filename = $this->e107->e107_dirs['ADMIN_DIRECTORY'].'sql/core_sql.php';
-		$fd       = fopen ($filename, 'r');
-		$sql_data = fread($fd, filesize($filename));
-		
-		fclose ($fd);
-		
-		if (!$sql_data)  return nl2br(LANINS_060).'<br /><br />';
-		
-		preg_match_all('/create(.*?)(?:myisam|innodb);/si', $sql_data, $result );
-		
-		# Force UTF-8 again
-		if ($this->previous_steps['mysql']['db_utf8'])  @mysql_query('SET NAMES `utf8`');
-		
-		foreach ($result[0] as $sql_table)
-		{
-//			preg_match("/CREATE TABLE\s(.*?)\s\(/si", $sql_table, $match);
-//			$tablename = $match[1];
-//			
-//			preg_match_all("/create(.*?)myisam;/si", $sql_data, $result );
-			$sql_table = preg_replace("/create table\s/si", "CREATE TABLE {$this->previous_steps['mysql']['prefix']}", $sql_table);
-			
-			if (!mysql_query($sql_table, $link))  return nl2br(LANINS_061."\n\n<b>".LANINS_083.":\n</b><i>".mysql_error($link)."</i>");
-		}
-		$this->logLine('All tables created');
-		$datestamp = time();
-		
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}news VALUES (0, '".LANINS_063."', '".LANINS_NEWS."', '', '{$datestamp}', '0', '1', 1, 0, 0, 0, 0, '0', '', 'welcome.png', 0) ");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}news_category VALUES (0, '".LANINS_087."', 'icon26.png') ");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}links VALUES (0, '".LANINS_088."', 'index.php', '', '', 1, 1, 0, 0, 0) ");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}links VALUES (0, '".LANINS_098."', 'news.php', '', '', 1, 2, 0, 0, 0) ");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}links VALUES (0, '".LANINS_089."', 'download.php', '', '', 1, 3, 0, 0, 0) ");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}links VALUES (0, '".LANINS_092."', 'contact.php', '', '', 1, 4, 0, 0, 0) ");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}links VALUES (0, '".LANINS_090."', 'user.php', '', '', 2, 1, 0, 0, 0) ");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}links VALUES (0, '".LANINS_091."', 'submitnews.php', '', '', 2, 2, 0, 0, 0) ");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}links VALUES (0, '".LANINS_099."', 'http://e107.org/', '', '', 3, 1, 0, 0, 0) ");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}links VALUES (0, '".LANINS_103."', 'http://e107.org/plugins/', '', '', 3, 2, 0, 0, 0) ");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}links VALUES (0, '".LANINS_111."', 'http://e107.org/themes/', '', '', 3, 3, 0, 0, 0) ");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}links VALUES (0, '".LANINS_112."', 'http://wiki.e107.org/', '', '', 3, 4, 0, 0, 0) ");
-		
-		$udirs  = 'admin/|plugins/|temp';
-		$e_SELF = $_SERVER['PHP_SELF'];
-		$e_HTTP = preg_replace('#'.$udirs.'#i', '', substr($e_SELF, 0, strrpos($e_SELF, '/')).'/');
-		
-		$pref_language = isset($this->previous_steps['language']) ? $this->previous_steps['language'] : 'English';
-		
-		if (file_exists($this->e107->e107_dirs['LANGUAGES_DIRECTORY'].$pref_language.'/lan_prefs.php'))
-			include_once $this->e107->e107_dirs['LANGUAGES_DIRECTORY'].$pref_language.'/lan_prefs.php';
-		else
-			include_once $this->e107->e107_dirs['LANGUAGES_DIRECTORY'].'English/lan_prefs.php';
-		
-		$site_admin_user  = $this->previous_steps['admin']['display'];
-		$site_admin_email = $this->previous_steps['admin']['email'];
-		
-		require_once $this->e107->e107_dirs['FILES_DIRECTORY'].'def_e107_prefs.php';
-		include_once $this->e107->e107_dirs['HANDLERS_DIRECTORY'].'arraystorage_class.php';
-		
-		$tmp = ArrayData::WriteArray($pref);
-		
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}core VALUES ('SitePrefs', '{$tmp}')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}core VALUES ('SitePrefs_Backup', '{$tmp}')");
-		
-		$emote = 'a:60:{i:0;a:1:{s:2:"&|";s:7:"cry.png";}i:1;a:1:{s:3:"&-|";s:7:"cry.png";}i:2;a:1:{s:3:"&o|";s:7:"cry.png";}i:3;a:1:{s:3:":((";s:7:"cry.png";}i:4;a:1:{s:3:"~:(";s:7:"mad.png";}i:5;a:1:{s:4:"~:o(";s:7:"mad.png";}i:6;a:1:{s:4:"~:-(";s:7:"mad.png";}i:7;a:1:{s:2:":)";s:9:"smile.png";}i:8;a:1:{s:3:":o)";s:9:"smile.png";}i:9;a:1:{s:3:":-)";s:9:"smile.png";}i:10;a:1:{s:2:":(";s:9:"frown.png";}i:11;a:1:{s:3:":o(";s:9:"frown.png";}i:12;a:1:{s:3:":-(";s:9:"frown.png";}i:13;a:1:{s:2:":D";s:8:"grin.png";}i:14;a:1:{s:3:":oD";s:8:"grin.png";}i:15;a:1:{s:3:":-D";s:8:"grin.png";}i:16;a:1:{s:2:":?";s:12:"confused.png";}i:17;a:1:{s:3:":o?";s:12:"confused.png";}i:18;a:1:{s:3:":-?";s:12:"confused.png";}i:19;a:1:{s:3:"%-6";s:11:"special.png";}i:20;a:1:{s:2:"x)";s:8:"dead.png";}i:21;a:1:{s:3:"xo)";s:8:"dead.png";}i:22;a:1:{s:3:"x-)";s:8:"dead.png";}i:23;a:1:{s:2:"x(";s:8:"dead.png";}i:24;a:1:{s:3:"xo(";s:8:"dead.png";}i:25;a:1:{s:3:"x-(";s:8:"dead.png";}i:26;a:1:{s:2:":@";s:7:"gah.png";}i:27;a:1:{s:3:":o@";s:7:"gah.png";}i:28;a:1:{s:3:":-@";s:7:"gah.png";}i:29;a:1:{s:2:":!";s:8:"idea.png";}i:30;a:1:{s:3:":o!";s:8:"idea.png";}i:31;a:1:{s:3:":-!";s:8:"idea.png";}i:32;a:1:{s:2:":|";s:11:"neutral.png";}i:33;a:1:{s:3:":o|";s:11:"neutral.png";}i:34;a:1:{s:3:":-|";s:11:"neutral.png";}i:35;a:1:{s:2:"?!";s:12:"question.png";}i:36;a:1:{s:2:"B)";s:12:"rolleyes.png";}i:37;a:1:{s:3:"Bo)";s:12:"rolleyes.png";}i:38;a:1:{s:3:"B-)";s:12:"rolleyes.png";}i:39;a:1:{s:2:"8)";s:10:"shades.png";}i:40;a:1:{s:3:"8o)";s:10:"shades.png";}i:41;a:1:{s:3:"8-)";s:10:"shades.png";}i:42;a:1:{s:2:":O";s:12:"suprised.png";}i:43;a:1:{s:3:":oO";s:12:"suprised.png";}i:44;a:1:{s:3:":-O";s:12:"suprised.png";}i:45;a:1:{s:2:":p";s:10:"tongue.png";}i:46;a:1:{s:3:":op";s:10:"tongue.png";}i:47;a:1:{s:3:":-p";s:10:"tongue.png";}i:48;a:1:{s:2:":P";s:10:"tongue.png";}i:49;a:1:{s:3:":oP";s:10:"tongue.png";}i:50;a:1:{s:3:":-P";s:10:"tongue.png";}i:51;a:1:{s:2:";)";s:8:"wink.png";}i:52;a:1:{s:3:";o)";s:8:"wink.png";}i:53;a:1:{s:3:";-)";s:8:"wink.png";}i:54;a:1:{s:4:"!ill";s:7:"ill.png";}i:55;a:1:{s:7:"!amazed";s:10:"amazed.png";}i:56;a:1:{s:4:"!cry";s:7:"cry.png";}i:57;a:1:{s:6:"!dodge";s:9:"dodge.png";}i:58;a:1:{s:6:"!alien";s:9:"alien.png";}i:59;a:1:{s:6:"!heart";s:9:"heart.png";}}';
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}core VALUES ('emote', '{$emote}') ");
-		
-		# Set up menu prefs so they can be 'lanned'
-		$new_block = Array ( 
-			'comment_caption' 			=> LANINS_096,	# 'Latest Comments'
-			'comment_display' 			=> '10',
-			'comment_characters' 		=> '50',
-			'comment_postfix' 			=> LANINS_097,	# '[more ...]'
-			'comment_title' 			=> 0,
-// obsolete	'article_caption' 			=> LANINS_098,	# 'Articles'
-// obsolete	'articles_display' 			=> '10',
-// obsolete	'articles_mainlink' 		=> LANINS_099,	# 'Articles Front Page ...'
-			'newforumposts_caption' 	=> LANINS_100,	# 'Latest Forum Posts'
-			'newforumposts_display' 	=> '10',
-			'forum_no_characters' 		=> '20',
-			'forum_postfix' 			=> LANINS_097,	# '[more ...]'
-			'update_menu' 				=> LANINS_101,	# 'Update menu Settings'
-			'forum_show_topics' 		=> '1',
-			'newforumposts_characters'	=> '50',
-			'newforumposts_postfix' 	=> LANINS_097,	# '[more ...]'
-			'newforumposts_title' 		=> 0,
-			'clock_caption' 			=> LANINS_102,	# 'Date / Time'
-// obsolete	'reviews_caption'			=> LANINS_103,	# 'Reviews'
-// obsolete	'reviews_display'			=> '10',
-// obsolete	'reviews_parents'			=> '1',
-// obsolete	'reviews_mainlink'			=> LANINS_104,	# 'Review Front Page ...'
-// obsolete	'articles_parents' 			=> '1'
-		);
-		
-		$menu_conf    = serialize($new_block);
-		$notify_prefs = mysql_real_escape_string("array ('event' => array ('usersup' => array ('type' => 'off', 'class' => '254', 'email' => '',),'userveri' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'login' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'logout' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'flood' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'subnews' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'newspost' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'newsupd' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), 'newsdel' => array ( 'type' => 'off', 'class' => '254', 'email' => '', ), ), )");
-		
-		preg_match('/^(.*?)($|-)/', mysql_get_server_info(), $mysql_version);
-		
-		if (version_compare($mysql_version[1], '4.0.1', '<'))
-			$search_prefs = 'a:12:{s:11:\"user_select\";s:1:\"1\";s:9:\"time_secs\";s:2:\"60\";s:13:\"time_restrict\";s:1:\"0\";s:8:\"selector\";s:1:\"2\";s:9:\"relevance\";s:1:\"0\";s:13:\"plug_handlers\";N;s:10:\"mysql_sort\";b:0;s:11:\"multisearch\";s:1:\"1\";s:6:\"google\";s:1:\"0\";s:13:\"core_handlers\";a:5:{s:4:\"news\";a:6:{s:5:\"class\";s:1:\"0\";s:9:\"pre_title\";s:1:\"0\";s:13:\"pre_title_alt\";s:0:\"\";s:5:\"chars\";s:3:\"150\";s:7:\"results\";s:2:\"10\";s:5:\"order\";s:1:\"1\";}s:8:\"comments\";a:6:{s:5:\"class\";s:1:\"0\";s:9:\"pre_title\";s:1:\"1\";s:13:\"pre_title_alt\";s:0:\"\";s:5:\"chars\";s:3:\"150\";s:7:\"results\";s:2:\"10\";s:5:\"order\";s:1:\"2\";}s:5:\"users\";a:6:{s:5:\"class\";s:1:\"0\";s:9:\"pre_title\";s:1:\"1\";s:13:\"pre_title_alt\";s:0:\"\";s:5:\"chars\";s:3:\"150\";s:7:\"results\";s:2:\"10\";s:5:\"order\";s:1:\"3\";}s:9:\"downloads\";a:6:{s:5:\"class\";s:1:\"0\";s:9:\"pre_title\";s:1:\"1\";s:13:\"pre_title_alt\";s:0:\"\";s:5:\"chars\";s:3:\"150\";s:7:\"results\";s:2:\"10\";s:5:\"order\";s:1:\"4\";}s:5:\"pages\";a:6:{s:5:\"class\";s:1:\"0\";s:5:\"chars\";s:3:\"150\";s:7:\"results\";s:2:\"10\";s:9:\"pre_title\";s:1:\"0\";s:13:\"pre_title_alt\";s:0:\"\";s:5:\"order\";s:1:\"5\";}}s:17:\"comments_handlers\";a:2:{s:4:\"news\";a:3:{s:2:\"id\";i:0;s:3:\"dir\";s:4:\"core\";s:5:\"class\";s:1:\"0\";}s:8:\"download\";a:3:{s:2:\"id\";i:2;s:3:\"dir\";s:4:\"core\";s:5:\"class\";s:1:\"0\";}}s:9:\"php_limit\";s:0:\"\";}';
-		else
-			$search_prefs = 'a:12:{s:11:\"user_select\";s:1:\"1\";s:9:\"time_secs\";s:2:\"60\";s:13:\"time_restrict\";s:1:\"0\";s:8:\"selector\";s:1:\"2\";s:9:\"relevance\";s:1:\"0\";s:13:\"plug_handlers\";N;s:10:\"mysql_sort\";b:1;s:11:\"multisearch\";s:1:\"1\";s:6:\"google\";s:1:\"0\";s:13:\"core_handlers\";a:5:{s:4:\"news\";a:6:{s:5:\"class\";s:1:\"0\";s:9:\"pre_title\";s:1:\"0\";s:13:\"pre_title_alt\";s:0:\"\";s:5:\"chars\";s:3:\"150\";s:7:\"results\";s:2:\"10\";s:5:\"order\";s:1:\"1\";}s:8:\"comments\";a:6:{s:5:\"class\";s:1:\"0\";s:9:\"pre_title\";s:1:\"1\";s:13:\"pre_title_alt\";s:0:\"\";s:5:\"chars\";s:3:\"150\";s:7:\"results\";s:2:\"10\";s:5:\"order\";s:1:\"2\";}s:5:\"users\";a:6:{s:5:\"class\";s:1:\"0\";s:9:\"pre_title\";s:1:\"1\";s:13:\"pre_title_alt\";s:0:\"\";s:5:\"chars\";s:3:\"150\";s:7:\"results\";s:2:\"10\";s:5:\"order\";s:1:\"3\";}s:9:\"downloads\";a:6:{s:5:\"class\";s:1:\"0\";s:9:\"pre_title\";s:1:\"1\";s:13:\"pre_title_alt\";s:0:\"\";s:5:\"chars\";s:3:\"150\";s:7:\"results\";s:2:\"10\";s:5:\"order\";s:1:\"4\";}s:5:\"pages\";a:6:{s:5:\"class\";s:1:\"0\";s:5:\"chars\";s:3:\"150\";s:7:\"results\";s:2:\"10\";s:9:\"pre_title\";s:1:\"0\";s:13:\"pre_title_alt\";s:0:\"\";s:5:\"order\";s:1:\"5\";}}s:17:\"comments_handlers\";a:2:{s:4:\"news\";a:3:{s:2:\"id\";i:0;s:3:\"dir\";s:4:\"core\";s:5:\"class\";s:1:\"0\";}s:8:\"download\";a:3:{s:2:\"id\";i:2;s:3:\"dir\";s:4:\"core\";s:5:\"class\";s:1:\"0\";}}s:9:\"php_limit\";s:0:\"\";}';
-		
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}core VALUES ('menu_pref', '{$menu_conf}') ");
-		
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}core VALUES ('search_prefs', '{$search_prefs}') ");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}core VALUES ('notify_prefs', '{$notify_prefs}') ");
-		
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}banner VALUES (0, 'e107', 'e107login', 'e107password', 'banner1.png', 'http://e107.org', 0, 0, 0, 0, 0, 0, '', 'campaign_one') ");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}banner VALUES (0, 'e107', 'e107login', 'e107password', 'banner2.png', 'http://e107.org', 0, 0, 0, 0, 0, 0, '', 'campaign_one') ");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}banner VALUES (0, 'e107', 'e107login', 'e107password', 'banner3.png', 'http://e107.org', 0, 0, 0, 0, 0, 0, '', 'campaign_one') ");
-		
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (1, 'login_menu', 0, 0, '0', '', 'login_menu/')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (3, 'online_menu', 0, 0, '0', '', 'online_menu/')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (4, 'blogcalendar_menu', 0, 0, '0', '', 'blogcalendar_menu/')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (5, 'tree_menu', 0, 0, '0', '', 'tree_menu/')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (6, 'search_menu', 0, 0, '0', '', 'search_menu/')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (7, 'compliance_menu', 0, 0, '0', '', 'compliance_menu/')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (8, 'userlanguage_menu', 0, 0, '0', '', 'userlanguage_menu/')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (9, 'powered_by_menu', 1, 1, '0', '2-index.php', 'powered_by_menu/')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (10, 'counter_menu', 0, 0, '0', '', 'counter_menu/')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (11, 'usertheme_menu', 0, 0, '0', '', 'usertheme_menu/')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (12, 'banner_menu', 0, 0, '0', '', 'banner_menu/')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (13, 'online_extended_menu', 0, 0, '0', '', 'online_extended_menu/')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (14, 'clock_menu', 0, 0, '0', '', 'clock_menu/')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (15, 'sitebutton_menu', 0, 0, '0', '', 'sitebutton_menu/')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (16, 'comment_menu', 0, 0, '0', '', 'comment_menu/')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (17, 'lastseen_menu', 0, 0, '0', '', 'lastseen/')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (18, 'other_news_menu', 0, 0, '0', '', 'other_news_menu/')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (19, 'other_news2_menu', 0, 0, '0', '', 'other_news_menu/')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (20, 'admin_menu', 0, 0, '0', '', 'admin_menu/')");
-//		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (21, 'rss_menu', 5, 1, '0', '', 'rss_menu/')");
-//		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (22, 'PCMag', 3, 1, '0', '', '1')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (21, 'e107_plugins', 2, 1, '0', '', '1')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (22, 'e107_themes', 3, 1, '0', '', '2')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}menus VALUES (23, 'e107_handbook', 4, 1, '0', '', '3')");
 
-		
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}userclass_classes VALUES (1, 'PRIVATEMENU', '".LANINS_093."',".e_UC_ADMIN.")");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}userclass_classes VALUES (2, 'PRIVATEFORUM1', '".LANINS_094."',".e_UC_ADMIN.")");
-//		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}plugin VALUES (0, '".LANINS_095."', '0.03', 'Integrity Check', 1, '') ");
-		
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}generic VALUES (0, 'wmessage', {$datestamp}, 1, '', 0, '[img=style=float: left; margin-right: 20px]{e_IMAGE}splash.jpg[/img]".LANINS_WELCOME."')");
-		
-		// TODO - more and better custom menus
-		//mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}page VALUES (1, '', '[img]{e_IMAGE}pcmag.png[/img] ', 0, 1145843485, 0, 0, '', '', '', 'PCMag')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}page VALUES (1, '".LANINS_103."', '[link=http://e107.org/plugins][img]{e_IMAGE}e107_plugins.png[/img][/link]', 0, {$datestamp}, 0, 0, '', '', '', 'e107_plugins')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}page VALUES (2, '".LANINS_111."', '[link=http://e107.org/themes][img]{e_IMAGE}e107_themes.png[/img][/link]', 0, {$datestamp}, 0, 0, '', '', '', 'e107_themes')");
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}page VALUES (3, '".LANINS_112."', '[link=http://e107.org/handbook][img]{e_IMAGE}e107_handbook.png[/img][/link]', 0, {$datestamp}, 0, 0, '', '', '', 'e107_handbook')");
-		$this->logLine('Sample custom menu added');
-		
-		# Create the admin user
-		$ip    = $_SERVER['REMOTE_ADDR'];
-		$userp = "1, '{$this->previous_steps['admin']['display']}', '{$this->previous_steps['admin']['user']}', '', '".md5($this->previous_steps['admin']['password'])."', '', '{$this->previous_steps['admin']['email']}', '', '', '', 0, ".time().", 0, 0, 0, 0, 0, 0, '{$ip}', 0, '', '', '', 0, 1, '', '', '0', '', ".time().", ''";
-		
-		mysql_query("INSERT INTO {$this->previous_steps['mysql']['prefix']}user VALUES ({$userp})" );
-		
-		$this->logLine('User record added');
-		
-		if (mysql_close($link))	# $link should be specified due to PHP5.3 (http://bugs.php.net/bug.php?id=48754)
+		$php_version = phpversion();
+		if(version_compare($php_version, MIN_PHP_VERSION, ">="))
 		{
-			$this->logLine('Database manipulation complete');
+			$php_help = "<span class='glyphicon glyphicon-ok'></span> ".LANINS_017;
 		}
 		else
 		{
-			$this->logLine('Error closing database: '.mysql_error());
-			return 'Error closing database: '.mysql_error();
+			$php_help = "<span class='glyphicon glyphicon-remove'></span> ".LANINS_019;
+		}
+		$e_forms->start_form("versions", $_SERVER['PHP_SELF'].($_SERVER['QUERY_STRING'] == "debug" ? "?debug" : ""));
+		if(!$perms_pass)
+		{
+			$this->add_button("retest_perms", LANINS_009);
+			$this->stage = 3; // make the installer jump back a step
+		}
+		elseif ($perms_pass && !$version_fail && $xml_installed)
+		{
+			$this->add_button("continue_install", LAN_CONTINUE);
 		}
 		
-		return false;
+		$permColor	= ($perms_pass == true) ? "text-success" : "text-error";
+		$PHPColor 	= ($version_fail == false) ? "text-success" : "text-error";
+		$xmlColor	= ($xml_installed == true) ? "text-success" : "text-error";
+		$mysqlColor	= ($mysql_pass == true) ? "text-success" : "text-error";
+
+		$xmlExtensionLink = "<a href='http://php.net/manual/en/ref.xml.php'>php.net</a>";
+
+		$output = "
+			<table class='table table-striped table-bordered' style='width: 100%; margin-left: auto; margin-right: auto;'>
+				<tr>
+					<td style='width: 20%;'>".LANINS_014."</td>
+					<td style='width: 40%;'>{$perms_errors}</td>
+					<td class='{$permColor}' style='width: 40%;'>{$perms_notes}</td>
+				</tr>
+				
+				<tr>
+					<td>".LANINS_015."</td>
+					<td>{$php_version}</td>
+					<td class='{$PHPColor}'>{$php_help}</td>
+				</tr>
+				
+				<tr>
+					<td>MySQL</td>
+					<td>{$mysql_note}</td>
+					<td class='{$mysqlColor}'>{$mysql_help}</td>
+				</tr>
+				
+				<tr>
+					<td>".LANINS_050."</td>
+					<td>".($xml_installed ? LANINS_051 : LANINS_052)."</td>
+					<td class='{$xmlColor}'>".($xml_installed ? "<i class='glyphicon glyphicon-ok'></i> ".LANINS_017 : str_replace("[x]",$xmlExtensionLink, LANINS_053) )."</td>
+				</tr>
+			</table>\n";
+		$this->finish_form();
+		$this->template->SetTag("stage_content", $output.$e_forms->return_form());
+		$this->logLine('Stage 4 completed');
 	}
-	
+
 	/**
-	 * e107_config.php Config file generator
+	 * Install stage 5 - collect Admin Login Data.
 	 *
-	 * @return	mixed	bool false on success (no errors) | string (error message) on error
+	 * @return string HTML form of stage 5.
 	 */
-	protected function _write_config()
+	private function stage_5()
 	{
-		$fp   = @fopen('e107_config.php', 'w');
-		$data = 
-"<?php
-/**
- *  e107 Website Content Management System
- *  
- *  ©e107 Inc 2008-2012
- *  http://e107.org
- *  
- *  Released under the terms and conditions of the
- *  GNU General Public License (http://gnu.org).
- *  
- *  This file has been auto-generated during installation process
- *  
- *  e107_config.php
+		global $e_forms;
+		
+		$this->updatePaths(); // update dynamic paths and create media and system directories - requires mysql info. 	
+		
+		$this->stage = 5;
+		$this->logLine('Stage 5 started');
+
+		$this->display_required();
+		$this->template->SetTag("installation_heading", LANINS_001);
+		$this->template->SetTag("stage_pre", LANINS_002);
+		$this->template->SetTag("stage_num", LANINS_046);
+		$this->template->SetTag("stage_title", LANINS_047);
+		// $this->template->SetTag("onload", "document.getElementById('u_name').focus()");
+		$this->template->SetTag("percent", 60);
+		$this->template->SetTag("bartype", 'warning');
+
+		$e_forms->start_form("admin_info", $_SERVER['PHP_SELF'].($_SERVER['QUERY_STRING'] == "debug" ? "?debug" : ""));
+		$output = "
+			<div style='width: 100%; padding-left: auto; padding-right: auto;'>
+			<table class='table table-striped table-bordered'>
+				<tr>
+					<td><label for='u_name'>".LANINS_072."</label></td>
+					<td>
+						<input class='form-control' type='text' autofocus name='u_name' id='u_name' placeholder='admin' size='30' required='required' value='".(isset($this->previous_steps['admin']['user']) ? $this->previous_steps['admin']['user'] : "")."' maxlength='60' />
+						<span class='field-help'>".LANINS_073."</span>
+					</td>
+				</tr>
+				
+				<tr>
+					<td><label for='d_name'>".LANINS_074."</label></td>
+					<td>
+						<input class='form-control' type='text' name='d_name' id='d_name' size='30' placeholder='Administrator'  value='".(isset($this->previous_steps['admin']['display']) ? $this->previous_steps['admin']['display'] : "")."' maxlength='60' />
+						<span class='field-help'>".LANINS_123."</span>
+					</td>
+				</tr>
+				
+				<tr>
+					<td><label for='pass1'>".LANINS_076."</label></td>
+					<td>
+						<input class='form-control' type='password' name='pass1' size='30' id='pass1' value='' maxlength='60' required='required' />
+						<span class='field-help'>".LANINS_124."</span>
+					</td>
+				</tr>
+				
+				<tr>
+					<td><label for='pass2'>".LANINS_078."</label></td>
+					<td>
+						<input class='form-control' type='password' name='pass2' size='30' id='pass2' value='' maxlength='60' required='required' />
+						<span class='field-help'>".LANINS_079."</span>
+					</td>
+				</tr>
+				
+				<tr>
+					<td><label for='email'>".LANINS_080."</label></td>
+					<td>
+						<input class='form-control' type='text' name='email' size='30' id='email' required='required' placeholder='admin@mysite.com' value='".(isset($this->previous_steps['admin']['email']) ? $this->previous_steps['admin']['email'] : '')."' maxlength='100' />
+					<span class='field-help'>".LANINS_081."</span>
+					</td>
+				</tr>
+			</table>
+			<br /><br />
+			</div>
+			\n";
+		$e_forms->add_plain_html($output);
+		$this->finish_form();
+		$this->add_button("submit", LAN_CONTINUE);
+		$this->template->SetTag("stage_content", $e_forms->return_form());
+		$this->logLine('Stage 5 completed');
+	}
+
+	/**
+	 * Collect User's Website Preferences
+	 *
+	 * @return string HTML form of stage 6.
+	 */
+	private function stage_6()
+	{
+		global $e_forms;
+		$tp = e107::getParser();
+		$this->stage = 6;
+		$this->logLine('Stage 6 started');
+
+		// -------------------- Save Step 5 Data -------------------------
+		if(!vartrue($this->previous_steps['admin']['user']) || varset($_POST['u_name']))
+		{
+			$_POST['u_name'] = str_replace(array("'", '"'), "", $_POST['u_name']);
+			$this->previous_steps['admin']['user'] = $tp->filter($_POST['u_name']);
+		}
+
+		if(!vartrue($this->previous_steps['admin']['display']) || varset($_POST['d_name']))
+		{
+			$_POST['d_name'] = str_replace(array("'", '"'), "", $_POST['d_name']);
+			if ($_POST['d_name'] == "")
+			{
+				$this->previous_steps['admin']['display'] = $tp->filter($_POST['u_name']);
+			}
+			else
+			{
+				$this->previous_steps['admin']['display'] = $tp->filter($_POST['d_name']);
+			}
+		}
+
+		if(!vartrue($this->previous_steps['admin']['email']) || varset($_POST['email']))
+		{
+			$this->previous_steps['admin']['email'] = $tp->filter($_POST['email'],'email');
+		}
+
+		if(varset($_POST['pass1']) || !vartrue($this->previous_steps['admin']['password']))
+		{
+			if($_POST['pass1'] != $_POST['pass2'])
+			{
+				$this->required['pass1'] = LANINS_049; // passwords don't match.
+			}
+			elseif(!vartrue($_POST['pass1']))
+			{
+				$this->required['pass1'] = LANINS_077;
+			}
+			else
+			{
+				$this->previous_steps['admin']['password'] = $_POST['pass1'];
+			}
+		}
+
+		// -------------   Validate Step 5 Data. --------------------------
+		if(!vartrue($this->previous_steps['admin']['user']) || !vartrue($this->previous_steps['admin']['password']))
+		{
+			$this->required['u_name'] = LANINS_086; //
+		}
+
+		if(vartrue($this->required['u_name']) || vartrue($this->required['pass1']))
+		{
+			return $this->stage_5();
+		}
+
+		// required for various core routines
+		if(!defined('USERNAME'))
+		{
+			define('USERNAME', $this->previous_steps['admin']['user']);
+			define('USEREMAIL', $this->previous_steps['admin']['email']);
+		}
+
+		// ------------- Step 6 Form --------------------------------
+		$this->display_required();
+		$this->template->SetTag("installation_heading", LANINS_001);
+		$this->template->SetTag("stage_pre", LANINS_002);
+		$this->template->SetTag("stage_num", LANINS_056);
+		$this->template->SetTag("stage_title", LANINS_117); // Website Preferences;
+		// $this->template->SetTag("onload", "document.getElementById('sitename').focus()");
+		$this->template->SetTag("percent", 70);
+		$this->template->SetTag("bartype", 'warning');
+
+		$e_forms->start_form("pref_info", $_SERVER['PHP_SELF'].($_SERVER['QUERY_STRING'] == "debug" ? "?debug" : ""));
+		$output = "
+			<div style='width: 100%; padding-left: auto; padding-right: auto; margin-bottom:20px'>
+			<table class='table table-striped'>
+			  	<colgroup>
+					<col class='col-label'  />
+					<col class='col-control'  />
+      			</colgroup>
+				<tr>
+					<td><label for='sitename'>".LANINS_107."</label></td>
+					<td>
+						<input class='form-control' type='text' autofocus placeholder=\"".LANINS_108."\" required='required' name='sitename' id='sitename' size='30' value='".(vartrue($_POST['sitename']) ? $_POST['sitename'] : "")."' maxlength='60' />
+					</td>
+				</tr>
+
+				<tr>
+					<td><label>".LANINS_109."</label></td>
+					<td style='padding-right:0'>
+						<table class='table table-striped' >
+							<thead>
+								<tr>
+									<th>".LANINS_115."</th>
+									<th>".LANINS_116."</th>
+								</tr>
+							</thead>
+							<tbody>";
+
+				$themes = $this->get_themes();
+
+				foreach($themes as $val)
+				{
+					if($val == 'bootstrap')
+					{
+						continue; 
+					} 
+					
+					$themeInfo 	= $this->get_theme_xml($val);
+					$title 		= vartrue($themeInfo['@attributes']['name']);
+					$category 	= vartrue($themeInfo['category']);
+
+					$selected = ($val == 'bootstrap3') ? " checked" : "";
+
+					$output .= "
+								<tr>
+									<td>
+										<label class='radio-inline'><input type='radio' name='sitetheme' value='{$val}' required='required' $selected />{$title}</label>
+									</td>
+									<td>{$category}</td>
+								</tr>";
+				}
+
+				$output .= "
+							</tbody>
+						</table>
+					</td>
+
+				</tr>
+				
+				<tr>
+					<td><label for='install_plugins'>".LANINS_118."</label></td>
+					<td>
+						<input type='checkbox' name='install_plugins' checked='checked' id='install_plugins' value='1' />
+						<span class='field-help'>".LANINS_119."</span>
+					</td>
+				</tr>
+				
+				<tr>
+					<td><label for='generate_content'>".LANINS_111."</label></td>
+					<td>
+						<input type='checkbox' name='generate_content' checked='checked' id='generate_content' value='1' />
+						<span class='field-help'>".LANINS_112."</span>
+					</td>
+				</tr>
+			</table>
+			<br /><br />
+			</div>
+			\n";
+		$e_forms->add_plain_html($output);
+		$this->finish_form();
+		$this->add_button("submit", LAN_CONTINUE);
+		$this->template->SetTag("stage_content", $e_forms->return_form());
+		$this->logLine('Stage 6 completed');
+	}
+
+	private function stage_7()
+	{
+		global $e_forms;
+		$tp = e107::getParser();
+
+		$this->e107->e107_dirs['SYSTEM_DIRECTORY'] = str_replace("[hash]",$this->e107->site_path,$this->e107->e107_dirs['SYSTEM_DIRECTORY']);	
+		$this->e107->e107_dirs['CACHE_DIRECTORY']  = str_replace("[hash]",$this->e107->site_path,$this->e107->e107_dirs['CACHE_DIRECTORY']);
+		$this->e107->e107_dirs['SYSTEM_DIRECTORY'] = str_replace("/".$this->e107->site_path,"",$this->e107->e107_dirs['SYSTEM_DIRECTORY']);
+		$this->e107->e107_dirs['MEDIA_DIRECTORY']  = str_replace("/".$this->e107->site_path,"",$this->e107->e107_dirs['MEDIA_DIRECTORY']);
+
+		$this->stage = 7;
+		$this->logLine('Stage 7 started');
+
+		// required for various core routines
+		if(!defined('USERNAME'))
+		{
+			define('USERNAME', $this->previous_steps['admin']['user']);
+			define('USEREMAIL', $this->previous_steps['admin']['email']);
+		}
+
+		if(varset($_POST['sitename']))
+		{
+			$this->previous_steps['prefs']['sitename'] = $tp->filter($_POST['sitename']);
+		}
+
+		if(varset($_POST['sitetheme']))
+		{
+			$this->previous_steps['prefs']['sitetheme'] = $tp->filter($_POST['sitetheme']);
+		}
+
+		if(varset($_POST['generate_content']))
+		{
+			$this->previous_steps['generate_content'] = $tp->filter($_POST['generate_content'],'int');
+		}
+
+		if(varset($_POST['install_plugins']))
+		{
+			$this->previous_steps['install_plugins'] = $tp->filter($_POST['install_plugins'],'int');
+		}
+
+		// Validate
+		if(!vartrue($this->previous_steps['prefs']['sitename']))
+		{
+			$this->required['sitename'] = LANINS_113; // 'Please enter a website name.'; // should be used to highlight the required field. (using css for example)
+		}
+		if(!vartrue($this->previous_steps['prefs']['sitetheme']))
+		{
+			 $this->required['sitetheme'] = LANINS_114; // 'Please select a theme.';
+		}
+
+		if(vartrue($this->required['sitetheme']) || vartrue($this->required['sitename']))
+		{
+			return $this->stage_6();
+		}
+
+		$config_file = "<?php
+/*
+ * e107 website system
+ *
+ * Copyright (C) 2008-".date('Y')." e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * e107 configuration file
+ *
+ * This file has been generated by the installation script.
  */
 
-\$mySQLserver         = '{$this->previous_steps['mysql']['server']}';
-\$mySQLuser           = '{$this->previous_steps['mysql']['user']}';
-\$mySQLpassword       = '{$this->previous_steps['mysql']['password']}';
-\$mySQLdefaultdb      = '{$this->previous_steps['mysql']['db']}';
-\$mySQLprefix         = '{$this->previous_steps['mysql']['prefix']}';
-\$mySQLcharset        = '".($this->previous_steps['mysql']['db_utf8'] ? 'utf8' : '')."';	# \$mySQLcharset can only contain 'utf8' or ''
+\$mySQLserver    = '{$this->previous_steps['mysql']['server']}';
+\$mySQLuser      = '{$this->previous_steps['mysql']['user']}';
+\$mySQLpassword  = '{$this->previous_steps['mysql']['password']}';
+\$mySQLdefaultdb = '{$this->previous_steps['mysql']['db']}';
+\$mySQLprefix    = '{$this->previous_steps['mysql']['prefix']}';
+\$mySQLcharset   = 'utf8';
 
 \$ADMIN_DIRECTORY     = '{$this->e107->e107_dirs['ADMIN_DIRECTORY']}';
 \$FILES_DIRECTORY     = '{$this->e107->e107_dirs['FILES_DIRECTORY']}';
@@ -1247,59 +1199,915 @@ class e_install
 \$HANDLERS_DIRECTORY  = '{$this->e107->e107_dirs['HANDLERS_DIRECTORY']}';
 \$LANGUAGES_DIRECTORY = '{$this->e107->e107_dirs['LANGUAGES_DIRECTORY']}';
 \$HELP_DIRECTORY      = '{$this->e107->e107_dirs['HELP_DIRECTORY']}';
-\$DOWNLOADS_DIRECTORY = '{$this->e107->e107_dirs['DOWNLOADS_DIRECTORY']}';";
+\$MEDIA_DIRECTORY	  = '{$this->e107->e107_dirs['MEDIA_DIRECTORY']}';
+\$SYSTEM_DIRECTORY    = '{$this->e107->e107_dirs['SYSTEM_DIRECTORY']}';
+
+";
+
+		$config_result = $this->write_config($config_file);		
+
+		if ($config_result)
+		{
+			$page = $config_result."<br />";
+			$this->logLine('Error writing config file: '.$config_result);
+			$alertType = 'warning';
+		} else {
+            $this->logLine('Config file written successfully');
+		}
+		 
+
+		// Data is okay - Continue.
+
+		// $this->previous_steps['prefs']['sitename'] 		= $_POST['sitename'];
+		// $this->previous_steps['prefs']['sitetheme'] 		= $_POST['sitetheme'];
+		// $this->previous_steps['generate_content'] 		= $_POST['generate_content'];
+
+		$this->template->SetTag("installation_heading", LANINS_001);
+		$this->template->SetTag("stage_pre", LANINS_002);
+		$this->template->SetTag("stage_num", LANINS_058);
+		$this->template->SetTag("stage_title", LANINS_055);
+		$this->template->SetTag("percent", 80);
+		$this->template->SetTag("bartype", 'warning');
+
+		$e_forms->start_form("confirmation", $_SERVER['PHP_SELF'].($_SERVER['QUERY_STRING'] == "debug" ? "?debug" : ""));
+		$page = '<div class="alert alert-success">'.nl2br(LANINS_057).'</div>';
+		$this->finish_form();
+		$this->add_button("submit", LAN_CONTINUE);
+
+
+
+		$this->template->SetTag("stage_content", $page.$e_forms->return_form());
+		$this->logLine('Stage 7 completed');
+	 
+	}
+
+	/**
+	 *	Stage 8 - actually create database and set up the site
+	 *
+	 *	@return none
+	 */
+	private function stage_8()
+	{
+		global $e_forms;
+	
+		//$system_dir = str_replace("/".$this->e107->site_path,"",$this->e107->e107_dirs['SYSTEM_DIRECTORY']);
+		//$media_dir = str_replace("/".$this->e107->site_path,"",$this->e107->e107_dirs['MEDIA_DIRECTORY']);
+
+		// required for various core routines
+		if(!defined('USERNAME'))
+		{
+			define('USERNAME', $this->previous_steps['admin']['user']);
+			define('USEREMAIL', $this->previous_steps['admin']['email']);
+		}
+
+		$this->stage = 8;
+		$this->logLine('Stage 8 started');
+
+		$this->template->SetTag("installation_heading", LANINS_001);
+		$this->template->SetTag("stage_pre", LANINS_002);
+		$this->template->SetTag("stage_num", LANINS_120);
+		$this->template->SetTag("stage_title", LANINS_071);
+		$this->template->SetTag("percent", 100);
+		$this->template->SetTag("bartype", 'success');
+	
+		$htaccessError = $this->htaccess();
+
+		$e_forms->start_form("confirmation", "index.php");
+
+			$errors = $this->create_tables();
+			if ($errors == true)
+			{
+				$this->logLine('Errors creating tables: '.$errors);
+				$page = $errors."<br />";
+				$alertType = 'error';
+			}
+			else
+			{
+				$alertType = 'success';
+				$this->logLine('Tables created successfully');
+				$this->import_configuration();
+				$page = nl2br(LANINS_125)."<br />";
+				$page .= (is_writable('e107_config.php')) ? "<br />".str_replace("e107_config.php","<b>e107_config.php</b>",LANINS_126) : "";
+				
+				if($htaccessError)
+				{
+					$page .= "<br />".$htaccessError;
+				}	
+				$this->add_button('submit', LAN_CONTINUE);
+			}
+		 
+		$this->finish_form();
+		$this->stats();
+		$this->template->SetTag("stage_content", "<div class='alert alert-block alert-{$alertType}'>".$page."</div>".$e_forms->return_form());
+		$this->logLine('Stage 8 completed');
+
+		e107::getMessage()->reset(false, false, true);
+	}
+
+
+	protected function stats()
+	{
+		global $e_forms;
+
+		$data = array('name'=>$this->previous_steps['prefs']['sitename'], 'theme'=>$this->previous_steps['prefs']['sitetheme'], 'language'=>$this->previous_steps['language'], 'url'=>$_SERVER['HTTP_REFERER']);;
+		$base = base64_encode(http_build_query($data, null, '&'));
+		$url = "http://e107.org/e-install/".$base;
+		$e_forms->add_plain_html("<img src='".$url."' style='width:1px; height:1px' />");
+
+	}
+
+
+
+	/**
+	 *	htaccess - handle the .htaccess file
+	 *
+	 *	@return string $error
+	 */	
+	protected function htaccess()
+	{
+		$error = "";
+			
+		if(!file_exists(".htaccess"))
+		{
+			if(!rename("e107.htaccess",".htaccess"))
+			{
+				$error = "IMPORTANT: Please rename e107.htaccess to .htaccess";
+			}
+			elseif($_SERVER['QUERY_STRING'] == "debug")
+			{
+				rename(".htaccess","e107.htaccess");
+				$error = "DEBUG: Rename from e107.htaccess to .htaccess was successful";		
+			}
+		}
+		elseif(file_exists("e107.htaccess"))
+		{		
+			$error = "IMPORTANT: Please copy and paste the contents of the <b>e107.htaccess</b> into your <b>.htaccess</b> file. Please take care NOT to overwrite any existing data that may be in it.";				
+		}		
+		return $error;	
+	}
+					
+	/**
+	 * Import and generate preferences and default content.
+	 *
+	 * @return boolean
+	 */
+	 //FIXME always return FALSE???
+	public function import_configuration()
+	{
+		$this->logLine('Starting configuration import');
+
+		// PRE-CONFIG start - create and register blank config instances - do not load!
+		$config_aliases = array(
+			'core',
+			'core_backup',
+			'emote', 
+			'menu',
+			'search',
+			'notify',
+		);
+		foreach ($config_aliases as $alias) 
+		{
+			e107::getConfig($alias, false)->clearPrefCache();
+		}
+		// PRE-CONFIG end		
+
+		// Basic stuff to get the handlers/classes to work.
+
+
+		// $udirs = "admin/|plugins/|temp";
+		// $e_SELF = $_SERVER['PHP_SELF'];
+		// $e_HTTP = preg_replace("#".$udirs."#i", "", substr($e_SELF, 0, strrpos($e_SELF, "/"))."/");
+
+		// define("MAGIC_QUOTES_GPC", (ini_get('magic_quotes_gpc') ? true : false));
+		// define('CHARSET', 'utf-8');
+		// define("e_LANGUAGE", $this->previous_steps['language']);
+		// define('e_SELF', 'http://'.$_SERVER['HTTP_HOST']) . ($_SERVER['PHP_SELF'] ? $_SERVER['PHP_SELF'] : $_SERVER['SCRIPT_FILENAME']);
+
+		$themeImportFile = array();
+		$themeImportFile[0] = $this->e107->e107_dirs['THEMES_DIRECTORY'].$this->previous_steps['prefs']['sitetheme']."/install.xml";
+		$themeImportFile[1] = $this->e107->e107_dirs['THEMES_DIRECTORY'].$this->previous_steps['prefs']['sitetheme']."/install/install.xml";
+		// $themeImportFile[3] = $this->e107->e107_dirs['CORE_DIRECTORY']. "xml/default_install.xml";
+
+		$XMLImportfile = false;
+
+		if(vartrue($this->previous_steps['generate_content']))
+		{
+			foreach($themeImportFile as $file)
+			{
+				if(is_readable($file))
+				{
+					$XMLImportfile = $file;
+					break;
+				}
+			}
+		}
+
+		$tp = e107::getParser();
+
+		define('PREVIEWTHEMENAME',""); // Notice Removal.
+
+		include_lan($this->e107->e107_dirs['LANGUAGES_DIRECTORY'].$this->previous_steps['language']."/lan_prefs.php");
+		include_lan($this->e107->e107_dirs['LANGUAGES_DIRECTORY'].$this->previous_steps['language']."/admin/lan_theme.php");
+
+		// [SecretR] should work now - fixed log errors (argument noLogs = true) change to false to enable log
 		
+		$coreConfig = $this->e107->e107_dirs['CORE_DIRECTORY']. "xml/default_install.xml";		
+		$ret = e107::getXml()->e107Import($coreConfig, 'replace', true, false); // Add core pref values
+		$this->logLine('Attempting to Write Core Prefs.');
+		$this->logLine(print_r($ret, true));
+		
+		if($XMLImportfile) // We cannot rely on themes to include all prefs..so use 'replace'. 
+		{
+			$ret2 = e107::getXml()->e107Import($XMLImportfile, 'replace', true, false); // Overwrite specific core pref and tables entries. 
+			$this->logLine('Attempting to write Theme Prefs/Tables (install.xml)');
+			$this->logLine(print_r($ret2, true));
+		}
+		
+		//Create default plugin-table entries.
+		// e107::getConfig('core')->clearPrefCache();
+		e107::getPlugin()->update_plugins_table('update');
+		$this->logLine('Plugins table updated');
+
+		// Install Theme-required plugins
+		if(vartrue($this->previous_steps['install_plugins']))
+		{
+			if($themeInfo = $this->get_theme_xml($this->previous_steps['prefs']['sitetheme']))
+			{
+				if(isset($themeInfo['plugins']['plugin']))
+				{
+					foreach($themeInfo['plugins']['plugin'] as $k=>$plug)
+					{
+						$this->install_plugin($plug['@attributes']['name']);
+						$this->logLine('Theme-related plugin installed: '.$plug['@attributes']['name']);
+					}
+				}
+			}
+		}
+
+		e107::getSingleton('e107plugin')->save_addon_prefs('update'); // save plugin addon pref-lists. eg. e_latest_list.
+		$this->logLine('Addon prefs saved');
+
+		$tm = e107::getSingleton('themeHandler');
+		$tm->noLog = true; // false to enable log
+		$tm->setTheme($this->previous_steps['prefs']['sitetheme'], false);
+
+		// Admin log fix - don't allow logs to be called inside pref handler
+		// FIX
+		e107::getConfig('core')->setParam('nologs', true); // change to false to enable log
+		$pref = e107::getConfig('core')->getPref();
+
+		// Set Preferences defined during install - overwriting those that may exist in the XML.
+
+		$this->previous_steps['prefs']['sitelanguage'] 		= $this->previous_steps['language'];
+		$this->previous_steps['prefs']['sitelang_init']		= $this->previous_steps['language'];
+
+		$this->previous_steps['prefs']['siteadmin'] 		= $this->previous_steps['admin']['display'];
+		$this->previous_steps['prefs']['siteadminemail'] 	= $this->previous_steps['admin']['email'];
+		$this->previous_steps['prefs']['install_date']  	= time();
+		$this->previous_steps['prefs']['siteurl']			= e_HTTP;
+
+		$this->previous_steps['prefs']['sitetag']			= "e107 Website System";
+		$this->previous_steps['prefs']['sitedisclaimer']	= '';
+
+		$this->previous_steps['prefs']['replyto_name']		= $this->previous_steps['admin']['display'];
+		$this->previous_steps['prefs']['replyto_email']		= $this->previous_steps['admin']['email'];
+
+		// Cookie name fix, ended up with 406 error when non-latin words used
+		$cookiename 										= preg_replace('/[^a-z0-9]/i', '', trim($this->previous_steps['prefs']['sitename']));
+		$this->previous_steps['prefs']['cookie_name']		= ($cookiename ? substr($cookiename, 0, 4).'_' : 'e_').'cookie';
+		
+		### URL related prefs
+		// set all prefs so that they are available, required for adminReadModules() - it checks which plugins are installed
+		e107::getConfig('core')->setPref($this->previous_steps['prefs']); 
+		
+		$url_modules = eRouter::adminReadModules();
+		$url_locations = eRouter::adminBuildLocations($url_modules);
+		$url_config = eRouter::adminBuildConfig(array(), $url_modules);
+		
+		$this->previous_steps['prefs']['url_aliases']		= array();
+		$this->previous_steps['prefs']['url_config']		= $url_config;
+		$this->previous_steps['prefs']['url_modules']		= $url_modules;
+		$this->previous_steps['prefs']['url_locations']		= $url_locations;
+		eRouter::clearCache();
+		$this->logLine('Core URL config set to default state');
+
+		// Set prefs, save
+		e107::getConfig('core')->setPref($this->previous_steps['prefs']);
+		e107::getConfig('core')->save(FALSE,TRUE, FALSE); // save preferences made during install.
+		$this->logLine('Core prefs set to install choices');
+
+		// Create the admin user - replacing any that may be been included in the XML.
+		$ip = $_SERVER['REMOTE_ADDR'];
+		$userp = "1, '{$this->previous_steps['admin']['display']}', '{$this->previous_steps['admin']['user']}', '', '".md5($this->previous_steps['admin']['password'])."', '', '{$this->previous_steps['admin']['email']}', '', '', 0, ".time().", 0, 0, 0, 0, 0, '{$ip}', 0, '', 0, 1, '', '', '0', '', ".time().", ''";
+		$qry = "REPLACE INTO {$this->previous_steps['mysql']['prefix']}user VALUES ({$userp})";
+		$this->dbqry("REPLACE INTO {$this->previous_steps['mysql']['prefix']}user VALUES ({$userp})" );
+		$this->logLine('Admin user created');
+
+		// Add Default user-extended values;
+		$extendedQuery = "REPLACE INTO `{$this->previous_steps['mysql']['prefix']}user_extended` (`user_extended_id` ,	`user_hidden_fields`) VALUES ('1', NULL 	);";
+		$this->dbqry($extendedQuery);
+
+		mysql_close($this->dbLink);
+		
+		e107::getMessage()->reset(false, false, true);
+		
+		return false;
+	}
+
+	/**
+	 * Install a Theme required plugin.
+	 *
+	 * @param string $plugpath - plugin folder name
+	 * @return void
+	 */
+	public function install_plugin($plugpath) //FIXME - requires default plugin table entries, see above.
+	{
+		e107::getDb()->gen("SELECT * FROM #plugin WHERE plugin_path = '".$plugpath."' LIMIT 1");
+		$row = e107::getDb()->fetch(MYSQL_ASSOC);
+		e107::getPlugin()->install_plugin($row['plugin_id']);
+		
+		e107::getMessage()->reset(false, false, true);
+		
+		return;
+	}
+
+	/**
+	 * Check a DB name or table prefix - anything starting with a numeric followed by 'e' causes problems.
+	 * Return TRUE if acceptable, FALSE if unacceptable
+	 * Empty string returns the value of $blank_ok (caller should set TRUE for prefix, FALSE for DB name)
+	 *
+	 * @param string $str
+	 * @param boolean $blank_ok [optional]
+	 * @return boolean
+	 */
+	function check_name($str, $blank_ok = FALSE)
+	{
+		if ($str == '')
+			return $blank_ok;
+		if (preg_match("#^\d+[e|E]#", $str))
+			return FALSE;
+		return TRUE;
+	}
+
+	/**
+	 * checkDbFields - Check an array of db-related fields for illegal characters
+	 *
+	 * @param array $fields
+	 * @return boolean TRUE for OK, FALSE for invalid character
+	 */
+	function checkDbFields($fields)
+	{
+		if (!is_array($fields)) return FALSE;
+		foreach (array('server', 'user', 'db', 'prefix') as $key)
+		{
+			if (isset($fields[$key]))
+			{
+				if (strtr($fields[$key],"';", '    ') != $fields[$key])
+				{
+					return FALSE;		// Invalid character found
+				}
+			}
+		}
+		return TRUE;
+	}
+
+	function get_lan_file()
+	{
+		if(!isset($this->previous_steps['language']))
+		{
+			$this->previous_steps['language'] = "English";
+		}
+
+		include_lan($this->e107->e107_dirs['LANGUAGES_DIRECTORY'].$this->previous_steps['language']."/lan_installer.php");
+		// $this->lan_file = "{$this->e107->e107_dirs['LANGUAGES_DIRECTORY']}{$this->previous_steps['language']}/lan_installer.php";
+		// if(is_readable($this->lan_file))
+		// {
+		//		include($this->lan_file);
+		// }
+		// elseif(is_readable("{$this->e107->e107_dirs['LANGUAGES_DIRECTORY']}English/lan_installer.php"))
+		// {
+		//		include("{$this->e107->e107_dirs['LANGUAGES_DIRECTORY']}English/lan_installer.php");
+		// }
+		// else
+		// {
+		//		$this->raise_error("Fatal: Could not get valid language file for installation.");
+		// }
+	}
+
+	/**
+	 * get_languages - check language folder for language names
+	 *
+	 * @param none
+	 * @return array $lanlist
+	 */
+	function get_languages()
+	{
+		$handle = opendir($this->e107->e107_dirs['LANGUAGES_DIRECTORY']);
+		$lanlist = array();		
+		while ($file = readdir($handle))
+		{
+			if ($file != "." && $file != ".." && $file != "/" && $file != "CVS" && $file != 'index.html') 
+			{
+				if(file_exists("./{$this->e107->e107_dirs['LANGUAGES_DIRECTORY']}{$file}/lan_installer.php"))
+				{
+					$lanlist[] = $file;
+				}
+			}
+		}
+		closedir($handle);
+		return $lanlist;
+	}
+
+	/**
+	 * get_themes - check theme folder for theme names
+	 *
+	 * @param none
+	 * @return array $themelist
+	 */
+	function get_themes()
+	{
+		$handle = opendir($this->e107->e107_dirs['THEMES_DIRECTORY']);
+		$themelist = array();
+		while ($file = readdir($handle))
+		{
+			if (is_dir($this->e107->e107_dirs['THEMES_DIRECTORY'].$file) && $file !='_blank')
+			{
+				if(is_readable("./{$this->e107->e107_dirs['THEMES_DIRECTORY']}{$file}/theme.xml"))
+				{
+					$themelist[] = $file;
+				}
+			}
+		}
+		closedir($handle);
+		return $themelist;
+	}
+
+	/**
+	 * get_theme_xml - check theme.xml file of specific theme
+	 *
+	 * @param string $theme_folder
+	 * @return array $xmlArray OR boolean FALSE if result is no array
+	 */	
+	function get_theme_xml($theme_folder)
+	{
+		if(!defined("SITEURL"))
+		{
+			define("SITEURL","");
+		}
+		$path = $this->e107->e107_dirs['THEMES_DIRECTORY'].$theme_folder."/theme.xml";
+
+		if(!is_readable($path))
+		{
+			return FALSE;
+		}
+
+		require_once($this->e107->e107_dirs['HANDLERS_DIRECTORY']."theme_handler.php");
+
+		$tm = new themeHandler;
+		$xmlArray = $tm->parse_theme_xml($theme_folder);
+
+		// $xml = e107::getXml();
+		// $xmlArray = $xml->loadXMLfile($path,'advanced');
+		return (is_array($xmlArray)) ? $xmlArray : FALSE;
+	}
+
+	/**
+	 * finish_form - pass data along forms
+	 *
+	 * @param string $force_stage [optional]
+	 * @return none
+	 */	
+	function finish_form($force_stage = false)
+	{
+		global $e_forms;
+		if($this->previous_steps)
+		{
+			$e_forms->add_hidden_data("previous_steps", base64_encode(serialize($this->previous_steps)));
+		}
+		$e_forms->add_hidden_data("stage", ($force_stage ? $force_stage : ($this->stage + 1)));
+	}
+
+	/**
+	 * check_writable_perms - check writable permissions
+	 *
+	 * @param string $list [default 'must_write']
+	 * @return array $bad_files
+	 */	
+	function check_writable_perms($list = 'must_write')
+	{
+		$bad_files = array();
+		
+		$system_dirs = $this->e107->e107_dirs;
+		$system_dirs['MEDIA_DIRECTORY'] = str_replace("[hash]/","", $system_dirs['MEDIA_DIRECTORY']);
+		$system_dirs['SYSTEM_DIRECTORY'] = str_replace("[hash]/","", $system_dirs['SYSTEM_DIRECTORY']);
+		
+		$data['must_write'] = 'e107_config.php|{$MEDIA_DIRECTORY}|{$SYSTEM_DIRECTORY}'; // all-sub folders are created on-the-fly
+		
+		$data['can_write'] = '{$PLUGINS_DIRECTORY}|{$THEMES_DIRECTORY}';
+		if (!isset($data[$list])) return $bad_files;
+		foreach ($system_dirs as $dir_name => $value)
+		{
+			$find[] = "{\${$dir_name}}";
+			$replace[] = "./$value";
+		}
+		$data[$list] = str_replace($find, $replace, $data[$list]);
+		$files = explode("|", trim($data[$list]));
+		foreach ($files as $file)
+		{
+			if(!is_writable($file))
+			{
+				$bad_files[] = str_replace("./", "", $file);
+			}
+		}
+		return $bad_files;
+	}
+
+	/**
+	 * Create Core MySQL tables
+	 *
+	 * @return string|FALSE error code or FALSE if no errors are detected
+	 */
+	public function create_tables()
+	{
+		$link = mysql_connect($this->previous_steps['mysql']['server'], $this->previous_steps['mysql']['user'], $this->previous_steps['mysql']['password']);
+		if(!$link)
+		{
+			return nl2br(LANINS_084."\n\n<b>".LANINS_083."\n</b><i>".mysql_error($link)."</i>");
+		}
+
+		$this->dbLink = $link;		// Needed for mysql_close() to work round bug in PHP 5.3
+		$db_selected = mysql_select_db($this->previous_steps['mysql']['db'], $link);
+		if(!$db_selected)
+		{
+			return nl2br(LANINS_085." '{$this->previous_steps['mysql']['db']}'\n\n<b>".LANINS_083."\n</b><i>".mysql_error($link)."</i>");
+		}
+
+		$filename = "{$this->e107->e107_dirs['CORE_DIRECTORY']}sql/core_sql.php";
+		$fd = fopen ($filename, "r");
+		$sql_data = fread($fd, filesize($filename));
+		$sql_data = preg_replace("#\/\*.*?\*\/#mis", '', $sql_data);		// Strip comments
+		fclose ($fd);
+
+		if (!$sql_data)
+		{
+			return nl2br(LANINS_060)."<br /><br />";
+		}
+
+		preg_match_all("/create(.*?)(?:myisam|innodb);/si", $sql_data, $result );
+
+		// Force UTF-8 again
+		$this->dbqry('SET NAMES `utf8`');
+
+		$srch = array("CREATE TABLE","(");
+		$repl = array("DROP TABLE IF EXISTS","");
+
+		foreach ($result[0] as $sql_table)
+		{
+			$sql_table = preg_replace("/create table\s/si", "CREATE TABLE {$this->previous_steps['mysql']['prefix']}", $sql_table);
+
+			// Drop existing tables before creating.
+			$tmp = explode("\n",$sql_table);
+			$drop_table = str_replace($srch,$repl,$tmp[0]);
+			$this->dbqry($drop_table);
+
+			if (!$this->dbqry($sql_table, $link))
+			{
+				return nl2br(LANINS_061."\n\n<b>".LANINS_083."\n</b><i>".mysql_error($link)."</i>");
+			}
+		}
+
+		return FALSE;
+
+	}
+
+	function write_config($data)
+	{
+		$e107_config = 'e107_config.php';
+		$fp = @fopen($e107_config, 'w');
 		if (!@fwrite($fp, $data))
 		{
 			@fclose ($fp);
 			return nl2br(LANINS_070);
 		}
 		@fclose ($fp);
+		@chmod($e107_config,0644); // correct permissions. 
 		return false;
 	}
+
+	function dbqry($qry)
+	{
+		mysql_query($qry);
+
+		if(mysql_errno())
+		{
+			$errorInfo = 'Query Error [#'.mysql_errno().']: '.mysql_error()."\nQuery: {$qry}";
+		//	echo $errorInfo."<br />";
+			//exit;
+			$this->debug_db_info['db_error_log'][] = $errorInfo;
+			//$this->debug_db_info['db_log'][] = $qry;
+			return false;
+		}
+		//$this->debug_db_info['db_log'][] = $qry;
+		return true;
+	}
+}
+
+class e_forms 
+{
+	var $form;
+	var $opened;
+
+	function start_form($id, $action, $method = "post" )
+	{
+		$this->form = "\n<form method='{$method}' id='{$id}' action='{$action}'>\n";
+		$this->opened = true;
+	}
+
+	function add_select_item($id, $labels, $selected)
+	{
+		$this->form .= "
+		<select class='form-control input-large' name='{$id}' id='{$id}'>\n";
+		foreach ($labels as $label)
+		{
+			$this->form .= "<option".($label == $selected ? " selected='selected'" : "").">{$label}</option>\n";
+		}
+		$this->form .= "</select>\n";
+	}
+	
+
+
+	function add_hidden_data($id, $data)
+	{
+		$this->form .= "<input type='hidden' name='{$id}' value='{$data}' />\n";
+	}
+
+	function add_plain_html($html_data)
+	{
+		$this->form .= $html_data;
+	}
+
+	function return_form()
+	{
+		if($this->opened == true)
+		{
+			$this->form .= "</form>\n";
+		}
+		$this->opened = false;
+		return $this->form;
+	}
+}
+
+function create_tables_unattended()
+{
+	//If username or password not specified, exit
+	if(!isset($_GET['username']) || !isset($_GET['password']))
+	{
+		return false;
+	}
+	
+	if(file_exists('e107_config.php'))
+	{
+		@include('e107_config.php');
+	} else {
+		return false;
+	}	
+	
+	//If mysql info not set, config file is not created properly
+	if(!isset($mySQLuser) || !isset($mySQLpassword) || !isset($mySQLdefaultdb) || !isset($mySQLprefix))
+	{
+		return false;
+	}
+
+	// If specified username and password does not match the ones in config, exit
+	if($_GET['username'] !== $mySQLuser || $_GET['password'] !== $mySQLpassword)
+	{
+		return false;
+	}
+
+	$einstall = new e_install();
+	$einstall->previous_steps['mysql']['server'] 	= $mySQLserver;
+	$einstall->previous_steps['mysql']['user']		= $mySQLuser;
+	$einstall->previous_steps['mysql']['password'] 	= $mySQLpassword;
+	$einstall->previous_steps['mysql']['db'] 		= $mySQLdefaultdb;
+	$einstall->previous_steps['mysql']['prefix'] 	= $mySQLprefix;
+
+	$einstall->previous_steps['language'] 			= (isset($_GET['language']) ? $_GET['language'] : 'English');
+
+	$einstall->previous_steps['admin']['display']  	= (isset($_GET['admin_display']) ? $_GET['admin_display'] : 'admin');
+	$einstall->previous_steps['admin']['user']  	= (isset($_GET['admin_user']) ? $_GET['admin_user'] : 'admin');
+	$einstall->previous_steps['admin']['password']  = (isset($_GET['admin_password']) ? $_GET['admin_password'] : 'admin_password');
+	$einstall->previous_steps['admin']['email']  	= (isset($_GET['admin_email']) ? $_GET['admin_email'] : 'admin_email@xxx.com');
+
+	$einstall->previous_steps['generate_content'] 	= isset($_GET['gen']) ? intval($_GET['gen']) : 1;
+	$einstall->previous_steps['install_plugins'] 	= isset($_GET['plugins']) ? intval($_GET['plugins']) : 1;
+	$einstall->previous_steps['prefs']['sitename'] 	= isset($_GET['sitename']) ? urldecode($_GET['sitename']) : LANINS_113;
+	$einstall->previous_steps['prefs']['sitetheme'] = isset($_GET['theme']) ? urldecode($_GET['theme']) : 'jayya';
+
+	//@include_once("./{$HANDLERS_DIRECTORY}e107_class.php");
+	//$e107_paths = compact('ADMIN_DIRECTORY', 'FILES_DIRECTORY', 'IMAGES_DIRECTORY', 'THEMES_DIRECTORY', 'PLUGINS_DIRECTORY', 'HANDLERS_DIRECTORY', 'LANGUAGES_DIRECTORY', 'HELP_DIRECTORY', 'CACHE_DIRECTORY', 'DOWNLOADS_DIRECTORY', 'UPLOADS_DIRECTORY');
+	//$e107 = e107::getInstance();
+	//$e107->init($e107_paths, realpath(dirname(__FILE__)));
+
+	//$einstall->e107 = &$e107;
+
+	//FIXME - does not appear to work for import_configuration. ie. tables are blank except for user table.
+
+	$einstall->create_tables();
+	$einstall->import_configuration();
+	return true;
 }
 
 class SimpleTemplate
 {
-	public	$Tags      = array();
-	public	$open_tag  = '{';
-	public	$close_tag = '}';
-	
-	public function GetTag($TagName, $Default='')
+	var $Tags = array();
+	var $open_tag = "{";
+	var $close_tag = "}";
+
+	function SimpleTemplate()
 	{
-		return isset($this->Tags[$TagName]) ? $this->Tags[$TagName]['Data'] : $Default;
+		define("TEMPLATE_TYPE_FILE", 0);
+		define("TEMPLATE_TYPE_DATA", 1);
 	}
-	
-	public function SetTag($TagName, $Data)
+
+	function SetTag($TagName, $Data)
 	{
-		$this->Tags[$TagName] = array(
-			'Tag'  => $TagName,
-			'Data' => $Data
+		$this->Tags[$TagName] = array(	'Tag'  => $TagName,
+		'Data' => $Data
 		);
-		
-		return $this;
 	}
-	
-	public function RemoveTag($TagName)
+
+	function RemoveTag($TagName)
 	{
-		if (isset($this->Tags[$TagName]))  unset($this->Tags[$TagName]);
-		
-		return $this;
+		unset($this->Tags[$TagName]);
 	}
-	
-	public function ClearTags()
+
+	function ClearTags()
 	{
 		$this->Tags = array();
-		
-		return $this;
 	}
-	
-	public function ParseTemplate($Template, $from_file=false)
+
+	function ParseTemplate($Template, $template_type = TEMPLATE_TYPE_FILE)
 	{
-		$TemplateData = $from_file ? file_get_contents($Template) : $Template;
-		
-		foreach ($this->Tags as $Tag)  $TemplateData = str_replace($this->open_tag.$Tag['Tag'].$this->close_tag, $Tag['Data'], $TemplateData);
-		
+		if($template_type == TEMPLATE_TYPE_DATA)
+		{
+			$TemplateData = $Template;
+		}
+		else
+		{
+			$TemplateData = file_get_contents($Template);
+		}
+		foreach ($this->Tags as $Tag)
+		{
+			$TemplateData = str_replace($this->open_tag.$Tag['Tag'].$this->close_tag, $Tag['Data'], $TemplateData);
+		}
+
 		return $TemplateData;
 	}
 }
+
+function template_data()
+{
+
+	$data = '<!DOCTYPE html>
+	<html lang="en">
+	  <head>
+		<meta charset="utf-8">
+		<title>{installation_heading} :: {stage_pre}{stage_num} - {stage_title}</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link href="'.e_THEME.'bootstrap3/css/bootstrap-dark.min.css" rel="stylesheet">
+		<link href="'.e_THEME.'bootstrap3/admin_style.css" rel="stylesheet">
+		<style type="text/css">
+		
+		body 					{  padding-top: 40px; padding-bottom: 40px; background-color: #181818; }
+		.container-narrow 		{ margin: 0 auto; max-width: 800px; }
+		.container-narrow > hr 	{ margin: 30px 0; }
+		.nav 					{ margin-top:35px; }
+		.buttons-bar 			{ margin: 20px 30px 10px 0px }
+		.tooltip-inner 			{ font-size:110%; }
+		div.masthead 			{ margin-bottom:30px }
+		h4						{ margin-left:10px; margin-bottom:20px; color:#181818; }
+		#version				{ position:relative; left:50px; top:-20px; }
+		.well					{ border-radius: 12px }
+		
+		</style>
+		<!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+		<!--[if lt IE 9]>
+		  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+		<![endif]-->
+	  </head>
+	  <body>
+
+		<div class="container-narrow">
+
+		  <div class="masthead">
+			<ul class="nav nav-pills pull-right" >
+			  <li class="active" style="width:200px;text-align:center" ><a href="#" >Installation: {stage_pre} {stage_num} of 8</a>
+			  <div class="progress progress-{bartype}">
+				<div class="progress-bar bar" style="width: {percent}%"></div>
+			</div>
+			</li>
+			 </ul>
+			<h3 class="muted">
+			<img src="'.e_IMAGE.'admin_images/credits_logo.png" alt="e107" />
+			</h3>
+			
+		  </div>
+
+			<div class="panel panel-default">
+					  <div class="panel-heading">
+					    <h3 class="panel-title">{stage_title}</h3>
+					  </div>
+					  <div class="panel-body">
+						{stage_content}
+					  </div>
+					</div>
+
+
+
+		  <div class="footer">
+			<p class="pull-left">&copy; e107 Inc. '.date("Y").'</p>
+			<p class="pull-right">Version: '.e_VERSION.'</p> 
+		  </div>
+		 <div>{debug_info}</div>
+		</div> <!-- /container -->
+
+		<!-- The javascript
+		================================================== -->
+		<!-- Placed at the end of the document so the pages load faster -->
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+		<script src="http://netdna.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"m type="text/javascript"></script>
+
+
+
+		<script type="text/javascript">
+		
+		$(document).ready(function()
+		{
+		
+			$("input,textarea,select,label,.e-tip").each(function(c) {
+						
+				var t = $(this).nextAll(".field-help");
+				t.hide();
+		
+				$(this).tooltip({
+					title: function() {
+						var tip = t.html();
+						return tip;
+					},
+					fade: true,
+					html: true,
+					placement: "right",
+					delay: { show: 200, hide: 200 }
+				});
+			});
+
+			// disable validation for back-button.
+			$(".no-validate").click(function () {
+				$("form").attr( "novalidate",true );
+			});
+		
+		});
+		
+		</script>
+		
+	  </body>
+	</html>
+	';
+	return $data;
+}
+
+/**
+ * Render a Fatal error and halt installation. 
+ */
+function die_fatal_error($error)
+{
+		
+	define("e_IMAGE","e107_images/");
+	define("e_JS","e107_web/js/");
+	define("e_THEME", "e107_themes/");
+	define("e_LANGUAGEDIR", "e107_languages/");
+	
+	include(e_LANGUAGEDIR."English/English.php");
+	include(e_LANGUAGEDIR."English/lan_installer.php");
+	
+	$var = array();
+	$var["installation_heading"] 	= LANINS_001;
+	$var["stage_pre"] 				= LANINS_002;
+	$var["stage_num"] 				=  LANINS_003;
+	$var["stage_title"] 			= LAN_ERROR;
+	$var["percent"] 				= 10;
+	$var["bartype"] 				= 'danger';
+	$var['stage_content']			= "<div class='alert alert-error alert-block'>".$error."</div>";
+	$var['debug_info'] 				= '';
+	
+	$template = template_data();
+	
+	foreach($var as $k=>$val)
+	{
+		$template = str_replace("{".$k."}", $val, $template);	
+		
+	}
+	echo $template;
+	exit;		
+}
+	

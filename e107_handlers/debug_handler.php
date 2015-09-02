@@ -3,17 +3,17 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system
 |
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
+|     Copyright (C) 2008-2009 e107 Inc (e107.org)
+|     http://e107.org
 |
 |
 |     Released under the terms and conditions of the
 |     GNU General Public License (http://gnu.org).
 |
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/debug_handler.php $
-|     $Revision: 12549 $
-|     $Id: debug_handler.php 12549 2012-01-13 06:55:24Z e107coders $
-|     $Author: e107coders $
+|     $Source: /cvs_backup/e107_0.8/e107_handlers/debug_handler.php,v $
+|     $Revision$
+|     $Date$
+|     $Author$
 +----------------------------------------------------------------------------+
 */
 
@@ -22,8 +22,13 @@
 //
 // MAKING NEW DEBUG DEFS
 // The debug levels are Single Bit Binary Values. i.e, 1,2,4,8,16...
-// In the table below, if you want to define a new value, pick one of
-// the "FILLIN" items and give it the name and definition you need
+// In the table below, if you want to define a new value:
+// - If it is debug info ALL devs will often want, then pick one of
+//   the remaining "FILLIN" items and give it the name and definition you need
+// - If it is a detail item not often used, simply add yours to the end of the
+//   list, multiplying the previous value by 2 to get the the next 'bit' number
+// - In either case, create one or more shortcut/abbreviations in $aDebugShortcuts
+//   to make it easy for dev's to specify the new display item.
 //
 // USING DEBUG DEFINITIONS
 // Since these are Bit Values, **never** test using < or > comparisons. Always
@@ -41,16 +46,17 @@ if (!defined('e107_INIT')) { exit; }
 // If debugging enabled, set it all up
 // If no debugging, then E107_DEBUG_LEVEL will be zero
 //
-
-
-if (preg_match('/\[debug(=?)(.*?),?(\+|stick|-|unstick|)\]/', $_SERVER['REQUEST_URI']) || strstr(e_MENU, "debug") || isset($_COOKIE['e107_debug_level']) || defined('e_DEBUG')) {
+if (strstr(e_MENU, "debug") || isset($_COOKIE['e107_debug_level'])) 
+{
 	$e107_debug = new e107_debug;
 	require_once(e_HANDLER.'db_debug_class.php');
 	$db_debug = new e107_db_debug;
 	$e107_debug->set_error_reporting();
 	$e107_debug_level = $e107_debug->debug_level;
 	define('E107_DEBUG_LEVEL', $e107_debug_level);
-} else {
+} 
+else 
+{
 	define('E107_DEBUG_LEVEL', 0);
 }
 
@@ -106,63 +112,71 @@ class e107_debug {
 		'deprecated'	=> 16384,   // show if code is using deprecated functions
 		'notice'		=> 32768,   // detailed notice error messages?
 		'inc'       =>  65536,  // include files
-
-		'everything'=> 61439,   //(65535-4096) everything we know, and the rumors too
-		                        // (but shortcode paths removed: inline debug breaks pages!
+		'everything'=> 16773119,   //(0+0xffffff-4096) 24 bits set, except shortcode paths 
+														// removed: inline debug breaks pages!
 	);
 
-	function e107_debug()
+	function e107_debug() 
 	{
-		if (preg_match('/\[debug(=?)(.*?),?(\+|stick|-|unstick)\]/', $_SERVER['REQUEST_URI'], $debug_param) || isset($_COOKIE['e107_debug_level']) || defined('e_DEBUG'))
+	  if (preg_match('/debug(=?)(.*?),?(\+|stick|-|unstick|$)/', e_MENU, $debug_param) || isset($_COOKIE['e107_debug_level'])) 
+	  {
+		$dVals='';
+		if (!isset($debug_param[1]) || ($debug_param[1]=='')) $debug_param[1] = '=';
+		if (isset($_COOKIE['e107_debug_level'])) 
 		{
-			$dVals=0;
-			
-			if(defined('e_DEBUG')) // manual debug via e107_config 
-			{
-				$dVals = e_DEBUG;	
-			}
-			
-			if (isset($_COOKIE['e107_debug_level']))
-			{
-				$dVals = substr($_COOKIE['e107_debug_level'],6);
-			}
-			
-			if (preg_match('/\[debug(=?)(.*?),?(\+|stick|-|unstick)\]/', $_SERVER['REQUEST_URI']))
-			{
-				$dVals = $debug_param[1] == '=' ? $debug_param[2] : 'everything';
-			}
-
-
-			
-			$aDVal = explode('.',$dVals); // support multiple values, OR'd together
-			$dVal = 0;
-			foreach ($aDVal as $curDVal)
-			{
-				if (isset($this->aDebugShortcuts[$curDVal])) {
-					$dVal |= $this->aDebugShortcuts[$curDVal];
-				} else {
-					$dVal |= $curDVal;
-				}
-			}
-				
-			if (isset($debug_param[3]))
-			{
-				if ($debug_param[3] == '+' || $debug_param[3] == 'stick')
-				{
-					cookie('e107_debug_level', 'level='.$dVal, time() + 86400,e_HTTP,e_DOMAIN);
-				}
-				if ($debug_param[3] == '-' || $debug_param[3] == 'unstick')
-				{
-					cookie('e107_debug_level', '', time() - 3600,e_HTTP,e_DOMAIN);
-				}
-			}
-
-				$this->debug_level = $dVal;
+		  $dVals = substr($_COOKIE['e107_debug_level'],6);
 		}
+		if (preg_match('/debug(=?)(.*?),?(\+|stick|-|unstick|$)/', e_MENU))
+		{
+		  $dVals = $debug_param[1] == '=' ? $debug_param[2] : 'everything';
+		}
+			
+		$aDVal = explode('.',$dVals); // support multiple values, OR'd together
+		$dVal = 0;
+		foreach ($aDVal as $curDVal)
+		{
+		  if (isset($this->aDebugShortcuts[$curDVal])) 
+		  {
+			$dVal |= $this->aDebugShortcuts[$curDVal];
+		  } 
+		  else 
+		  {
+				$dVal |= $curDVal;
+		  }
+		}
+								
+		if (isset($debug_param[3]))
+		{
+		  if ($debug_param[3] == '+' || $debug_param[3] == 'stick')
+		  {
+			cookie('e107_debug_level', 'level='.$dVal, time() + 86400);
+		  }
+		  if ($debug_param[3] == '-' || $debug_param[3] == 'unstick')
+		  {
+			cookie('e107_debug_level', '', time() - 3600);
+		  }
+		}
+
+		$this->debug_level = $dVal;
+	  }
 	}
 
-	function set_error_reporting()
+
+	function set_error_reporting() 
 	{
 	}
 }
+
+// Quick debug message logger
+// Example: e7debug(__FILE__.__LINE__.": myVar is ".print_r($myVar,TRUE));
+function e7debug($message,$TraceLev=1)
+{
+  if (!E107_DEBUG_LEVEL) return;
+	global $db_debug;
+	if (is_object($db_debug))
+	{
+		$db_debug->log($message,$TraceLev);
+	}
+}
+
 ?>

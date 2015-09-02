@@ -5,6 +5,9 @@ if (!defined('e107_INIT')) { exit; }
 /* Manuel Lemos's PHP E-mail validation class
  * http://freshmeat.net/projects/emailaddressvalidationcomponent/
  * email_validation.php
+ *
+ * @(#) $Header: /cvs_backup/e107_0.8/e107_handlers/mail_validation_class.php,v 1.1.1.1 2006-12-02 04:33:46 mcfly_e107 Exp $
+ *
  */
 
 class email_validation_class
@@ -94,7 +97,7 @@ class email_validation_class
 			$this->preg=(function_exists("preg_match") ? "/".str_replace("/", "\\/", $this->email_regular_expression)."/" : "");
 			return($this->ValidateEmailAddress($email));
 		}
-		return(eregi($this->email_regular_expression,$email)!=0);
+		return(preg_match("/".str_replace("/", "\\/", $this->email_regular_expression)."/i", $email)/*!=0*/);
 	}
 
 	Function ValidateEmailHost($email,&$hosts)
@@ -153,7 +156,7 @@ class email_validation_class
 		for($host=0;$host<count($hosts);$host++)
 		{
 			$domain=$hosts[$host];
-			if(ereg('^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',$domain))
+			if(preg_match('/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/',$domain))
 				$ip=$domain;
 			else
 			{

@@ -1,21 +1,18 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/search/search_comment.php $
-|     $Revision: 11678 $
-|     $Id: search_comment.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) 2008-2009 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ *
+ *
+ * $Source: /cvs_backup/e107_0.8/e107_handlers/search/search_comment.php,v $
+ * $Revision$
+ * $Date$
+ * $Author$
+ */
 
 if (!defined('e107_INIT')) { exit; }
 
@@ -30,11 +27,11 @@ if (isset($_GET['time']) && is_numeric($_GET['time'])) {
 }
 
 if (isset($_GET['author']) && $_GET['author'] != '') {
-	$advanced_where .= " c.comment_author LIKE '%".$tp -> toDB($_GET['author'])."%' AND";
+	$advanced_where .= " c.comment_author_name LIKE '%".$tp -> toDB($_GET['author'])."%' AND";
 }
 
 //basic
-$return_fields = 'c.comment_item_id, c.comment_author, c.comment_datestamp, c.comment_comment, c.comment_type';
+$return_fields = 'c.comment_item_id, c.comment_author_id, comment_author_name, c.comment_datestamp, c.comment_comment, c.comment_type';
 
 foreach ($search_prefs['comments_handlers'] as $h_key => $value) {
 	if (check_class($value['class'])) {
@@ -49,7 +46,7 @@ foreach ($search_prefs['comments_handlers'] as $h_key => $value) {
 	}
 }
 
-$search_fields = array('c.comment_comment', 'c.comment_author');
+$search_fields = array('c.comment_comment', 'c.comment_author_name');
 $weights = array('1.2', '0.6');
 $no_results = LAN_198;
 $where = "comment_type IN (".implode(',', $in).") AND".$advanced_where;

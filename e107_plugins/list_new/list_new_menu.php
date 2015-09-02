@@ -1,68 +1,53 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/list_new/list_new_menu.php $
-|     $Revision: 12126 $
-|     $Id: list_new_menu.php 12126 2011-04-10 21:27:12Z e107steved $
-|     $Author: e107steved $
-+----------------------------------------------------------------------------+
+ * e107 website system
+ *
+ * Copyright (C) 2008-2009 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * List Menu New
+ *
+ * $Source: /cvs_backup/e107_0.8/e107_plugins/list_new/list_new_menu.php,v $
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
 */
+
+/**
+ *	Menu for list_new plugin
+ *
+ *	@package e107_plugins
+ *	@subpackage list_new
+ */
 
 if (!defined('e107_INIT')) { exit; }
 
-if (!isset($pref['plug_installed']['list_new']))
+if (!e107::isInstalled('list_new'))
 {
-    return;
+	return;
 }
 
-global $sysprefs, $tp, $eArrayStorage, $list_pref, $rc;
-$listplugindir = e_PLUGIN . "list_new/";
 unset($text);
-require_once($listplugindir."list_shortcodes.php");
 
-// get language file
-include_lan($listplugindir . "languages/" . e_LANGUAGE . ".php");
-
+global $rc;
 if (!is_object($rc))
 {
-    require_once($listplugindir . "list_class.php");
+    require_once(e_PLUGIN."list_new/list_class.php");
     $rc = new listclass;
 }
 
-if(!isset($list_pref))
-{
-	$list_pref = $rc->getListPrefs();
-}
+//set mode
+$rc->mode = "new_menu";
 
-$mode = "new_menu";
-$sections = $rc->prepareSection($mode);
-$arr = $rc->prepareSectionArray($mode, $sections);
-// display the sections
-$text = "";
-for($i = 0;$i < count($arr);$i++)
-{
-    if ($arr[$i][1] == "1")
-    {
-        $sectiontext = $rc->show_section_list($arr[$i], $mode);
-        if ($sectiontext != "")
-        {
-            $text .= $sectiontext;
-        }
-    }
-}
+//parse menu
+$text = $rc->displayMenu();
 
-$caption = (isset($list_pref[$mode."_caption"]) && $list_pref[$mode."_caption"] ? $list_pref[$mode."_caption"] : LIST_MENU_1);
-$caption = $tp->toHtml($caption, FALSE, 'USER_TITLE');
-$text = $tp->toHtml($text, TRUE, 'USER_BODY');
-$ns->tablerender($caption, $text, 'list_new');
+$caption = vartrue($rc->list_pref[$rc->mode."_caption"], LIST_MENU_1);
+$caption = $rc->e107->tp->toHtml($caption, FALSE, 'USER_TITLE');
+$text = $rc->e107->tp->toHtml($text, TRUE, 'USER_BODY');
+$rc->e107->ns->tablerender($caption, $text, 'list_new');
 unset($caption);
 unset($text);
 

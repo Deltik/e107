@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/lan_email.php $
-|     $Revision: 11678 $
-|     $Id: lan_email.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Source: /cvs_backup/e107_0.8/e107_languages/English/lan_email.php,v $
+|     $Revision$
+|     $Date$
+|     $Author$
 +----------------------------------------------------------------------------+
 */
 if (!defined("PAGE_NAME")) { define("PAGE_NAME", "Email"); }
@@ -22,7 +22,7 @@ define("LAN_EMAIL_8", "Comment");
 define("LAN_EMAIL_9", "Sorry - unable to send email");
 define("LAN_EMAIL_10", "Mail sent to");
 define("LAN_EMAIL_11", "Email sent");
-define("LAN_EMAIL_12", "Error");
+//define("LAN_EMAIL_12", "Error"); // new > LAN_ERROR
 define("LAN_EMAIL_13", "Email article to a friend");
 define("LAN_EMAIL_14", "Email news_item to a friend");
 define("LAN_EMAIL_15", "Username: ");

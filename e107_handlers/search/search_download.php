@@ -1,25 +1,23 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/search/search_download.php $
-|     $Revision: 11678 $
-|     $Id: search_download.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) 2008-2009 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ *
+ *
+ * $Source: /cvs_backup/e107_0.8/e107_handlers/search/search_download.php,v $
+ * $Revision$
+ * $Date$
+ * $Author$
+ */
 
 if (!defined('e107_INIT')) { exit; }
 
 // advanced 
+/*
 $advanced_where = "";
 if (isset($_GET['cat']) && is_numeric($_GET['cat'])) {
 	$advanced_where .= " d.download_category='".$_GET['cat']."' AND";
@@ -62,5 +60,5 @@ function search_downloads($row) {
 	$res['detail'] = LAN_SEARCH_15." ".$row['download_author']." | ".LAN_SEARCH_66.": ".$datestamp;
 	return $res;
 }
-
+*/
 ?>

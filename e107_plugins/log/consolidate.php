@@ -1,138 +1,208 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/log/consolidate.php $
-|     $Revision: 12938 $
-|     $Id: consolidate.php 12938 2012-08-10 03:57:15Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) 2008-2009 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ *
+ *
+ * $Source: /cvs_backup/e107_0.8/e107_plugins/log/consolidate.php,v $
+ * $Revision$
+ * $Date$
+ * $Author$
+ */
 
 /* first thing to do is check if the log file is out of date ... */
-if (!defined('e107_INIT')) { exit; }
 
-$pathtologs = e_PLUGIN."log/logs/";
-$date = date("z.Y", time());
-$yesterday = date("z.Y",(time() - 86400));		// This makes sure year wraps round OK
-$date2 = date("Y-m-j", (time() -86400));		// Yesterday's date for the database summary	
-$date3 = date("Y-m");							// Current month's date for monthly summary
+// $pathtologs = e_PLUGIN."log/logs/";
 
-$pfileprev = "logp_".$yesterday.".php";		// Yesterday's log file
-$pfile = "logp_".$date.".php";				// Today's log file
-$ifileprev = "logi_".$yesterday.".php";
-$ifile = "logi_".$date.".php";
+if (!defined('e107_INIT')){ exit; } 
 
-if(file_exists($pathtologs.$pfile)) 
+$pathtologs 	= e_LOG;
+$date 			= date("z.Y", time());
+$yesterday 		= date("z.Y",(time() - 86400));		// This makes sure year wraps round OK
+$date2 			= date("Y-m-j", (time() -86400));		// Yesterday's date for the database summary	
+$date3 			= date("Y-m", (time() -86400));			// Current month's date for monthly summary (we're working with yesterday's data)
+
+$pfileprev 		= "logp_".$yesterday.".php";		// Yesterday's log file
+$pfile 			= "logp_".$date.".php";				// Today's log file
+$ifileprev 		= "logi_".$yesterday.".php";
+$ifile 			= "logi_".$date.".php";
+
+if(file_exists($pathtologs.$pfile))  /* log file is up to date, no consolidation required */
 {
-	/* log file is up to date, no consolidation required */
 	return;
 }
-else if(!file_exists($pathtologs.$pfileprev)) 
-{  // See if any older log files
-  if (($retvalue = check_for_old_files($pathtologs)) === FALSE)
-  { 	/* no logfile found at all - create - this will only ever happen once ... */
-	createLog("blank");
+else if(!file_exists($pathtologs.$pfileprev))  // See if any older log files
+{  
+  if (($retvalue = check_for_old_files($pathtologs)) === FALSE) /* no logfile found at all - create - this will only ever happen once ... */
+  { 	
+	createLog($pathtologs);
 	return FALSE;
   }
-  // ... if we've got files
-  list($pfileprev,$ifileprev,$date2,$tstamp) = explode('|',$retvalue);
+ 
+  list($pfileprev,$ifileprev,$date2,$tstamp) = explode('|',$retvalue);  // ... if we've got files
 }
 
 
+
+// List of the non-page-based info which is gathered - historically only 'all-time' stats, now we support monthly as well
+$stats_list = array('statBrowser','statOs','statScreen','statDomain','statReferer','statQuery');
+
+$qry = "`log_id` IN ('statTotal','statUnique'";
+foreach ($stats_list as $s)
+{
+  $qry .= ",'{$s}'";									// Always read the all-time stats
+  if ($pref[$s] == 2) $qry .= ",'{$s}:{$date3}'";		// Look for monthlys as well as cumulative
+}
+$qry .= ")";
 
 /* log file is out of date - consolidation required */
 
 /* get existing stats ... */
-if($sql -> db_Select("logstats", "*", "log_id='statBrowser' OR log_id='statOs' OR log_id='statScreen' OR log_id='statDomain' OR log_id='statTotal' OR log_id='statUnique' OR log_id='statReferer' OR log_id='statQuery'")) {
-	$infoArray = array();
-	while($row = $sql -> db_Fetch())
+//if($sql->select("logstats", "*", "log_id='statBrowser' OR log_id='statOs' OR log_id='statScreen' OR log_id='statDomain' OR log_id='statTotal' OR log_id='statUnique' OR log_id='statReferer' OR log_id='statQuery'")) 
+if($sql->select("logstats", "*", $qry)) 
+{	// That's read in all the stats we need to modify
+	while($row = $sql->fetch())
 	{
-		$$row[1] = unserialize($row[2]);	// $row[1] is the stats type - save in a variable
-		if($row[1] == "statUnique") $statUnique = $row[2];
-		if($row[1] == "statTotal") $statTotal = $row[2];
+		if($row['log_id'] == "statUnique")
+		{
+		  $statUnique = $row['log_data'];
+		}
+		elseif ($row['log_id'] == "statTotal") 
+		{
+		  $statTotal = $row['log_data'];
+		}
+		elseif (($pos = strpos($row['log_id'],':')) === FALSE)
+		{  // Its all-time stats
+		  $$row['log_id'] = unserialize($row['log_data']);	// $row['log_id'] is the stats type - save in a variable
+		}
+		else
+		{  // Its monthly stats
+		  $row['log_id'] = 'mon_'.substr($row['log_id'],0,$pos);	// Create a generic variable for each monthly stats
+		  $$row['log_id'] = unserialize($row['log_data']);	// $row['log_id'] is the stats type - save in a variable
+		}
 	}
-}else{
-	/* this must be the first time a consolidation has happened - this will only ever happen once ... */
-	$sql -> db_Insert("logstats", "0, 'statBrowser', ''");
-	$sql -> db_Insert("logstats", "0, 'statOs', ''");
-	$sql -> db_Insert("logstats", "0, 'statScreen', ''");
-	$sql -> db_Insert("logstats", "0, 'statDomain', ''");
-	$sql -> db_Insert("logstats", "0, 'statReferer', ''");
-	$sql -> db_Insert("logstats", "0, 'statQuery', ''");
-	$sql -> db_Insert("logstats", "0, 'statTotal', '0'");
-	$sql -> db_Insert("logstats", "0, 'statUnique', '0'");
-	$statBrowser =array();
-	$statOs =array();
-	$statScreen =array();
-	$statDomain =array();
-	$statReferer =array();
-	$statQuery =array();
+}
+else
+{
+	// this must be the first time a consolidation has happened - this will only ever happen once ... 
+	$sql->insert("logstats", "0, 'statBrowser', ''");
+	$sql->insert("logstats", "0, 'statOs', ''");
+	$sql->insert("logstats", "0, 'statScreen', ''");
+	$sql->insert("logstats", "0, 'statDomain', ''");
+	$sql->insert("logstats", "0, 'statReferer', ''");
+	$sql->insert("logstats", "0, 'statQuery', ''");
+	$sql->insert("logstats", "0, 'statTotal', '0'");
+	$sql->insert("logstats", "0, 'statUnique', '0'");
+	
+	$statBrowser 	=array();
+	$statOs 		=array();
+	$statScreen 	=array();
+	$statDomain 	=array();
+	$statReferer 	=array();
+	$statQuery 		=array();
 }
 
-require_once($pathtologs.$pfileprev);
-require_once($pathtologs.$ifileprev);
 
-foreach($browserInfo as $name => $amount) {
+foreach ($stats_list as $s)
+{
+  $varname = 'mon_'.$s;
+  if (!isset($$varname)) $$varname = array();		// Create monthly arrays if they don't exist
+}
+
+
+require_once($pathtologs.$pfileprev);		// Yesterday's page accesses - $pageInfo array
+require_once($pathtologs.$ifileprev);		// Yesterdays browser accesses etc
+
+foreach($browserInfo as $name => $amount) 
+{
 	$statBrowser[$name] += $amount;
+	$mon_statBrowser[$name] += $amount;
 }
 
-foreach($osInfo as $name => $amount) {
+foreach($osInfo as $name => $amount) 
+{
 	$statOs[$name] += $amount;
+	$mon_statOs[$name] += $amount;
 }
 
-foreach($screenInfo as $name => $amount) {
+foreach($screenInfo as $name => $amount) 
+{
 	$statScreen[$name] += $amount;
+	$mon_statScreen[$name] += $amount;
 }
 
 
-foreach($domainInfo as $name => $amount) {
-	if(!is_numeric($name)) {
+foreach($domainInfo as $name => $amount) 
+{
+	if(!is_numeric($name)) 
+	{
 		$statDomain[$name] += $amount;
+		$mon_statDomain[$name] += $amount;
 	}
 }
 
-foreach($refInfo as $name => $info) {
+foreach($refInfo as $name => $info) 
+{
 	$statReferer[$name]['url'] = $info['url'];
 	$statReferer[$name]['ttl'] += $info['ttl'];
+	$mon_statReferer[$name]['url'] = $info['url'];
+	$mon_statReferer[$name]['ttl'] += $info['ttl'];
 }
 
 
-foreach($searchInfo as $name => $amount) {
+foreach($searchInfo as $name => $amount) 
+{
 	$statQuery[$name] += $amount;
+	$mon_statQuery[$name] += $amount;
 }
 
-$browser = serialize($statBrowser);
-$os = serialize($statOs);
-$screen = serialize($statScreen);
-$domain = serialize($statDomain);
-$refer = serialize($statReferer);
-$squery = serialize($statQuery);
+$browser 	= serialize($statBrowser);
+$os 		= serialize($statOs);
+$screen 	= serialize($statScreen);
+$domain 	= serialize($statDomain);
+$refer 		= serialize($statReferer);
+$squery 	= serialize($statQuery);
 
 $statTotal += $siteTotal;
 $statUnique += $siteUnique;
 
-$sql -> db_Update("logstats", "log_data='$browser' WHERE log_id='statBrowser'");
-$sql -> db_Update("logstats", "log_data='$os' WHERE log_id='statOs'");
-$sql -> db_Update("logstats", "log_data='$screen' WHERE log_id='statScreen'");
-$sql -> db_Update("logstats", "log_data='$domain' WHERE log_id='statDomain'");
-$sql -> db_Update("logstats", "log_data='$refer' WHERE log_id='statReferer'");
-$sql -> db_Update("logstats", "log_data='$squery' WHERE log_id='statQuery'");
-$sql -> db_Update("logstats", "log_data='".intval($statTotal)."' WHERE log_id='statTotal'");
-$sql -> db_Update("logstats", "log_data='".intval($statUnique)."' WHERE log_id='statUnique'");
+// Save cumulative results - always keep track of these, even if the $pref doesn't display them
+$sql->update("logstats", "log_data='{$browser}' WHERE log_id='statBrowser'");
+$sql->update("logstats", "log_data='{$os}' WHERE log_id='statOs'");
+$sql->update("logstats", "log_data='{$screen}' WHERE log_id='statScreen'");
+$sql->update("logstats", "log_data='{$domain}' WHERE log_id='statDomain'");
+$sql->update("logstats", "log_data='{$refer}' WHERE log_id='statReferer'");
+$sql->update("logstats", "log_data='{$squery}' WHERE log_id='statQuery'");
+$sql->update("logstats", "log_data='".intval($statTotal)."' WHERE log_id='statTotal'");
+$sql->update("logstats", "log_data='".intval($statUnique)."' WHERE log_id='statUnique'");
 
 
-/* get monthly info from db */
-if($sql -> db_Select("logstats", "*", "log_id='$date3' ")) {
-	$tmp = $sql -> db_Fetch();
+// Now save the relevant monthly results - only where enabled
+foreach ($stats_list as $s)
+{
+  if (isset($pref[$s]) && ($pref[$s] > 1))
+  { // Value 2 requires saving of monthly stats
+	$srcvar = 'mon_'.$s;
+    $destvar = 'smon_'.$s;
+	$$destvar = serialize($$srcvar);
+	
+	if (!$sql->update("logstats", "log_data='".$$destvar."' WHERE log_id='".$s.":".$date3."'"))
+	{
+	  $sql->insert("logstats", "0, '".$s.":".$date3."', '".$$destvar."'");
+	}
+  }
+}
+
+
+
+/* get page access monthly info from db */
+if($sql->select("logstats", "*", "log_id='{$date3}' ")) 
+{
+	$tmp = $sql->fetch();
 	$monthlyInfo = unserialize($tmp['log_data']);
 	unset($tmp);
 	$MonthlyExistsFlag = TRUE;
@@ -148,17 +218,20 @@ foreach($pageInfo as $key => $info)
 
 $monthlyinfo = serialize($monthlyInfo);
 
-if($MonthlyExistsFlag) {
-	$sql -> db_Update("logstats", "log_data='$monthlyinfo' WHERE log_id='$date3'");
-} else {
-	$sql->db_Insert("logstats", "0, '$date3', '$monthlyinfo'");
+if($MonthlyExistsFlag) 
+{
+	$sql->update("logstats", "log_data='{$monthlyinfo}' WHERE log_id='{$date3}'");
+} 
+else 
+{
+	$sql->insert("logstats", "0, '{$date3}', '{$monthlyinfo}'");
 }
 
 
 /* collate page total information */
-if($sql -> db_Select("logstats", "*", "log_id='pageTotal' "))
+if($sql->select("logstats", "*", "log_id='pageTotal' "))
 {
-	$tmp = $sql -> db_Fetch();
+	$tmp = $sql->fetch();
 	$pageTotal = unserialize($tmp['log_data']);
 	unset($tmp);
 }
@@ -176,10 +249,14 @@ foreach($pageInfo as $key => $info)
 
 $pagetotal = serialize($pageTotal);
 
-if(!$sql -> db_Update("logstats", "log_data='$pagetotal' WHERE log_id='pageTotal' "))
+$insertPageTotal = array('log_data'=> $pageTotal, 'WHERE' => "log_id='pageTotal'");
+$sql->replace('logstats', $insertPageTotal);
+
+/*
+if(!$sql->update("logstats", "log_data='{$pagetotal}' WHERE log_id='pageTotal' "))
 {
-	$sql -> db_Insert("logstats", "0, 'pageTotal', '$pagetotal' ");
-}
+	$sql->insert("logstats", "0, 'pageTotal', '{$pagetotal}' ");
+}*/
 
 
 /* now we need to collate the individual page information into an array ... */
@@ -195,7 +272,7 @@ foreach($pageInfo as $key => $value)
 }
 
 $data = $dailytotal.chr(1).$uniquetotal.chr(1) . $data;
-$sql -> db_Insert("logstats", "0, '$date2', '".$tp -> toDB($data, true)."'");
+$sql->insert("logstats", "0, '$date2', '".$tp -> toDB($data, true)."'");
 
 	
 /* ok, we're finished with the log file now, we can empty it ... */
@@ -217,16 +294,17 @@ if(!unlink($pathtologs.$ifileprev))
 }
 
 /* and finally, we need to create new logfiles for today ... */
-createLog();
+createLog($pathtologs);
 /* done! */
 
 
-function createLog($mode="default") 
+function createLog($pathtologs) 
 {
-	global $pathtologs, $statTotal, $statUnique, $pfile, $ifile;
+	global $statTotal, $statUnique, $pfile, $ifile;
 	if(!is_writable($pathtologs)) 
 	{
-		echo "Log directory is not writable - please CHMOD ".e_PLUGIN."log/logs to 777";
+		echo "Log directory is not writable - please CHMOD ".e_LOG." to 777";
+		echo '<br />Path to logs: '.$pathtologs;
 		return FALSE;
 	}
 

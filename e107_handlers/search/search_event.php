@@ -1,22 +1,19 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_handlers/search/search_event.php $
-|     $Revision: 11678 $
-|     $Id: search_event.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
-*/
-	
+ * e107 website system
+ *
+ * Copyright (C) 2008-2009 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ *
+ *
+ * $Source: /cvs_backup/e107_0.8/e107_handlers/search/search_event.php,v $
+ * $Revision$
+ * $Date$
+ * $Author$
+ */
+
 if (!defined('e107_INIT')) { exit; }
 
 $query = $tp -> toDB($query);
@@ -60,17 +57,15 @@ while (list($event_id, $event_stake, $event_ward, $event_organisation, $event_st
 	if (!$event_url_) {
 		$event_threat_ = $event_threat;
 	}
-
 	$bullet = '';
 	if(defined('BULLET'))
 	{
-		$bullet = '<img src="'.THEME.'images/'.BULLET.'" alt="" style="vertical-align: middle;" />';
+		$bullet = '<img src="'.THEME.'images/'.BULLET.'" alt="" class="icon" />';
 	}
 	elseif(file_exists(THEME.'images/bullet2.gif'))
 	{
-		$bullet = '<img src="'.THEME.'images/bullet2.gif" alt="" style="vertical-align: middle;" />';
+		$bullet = '<img src="'.THEME.'images/bullet2.gif" alt="" class="icon" />';
 	}
-
 	$text .= $bullet." <a href=\"event.php?".$event_start."\">{$event_title}</a>{$event_details}<br />";
 }
 $qtype = LAN_911;

@@ -1,22 +1,18 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/poll/templates/poll_template.php $
-|     $Revision: 11678 $
-|     $Id: poll_template.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
-|
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) 2008-2009 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ *
+ *
+ * $Source: /cvs_backup/e107_0.8/e107_plugins/poll/templates/poll_template.php,v $
+ * $Revision$
+ * $Date$
+ * $Author$
+ */
 
 if (!defined('e107_INIT')) { exit; }
 
@@ -182,5 +178,63 @@ $POLL_FORUM_VOTED_END = "
 </table>
 </div>
 ";
+
+
+
+/*	v2.x template for  polls when user has not voted 	*/
+
+$POLL_TEMPLATE = array();
+
+
+$POLL_TEMPLATE['form']['start'] = "
+<div class='clearfix'>
+	<div>
+		<div class='form-group control-group'>
+			Poll: {QUESTION}
+			
+";
+
+$POLL_TEMPLATE['form']['item'] = "
+			<div class='radio'>
+				{ANSWER} 
+			</div>";
+
+$POLL_TEMPLATE['form']['end'] = "
+			
+		</div>
+		<div class='control-group'>
+			 <div class='controls text-center'>
+				{SUBMITBUTTON}	
+			</div>
+		</div>
+	</div>
+</div>
+";
+
+
+
+/*	v2.x template for polls when user HAS voted		*/
+
+$POLL_TEMPLATE['results']['start'] = "
+<div class='clearfix'>
+	<div>
+		<h5>Poll: {QUESTION}</h5>
+";
+
+$POLL_TEMPLATE['results']['item'] = "
+			<strong>{OPTION}</strong><small class='pull-right'><a href='#' class='e-tip' title=\"{VOTES}\">{PERCENTAGE}</a></small>
+			{BAR}
+";
+
+$POLL_TEMPLATE['results']['end'] = "
+		<div class='text-center'><small>{VOTE_TOTAL}</small></div>
+		 {COMMENTS} {OLDPOLLS}
+	</div>
+</div>
+";
+
+
+
+
 
 ?>

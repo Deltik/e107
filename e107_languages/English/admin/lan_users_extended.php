@@ -3,8 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_users_extended.php $
-|     $Id: lan_users_extended.php 12306 2011-07-06 13:43:10Z secretr $
+|     $Source: /cvs_backup/e107_0.8/e107_languages/English/admin/lan_users_extended.php,v $
+|     $Revision$
+|     $Date$
+|     $Author$
 +----------------------------------------------------------------------------+
 */
 define("EXTLAN_1", "Name");
@@ -38,8 +40,8 @@ define("EXTLAN_27", "Confirm Delete");
 define("EXTLAN_28", "No extended fields defined");
 define("EXTLAN_29", "Extended user fields saved.");
 define("EXTLAN_30", "Extended field deleted");
-// define("EXTLAN_31", "Extended Field Menu");
-// define("EXTLAN_32", "Extended front page");
+define("EXTLAN_31", "Category label");
+define("EXTLAN_32", "This is the label of the field as shown on User Settings page. Language constants are allowed.");
 define("EXTLAN_33", "Cancel Edit");
 define("EXTLAN_34", "Extended Fields");
 define("EXTLAN_35", "Categories");
@@ -86,10 +88,12 @@ define("EXTLAN_72", "has been deactivated");
 define("EXTLAN_73", "was not deactivated!");
 define("EXTLAN_74", "is a reserved field name and can not be used.");
 define("EXTLAN_75", "Error adding field to database.");
-define("EXTLAN_76", "Invalid characters in field name - only A-Z, a-z, 0-9, '_' allowed.");
+define("EXTLAN_76", "Invalid characters in field name - only A-Z, a-z, 0-9, allowed.");
 define("EXTLAN_77", "Category not deleted - must delete fields in category first: ");
-define('EXTLAN_78', 'Cannot find file --FILE-- needed to create data table');
-define('EXTLAN_79', 'Validation error - aborted.');
+define("EXTLAN_78", "Cannot find file --FILE-- needed to create data table");
+
+define("EXTLAN_79", "Label");
+define("EXTLAN_80", "Validation error - aborted.");
 
 
 //textbox
@@ -108,5 +112,7 @@ define("EXTLAN_HELP_6", "Allow user to enter a numeric value");
 define("EXTLAN_HELP_7", "Require user to enter a date");
 // Language
 define("EXTLAN_HELP_8", "Allow user to select from installed languages");
+// Predefined list
+define("EXTLAN_HELP_9", "Specify a predefined list. The value field selects the type of list - at present only 'timezones' is a valid entry");
 
 ?>

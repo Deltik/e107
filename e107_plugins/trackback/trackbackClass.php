@@ -1,20 +1,18 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/trackback/trackbackClass.php $
-|     $Revision: 11678 $
-|     $Id: trackbackClass.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
+ * e107 website system
+ *
+ * Copyright (C) 2008-2009 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * Plugin administration - newsfeeds
+ *
+ * $Source: /cvs_backup/e107_0.8/e107_plugins/trackback/trackbackClass.php,v $
+ * $Revision$
+ * $Date$
+ * $Author$
+ *
 */
 
 if (!defined('e107_INIT')) { exit; }
@@ -41,7 +39,7 @@ class trackbackClass
 		}
 		else
 		{
-			
+
 			$trackback_url = parse_url($pingUrl);
 
 			if ((isset($trackback_url["query"])) && ($trackback_url["query"] != ""))
@@ -60,19 +58,20 @@ class trackbackClass
 
 			$header  = 'POST ' . $trackback_url['path'] . $trackback_url['query'] . " HTTP/1.0\r\n";
 			$header .= 'Host: '.$trackback_url['host']."\r\n";
-			$header .= 'Content-Type: application/x-www-form-urlencoded'."\r\n";
+			$header .= 'Content-Type: application/x-www-form-urlencoded; charset=utf-8'."\r\n";
 			$header .= 'Content-Length: '.strlen($query_string)."\r\n";
 			$header .= "\r\n";
 			$header .= $query_string;
 
-			$socket = fsockopen($trackback_url["host"], $trackback_url["port"]); 
+			$socket = fsockopen($trackback_url["host"], $trackback_url["port"]);
 
-			if (!is_resource($socket)) {
-				return "$trackbackClass -> sendTrackback: Unable to connect to $pingUrl.";
+			if (!is_resource($socket))
+			{
+				return 'trackbackClass -> sendTrackback: Unable to connect to {$trackback_url[\'host\']}.';
 			}
 
-			fputs($socket, $header); 
-       
+			fputs($socket, $header);
+
 			$response = "";
 			while (!feof($socket)) {
 				$response .= fgets($socket, 4096);
@@ -87,7 +86,7 @@ class trackbackClass
 		}
 		else
 		{
-			if(preg_match("#\<message\>(.*?)\<\/message\>#", $response, $match))
+			if(preg_match('#\<message\>(.*?)\<\/message\>#', $response, $match))
 			{
 				return $match[0];
 			}
@@ -164,7 +163,7 @@ class trackbackClass
 
 		if($errorMessage)
 		{
-			echo '<?xml version="1.0" encoding="iso-8859-1"?'.">\n";
+			echo '<?xml version="1.0" encoding="utf-8"?'.">\n";
 			echo "<response>\n";
 			echo "<error>1</error>\n";
 			echo "<message>".$errorMessage."</message>\n";
@@ -172,7 +171,7 @@ class trackbackClass
 		}
 		else
 		{
-			echo '<?xml version="1.0" encoding="iso-8859-1"?'.">\n";
+			echo '<?xml version="1.0" encoding="utf-8"?'.">\n";
 			echo "<response>\n";
 			echo "<error>0</error>\n";
 			echo "</response>";

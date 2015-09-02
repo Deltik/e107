@@ -1,1 +1,0 @@
-return "<strong class='bbcode bold'>$code_text</strong>";

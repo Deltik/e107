@@ -3,10 +3,10 @@
 + ----------------------------------------------------------------------------+
 |     e107 website system - Language File.
 |
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/lan_online.php $
-|     $Revision: 11678 $
-|     $Id: lan_online.php 11678 2010-08-22 00:43:45Z e107coders $
-|     $Author: e107coders $
+|     $Source: /cvs_backup/e107_0.8/e107_languages/English/lan_online.php,v $
+|     $Revision$
+|     $Date$
+|     $Author$
 +----------------------------------------------------------------------------+
 */
 
@@ -26,10 +26,12 @@ define("ONLINE_EL12", "Replying to");
 define("ONLINE_EL13", "Forum");
 define("ONLINE_EL14", "Thread");
 define("ONLINE_EL15", "Page");
+define("ONLINE_EL16", "Information not available");
+
 define("CLASSRESTRICTED", "Class Restricted Page");
-define("ARTICLEPAGE", "Article/Review");
+//define("ARTICLEPAGE", "Article/Review");
 define("CHAT", "Chat");
-define("COMMENT", "Comments");
+// define("COMMENT", "Comments");
 define("DOWNLOAD", "Downloads");
 define("EMAIL", "email.php");
 define("FORUM", "Main Forum Index");
@@ -48,7 +50,7 @@ define("USERSETTINGS", "User Settings");
 define("ONLINE", "Online Users");
 define("LISTNEW", "List New Items");
 define("USERPOSTS", "User Posts");
-define("SUBCONTENT", "Submit Article/Review");
+define("SUBCONTENT", "Submit Content");
 define("TOP", "Top Posters/Most Active Threads");
 define("ADMINAREA", "Admin Area");
 define("BUGTRACKER", "Bugtracker");
@@ -60,5 +62,6 @@ define("SURVEY", "Survey");
 define("ARTICLE", "Article");
 define("CONTENT", "Content Page");
 define("REVIEW", "Review");
+define("OTHER", "Other page: ");
 
 ?>

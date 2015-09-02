@@ -1,27 +1,22 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system - Language File.
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_languages/English/admin/lan_language.php $
-|     $Revision: 12553 $
-|     $Id: lan_language.php 12553 2012-01-14 12:53:11Z e107coders $
-|     $Author: e107coders $
-+----------------------------------------------------------------------------+
+ * Copyright (C) 2008-2013 e107 Inc (e107.org), Licensed under GNU GPL (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * Admin Language File
+ *
 */
 
-define("LANG_LAN_00","could not be created.(already exists)");
-define("LANG_LAN_01","was deleted(if existing) and created.");
-define("LANG_LAN_02","couldn't be deleted");
-define("LANG_LAN_03","Tables");
+define("LANG_LAN_00", "[x] could not be created (already exists)."); 
+define("LANG_LAN_01", "[x] was deleted (if existing) and created."); 
+define("LANG_LAN_02", "[x] couldn't be deleted."); 
+define("LANG_LAN_03", "Tables");
 
 define("LANG_LAN_05", "Not Installed");
 define("LANG_LAN_06", "Create tables");
 define("LANG_LAN_07", "Drop existing tables?");
 define("LANG_LAN_08", "Replace existing tables (data will be lost).");
-define("LANG_LAN_10", "Confirm delete");
 define("LANG_LAN_11", "Delete unchecked tables above (if they exist).");
-define("LANG_LAN_12", "Enable Multi-Language Tables");
+define("LANG_LAN_12", "Multi-Language Database Tables");
 define("LANG_LAN_13", "Language Preferences");
 define("LANG_LAN_14", "Default Site Language");
 define("LANG_LAN_15", "Tick to copy data from the default language. (Useful for links, news-categories, etc.)");
@@ -33,22 +28,29 @@ define("LANG_LAN_20", "Enter one domain per line. eg. mydomain.com etc. or leave
 
 define("LANG_LAN_21", "Language-Packs");
 
-define("LANG_LAN_23", "Create Language-Pack (zip)");
-define("LANG_LAN_24", "Create Pack");
-
-define("LANG_LAN_AGR", "Note: By using these tools you agree to share your language pack(s) with the e107 community.");
+define("LANG_LAN_25", "Language-Pack Creation Status");
+define("LANG_LAN_26", "Load language files only for current language");
+define("LANG_LAN_27", "If checked, and a required language cannot be found, there will be an error");
 define("LANG_LAN_EML", "Please email your language pack to:");
-
-define("LANG_LAN_25", "Please check that CORE_LC and CORE_LC2 have values in [lcpath] and try again.");
-define("LANG_LAN_26", "Please make sure you are using default folder names in e107_config.php (eg. 'e107_languages/', 'e107_plugins/' etc.) and try again.");
-define("LANG_LAN_27", "Please verify your language files ('Verify') then try again.");
-define("LANG_LAN_28", "Check this box if you're an [e107 certified translator].");
-
-define("LANG_LAN_29", "You should correct the remaining errors before contributing your language pack.");
-define("LANG_LAN_30", "Release Date");
-define("LANG_LAN_31", "Compatibility");
 define("LANG_LAN_32", "Installed Languages");
 define("LANG_LAN_33", "Display only errors during verification");
-define("LANG_LAN_34", "Please verify and correct the remaining [x] error(s) before attempting to create a language-pack.");
+define("LANG_LAN_50", "Admin-Area Interface Language");
+define("LANG_LAN_100", "[x] deleted.");
+define("LANG_LAN_101", "[x] could not be deleted.");
+define("LANG_LAN_103", "[x] created.");
+define("LANG_LAN_104", "[x] was disabled but left intact.");
+define("LANG_LAN_105", "Delete all tables in [x]?");
+
+define("LANG_LAN_106", "Language by Domain Name");
+define("LANG_LAN_107", "Domain determines the site's language. Enter domain without the 'www.'");
+
+define("LANG_LAN_121", "Couldn't Load:");
+define("LANG_LAN_124", "Definition");
+define("LANG_LAN_126", "Disable All Unused");
+define("LANG_LAN_130", "Common Term");
+define("LANG_LAN_131", "Missing from language file");
+define("LANG_LAN_132", "is a common phrase.");
+define("LANG_LAN_133", "Use");
+define("LANG_LAN_134", "instead.");
 
 ?>

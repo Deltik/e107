@@ -1,32 +1,33 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2001-2002 Steve Dunstan (jalist@e107.org)
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL: https://e107.svn.sourceforge.net/svnroot/e107/trunk/e107_0.7/e107_plugins/newsfeed/admin_config.php $
-|     $Revision: 13011 $
-|     $Id: admin_config.php 13011 2012-10-28 16:26:00Z e107steved $
-|     $Author: e107steved $
-+----------------------------------------------------------------------------+
+ * e107 website system
+ *
+ * Copyright (C) 2008-2013 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ * Plugin administration - newsfeeds
+ *
+ *
 */
 require_once("../../class2.php");
-if (!isset($pref['plug_installed']['newsfeed']) || !getperms("P")) 
+if (!getperms("P") || !e107::isInstalled('newsfeed')) 
 {
-  header("location:".e_BASE."index.php");
-  exit;
+	header("location:".e_BASE."index.php");
+	exit;
 }
 
 require_once(e_ADMIN."auth.php");
 
-if (e_QUERY) {
+define('NEWSFEED_LIST_CACHE_TAG', 'nomd5_newsfeeds');
+
+$frm = e107::getForm();
+$mes = e107::getMessage();
+
+if (e_QUERY) 
+{
 	list($action, $id) = explode(".", e_QUERY);
+	$id = intval($id);
 }
 else
 {
@@ -34,80 +35,122 @@ else
 	$id = FALSE;
 }
 
-if(isset($_POST['createFeed']))
+if (isset($_POST['createFeed']) || isset($_POST['updateFeed']))
 {
-	if ($_POST['newsfeed_url'] && $_POST['newsfeed_name']) {
-		$name = $tp -> toDB($_POST['newsfeed_name']);
-		$description = $tp -> toDB($_POST['newsfeed_description']);
-		$imgfield = $_POST['newsfeed_image']."::".$_POST['newsfeed_showmenu']."::".$_POST['newsfeed_showmain'];
-		$sql->db_Insert("newsfeed", "0, '$name', '".$_POST['newsfeed_url']."', '', '0', '{$description}', '{$imgfield}', ".$_POST['newsfeed_active'].", ".$_POST['newsfeed_updateint']." ");
-		$message = NFLAN_23;
-	} else {
-		$message = NFLAN_24;
+	if ($_POST['newsfeed_url'] && $_POST['newsfeed_name']) 
+	{
+		$feed['newsfeed_name'] 			= $tp->toDB($_POST['newsfeed_name']);
+		$feed['newsfeed_description'] 	= $tp->toDB($_POST['newsfeed_description']);
+		$feed['newsfeed_image'] 		= $tp->toDB($_POST['newsfeed_image'])."::".intval($_POST['newsfeed_showmenu'])."::".intval($_POST['newsfeed_showmain']);
+		$feed['newsfeed_url'] 			= $tp->toDB($_POST['newsfeed_url']);
+		$feed['newsfeed_active'] 		= intval($_POST['newsfeed_active']);
+		$feed['newsfeed_updateint'] 	= intval($_POST['newsfeed_updateint']);
+		$feed['newsfeed_data'] 			= ''; 	// Start with blank data feed
+		$feed['newsfeed_timestamp'] 	= 0;	// This should force an immediate update
+		
+		if (isset($_POST['createFeed']))
+		{
+			if ($sql->insert('newsfeed',$feed))
+			{
+				$admin_log->logArrayAll('NEWSFD_01', $feed);
+				$mes->addSuccess(LAN_CREATED);
+			}
+			else
+			{
+				$mes->addError(LAN_CREATED_FAILED.': '.$sql->mySQLerror); 
+			}
+		}
+		elseif (isset($_POST['updateFeed']))
+		{
+			$feed['WHERE'] = "newsfeed_id=".intval($_POST['newsfeed_id']);
+			
+			if($sql->update('newsfeed',$feed))
+			{
+				$admin_log->logArrayAll('NEWSFD_02', $feed);
+				$mes->addSuccess(LAN_UPDATED);
+			}
+			else
+			{
+				$mes->addInfo(LAN_NO_CHANGE.': '.$sql->mySQLerror); 
+			}
+		}
+		e107::getCache()->clear(NEWSFEED_LIST_CACHE_TAG);		// This should actually clear all the newsfeed data in one go
+	} 
+	else 
+	{
+		$mes->addError(LAN_REQUIRED_BLANK);
 	}
 }
 
-if(isset($_POST['updateFeed']))
+$ns->tablerender($caption, $mes->render() . $text);
+
+if($action == "delete") 
 {
-	$name = $tp -> toDB($_POST['newsfeed_name']);
-	$description = $tp -> toDB($_POST['newsfeed_description']);
-	$imgfield = $_POST['newsfeed_image']."::".$_POST['newsfeed_showmenu']."::".$_POST['newsfeed_showmain'];
-	$sql->db_Update("newsfeed", "newsfeed_name='{$name}', newsfeed_url='".$_POST['newsfeed_url']."', newsfeed_timestamp='0', newsfeed_image='{$imgfield}', newsfeed_description='{$description}', newsfeed_active=".$_POST['newsfeed_active'].", newsfeed_updateint=".$_POST['newsfeed_updateint']." WHERE newsfeed_id=".$_POST['newsfeed_id']);
-	$message = NFLAN_25;
+	$sql->db_Delete('newsfeed', 'newsfeed_id='.$id);
+	e107::getLog()->add('NEWSFD_03','ID: '.$id,E_LOG_INFORMATIVE,'');
+	$mes->addSuccess(LAN_DELETED);
 }
 
-if($action == "delete") {
-	$sql->db_Delete("newsfeed", "newsfeed_id=$id");
-	$message = NFLAN_40;
-}
-
-if (isset($message)) {
-	$ns->tablerender("", "<div style='text-align:center'><b>".$message."</b></div>");
-}
+$ns->tablerender($caption, $mes->render() . $text);
 
 
 if($headline_total = $sql->db_Select("newsfeed"))
 {
-	$nfArray = $sql -> db_getList();
+	$nfArray = $sql->rows();
 
-	$text = "<div style='text-align:center'>
-	<table class='fborder' style='".ADMIN_WIDTH.";'>
+	$text = "
+	<table class='table table-striped'>
+	<colgroup>
+		<col style='width: 5%; text-align: center;' />
+		<col style='width: 40%;' />
+		<col style='width: 10%; text-align: center;' />
+		<col style='width: 25%; text-align: center;' />
+		<col style='width: 10%; text-align: center;' />
+	</colgroup>
+	<thead>
 	<tr>
-	<td class='forumheader' style='width: 5%; text-align: center;'>ID</td>
-	<td class='forumheader' style='width: 50%;'>".NFLAN_30."</td>
-	<td class='forumheader' style='width: 10%; text-align: center;'>".NFLAN_26."</td>
-	<td class='forumheader' style='width: 25%; text-align: center;'>".NFLAN_12."</td>
-	<td class='forumheader' style='width: 10%; text-align: center;'>".NFLAN_27."</td>
-	</tr>\n";
+		<th>".LAN_ID."</th>
+		<th>".LAN_NAME."</th>
+		<th>".NFLAN_26."</th>
+		<th>".NFLAN_12."</th>
+		<th class='center options'>".LAN_OPTIONS."</th>
+	</tr>
+	</thead>\n";
 
 	$active = array(NFLAN_13,NFLAN_14,NFLAN_20,NFLAN_21);
 
 	foreach($nfArray as $newsfeed)
 	{
-		extract($newsfeed);
+		extract($newsfeed); // FIXME
 
-		$text .= "<tr><td class='forumheader3' style='width: 5%; text-align: center;'>$newsfeed_id</td>
-		<td class='forumheader3' style='width: 50%;'><a href='$newsfeed_url' rel='external'>$newsfeed_name</a></td>
-		<td class='forumheader3' style='width: 10%; text-align: center;'>".($newsfeed_updateint ? $newsfeed_updateint : "3600")."</td>
-		<td class='forumheader3' style='width: 25%; text-align: center;'>".$active[$newsfeed_active]."</td>
-		<td class='forumheader3' style='width: 10%; text-align: center;'><a href='".e_SELF."?edit.".$newsfeed_id."'>".ADMIN_EDIT_ICON."</a>&nbsp;<a href='".e_SELF."?delete.".$newsfeed_id."'>".ADMIN_DELETE_ICON."</a></td>
-		</tr>\n";
+		$text .= "
+		<tr>
+			<td>$newsfeed_id</td>
+			<td><a href='$newsfeed_url' rel='external'>$newsfeed_name</a></td>
+			<td>".($newsfeed_updateint ? $newsfeed_updateint : "3600")."</td>
+			<td>".$active[$newsfeed_active]."</td>
+			<td>
+				<a class='btn btn-default btn-large' href='".e_SELF."?edit.".$newsfeed_id."'>".ADMIN_EDIT_ICON."</a>
+	            <a class='btn btn-default btn-large action delete' href='".e_SELF."?delete.".$newsfeed_id."' rel='no-confirm' title='".LAN_CONFDELETE."'>".ADMIN_DELETE_ICON."</a>
+			</td>
+		</tr>";
 	}
 
-	$text .= "</table>\n</div>";
+	$text .= "</table>";
 }
 else
 {
-	$text = NFLAN_41;
+	$mes->addInfo(NFLAN_41);
 }
-$ns->tablerender(NFLAN_07, $text);
+
+$ns->tablerender(NFLAN_07, $mes->render(). $text);
 
 if($action == "edit")
 {
-	if($sql->db_Select("newsfeed", "*", "newsfeed_id=$id"))
+	if($sql->select("newsfeed", "*", "newsfeed_id=$id"))
 	{
-		$row = $sql->db_Fetch();
-		extract($row);
+		$row = $sql->fetch();
+		extract($row); // FIX
 		list($newsfeed_image, $newsfeed_showmenu, $newsfeed_showmain) = explode("::", $newsfeed_image);
 	}
 }
@@ -116,84 +159,59 @@ else
 	unset($newsfeed_showmenu, $newsfeed_showmain, $newsfeed_name, $newsfeed_url, $newsfeed_image, $newsfeed_description, $newsfeed_updateint, $newsfeed_active);
 }
 
-$text = "<div style='text-align:center'>
-<form method='post' action='".e_SELF."'>\n
-<table style='".ADMIN_WIDTH."' class='fborder'>
+	$text = "
+	<form method='post' action='".e_SELF."'>\n
+	<table class='table'>
+	<colgroup>
+		<col class='col-label' />
+		<col style='col-control' />
+	</colgroup>
+	<tr>
+		<td>".LAN_NAME."</td>
+		<td>".$frm->text('newsfeed_name', $newsfeed_name, '200')."</td>
+	</tr>
+	
+	<tr>
+		<td>".LAN_URL."</td>
+		<td>".$frm->text('newsfeed_url', $newsfeed_url, '250', 'size=xxlarge')."<span class='field-help'>".NFLAN_10."</span></td>
+	</tr>
+	<tr>
+		<td>".NFLAN_11."</td>
+		<td>".$frm->text('newsfeed_image', $newsfeed_image, '200') /* TODO imagepicker? */."<span class='field-help'>".NFLAN_17."</span></td>
+	</tr>
+	<tr>
+		<td>".LAN_DESCRIPTION."</td>
+		<td>".$frm->text('newsfeed_description', $newsfeed_description, '200')."<span class='field-help'>".NFLAN_37."</span></td>
+	</tr>
+	<tr>
+		<td>".NFLAN_18."</td>
+		<td>".$frm->number('newsfeed_updateint',($newsfeed_updateint ? $newsfeed_updateint : 3600),5)."<span class='field-help'>".NFLAN_19."</span></td>
+	</tr>
+	<tr>
+		<td>".NFLAN_12."</td>
+		<td>"; 
+		$array = array(NFLAN_13,NFLAN_14,NFLAN_20,NFLAN_21);
+		$text .= 
+		$frm->radio('newsfeed_active', $array, ($newsfeed_active ? $newsfeed_active : 0), true, NFLAN_22)."
+		</td>
+	</tr>
+	<tr>
+		<td>".NFLAN_45."</td>
+		<td>".$frm->number('newsfeed_showmenu', $newsfeed_showmenu ,5)."<span class='field-help'>".NFLAN_47."</span></td>
+	</tr>
+	<tr>
+		<td>".NFLAN_46."</td>
+		<td>".$frm->number('newsfeed_showmain', $newsfeed_showmain ,5)."<span class='field-help'>".NFLAN_47."</span></td>
+	</tr>
+	</table>
+	<div class='buttons-bar center'>
+		".$frm->admin_button(($action == "edit" ? "updateFeed" : "createFeed"),($action == "edit" ? LAN_UPDATE : LAN_CREATE),'update')."
+	</div>
+		".($action == "edit" ? "<input type='hidden' name='newsfeed_id' value='$newsfeed_id' />" : "")."
+	</form>
+	";
 
-<tr>
-<td style='width:50%' class='forumheader3'>".NFLAN_30."</td>
-<td style='width:50%; text-align: left;' class='forumheader3'>
-<input class='tbox' type='text' name='newsfeed_name' size='80' value='$newsfeed_name' maxlength='200' />
-</td>
-</tr>
-
-
-
-<tr>
-<td style='width:50%' class='forumheader3'>".NFLAN_10."</td>
-<td style='width:50%; text-align: left;' class='forumheader3'>
-<input class='tbox' type='text' name='newsfeed_url' size='80' value='$newsfeed_url' maxlength='200' />
-</td>
-</tr>
-
-<tr>
-<td style='width:50%' class='forumheader3'>".NFLAN_11."<br /><span class='smalltext'>".NFLAN_17."</span></td>
-<td style='width:50%; text-align: left;' class='forumheader3'>
-<input class='tbox' type='text' name='newsfeed_image' size='80' value='$newsfeed_image' maxlength='200' />
-</td>
-</tr>
-
-<tr>
-<td style='width:50%' class='forumheader3'>".NFLAN_36."<br /><span class='smalltext'>".NFLAN_37."</span></td>
-<td style='width:50%; text-align: left;' class='forumheader3'>
-<input class='tbox' type='text' name='newsfeed_description' size='80' value='$newsfeed_description' maxlength='200' />
-</td>
-</tr>
-
-<tr>
-<td style='width:50%' class='forumheader3'>".NFLAN_18."<br /><span class='smalltext'>".NFLAN_19."</span></td>
-<td style='width:50%; text-align: left;' class='forumheader3'>
-<input class='tbox' type='text' name='newsfeed_updateint' size='5' value='".($newsfeed_updateint ? $newsfeed_updateint : "3600")."' maxlength='200' />
-</td>
-</tr>
-
-<tr>
-<td style='width:50%' class='forumheader3'>".NFLAN_12."<br /><span class='smalltext'>".NFLAN_22."</span></td>
-<td style='width:50%; text-align: left;' class='forumheader3'>
-
-<input type='radio' name='newsfeed_active' value='0'".(!$newsfeed_active ? " checked='checked'" : "")." /> ".NFLAN_13."&nbsp;<br />
-<input type='radio' name='newsfeed_active' value='1'".($newsfeed_active == 1 ? " checked='checked'" : "")." /> ".NFLAN_14."&nbsp;<br />
-<input type='radio' name='newsfeed_active' value='2'".($newsfeed_active == 2 ? " checked='checked'" : "")." /> ".NFLAN_20."&nbsp;<br />
-<input type='radio' name='newsfeed_active' value='3'".($newsfeed_active == 3 ? " checked='checked'" : "")." /> ".NFLAN_21."&nbsp;
-</td>
-</tr>
-
-<tr>
-<td style='width:50%' class='forumheader3'>".NFLAN_45."<br /><span class='smalltext'>".NFLAN_47."</span></td>
-<td style='width:50%; text-align: left;' class='forumheader3'>
-<input class='tbox' type='text' name='newsfeed_showmenu' size='5' value='".($newsfeed_showmenu ? $newsfeed_showmenu : "0")."' maxlength='200' />
-</td>
-</tr>
-
-<tr>
-<td style='width:50%' class='forumheader3'>".NFLAN_46."<br /><span class='smalltext'>".NFLAN_47."</span></td>
-<td style='width:50%; text-align: left;' class='forumheader3'>
-<input class='tbox' type='text' name='newsfeed_showmain' size='5' value='".($newsfeed_showmain ? $newsfeed_showmain : "0")."' maxlength='200' />
-</td>
-</tr>
-
-<tr style='vertical-align:top'>
-<td colspan='2' style='text-align:center' class='forumheader'>
-<input class='button' type='submit' name='".($action == "edit" ? "updateFeed" : "createFeed")."' value='".($action == "edit" ? NFLAN_16 : NFLAN_15)."' />
-</td>
-</tr>
-
-</table>
-".($action == "edit" ? "<input type='hidden' name='newsfeed_id' value='$newsfeed_id' />" : "")."
-</form>
-</div>";
-
-$ns->tablerender(NFLAN_09, $text);
+$ns->tablerender(NFLAN_09, $mes->render() . $text);
 
 require_once(e_ADMIN."footer.php");
 ?>

@@ -1,17 +1,17 @@
 <?php
 if (!defined('e107_INIT')) { exit; }
-// $Id: pop3_class.php 11346 2010-02-17 18:56:14Z secretr $
-// Main ReciveMail Class File - Version 1.0 (01-03-2006)
+// $Id$
+// Main ReceiveMail Class File - Version 1.0 (01-03-2006)
 /*
- * File: recivemail.class.php
- * Description: Reciving mail With Attechment
+ * Original file name: recivemail.class.php
+ * Description: Receiving mail With Attachment
  * Version: 1.0
  * Created: 01-03-2006
  * Author: Mitul Koradia
  * Email: mitulkoradia@gmail.com
  * Cell : +91 9879697592
 
-Modified by CaMer0n (www.e107coders.org)
+Modified by CaMer0n (www.e107coders.org) and steved
 
  */
 class receiveMail
@@ -24,7 +24,7 @@ class receiveMail
 
 	var $email='';
 
-	function receiveMail($username,$password,$EmailAddress,$mailserver='localhost',$servertype='pop',$port='110') //Constructure
+	function receiveMail($username,$password,$EmailAddress,$mailserver='localhost',$servertype='pop3',$port='110') //Constructor
 	{
 		if($servertype=='imap')
 		{
@@ -33,7 +33,9 @@ class receiveMail
 		}
 		else
 		{
-			$strConnect='{'.$mailserver.':'.$port. '/pop3}INBOX';
+		  if($port=='') $port='110';
+		  if ($servertype == '') $servertype = 'pop3';
+		  $strConnect='{'.$mailserver.':'.$port. '/'.$servertype.'}INBOX';
 		}
 		$this->server			=	$strConnect;
 		$this->username			=	$username;
@@ -44,6 +46,7 @@ class receiveMail
 	{
 		$this->marubox=imap_open($this->server,$this->username,$this->password);
 	}
+
 
 	function getHeaders($mid) // Get Header info
 	{
@@ -67,6 +70,8 @@ class receiveMail
 
 		return $mail_details;
 	}
+
+
 	function get_mime_type(&$structure) //Get Mime type Internal Private Use
 	{
 		$primary_mime_type = array("TEXT", "MULTIPART", "MESSAGE", "APPLICATION", "AUDIO", "IMAGE", "VIDEO", "OTHER");
@@ -76,6 +81,8 @@ class receiveMail
 		}
 		return "TEXT/PLAIN";
 	}
+
+
 	function get_part($stream, $msg_number, $mime_type, $structure = false, $part_number = false) //Get Part Of Message Internal Private Use
 	{
 		if(!$structure) {
@@ -120,11 +127,15 @@ class receiveMail
 		}
 		return false;
 	}
+
+
 	function getTotalMails() //Get Total Number off Unread Email In Mailbox
 	{
 		$headers=imap_headers($this->marubox);
 		return count($headers);
 	}
+
+
 	function GetAttach($mid,$path) // Get Atteced File from Mail
 	{
 		$struckture = imap_fetchstructure($this->marubox,$mid);
@@ -157,6 +168,8 @@ class receiveMail
 		$ar=substr($ar,0,(strlen($ar)-1));
 		return $ar;
 	}
+
+
 	function getBody($mid,$mode="") // Get Message Body
 	{
 		if($mode != "plain")
@@ -170,10 +183,14 @@ class receiveMail
 		}
 		return $body;
 	}
+
+
 	function deleteMails($mid) // Delete That Mail
 	{
 		imap_delete($this->marubox,$mid);
 	}
+
+
 	function close_mailbox() //Close Mail Box
 	{
 		imap_close($this->marubox,CL_EXPUNGE);
