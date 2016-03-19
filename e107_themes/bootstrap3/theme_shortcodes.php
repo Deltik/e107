@@ -21,7 +21,7 @@ class theme_shortcodes extends e_shortcode
 
 	function sc_bootstrap_branding()
 	{
-		$pref = e107::pref('theme', 'branding', 'sitename');
+		$pref = e107::pref('theme', 'branding');
 
 		switch($pref)
 		{
@@ -108,7 +108,7 @@ class theme_shortcodes extends e_shortcode
 				<a class="dropdown-toggle" href="#" data-toggle="dropdown">'.LAN_LOGINMENU_51.' <strong class="caret"></strong></a>
 				<div class="dropdown-menu col-sm-12" style="min-width:250px; padding: 15px; padding-bottom: 0px;">
 				
-				{SOCIAL_LOGIN: size=2x}		
+				{SOCIAL_LOGIN: size=2x&label=1}
 				'; // Sign In
 			}
 			else
@@ -183,7 +183,7 @@ class theme_shortcodes extends e_shortcode
 		$text = '
 		
 		<ul class="nav navbar-nav navbar-right'.$direction.'">
-		<li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">{SETIMAGE: w=20}{USER_AVATAR} '. USERNAME.' <b class="caret"></b></a>
+		<li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">{SETIMAGE: w=20} {USER_AVATAR: shape=circle} '. USERNAME.' <b class="caret"></b></a>
 		<ul class="dropdown-menu">
 		<li>
 			<a href="{LM_USERSETTINGS_HREF}"><span class="glyphicon glyphicon-cog"></span> '.LAN_SETTINGS.'</a>

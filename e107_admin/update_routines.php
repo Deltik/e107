@@ -130,8 +130,15 @@ if (!$dont_check_update)
 	// set 'master' to true to prevent other upgrades from running before it is complete.
 
 	$LAN_UPDATE_4 = deftrue('LAN_UPDATE_4',"Update from [x] to [y]"); // in case language-pack hasn't been upgraded.
+	$LAN_UPDATE_5 = deftrue('LAN_UPDATE_5', "Core database structure");
 
-	$dbupdate['706_to_800'] = array('master'=>true, 'title'=> e107::getParser()->lanVars($LAN_UPDATE_4, array('1.x','2.0')), 'message'=> LAN_UPDATE_29);
+
+
+	$dbupdate['706_to_800'] = array('master'=>true, 'title'=> e107::getParser()->lanVars($LAN_UPDATE_4, array('1.x','2.0')), 'message'=> LAN_UPDATE_29, 'hide_when_complete'=>false);
+
+
+	// always run these last.
+	$dbupdate['core_database'] = array('master'=>false, 'title'=> $LAN_UPDATE_5);
 	$dbupdate['core_prefs'] = array('master'=>true, 'title'=> LAN_UPDATE_13);						// Prefs check
 //	$dbupdate['70x_to_706'] = LAN_UPDATE_8.' .70x '.LAN_UPDATE_9.' .706';
 }		// End if (!$dont_check_update)
@@ -265,18 +272,23 @@ class e107Update
 		
 		foreach($this->core as $func => $data)
 		{
+			$text2 = '';
+
 			if(function_exists("update_".$func))
 			{
-				$text .= "<tr><td>".$data['title']."</td>";
-				
-				
-				
+
 				if(call_user_func("update_".$func))
 				{
-					$text .= "<td>".ADMIN_TRUE_ICON."</td>";
+					if(empty($data['hide_when_complete']))
+					{
+						$text2 .= "<td>".$data['title']."</td>";
+						$text2 .= "<td>".ADMIN_TRUE_ICON."</td>";
+					}
 				}
 				else
 				{
+					$text2 .= "<td>".$data['title']."</td>";
+
 					if(vartrue($data['message']))
 					{
 						$mes->addInfo($data['message']);	
@@ -284,13 +296,19 @@ class e107Update
 					
 					$this->updates ++;
 					
-					$text .= "<td>".$frm->admin_button('update_core['.$func.']', LAN_UPDATE, 'warning', '', "id=e-{$func}&disabled=".$this->disabled)."</td>";
+					$text2 .= "<td>".$frm->admin_button('update_core['.$func.']', LAN_UPDATE, 'warning', '', "id=e-{$func}&disabled=".$this->disabled)."</td>";
+
 					if($data['master'] == true)
 					{
 						$this->disabled = 1;	
 					}
 				}
-				$text .= "</tr>\n";
+
+				if(!empty($text2))
+				{
+					$text .= "<tr>".$text2."</tr>\n";
+				}
+
 			}	
 		}
 		
@@ -306,7 +324,7 @@ class e107Update
 		
 		$caption = LAN_UPDATE;
 		$text = "
-		<form method='post' action='".e_SELF."'>
+		<form method='post' action='".e_ADMIN."e107_update.php'>
 			<fieldset id='core-e107-update'>
 			<legend>{$caption}</legend>
 				<table class='table adminlist'>
@@ -484,6 +502,46 @@ if (defined('TEST_UPDATE'))
 	}
 }  // End of test routine
 
+// generic database structure update.
+function update_core_database($type = '')
+{
+	$just_check = ($type == 'do') ? FALSE : TRUE;
+	require_once(e_HANDLER."db_verify_class.php");
+	$dbv = new db_verify;
+	$log = e107::getAdminLog();
+
+	if($plugUpgradeReq = e107::getPlugin()->updateRequired())
+	{
+		$exclude =  array_keys($plugUpgradeReq); // search xxxxx_setup.php and check for 'upgrade_required()' == true.
+		asort($exclude);
+	}
+	else
+	{
+		$exclude = false;
+	}
+
+	$dbv->compareAll($exclude); // core & plugins, but not plugins calling for an update with xxxxx_setup.php
+
+
+	if(count($dbv->errors))
+	{
+		if ($just_check)
+		{
+			$mes = e107::getMessage();
+		//	$mes->addDebug(print_a($dbv->errors,true));
+			$log->addDebug(print_a($dbv->errors,true));
+			$tables = implode(", ", array_keys($dbv->errors));
+			return update_needed("Database Tables require updating: <b>".$tables."</b>");
+		}
+
+		$dbv->compileResults();
+		$dbv->runFix(); // Fix entire core database structure and plugins too.
+	}
+
+
+	return $just_check;
+}
+
 
 
 
@@ -645,9 +703,10 @@ function update_706_to_800($type='')
 	if(e107::getDb()->select("core", "*", $serialz_qry))
 	{
 		if($just_check) return update_needed('Convert serialized core prefs');
-		while ($row = e107::getDb()->fetch(MYSQL_ASSOC))
+		while ($row = e107::getDb()->fetch())
 		{
-			$status = e107::getDb('sql2')->update('core',"e107_value=\"".convert_serialized($row['e107_value'])."\" WHERE e107_name='".$row['e107_name']."'") ? E_MESSAGE_SUCCESS : E_MESSAGE_ERROR;				
+
+			$status = e107::getDb('sql2')->update('core',"e107_value=\"".convert_serialized($row['e107_value'])."\" WHERE e107_name='".$row['e107_name']."'") ? E_MESSAGE_SUCCESS : E_MESSAGE_ERROR;
 			
 			$log->addDebug(LAN_UPDATE_22.$row['e107_name'].": ". $status);
 		}	
@@ -1032,11 +1091,13 @@ function update_706_to_800($type='')
 			$mes = e107::getMessage();
 		//	$mes->addDebug(print_a($dbv->errors,true));
 			$log->addDebug(print_a($dbv->errors,true));
-			return update_needed("Database Tables require updating.");
+		//	return update_needed("Database Tables require updating."); //
 		}
-		
-		$dbv->compileResults();	
-		$dbv->runFix(); // Fix entire core database structure and plugins too. 	
+		else
+		{
+			$dbv->compileResults();
+			$dbv->runFix(); // Fix entire core database structure and plugins too.
+		}
 	}
 	
 	// print_a($dbv->results);
@@ -1150,7 +1211,7 @@ function update_706_to_800($type='')
 		require_once(e_HANDLER.'mail_manager_class.php');
 		$mailHandler = new e107MailManager;
 		$i = 0;
-		while ($row = $sql->db_Fetch(MYSQL_ASSOC))
+		while ($row = $sql->fetch())
 		{
 			$mailRecord = array(
 				'mail_create_date' => $row['gen_datestamp'],
@@ -1647,7 +1708,7 @@ function update_70x_to_706($type='')
 	if(!$sql->db_Field("plugin",5))  // not plugin_rss so just add the new one.
 	{
 	  if ($just_check) return update_needed();
-      $sql->db_Select_gen("ALTER TABLE `".MPREFIX."plugin` ADD `plugin_addons` TEXT NOT NULL ;");
+      $sql->gen("ALTER TABLE `".MPREFIX."plugin` ADD `plugin_addons` TEXT NOT NULL ;");
 	  catch_error($sql);
 	}
 
@@ -1655,7 +1716,7 @@ function update_70x_to_706($type='')
 	if($sql->db_Field("plugin",5) == "plugin_rss")
 	{
 	  if ($just_check) return update_needed();
-	  $sql->db_Select_gen("ALTER TABLE `".MPREFIX."plugin` CHANGE `plugin_rss` `plugin_addons` TEXT NOT NULL;");
+	  $sql->gen("ALTER TABLE `".MPREFIX."plugin` CHANGE `plugin_rss` `plugin_addons` TEXT NOT NULL;");
 	  catch_error($sql);
 	}
 
@@ -1663,16 +1724,16 @@ function update_70x_to_706($type='')
 	if($sql->db_Field("dblog",5) == "dblog_query")
 	{
       if ($just_check) return update_needed();
-	  $sql->db_Select_gen("ALTER TABLE `".MPREFIX."dblog` CHANGE `dblog_query` `dblog_title` VARCHAR( 255 ) NOT NULL DEFAULT '';");
+	  $sql->gen("ALTER TABLE `".MPREFIX."dblog` CHANGE `dblog_query` `dblog_title` VARCHAR( 255 ) NOT NULL DEFAULT '';");
 	  catch_error($sql);
-	  $sql->db_Select_gen("ALTER TABLE `".MPREFIX."dblog` CHANGE `dblog_remarks` `dblog_remarks` TEXT NOT NULL;");
+	  $sql->gen("ALTER TABLE `".MPREFIX."dblog` CHANGE `dblog_remarks` `dblog_remarks` TEXT NOT NULL;");
 	  catch_error($sql);
 	}
 
 	if(!$sql->db_Field("plugin","plugin_path","UNIQUE"))
 	{
       if ($just_check) return update_needed();
-      if(!$sql->db_Select_gen("ALTER TABLE `".MPREFIX."plugin` ADD UNIQUE (`plugin_path`);"))
+      if(!$sql->gen("ALTER TABLE `".MPREFIX."plugin` ADD UNIQUE (`plugin_path`);"))
 	  {
 		$mesg = LAN_UPDATE_12." : <a href='".e_ADMIN."db.php?plugin'>".ADLAN_145."</a>.";
         //$ns -> tablerender(LAN_ERROR,$mes);
@@ -1684,7 +1745,7 @@ function update_70x_to_706($type='')
 	if(!$sql->db_Field("online",6)) // online_active field
 	{
 	  if ($just_check) return update_needed();
-	  $sql->db_Select_gen("ALTER TABLE ".MPREFIX."online ADD online_active INT(10) UNSIGNED NOT NULL DEFAULT '0'");
+	  $sql->gen("ALTER TABLE ".MPREFIX."online ADD online_active INT(10) UNSIGNED NOT NULL DEFAULT '0'");
 	  catch_error($sql);
 	}
 
@@ -1694,9 +1755,9 @@ function update_70x_to_706($type='')
 	  if (!in_array('tmp_ip', $row))
 	  {
 		if ($just_check) return update_needed();
-		$sql->db_Select_gen("ALTER TABLE `".MPREFIX."tmp` ADD INDEX `tmp_ip` (`tmp_ip`);");
-		$sql->db_Select_gen("ALTER TABLE `".MPREFIX."upload` ADD INDEX `upload_active` (`upload_active`);");
-		$sql->db_Select_gen("ALTER TABLE `".MPREFIX."generic` ADD INDEX `gen_type` (`gen_type`);");
+		$sql->gen("ALTER TABLE `".MPREFIX."tmp` ADD INDEX `tmp_ip` (`tmp_ip`);");
+		$sql->gen("ALTER TABLE `".MPREFIX."upload` ADD INDEX `upload_active` (`upload_active`);");
+		$sql->gen("ALTER TABLE `".MPREFIX."generic` ADD INDEX `gen_type` (`gen_type`);");
 	  }
 	}
 
@@ -1791,7 +1852,7 @@ function addIndexToTable($target, $indexSpec, $just_check, &$updateMessages, $op
 		$updateMessages[] = str_replace(array('--TABLE--','--INDEX--'),array($target,$indexSpec),LAN_UPDATE_54);
 		return !$just_check;		// No point carrying on - return 'nothing to do'
 	}
-	if ($sql->db_Select_gen("SHOW INDEX FROM ".MPREFIX.$target))
+	if ($sql->gen("SHOW INDEX FROM ".MPREFIX.$target))
 	{
 		$found = FALSE;
 		while ($row = $sql -> db_Fetch())
@@ -1806,7 +1867,7 @@ function addIndexToTable($target, $indexSpec, $just_check, &$updateMessages, $op
 		{
 			return 'Required to add index to '.$target;
 		}
-		$sql->db_Select_gen("ALTER TABLE `".MPREFIX.$target."` ADD INDEX `".$indexSpec."` (`".$indexSpec."`);");
+		$sql->gen("ALTER TABLE `".MPREFIX.$target."` ADD INDEX `".$indexSpec."` (`".$indexSpec."`);");
 		$updateMessages[] = str_replace(array('--TABLE--','--INDEX--'),array($target,$indexSpec),LAN_UPDATE_37);
 	}
 	return FALSE;
@@ -1836,10 +1897,11 @@ function get_default_prefs()
 	return $pref;
 }
 
-function convert_serialized($serializedData)
+function convert_serialized($serializedData, $type='')
 {
 	$arrayData = unserialize($serializedData);
-	return e107::serialize($arrayData,FALSE);
+	$data = e107::serialize($arrayData,FALSE);
+	return $data;
 }
 
 

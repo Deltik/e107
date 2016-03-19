@@ -8,6 +8,9 @@
 +----------------------------------------------------------------------------+
 */
 $_E107['no_online'] = true;
+$_E107['no_forceuserupdate'] = true;
+$_E107['no_menus'] = true;
+$_E107['no_maintenance'] = true;
 require_once("../../class2.php");
 
 /*
@@ -340,7 +343,10 @@ class wysiwyg
 			
 		);
 
-
+	//	if(e_ADMIN_AREA)
+		{
+	//		$ret['skin_url']     = e_PLUGIN_ABS.'tinymce4/skins/eskin';
+		}
 		
 		// Loop thru XML parms. 
 		foreach($config as $k=>$xml)
@@ -384,11 +390,11 @@ class wysiwyg
 		// plugins: "visualblocks",
 
 
-
+/*
 		$formats = array(
 			'hilitecolor' => array('inline'=> 'span', 'classes'=> 'hilitecolor', 'styles'=> array('backgroundColor'=> '%value'))
 			//	block : 'h1', attributes : {title : "Header"}, styles : {color : red}
-		);
+		);*/
 
 		//@see http://www.tinymce.com/wiki.php/Configuration:formats
 
@@ -417,6 +423,7 @@ class wysiwyg
                     {title: 'Paragraph', block: 'p'},
                     {title: 'Blockquote', block: 'blockquote'},
                     {title: 'Div', block: 'div'},
+
                     {title: 'Pre', block: 'pre'},
                     {title: 'Code Highlighted', block: 'pre', classes: 'prettyprint linenums' }
                 ]},
@@ -426,7 +433,8 @@ class wysiwyg
                     {title: 'Center', block: 'div',classes: 'text-center', icon: 'aligncenter'},
                     {title: 'Right', block: 'div', classes: 'text-right',  icon: 'alignright'},
                     {title: 'Justify', block: 'div', classes: 'text-justify', icon: 'alignjustify'},
-                    {title: 'No-Wrap', block: 'div', classes: 'text-nowrap', icon: ''},
+                    {title: 'No Text-Wrap', block: 'div', classes: 'text-nowrap', icon: ''},
+                    {title: 'Clear Float', block: 'div', classes: 'clearfix'},
                     {title: 'Image Left', selector: 'img', classes: 'pull-left', styles: {'margin': '0 10px 5px 0'  },  icon: 'alignleft'},
                     {title: 'Image Right', selector: 'img', classes: 'pull-right', styles: { 'margin': '0 0 5px 10px'}, icon: 'alignright'}
 
@@ -447,9 +455,9 @@ class wysiwyg
                  {title: 'Alert (Info)', block: 'div', classes: 'alert alert-info'},
                  {title: 'Alert (Warning)', block: 'div', classes: 'alert alert-warning'},
                  {title: 'Alert (Danger)', block: 'div', classes: 'alert alert-block alert-danger'},
-                 {title: 'Float Clear', block: 'div', classes: 'clearfix'},
                  {title: 'Lead', block: 'p', classes: 'lead'},
                  {title: 'Well', block: 'div', classes: 'well'},
+				 {title: 'Row', block: 'div', classes: 'row'},
                  {title: '1/4 Width Block', block: 'div', classes: 'col-md-3 col-sm-12'},
                  {title: '3/4 Width Block', block: 'div', classes: 'col-md-9 col-sm-12'},
                  {title: '1/3 Width Block', block: 'div', classes: 'col-md-4 col-sm-12'},
@@ -502,7 +510,16 @@ class wysiwyg
         {title: 'Button (Danger)', value: 'btn btn-danger'}
     ]";
 
-
+	/*	$ret['setup'] = "function(ed) {
+      ed.addMenuItem('test', {
+         text: 'Clear Floats',
+         context: 'insert',
+         icon: false,
+         onclick: function() {
+            ed.insertContent('<div class=\"clearfix\" ></div>');
+         }
+      });
+      }";*/
 // https://github.com/valtlfelipe/TinyMCE-LocalAutoSave
 
 
@@ -596,12 +613,25 @@ class wysiwyg
 
 
 		$ret['convert_fonts_to_spans']	= false;
-		$ret['content_css']				= e_PLUGIN_ABS.'tinymce4/editor.css,https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css,http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css';
-		
+
+		$editorCSS = array(
+
+			'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css',
+			'http://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css',
+			e_PLUGIN_ABS.'tinymce4/editor.css',
+		);
+
+
+		$ret['content_css']				= json_encode($editorCSS);
+		$ret['content_style']           = "div.clearfix { border-top:1px solid red } ";
+
+	//	$ret['content_css'] = e_WEB_ABS."js/bootstrap/css/bootstrap.min.css";
+
 		$ret['relative_urls']			= false;  //Media Manager prefers it like this. 
 		$ret['preformatted']			= true;
 		$ret['document_base_url']		= SITEURL;
-
+		$ret['schema']                  = "html5";
+		$ret['element_format']          = "html";
 
 	//	$ret['table_default_attributes'] = json_encode(array('class'=>'table table-striped' ));
 
@@ -610,6 +640,16 @@ class wysiwyg
 		{
 			$ret['templates']				 = $tp->replaceConstants($ret['templates'],'abs'); // $this->getTemplates(); 
 		}
+
+		if(ADMIN)
+		{
+			$ret['templates'] = $this->getSnippets();
+		}
+
+
+
+
+
 		//	$this->config['verify_css_classes']	= 'false';
 		
 		$text = array();
@@ -773,6 +813,28 @@ class wysiwyg
 		
 		
 		
+	}
+
+
+	private function getSnippets()
+	{
+		$files = e107::getFile()->get_files(e_PLUGIN."tinymce4/snippets");
+
+		$ret = array();
+		foreach($files as $f)
+		{
+			$content = file_get_contents($f['path'].$f['fname'], null, null, null, 140);
+
+			preg_match('/<!--[^\w]*Title:[\s]([^\r\n]*)[\s]*Info: ?([^\r\n]*)/is', $content, $m);
+			if(!empty($m[1]))
+			{
+				$url = e_PLUGIN_ABS."tinymce4/snippets/".$f['fname'];
+				$ret[] = array('title'=>trim($m[1]), 'url'=>$url, 'description'=>trim($m[2]));
+			}
+		}
+
+		return json_encode($ret);
+
 	}
 
 

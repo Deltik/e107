@@ -80,6 +80,12 @@ class usersettings_shortcodes extends e_shortcode
 	
 	function sc_realname($parm)
 	{
+		if(!empty($this->var['user_xup'])) // social login active.
+		{
+			return $this->var['user_login'];
+		}
+
+
 		$pref = e107::getPref();
 		$options = array('title'=> '', 'size' => 40,'required'=>$pref['signup_option_realname']);	
 		return e107::getForm()->text('realname',$this->var['user_login'], 100, $options);
@@ -90,6 +96,11 @@ class usersettings_shortcodes extends e_shortcode
 	function sc_password1($parm)
 	{ 
 		$pref = e107::getPref();
+
+		if(!empty($this->var['user_xup'])) // social login active.
+		{
+			return null;
+		}
 		
 		if(!isset($pref['auth_method']) || $pref['auth_method'] == '' || $pref['auth_method'] == 'e107' || $pref['auth_method'] == '>e107')
 		{
@@ -105,6 +116,11 @@ class usersettings_shortcodes extends e_shortcode
 	function sc_password2($parm)
 	{ 
 		$pref = e107::getPref();
+
+		if(!empty($this->var['user_xup'])) // social login active.
+		{
+			return null;
+		}
 		
 		if(!isset($pref['auth_method']) || $pref['auth_method'] == '' || $pref['auth_method'] == 'e107' || $pref['auth_method'] == '>e107')
 		{
@@ -130,7 +146,12 @@ class usersettings_shortcodes extends e_shortcode
 	
 	
 	function sc_email($parm)
-	{ 
+	{
+		if(!empty($this->var['user_xup'])) // social login active.
+		{
+			return $this->var['user_email'];
+		}
+
 		$options = array('size' => 40,'title'=>'','required'=>true); 
 		return e107::getForm()->email('email', $this->var['user_email'], 100, $options);
 	}
@@ -227,6 +248,12 @@ class usersettings_shortcodes extends e_shortcode
 	
 	function sc_avatar_remote($parm)
 	{
+		if(!empty($this->var['user_xup'])) // social login active.
+		{
+		//	return $this->var['user_image'];
+			return e107::getParser()->toAvatar($this->var);
+		}
+
 		return e107::getForm()->avatarpicker('image',$this->var['user_image'],array('upload'=>1)); 
 	}
 	
@@ -242,9 +269,11 @@ class usersettings_shortcodes extends e_shortcode
 	function sc_photo_upload($parm)
 	{ 
 		$diz = LAN_USET_27.". ".LAN_USET_28.".";
-		
+		$text = '';
+
 		if(USERPHOTO)
 		{
+
 			$text .= e107::getParser()->parseTemplate("{PICTURE}",true);
 		}
 		
@@ -373,7 +402,7 @@ class usersettings_shortcodes extends e_shortcode
 				$fieldList = $sql->db_getList();
 				foreach($fieldList as $field)
 				{
-					cachevars("extendedfield_{$cat['user_extended_struct_name']}", $field);
+					cachevars("extendedfield_{$field['user_extended_struct_name']}", $field);
 					//TODO use $this instead of parseTemplate(); 
 					$ret .= $this->sc_userextended_field($field['user_extended_struct_name']);
 			//		$ret .= $tp->parseTemplate("{USEREXTENDED_FIELD={$field['user_extended_struct_name']}}", TRUE, $usersettings_shortcodes);

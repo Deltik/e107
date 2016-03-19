@@ -141,9 +141,16 @@ $nobody_regexp = "'(^|,)(".str_replace(",", "|", e_UC_NOBODY).")(,|$)'";
 		$newsRoute = 'list/all';
 		$newsUrlparms['id'] = $sub_action;
 	}
+	else
+	{
+		$newsRoute = 'list/items';
+	}
 
-	else $newsRoute = 'list/items';
+
+
 	$newsRoute = 'news/'.$newsRoute;
+
+
 
 
 if(vartrue($_GET['tag']) || substr($action,0,4) == 'tag=')
@@ -160,11 +167,18 @@ if(vartrue($_GET['tag']) || substr($action,0,4) == 'tag=')
 	$newsfrom = intval(varset($_GET['page'],0));
 }
 
-/*
-echo "route= ".$newsRoute."  ";
-echo "<br />action= ".$action."  ";
-echo "<br />_GET= ".print_a($_GET,true);
-*/
+if(E107_DBG_PATH)
+{
+	echo "<div class='alert alert-info'>";
+	echo "<h4>SEF Debug Info</h4>";
+	echo "action= ".$action."  ";
+	echo "<br />route= ".$newsRoute."  ";
+	echo "<br />e_QUERY= ".e_QUERY."  ";
+
+	echo "<br />_GET= ".print_r($_GET,true);
+	echo "</div>";
+}
+
 //------------------------------------------------------
 //		DISPLAY NEWS IN 'CATEGORY' LIST FORMAT HERE
 //------------------------------------------------------
@@ -259,7 +273,30 @@ if ($action == 'cat' || $action == 'all' || vartrue($_GET['tag']))
 	if($sql->gen($query))
 	{
 		$newsList = $sql->db_getList();
+		$ogImageCount = 0;
+		foreach($newsList as $row)
+		{
+			if(!empty($row['news_thumbnail']))
+			{
+				$iurl = (substr($row['news_thumbnail'],0,3)=="{e_") ? $row['news_thumbnail'] : SITEURL.e_IMAGE."newspost_images/".$news['news_thumbnail'];
+				$tmp = explode(",", $iurl);
+
+				if($tp->isImage($tmp[0]))
+				{
+					if($ogImageCount > 6)
+					{
+						break;
+					}
+
+					e107::meta('og:image',$tp->thumbUrl($tmp[0],'w=500',false,true) );
+					$ogImageCount++;
+
+				}
+			}
+
+		}
 	}
+
 
 	if($action == 'cat')
 	{
@@ -290,6 +327,7 @@ if ($action == 'cat' || $action == 'all' || vartrue($_GET['tag']))
 	$param['catlink']  = (defined("NEWSLIST_CATLINK")) ? NEWSLIST_CATLINK : "";
 	$param['caticon'] =  (defined("NEWSLIST_CATICON")) ? NEWSLIST_CATICON : defset('ICONSTYLE','');
 	$param['current_action'] = $action;
+	$param['template_key'] = 'list';
 
 	// NEW - allow news batch shortcode override (e.g. e107::getScBatch('news', 'myplugin', true); )
 	e107::getEvent()->trigger('news_list_parse', $newsList);
@@ -301,9 +339,16 @@ if ($action == 'cat' || $action == 'all' || vartrue($_GET['tag']))
 		$text .= $tp->parseTemplate($template['start'], true);		
 	}
 
-	foreach($newsList as $row)
+	if(!empty($newsList))
 	{
-		$text .= $ix->render_newsitem($row, 'return', '', $template['item'], $param);
+		foreach($newsList as $row)
+		{
+			$text .= $ix->render_newsitem($row, 'return', '', $template['item'], $param);
+		}
+	}
+	else // No News - empty.
+	{
+		$text .= "<div class='alert alert-info'>".(strstr(e_QUERY, "month") ? LAN_NEWS_462 : LAN_NEWS_83)."</div>";
 	}
 
 	if(vartrue($template['end']))
@@ -394,9 +439,9 @@ if ($action == 'extend')
 		AND (n.news_end=0 || n.news_end>".time().")
 		AND n.news_id=".intval($sub_action);
 	}
-	if ($sql->db_Select_gen($query))
+	if ($sql->gen($query))
 	{
-		$news = $sql->db_Fetch();
+		$news = $sql->fetch();
 		$id = $news['news_category'];		// Use category of this news item to generate next/prev links
 
 		//***NEW [SecretR] - comments handled inside now
@@ -458,6 +503,7 @@ if ($action == 'extend')
 
 		$param = array();
 		$param['current_action'] = $action;
+		$param['template_key'] = 'view';
 		
 		if(vartrue($NEWSSTYLE)) 
 		{
@@ -489,7 +535,13 @@ if ($action == 'extend')
 	}
 	else
 	{
-		$action = 'default';
+	//	$action = 'default';
+
+		//XXX item not found, redirect to avoid messing up search-engine data.
+		$defaultUrl = e107::getUrl()->create('news/list/items');
+		e107::getRedirect()->go($defaultUrl, null, 301);
+		exit;
+
 	}
 }
 
@@ -802,6 +854,7 @@ else
 	// #### normal newsitems, rendered via render_newsitem(), the $query is changed above (no other changes made) ---------
 	$param = array();
 	$param['current_action'] = $action;
+	$param['template_key'] = 'default';
 	
 	// Get Correct Template 
 	// XXX we use $NEWSLISTSTYLE above - correct as we are currently in list mode - XXX No this is not NEWSLISTSTYLE - which provides only summaries. 
@@ -839,17 +892,23 @@ else
 	}
 
 	$i= 1;
+
+	$socialInstalled = e107::isInstalled('social');
+
 	while(isset($newsAr[$i]) && $i <= $interval) 
 	{
 		$news = $newsAr[$i];
 		
-		// Set the Values for the social shortcode usage. 
-		$socialArray = array('url'=>e107::getUrl()->create('news/view/item', $news, 'full=1'), 'title'=>$tp->toText($news['news_title']), 'tags'=>$news['news_meta_keywords']);
-		$socialObj = e107::getScBatch('social');
-
-		if(is_object($socialObj))
+		// Set the Values for the social shortcode usage.
+		if($socialInstalled == true)
 		{
-			$socialObj->setVars($socialArray);
+			$socialArray = array('url'=>e107::getUrl()->create('news/view/item', $news, 'full=1'), 'title'=>$tp->toText($news['news_title']), 'tags'=>$news['news_meta_keywords']);
+			$socialObj = e107::getScBatch('social');
+
+			if(is_object($socialObj))
+			{
+				$socialObj->setVars($socialArray);
+			}
 		}
 
 		if(function_exists("news_style")) // BC
@@ -1072,26 +1131,11 @@ function setNewsFrontMeta($news, $type='news')
 		{
 			e107::meta('og:description',$news['news_summary']);		
 		}
-	
-		// grab all images in news-body and add to meta. 
-		$images = e107::getBB()->getContent('img',$news['news_body'],SITEURL.e_IMAGE."newspost_images/");
-		foreach($images as $im)
-		{
-			e107::meta('og:image',$im);		
-		}
-		
-		// grab all youtube videos in news-body and add thumbnails to meta. 
-		$youtube = e107::getBB()->getContent('youtube',$news['news_body']);
-		foreach($youtube as $yt)
-		{
-			list($img,$tmp) = explode("?",$yt);
-			e107::meta('og:image',"http://img.youtube.com/vi/".$img."/0.jpg");		
-		}	
 
-		// include news-thumbnail/image in meta. 
+		// include news-thumbnail/image in meta. - always put this one first.
 		if($news['news_thumbnail'])
 		{
-			$iurl = (substr($news['news_thumbnail'],0,3)=="{e_") ? $tp->replaceConstants($news['news_thumbnail'],'full') : SITEURL.e_IMAGE."newspost_images/".$news['news_thumbnail'];	
+			$iurl = (substr($news['news_thumbnail'],0,3)=="{e_") ? $news['news_thumbnail'] : SITEURL.e_IMAGE."newspost_images/".$news['news_thumbnail'];
 			$tmp = explode(",", $iurl);
 			foreach($tmp as $mimg)
 			{
@@ -1099,11 +1143,34 @@ function setNewsFrontMeta($news, $type='news')
 				{
 					continue;
 				}
-				
-				e107::meta('og:image',$mimg);		
+				e107::meta('og:image',$tp->thumbUrl($tmp[0],'w=500',false,true) );
+			//	e107::meta('og:image',$mimg);
 			}
-					
+
 		}
+	
+		// grab all images in news-body and add to meta. 
+		$images = e107::getBB()->getContent('img',$news['news_body'],SITEURL.e_IMAGE."newspost_images/");
+		$c =1;
+		foreach($images as $im)
+		{
+			if($c == 4){ break; }
+			e107::meta('og:image',$im);
+			$c++;
+		}
+		
+		// grab all youtube videos in news-body and add thumbnails to meta. 
+		$youtube = e107::getBB()->getContent('youtube',$news['news_body']);
+		$c = 1;
+		foreach($youtube as $yt)
+		{
+			if($c == 3){ break; }
+			list($img,$tmp) = explode("?",$yt);
+			e107::meta('og:image',"http://img.youtube.com/vi/".$img."/0.jpg");
+			$c++;
+		}
+
+
 
 		$url = e107::getUrl()->create('news/view/item', $news,'full=1');
 		e107::meta('og:url',$url);	

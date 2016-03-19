@@ -113,7 +113,7 @@ if($signup_imagecode)
 
 if ((USER || (intval($pref['user_reg']) !== 1) || (vartrue($pref['auth_method'],'e107') != 'e107')) && !getperms('0'))
 {
-	 header('location: '.e_HTTP.'index.php');
+	e107::redirect();
 	
 }
 
@@ -234,7 +234,7 @@ class signup
 			}
 			else
 			{
-				message_handler("ALERT",LAN_SIGNUP_52); // Incorrect Password.
+				message_handler("ALERT",LAN_INCORRECT_PASSWORD); // Incorrect Password.
 				return false;
 			}
 		}
@@ -762,7 +762,7 @@ if (isset($_POST['register']) && intval($pref['user_reg']) === 1)
 		$fp = new floodprotect;
 		if ($fp->flood("user", "user_join") == FALSE)
 		{
-			header("location:".e_BASE."index.php");
+			e107::redirect();
 			exit;
 		}
 
@@ -926,6 +926,8 @@ if (isset($_POST['register']) && intval($pref['user_reg']) === 1)
 
 			e107::getEvent()->trigger('usersup', $_POST);  // Old trigger - send everything in the template, including extended fields.
 			e107::getEvent()->trigger('userpartial', array_merge($allData['data'],$eufVals['data']));  // New trigger - send everything in the template, including extended fields.
+			e107::getEvent()->trigger('user_signup_submitted', $_POST);
+
 
 			require_once(HEADERF);
 
@@ -1018,7 +1020,7 @@ if ($qs == 'stage1' && $pref['use_coppa'] == 1)
 	}
 	else
 	{
-  		header('Location: '.e_BASE.'signup.php');
+		e107::redirect();
 		exit;
 	}
 }

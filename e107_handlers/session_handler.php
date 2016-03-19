@@ -208,6 +208,20 @@ class e_session
 				$options['path'] = e107::getPref('session_cookie_path', ''); // FIXME - new pref
 				$options['secure'] = e107::getPref('ssl_enabled', false); // FIXME - new pref
 			}
+
+			if(defined('SESSION_SAVE_PATH')) // safer than a pref.
+			{
+				$config['SavePath'] = e_BASE. SESSION_SAVE_PATH;
+			}
+
+			$hashes = hash_algos();
+
+			if((e_SECURITY_LEVEL >= self::SECURITY_LEVEL_BALANCED) && in_array('sha512',$hashes))
+			{
+				ini_set('session.hash_function', 'sha512');
+				ini_set('session.hash_bits_per_character', 5);
+			}
+
 			
 			$this->setConfig($config)
 				->setOptions($options);
@@ -443,7 +457,7 @@ class e_session
 		if (empty($this->_options['domain']))
 		{
 			// MULTILANG_SUBDOMAIN set during initial language detection in language handler
-			$doma = ((!e_SUBDOMAIN || deftrue('MULTILANG_SUBDOMAIN')) && e_DOMAIN != FALSE) ? ".".e_DOMAIN : FALSE; // from v1.x
+			$doma = ((deftrue('e_SUBDOMAIN') || deftrue('MULTILANG_SUBDOMAIN')) && e_DOMAIN != FALSE) ? ".".e_DOMAIN : FALSE; // from v1.x
 			$this->_options['domain'] = $doma;
 		}
 

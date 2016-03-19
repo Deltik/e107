@@ -240,7 +240,7 @@ define("LAN_CREATED_FAILED","Creation Unsuccessful");
 define("LAN_DELETED_FAILED","Deletion Unsuccessful");
 define("LAN_UPDATED_FAILED","Update Unsuccessful");
 define("LAN_NO_CHANGE","Nothing updated as no changes were made.");
-define("LAN_REQUIRED_BLANK", "Required field(s) left blank.");
+
 define("LAN_TRY_AGAIN","Please try again.");
 define("LAN_NEVER", "Never");
 define("LAN_PRUNE", "Prune");
@@ -331,7 +331,8 @@ define("LAN_STATUS", "Status");
 define("LAN_URL", "URL");
 
 define("LAN_OWNER", "Owner");
-
+define("LAN_PURCHASE", "Purchase ");
+define("LAN_DOWN_THEME", "Downloading ");
 
 define("LAN_ID", "ID");
 
@@ -410,7 +411,20 @@ define("LAN_USER_QUICKADD","Quick Add User");
 define("LAN_USER_PRUNE", "Prune Users");
 define("LAN_USER_OPTIONS", "User Options");
 define("LAN_USER_RANKS", "User Ranks");
+define("LAN_CONTROL_PANEL", "[x]'s Control Panel");
+define("LAN_CUSTOM_URL", "Custom URL");
+define("LAN_CUSTOM_URL_DISABLED", "Disabled or Enter Custom URL");
 
+define("LAN_GENERAL", "General");
+//define("LAN_GENERATE", "Generate"); //moved to English php
+define("LAN_GEN_PW", "Generate a password");
+define("LAN_DISPL_PW", "Display the password");
+define("LAN_WILL_OVERWRITE_SEF", "This will overwrite your existing SEF URL.");
+
+define("LAN_CAPTION", "Caption");
+define("LAN_LIMIT", "Limit");
+define("LAN_BASIC", "Basic");
+define("LAN_ADVANCED", "Advanced");
 
 
 // TODO - move e_form related LANS below, add new lan_form.php file (for both front/back-end)

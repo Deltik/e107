@@ -326,6 +326,18 @@ class ecache {
 			$mask = ($mask == null) ? '.*\.cache\.bin' : $mask;		
 		}
 
+		if($type == 'js')
+		{
+			$path = e_WEB."cache/";
+			$mask = ($mask == null) ? '.*\.js' : $mask;
+		}
+
+		if($type == 'css')
+		{
+			$path = e_WEB."cache/";
+			$mask = ($mask == null) ? '.*\.css' : $mask;
+		}
+
 		if((null == $path) || (null == $mask))
 		{
 			return;

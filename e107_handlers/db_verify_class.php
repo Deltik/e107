@@ -134,7 +134,7 @@ class db_verify
 		}
 		else
 		{
-			$mes->addSuccess("Tables appear to be okay!"); //TODO LAN
+			$mes->addSuccess(DBLAN_111); 
 			$mes->addSuccess("<a class='btn btn-primary' href='".$this->backUrl."'>".LAN_BACK."</a>");
 			//$debug = "<pre>".print_r($this->results,TRUE)."</pre>";
 			//$mes->add($debug,E_MESSAGE_DEBUG);	
@@ -219,9 +219,14 @@ class db_verify
 				// echo "missing table: $tbl";
 				continue;
 			}
-			
+
+		//	echo "<h4>RAW</h4>";
+		//	print_a($rawSqlData);
+
 			$sqlDataArr     = $this->getTables($rawSqlData);
-			
+		//	echo "<h4>PARSED</h4>";
+		//	print_a($sqlDataArr);
+
 			$fileFieldData	= $this->getFields($this->tables[$selection]['data'][$key]);
 			$sqlFieldData	= $this->getFields($sqlDataArr['data'][0]);	
 			
@@ -735,15 +740,17 @@ class db_verify
 		}
 		
 		$ret = array();
-		
+
 		$sql_data = preg_replace("#\/\*.*?\*\/#mis", '', $sql_data);	// remove comments 
-		
+	//	echo "<h4>SqlData</h4>";
+	//	print_a($sql_data);
 	//	$regex = "/CREATE TABLE `?([\w]*)`?\s*?\(([\s\w\+\-_\(\),'\. `]*)\)\s*(ENGINE|TYPE)\s*?=\s?([\w]*)[\w =]*;/i";
-	
-		$regex = "/CREATE TABLE (?:IF NOT EXISTS )?`?([\w]*)`?\s*?\(([\s\w\+\-_\(\),'\. `]*)\)\s*(ENGINE|TYPE)\s*?=\s?([\w]*)[\w =]*;/i";
+
+		$regex = "/CREATE TABLE (?:IF NOT EXISTS )?`?([\w]*)`?\s*?\(([\s\w\+\-_\(\),:'\. `]*)\)\s*(ENGINE|TYPE)\s*?=\s?([\w]*)[\w =]*;/i";
 	 			
 		$table = preg_match_all($regex,$sql_data,$match);
 		
+
 
 			
 		$tables = array();
@@ -790,8 +797,15 @@ class db_verify
 		$mes = e107::getMessage();
 			
 	//	$regex = "/`?([\w]*)`?\s*?(".implode("|",$this->fieldTypes)."|".implode("|",$this->fieldTypeNum).")\s?(?:\([\s]?([0-9,]*)[\s]?\))?[\s]?(unsigned)?[\s]?.*?(?:(NOT NULL|NULL))?[\s]*(auto_increment|default .*)?[\s]?(?:PRIMARY KEY)?[\s]*?,?\s*?\n/im";
-		$regex = "/^\s*?`?([\w]*)`?\s*?(".implode("|",$this->fieldTypes)."|".implode("|",$this->fieldTypeNum).")\s?(?:\([\s]?([0-9,]*)[\s]?\))?[\s]?(unsigned)?[\s]?.*?(?:(NOT NULL|NULL))?[\s]*(auto_increment|default [\w'.-]*)?[\s]?(comment [\w\s'.-]*)?[\s]?(?:PRIMARY KEY)?[\s]*?,?\s*?\n/im";
-	
+		$regex = "/^\s*?`?([\w]*)`?\s*?(".implode("|",$this->fieldTypes)."|".implode("|",$this->fieldTypeNum).")\s?(?:\([\s]?([0-9,]*)[\s]?\))?[\s]?(unsigned)?[\s]?.*?(?:(NOT NULL|NULL))?[\s]*(auto_increment|default|AUTO_INCREMENT|DEFAULT [\w'\s.\(:\)-]*)?[\s]?(comment [\w\s'.-]*)?[\s]?(?:PRIMARY KEY)?[\s]*?,?\s*?\n/im";
+
+		if(e_DEBUG)
+		{
+		//	e107::getMessage()->addDebug("Regex: ".print_a($data,true));
+		//	e107::getMessage()->addDebug("Regex: ".$regex);
+
+		}
+
 	//	echo $regex."<br /><br />";
 	
 		//	$regex = "/`?([\w]*)`?\s*(int|varchar|tinyint|smallint|text|char|tinyint) ?(?:\([\s]?([0-9]*)[\s]?\))?[\s]?(unsigned)?[\s]?.*?(NOT NULL|NULL)?[\s]*(auto_increment|default .*)?[\s]?,/i";		
@@ -905,7 +919,7 @@ class db_verify
 		if($z)
 		{
 		//	$row = mysql_fetch_row($z);
-			$row = $sql->fetch(MYSQL_NUM);
+			$row = $sql->fetch('num');
 			//return $row[1];
 			return stripslashes($row[1]).';'; // backticks needed. 
 			// return str_replace("`", "", stripslashes($row[1])).';';

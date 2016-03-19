@@ -24,7 +24,7 @@
 require_once('../class2.php');
 if (!getperms('U'))
 {
-	header('location:'.e_BASE.'index.php');
+	e107::redirect('admin');
 	exit;
 }
 
@@ -109,7 +109,7 @@ class cron_admin_ui extends e_admin_ui
 			}
 			
 			$sql->gen("SELECT cron_function,cron_active FROM #cron ");
-			while($row = $sql->fetch(MYSQL_ASSOC))
+			while($row = $sql->fetch())
 			{
 				$this->curCrons[] = $row['cron_function'];
 				if($row['cron_active']==1)
@@ -343,9 +343,15 @@ class cron_admin_ui extends e_admin_ui
 			$mes 	= e107::getMessage();
 			$frm = e107::getForm();
 			
-			e107::getCache()->CachePageMD5 = '_';
-			$lastload = e107::getCache()->retrieve('cronLastLoad', false, true, true);
-			
+			if(file_exists(e_CACHE.'cronLastLoad.php'))
+			{
+				$lastload = intval(@file_get_contents(e_CACHE.'cronLastLoad.php'));
+			}
+			else
+			{
+				$lastload = 0;
+			}
+
 			$ago = (time() - $lastload);
 	
 			$active = ($ago < 1200) ? true : false; // longer than 20 minutes, so lets assume it's inactive.
@@ -403,7 +409,7 @@ class cron_admin_ui extends e_admin_ui
 			$sql = e107::getDb();
 			if($sql->select("cron","cron_name,cron_function","cron_id = ".intval($cron_id)))
 			{
-				$row = $sql->fetch(MYSQL_ASSOC);
+				$row = $sql->fetch();
 				$class_func = $row['cron_function'];
 				$cron_name = $row['cron_name'];	
 			}

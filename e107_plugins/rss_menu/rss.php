@@ -26,9 +26,9 @@ if (!defined('e107_INIT'))
 
 $e107 = e107::getInstance();
 
-if (!$e107->isInstalled('rss_menu'))
+if (!e107::isInstalled('rss_menu'))
 {
-	header('Location: '.e_BASE.'index.php');
+	e107::redirect();
 	exit;
 }
 
@@ -135,7 +135,9 @@ if(!$sql->select('rss', '*', "rss_class!=2 AND rss_url='".$content_type."' ".$ch
 	if(!$sql->select('rss', '*', "rss_class!=2 AND rss_url='".$content_type."' ".$check_topic." AND rss_limit>0 "))
 	{
 		require_once(HEADERF);
-		$ns->tablerender('', RSS_LAN_ERROR_1);
+		$repl  = array("<a href='".e_REQUEST_SELF."'>", "</a>");
+		$message = str_replace(array("[","]"), $repl, RSS_LAN_ERROR_1);
+		$ns->tablerender('', $message);
 		require_once(FOOTERF);
 		exit;
 	}

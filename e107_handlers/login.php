@@ -251,10 +251,11 @@ class userlogin
 		// Problem is that USERCLASS_LIST just contains 'guest' and 'everyone' at this point
 		$class_list = $this->userMethods->addCommonClasses($this->userData, TRUE);
 
-		$user_logging_opts = e107::getConfig()->get('user_audit_opts');
-		if (isset($user_logging_opts[USER_AUDIT_LOGIN]) && in_array(varset($pref['user_audit_class'],''),$class_list))
+	//	$user_logging_opts = e107::getConfig()->get('user_audit_opts');
+
+		if (in_array(varset($pref['user_audit_class'],''), $class_list))
 		{  // Need to note in user audit trail
-			$this->e107->admin_log->user_audit(USER_AUDIT_LOGIN,'', $user_id,$user_name);
+			e107::getLog()->user_audit(USER_AUDIT_LOGIN,'', $user_id, $user_name);
 		}
 
 		$edata_li = array('user_id' => $user_id, 'user_name' => $user_name, 'class_list' => implode(',',$class_list), 'remember_me' => $autologin, 'user_admin'=>$user_admin, 'user_email'=> $user_email);
@@ -357,7 +358,7 @@ class userlogin
 		}
 
 		// User is in DB here
-		$this->userData = e107::getDb()->fetch(MYSQL_ASSOC);		// Get user info
+		$this->userData = e107::getDb()->fetch();		// Get user info
 		$this->userData['user_perms'] = trim($this->userData['user_perms']);
 		$this->lookEmail = $this->lookEmail && ($username == $this->userData['user_email']);		// Know whether login name or email address used now
 		
@@ -580,6 +581,8 @@ class userlogin
 
 		define('LOGINMESSAGE', $message);
 
+	//	$sql->update('online', 'user_active = 0 WHERE user_ip = "'.$this->userIP.'" LIMIT 1');
+
 		if ($doCheck) // See if ban required (formerly the checkibr() function)
 		{
 			if($pref['autoban'] == 1 || $pref['autoban'] == 3) // Flood + Login or Login Only.
@@ -614,8 +617,10 @@ class userlogin
 	//	$text  = e107::getParser()->toDB($text);
 	//	$text = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS_);
 
-		$debug = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS,2);
+		$debug = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS,4);
 
+		// unset($debug[0]);
+		$debug[0] = e_REQUEST_URI;
 
 	//	$array = debug_backtrace();
 	//	e107::getLog()->e_log_event(4, $array, "LOGIN", $title, $text, FALSE, LOG_TO_ROLLING);

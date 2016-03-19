@@ -17,8 +17,12 @@ if (!defined('e107_INIT'))
 	exit;
 }
 
-define('ADMINFEED', 'http://e107.org/adminfeed');
+
 define('ADMINFEEDMORE', 'http://e107.org/blog');
+
+
+
+
 
 class adminstyle_infopanel
 {
@@ -27,17 +31,19 @@ class adminstyle_infopanel
 	
 	function __construct()
 	{
-		e107::js('core','zrssfeed/jquery.zrssfeed.min.js'); // http://www.zazar.net/developers/jquery/zrssfeed/
+	//	e107::js('core','zrssfeed/jquery.zrssfeed.min.js'); // http://www.zazar.net/developers/jquery/zrssfeed/
 		
 		$code = "
 		
 		
 		jQuery(function($){
-		 $('#e-adminfeed').rssfeed('".ADMINFEED."', {
-    		limit: 3,
-    		header: false,
-    		linktarget: '_blank'
-  			});
+
+  			$('#e-adminfeed').load('".e_ADMIN."admin.php?mode=core&type=feed');
+
+  		    $('#e-adminfeed-plugin').load('".e_ADMIN."admin.php?mode=addons&type=plugin');
+
+  		    $('#e-adminfeed-theme').load('".e_ADMIN."admin.php?mode=addons&type=theme');
+
 		});
 ";
 		
@@ -195,13 +201,19 @@ class adminstyle_infopanel
 			$mainPanel .= "</div>
 	      
 			</div>";
-	
-		$text = $ns->tablerender(ucwords(USERNAME)."'s Control Panel", $mainPanel, "core-infopanel_mye107",true);
+
+		$caption = $tp->lanVars(LAN_CONTROL_PANEL, ucwords(USERNAME));
+		$text = $ns->tablerender($caption, $mainPanel, "core-infopanel_mye107",true);
 		
 	
 	//  ------------------------------- e107 News --------------------------------
-		
-		$text2 = $ns->tablerender("e107 News","<div id='e-adminfeed'></div><div class='right'><a rel='external' href='".ADMINFEEDMORE."'>".LAN_MORE."</a></div>","core-infopanel_news",true); 
+
+		$newsTabs = array();
+		$newsTabs['coreFeed'] = array('caption'=>'General','text'=>"<div id='e-adminfeed' style='min-height:300px'></div><div class='right'><a rel='external' href='".ADMINFEEDMORE."'>".LAN_MORE."</a></div>");
+		$newsTabs['pluginFeed'] = array('caption'=>'Plugins','text'=>"<div id='e-adminfeed-plugin'></div>");
+		$newsTabs['themeFeed'] = array('caption'=>'Themes','text'=>"<div id='e-adminfeed-theme'></div>");
+
+		$text2 = $ns->tablerender("Latest e107 News",e107::getForm()->tabs($newsTabs, array('active'=>'coreFeed')),"core-infopanel_news",true);
 	
 	
 	
@@ -373,6 +385,7 @@ class adminstyle_infopanel
 		
 		$ol = e107::getOnline();
 		$tp = e107::getParser();
+		$multilan = e107::getPref('multilanguage');
 
 		$panelOnline = "
 				
@@ -382,7 +395,15 @@ class adminstyle_infopanel
 		            <col style='width: 25%' />
 					<col style='width: 10%' />
 					<col style='width: 40%' />
-					<col style='width: auto' />
+					<col style='width: auto' />";
+
+
+		$panelOnline .= (!empty($multilan)) ? "<col style='width: auto' />" : "";
+
+
+		// TODO LAN
+		$panelOnline .= "
+
 				</colgroup>
 				<thead>
 					<tr class='first'>
@@ -390,10 +411,16 @@ class adminstyle_infopanel
 						<th>Username</th>
 						<th>IP</th>
 						<th>Page</th>
-						<th class='center'>Agent</th>
+						<th class='center'>Agent</th>";
+
+		$panelOnline .= (!empty($multilan)) ? "<th class='center'>Lang.</th>" : "";
+
+		$panelOnline .= "
 					</tr>
 				</thead>
-				<tbody>";	
+				<tbody>";
+
+
 
 		$online = $ol->userList() + $ol->guestList();
 		
@@ -402,8 +429,10 @@ class adminstyle_infopanel
 			return count($online);	
 		}
 				
-		//	echo "Users: ".print_a($online);
-		
+	//		echo "Users: ".print_a($online);
+
+		$lng = e107::getLanguage();
+
 		foreach ($online as $val)
 		{
 			$panelOnline .= "
@@ -412,7 +441,12 @@ class adminstyle_infopanel
 				<td>".$this->renderOnlineName($val['online_user_id'])."</td>
 				<td>".e107::getIPHandler()->ipDecode($val['user_ip'])."</td>
 				<td><a class='e-tip' href='".$val['user_location']."' title='".$val['user_location']."'>".$tp->html_truncate(basename($val['user_location']),50,"...")."</a></td>
-				<td class='center'><a class='e-tip' href='#' title='".$val['user_agent']."'>".$this->browserIcon($val)."</a></td>
+				<td class='center'><a class='e-tip' href='#' title='".$val['user_agent']."'>".$this->browserIcon($val)."</a></td>";
+
+			$panelOnline .= (!empty($multilan)) ? "<td class='center'><a class='e-tip' href='#' title=\"".$lng->convert($val['user_language'])."\">".$val['user_language']."</a></td>" : "";
+
+
+			$panelOnline .= "
 			</tr>
 			";
 		}
@@ -596,7 +630,7 @@ class adminstyle_infopanel
 			if (getperms($icon['perms']))
 			{
 				$checked = (varset($user_pref['core-infopanel-mye107']) && in_array($key, $user_pref['core-infopanel-mye107'])) ? true : false;
-				$text .= "<div class='left f-left list field-spacer checkbox' style='display:block;height:24px;width:200px;'>
+				$text .= "<div class='left f-left list field-spacer form-inline' style='display:block;height:24px;width:200px;'>
 		                        ".$icon['icon'].' '.$frm->checkbox_label($icon['title'], 'e-mye107[]', $key, $checked)."</div>";
 								
 			}
@@ -609,7 +643,7 @@ class adminstyle_infopanel
 				if (getperms($icon['perms']))
 				{
 					$checked = (in_array('p-'.$key, $user_pref['core-infopanel-mye107'])) ? true : false;
-					$text .= "<div class='left f-left list field-spacer checkbox' style='display:block;height:24px;width:200px;'>
+					$text .= "<div class='left f-left list field-spacer form-inline' style='display:block;height:24px;width:200px;'>
 			                         ".$icon['icon'].$frm->checkbox_label($icon['title'], 'e-mye107[]', $key, $checked)."</div>";
 				}
 			}
@@ -636,7 +670,7 @@ class adminstyle_infopanel
 		$menu_qry = 'SELECT * FROM #menus WHERE menu_id!= 0  GROUP BY menu_name ORDER BY menu_name';
 		$settings = varset($pref['core-infopanel-menus'],array());
 	
-		if (e107::getDb()->db_Select_gen($menu_qry))
+		if (e107::getDb()->gen($menu_qry))
 		{
 			while ($row = e107::getDb()->db_Fetch())
 			{
@@ -727,6 +761,7 @@ class adminstyle_infopanel
 			foreach($array as $key => $value) 
 			{
 				extract($value);
+				$log_id = substr($log_id, 0, 4).'-'.substr($log_id, 5, 2).'-'.str_pad(substr($log_id, 8), 2, '0', STR_PAD_LEFT);
 				if(is_array($log_data)) {
 					$entries[0] = $log_data['host'];
 					$entries[1] = $log_data['date'];

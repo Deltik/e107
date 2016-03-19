@@ -15,112 +15,14 @@
 /* Forum Header File */
 if (!defined('e107_INIT')) { exit; }
 
-$jscode = <<<EON
-
-$(document).ready(function() 
-{
-	$('a[data-forum-action], input[data-forum-action]').on('click', function(e)
-	{
-			
-		var action = $(this).attr('data-forum-action');	
-		var thread = $(this).attr('data-forum-thread');		
-		var post 	= $(this).attr('data-forum-post');		
-		var text 	= $('#forum-quickreply-text').val();
-		var insert	= $(this).attr('data-forum-insert');
-		var token	= $(this).attr('data-token');
-		
-		e.preventDefault();
-					
-		var script = $(this).attr("src"); 
-
-		$.ajax({
-			type: "POST",
-			url: script,
-			data: { thread: thread, action: action, post: post, text: text, insert:insert, e_token: token },
-			success: function(data) {
-			  		
-			 //		 alert(data); 	
-			  	
-				var d = $.parseJSON(data);
-				
-				if(d)
-				{
-		
-									
-					if(d.msg)
-					{
-						if(d.status == 'ok')
-						{
-							var alertType = 'success';
-						}
-						else {
-							var alertType = 'info';
-						}			
-							
-						// http://nijikokun.github.io/bootstrap-notify/
-						$('#uiAlert').notify({
-							type: alertType,
-   							message: { text: d.msg },
-   							fadeOut: { enabled: true, delay: 3000 }
-  						}).show(); 
-						
-						// alert(d.msg);
-					}
-					
-					if(action == 'stick' || action == 'unstick' || action == 'lock' || action == 'unlock')
-					{
-						location.reload();
-						return;
-					}		
-					
-					if(action == 'quickreply' && d.status == 'ok' )
-					{
-					//	alert(d.html);
-						if(d.html != false)
-						{
-							// $('#forum-viewtopic li:last').after(d.html).hide().slideDown(800);
-
-							$(d.html).appendTo("#forum-viewtopic").hide().slideDown(1000);
-
-						}
-						$('#forum-quickreply-text').val('');
-						return;
-					}
-					
-					
-					if(d.hide)
-					{
-						var t = '#thread-' + thread ; 
-						var p = '#post-' + post ; 
-						
-				//		alert(p);
-						$(t).hide('slow');
-						$(p).hide('slow').slideUp(800);
-					}
-					
-					
-					
-				}					
-			}
-		  
-		});
-		
-							
-		
-		// return false;
-	});
-	
-});
-			
-		
-
-EON;
-
-e107::js('inline',$jscode,'jquery');
+e107::js('forum', 'js/forum.js', 'jquery', 5);
 e107::css('forum','forum.css');
 
 
 e107::lan('forum','English_front');
+
+
+
 // include_lan(e_PLUGIN.'forum/languages/'.e_LANGUAGE.'/lan_forum.php');
 if(!defined('IMAGE_new') && !defined('IMAGE_e'))
 {
@@ -150,6 +52,14 @@ class e107forum
 
 	public function __construct($update= false)
 	{
+
+		if (!empty($_POST['fjsubmit']) && !empty($_POST['forumjump']))
+		{
+			$url = e107::getParser()->filter($_POST['forumjump'],'url');
+			e107::getRedirect()->go($_POST['forumjump']);
+			exit;
+		}
+
 		$this->e107 = e107::getInstance();
 		$tp = e107::getParser();
 		$this->userViewed = array();
@@ -264,80 +174,133 @@ class e107forum
 
 
 	/**
-	 * Handle the Ajax quick-reply. 
+	 * Handle the Ajax quick-reply.
 	 */
 	function ajaxQuickReply()
 	{
 		$tp = e107::getParser();
-		
-		if(!isset($_POST['e_token'])) // Set the token if not included 
+
+		if(!isset($_POST['e_token'])) // Set the token if not included
 		{
-			$_POST['e_token'] = '';	
+			$_POST['e_token'] = '';
 		}
-				
+
 		if(!e107::getSession()->check(false) || !$this->checkPerm($_POST['post'], 'post'))
 		{
-			//$ret['status'] = 'ok';
-		//	$ret['msg'] = "Token Error";
-
-		//	echo json_encode($ret);  
-			
+			// Invalid token.
 			exit;
 		}
 
 		if(varset($_POST['action']) == 'quickreply' && vartrue($_POST['text']))
-		{		
-	
-				$postInfo = array();
-				$postInfo['post_ip'] = e107::getIPHandler()->getIP(FALSE);
-				
-				if (USER)
-				{
-					$postInfo['post_user'] = USERID;
+		{
 
-				}
-				else
-				{
-					$postInfo['post_user_anon'] = $_POST['anonname'];
-				}
-				
-				$postInfo['post_entry'] 		= $_POST['text'];
-				$postInfo['post_forum'] 		= intval($_POST['post']);
-				$postInfo['post_datestamp'] 	= time();
-				$postInfo['post_thread'] 		= intval($_POST['thread']);
-				
-				$postInfo['post_id']  = $this->postAdd($postInfo); // save it. 
-					
-				$postInfo['user_name'] = USERNAME;
-				$postInfo['user_email'] = USEREMAIL;
-				$postInfo['user_image'] = USERIMAGE; 
-				$postInfo['user_signature'] = USERSIGNATURE; 
+			$postInfo = array();
+			$postInfo['post_ip'] = e107::getIPHandler()->getIP(false);
 
-				if($_POST['insert'] == 1)
-				{
-					$tmpl = e107::getTemplate('forum','forum_viewtopic','replies');
-					$sc  = e107::getScBatch('view', 'forum');
-					$sc->setScVar('postInfo', $postInfo);
-					$ret['html'] = $tp->parseTemplate($tmpl, true, $sc) . "\n";
-				}
-				else 
-				{
-					$ret['html'] = false;
-				}
-				
-				$ret['status'] = 'ok';
-				$ret['msg'] = "Your post has been added"; 
+			if(USER)
+			{
+				$postInfo['post_user'] = USERID;
+			}
+			else
+			{
+				$postInfo['post_user_anon'] = $_POST['anonname'];
+			}
 
-			//echo $ret;
-			 echo json_encode($ret);  
-		}	
+			$postInfo['post_entry'] = $_POST['text'];
+			$postInfo['post_forum'] = intval($_POST['post']);
+			$postInfo['post_datestamp'] = time();
+			$postInfo['post_thread'] = intval($_POST['thread']);
+
+			$postInfo['post_id'] = $this->postAdd($postInfo); // save it.
+
+			$postInfo['user_name'] = USERNAME;
+			$postInfo['user_email'] = USEREMAIL;
+			$postInfo['user_image'] = USERIMAGE;
+			$postInfo['user_signature'] = USERSIGNATURE;
+
+			if($_POST['insert'] == 1)
+			{
+				$tmpl = e107::getTemplate('forum', 'forum_viewtopic', 'replies');
+				$sc = e107::getScBatch('view', 'forum');
+				$sc->setScVar('postInfo', $postInfo);
+				$ret['html'] = $tp->parseTemplate($tmpl, true, $sc) . "\n";
+			}
+			else
+			{
+				$ret['html'] = false;
+			}
+
+			$ret['status'] = 'ok';
+			$ret['msg'] = "Your post has been added"; // TODO lan.
+		}
 
 		e107::getSession()->reset();
+
+		if(varset($ret, false))
+		{
+			$ret['e_token'] = e107::getSession()->getFormToken();
+		}
+
+		echo $tp->toJSON($ret);
+		exit;
+	}
+
+
+	/**
+	* Process Tracking Enable/disable
+	*/
+	public function ajaxTrack()
+	{
+		$ret = array();
+		$ret['status'] 	= 'error';
+
+		$threadID = intval($_POST['thread']);
+
+		if(!USER || empty($threadID))
+		{
+			exit;
+		}
+
+		$sql = e107::getDb();
+
+		if($sql->select('forum_track', '*', "track_userid=".USERID." AND track_thread=".$threadID))
+		{
+			if($this->track('del', USERID, $threadID))
+			{
+				$ret['html'] = IMAGE_untrack;
+				$ret['msg'] = LAN_FORUM_8004; // "Email notifications for this topic are now turned off. ";
+				$ret['status'] = 'info';
+			}
+			else
+			{
+				$ret['msg'] = 'There was a problem disabling the tracking.';  //TODO LAN
+				$ret['status'] = 'error';
+			}
+
+		}
+		else
+		{
+			if($this->track('add', USERID, $threadID))
+			{
+				$ret['msg'] = LAN_FORUM_8003; // "Email notifications for this topic are now turned on. ";
+				$ret['html']  = IMAGE_track;
+				$ret['status'] = 'ok';
+			}
+			else
+			{
+				$ret['html'] = IMAGE_untrack;
+				$ret['msg'] = "There was a problem.";  //TODO LAN
+				$ret['status'] = 'error';
+			}
+
+
+		}
+
+		echo json_encode($ret);
+
 		exit;
 
 	}
-	
-	
 	
 	
 	public function ajaxModerate()
@@ -611,7 +574,7 @@ class e107forum
 		{
 			$ret = array();
 
-			while($row = $sql->fetch(MYSQL_ASSOC))
+			while($row = $sql->fetch())
 			{
 				$ret[] = $row['track_thread'];
 			}
@@ -657,10 +620,11 @@ class e107forum
 			return -1;
 		}
 
+
+
 		$addUserPostCount = true;
 		$result = false;
 
-		$e107 = e107::getInstance();
 		$sql = e107::getDb();
 		$info = array();
 		$tp = e107::getParser();
@@ -671,7 +635,17 @@ class e107forum
 
 		$info['data'] = $postInfo;
 		$postId = $sql->insert('forum_post', $info);
+
+		$info['data']['post_id'] = $postId; // Append last inserted ID to data array for passing it to event callbacks.
+
+
+
 	  	e107::getEvent()->trigger('user_forum_post_created', $info);
+
+	  	ob_start(); // precaution so json doesn't break.
+		$this->trackEmail($info['data']);
+		ob_end_clean();
+
 		$forumInfo = array();
 
 		if($postId && $updateThread)
@@ -745,6 +719,10 @@ class e107forum
 			';
 			$result = $sql->gen($qry);
 		}
+
+
+
+
 		return $postId;
 	}
 
@@ -767,11 +745,17 @@ class e107forum
 			$postInfo['post_thread'] = $newThreadId;
 			$newPostId = $this->postAdd($postInfo, false);
 			$this->threadMarkAsRead($newThreadId);
-			$threadInfo['thread_sef'] = eHelper::title2sef($threadInfo['thread_name'],'dashl');
+			$threadInfo['thread_sef'] = $this->getThreadsef($threadInfo);
 
 			return array('postid' => $newPostId, 'threadid' => $newThreadId, 'threadsef'=>$threadInfo['thread_sef']);
 		}
 		return false;
+	}
+
+
+	function getThreadSef($threadInfo)
+	{
+		return eHelper::title2sef($threadInfo['thread_name'],'dashl');
 	}
 
 
@@ -881,9 +865,9 @@ class e107forum
 			FROM `#forum_thread`
 			WHERE thread_id = '.$id;
 		}
-		if($sql->gen($qry))
+		if($sql->gen($qry)!==false)
 		{
-			$tmp = $sql->fetch(MYSQL_ASSOC);
+			$tmp = $sql->fetch();
 			if($tmp)
 			{
 				if(trim($tmp['thread_options']) != '')
@@ -939,7 +923,7 @@ class e107forum
 		if($sql->gen($qry))
 		{
 			$ret = array();
-			while($row = $sql->fetch(MYSQL_ASSOC))
+			while($row = $sql->fetch())
 			{
 				$row['thread_sef'] = eHelper::title2sef($row['thread_name'],'dashl');
 				$ret[] = $row;
@@ -999,7 +983,7 @@ class e107forum
 		if($sql->gen($qry))
 		{
 			$ret = array();
-			while($row = $sql->fetch(MYSQL_ASSOC))
+			while($row = $sql->fetch())
 			{
 				$ret[$row['post_user']] = $row['post_count'];
 			}
@@ -1045,7 +1029,7 @@ class e107forum
 
 			$postList = array();
 			
-			while($row = $sql->Fetch(MYSQL_ASSOC))
+			while($row = $sql->Fetch())
 			{
 				$postList[] = $row['post_id'];
 			}
@@ -1065,7 +1049,7 @@ class e107forum
 				return true;
 			}
 
-			$tmp = $sql->fetch(MYSQL_ASSOC);
+			$tmp = $sql->fetch();
 
 			$attachment_array = e107::unserialize($tmp['post_attachments']);
 	   		$files = $attachment_array['file'];
@@ -1203,7 +1187,7 @@ class e107forum
 			{
 				if ($sql->select('forum', 'forum_id', 'forum_parent != 0'))
 				{
-					while ($row = $sql->fetch(MYSQL_ASSOC))
+					while ($row = $sql->fetch())
 					{
 						$parentList[] = $row['forum_id'];
 					}
@@ -1223,7 +1207,7 @@ class e107forum
 				{
 					if ($sql2->select('forum_t', 'thread_id', "thread_forum_id = $id AND thread_parent = 0")) // forum_t used in forum_update
 					{
-						while ($row = $sql2->fetch(MYSQL_ASSOC))
+						while ($row = $sql2->fetch())
 						{
 							set_time_limit(60);
 							$this->forumUpdateLastpost('thread', $row['thread_id']);
@@ -1232,7 +1216,7 @@ class e107forum
 				}
 				if ($sql->select('forum_thread', 'thread_id, thread_lastuser, thread_lastuser_anon, thread_datestamp', 'thread_forum_id='.$id.' ORDER BY thread_datestamp DESC LIMIT 1'))
 				{
-					$row = $sql->fetch(MYSQL_ASSOC);
+					$row = $sql->fetch();
 					$lp_info = $row['thread_datestamp'].'.'.$row['thread_id'];
 					$lp_user = $row['thread_lastuser'];
 				}
@@ -1274,7 +1258,7 @@ class e107forum
 
 		if ($sql->select('forum_thread', 'thread_id', $qry))
 		{
-			while ($row = $sql->fetch(MYSQL_ASSOC))
+			while ($row = $sql->fetch())
 			{
 		  		$newIdList[] = $row['thread_id'];
 			}
@@ -1310,7 +1294,7 @@ class e107forum
 	{
 		if (e107::getDb()->select('forum', '*', 'forum_parent=0 ORDER BY forum_order ASC'))
 		{
-			while ($row = e107::getDb()->fetch(MYSQL_ASSOC)) {
+			while ($row = e107::getDb()->fetch()) {
 				$ret[] = $row;
 			}
 			return $ret;
@@ -1330,7 +1314,7 @@ class e107forum
 		if($uclass == e_UC_ADMIN || trim($uclass) == '')
 		{
 			$sql->select('user', 'user_id, user_name','user_admin = 1 ORDER BY user_name ASC');
-			while($row = $sql->fetch(MYSQL_ASSOC))
+			while($row = $sql->fetch())
 			{
 				$this->modArray[$row['user_id']] = $row['user_name'];
 			}
@@ -1401,7 +1385,7 @@ class e107forum
 		";
 		if ($sql->gen($qry))
 		{
-			while ($row = $sql->fetch(MYSQL_ASSOC))
+			while ($row = $sql->fetch())
 			{
 				if($type == 'all')
 				{
@@ -1430,7 +1414,7 @@ class e107forum
 		";
 		if ($sql->gen($qry))
 		{
-			while ($row = $sql->fetch(MYSQL_ASSOC))
+			while ($row = $sql->fetch())
 			{
 				if($forum_id == '')
 				{
@@ -1478,7 +1462,7 @@ class e107forum
 		WHERE ft.thread_lastpost > '.USERLV.' '.$viewed;
 		if($sql->gen($_newqry))
 		{
-			while($row = $sql->fetch(MYSQL_ASSOC))
+			while($row = $sql->fetch())
 			{
 				$ret[] = $row['thread_forum_id'];
 				if($row['forum_sub'])
@@ -1509,9 +1493,17 @@ class e107forum
 	}
 
 
+
+	/**
+	 * Topic/Thread tracking add/remove
+	 * @param $which
+	 * @param $uid
+	 * @param $threadId
+	 * @param bool|false $force
+	 * @return bool|int
+	 */
 	function track($which, $uid, $threadId, $force=false)
 	{
-		$e107 = e107::getInstance();
 		$sql = e107::getDb();
 
 		if ($this->prefs->get('track') != 1 && !$force) { return false; }
@@ -1542,6 +1534,109 @@ class e107forum
 	}
 
 
+	/**
+	 * Send an email to users who are tracking the topic/thread.
+	* @param $post
+	 * @return bool
+	*/
+	function trackEmail($post)
+	{
+		$sql = e107::getDb();
+		$tp = e107::getParser();
+
+		$trackingPref = $this->prefs->get('track');
+
+		if(empty($trackingPref))
+		{
+			return false;
+		}
+
+		$data = $sql->retrieve('SELECT t.*, u.user_id, u.user_name, u.user_email, u.user_lastvisit FROM `#forum_track` AS t LEFT JOIN `#user` AS u ON t.track_userid = u.user_id WHERE t.track_thread='.intval($post['post_thread']), true);
+
+		if(empty($data))
+		{
+			return false;
+		}
+
+		$threadData = $this->threadGet($post['post_thread']);
+
+		$recipients = array();
+
+		$thread_name = $tp->toText($threadData['thread_name']);
+	//	$thread_name = str_replace('&quot;', '"', $thread_name);		// This not picked up by toText();
+		$datestamp = $tp->toDate($post['post_datestamp']);
+		$email_post = $tp->toHTML($post['post_entry'], true);
+
+	//	$mail_link = "<a href='".SITEURL.$PLUGINS_DIRECTORY."forum/forum_viewtopic.php?".$thread_parent.".last'>".SITEURL.$PLUGINS_DIRECTORY."forum/forum_viewtopic.php?".$thread_parent.".last</a>";
+
+		$query = array('last'=>1);
+		$mail_link = e107::url('forum','topic', $threadData, array('mode'=>'full','query'=>$query));
+		$subject = $this->prefs->get('eprefix')." ".$thread_name;
+
+		foreach($data as $row)
+		{
+
+			$recipients[] = array(
+							'mail_recipient_id'     => $row['user_id'],
+							'mail_recipient_name'   => $row['user_name'],		// Should this use realname?
+							'mail_recipient_email'  => $row['user_email'],
+							'mail_target_info'		=> array(
+								'USERID'		        => $row['user_id'],
+								'DISPLAYNAME' 	        => $row['user_name'],
+								'SUBJECT'               => $subject,
+								'USERNAME' 		        => $row['user_name'],
+								'USERLASTVISIT'         => $row['user_lastvisit'],
+						//		'UNSUBSCRIBE'	        => (!in_array($notifyTarget, $exclude)) ? $unsubUrl : '',
+						//		'UNSUBSCRIBE_MESSAGE'   => (!in_array($notifyTarget, $exclude)) ? $unsubMessage : '',
+						//		'USERCLASS'             => $notifyTarget,
+								'DATE_SHORT'            => $tp->toDate(time(),'short'),
+								'DATE_LONG'             => $tp->toDate(time(),'long'),
+
+
+							)
+						);
+		}
+
+
+		require_once(e_HANDLER.'mail_manager_class.php');
+
+		$mailer = new e107MailManager;
+
+		$vars = array('x'=>USERNAME, 'y'=>$thread_name, 'z'=>$datestamp);
+
+		$message = "[html]".$tp->lanVars(LAN_FORUM_8001, $vars,true)."<br /><br /><blockquote>".$tp->toEmail($email_post, false)."</blockquote><br />".LAN_FORUM_8002."<br /><a href='".$mail_link."'>".$mail_link."</a>[/html]";
+
+
+			// Create the mail body
+		$mailData = array(
+				'mail_total_count'      => count($recipients),
+				'mail_content_status' 	=> MAIL_STATUS_TEMP,
+				'mail_create_app' 		=> 'forum',
+				'mail_title' 			=> 'FORUM TRACKING',
+				'mail_subject' 			=> $subject,
+				'mail_sender_email' 	=> e107::getPref('replyto_email',SITEADMINEMAIL),
+				'mail_sender_name'		=> e107::getPref('replyto_name',SITEADMIN),
+				'mail_notify_complete' 	=> 0,	// NEVER notify when this email sent!
+				'mail_body' 			=> $message,
+				'template'				=> 'default',
+				'mail_send_style'       => 'default'
+		);
+
+		/*	if(!empty($media) && is_array($media))
+			{
+				foreach($media as $k=>$v)
+				{
+					$mailData['mail_media'][$k] = array('path'=>$v);
+				}
+			}*/
+
+
+		$opts =  array(); // array('mail_force_queue'=>1);
+		$mailer->sendEmails('default', $mailData, $recipients, $opts);
+
+
+	}
+
 
 	function forumGet($forum_id)
 	{
@@ -1558,7 +1653,7 @@ class e107forum
 		";
 		if ($sql->gen($qry))
 		{
-			return $sql->fetch(MYSQL_ASSOC);
+			return $sql->fetch();
 		}
 		return FALSE;
 	}
@@ -1611,7 +1706,7 @@ class e107forum
 		$ret = array();
 		if ($sql->gen($qry))
 		{
-			while ($row = $sql->fetch(MYSQL_ASSOC))
+			while ($row = $sql->fetch())
 			{
 			//	$row['thread_sef'] = eHelper::title2sef($row['thread_name']);
 				$ret[] = $row;
@@ -1635,7 +1730,7 @@ class e107forum
 		";
 		if ($sql->gen($qry))
 		{
-			$row = $sql->fetch(MYSQL_ASSOC);
+			$row = $sql->fetch();
 			$row['thread_sef'] = eHelper::title2sef($row['thread_name'],'dashl');
 			return $row;
 		}
@@ -1834,7 +1929,7 @@ class e107forum
 		if($sql->gen($qry))
 		{
 			$ret = array();
-			while($row = $sql->fetch(MYSQL_ASSOC))
+			while($row = $sql->fetch())
 			{
 				$ret[$row['post_user']] = $row['cnt'];
 			}
@@ -1863,6 +1958,7 @@ class e107forum
 
 		if(is_array($FORUM_CRUMB))
 		{
+
 			$search 	= array('{SITENAME}', '{SITENAME_HREF}');
 			$replace 	= array(SITENAME, e107::getUrl()->create('/'));
 			$FORUM_CRUMB['sitename']['value'] = str_replace($search, $replace, $FORUM_CRUMB['sitename']['value']);
@@ -1878,7 +1974,7 @@ class e107forum
 			if($forumInfo['forum_sub'])
 			{
 				$search 	= array('{SUBPARENT_TITLE}', '{SUBPARENT_HREF}');
-				$replace 	= array(ltrim($forumInfo['sub_parent'], '*'), e107::getUrl()->create('forum/forum/view', "id={$forumInfo['forum_sub']}")); // XXX forum sub name
+				$replace 	= array(ltrim($forumInfo['sub_parent'], '*'), e107::url('forum', 'forum', array('forum_id'=>$forumInfo['parent_id'],'forum_sef'=>$forumInfo['parent_sef'])));
 				$FORUM_CRUMB['subparent']['value'] = str_replace($search, $replace, $FORUM_CRUMB['subparent']['value']);
 			}
 			else
@@ -1887,13 +1983,12 @@ class e107forum
 			}
 
 			$search 	= array('{FORUM_TITLE}', '{FORUM_HREF}');
-			// TODO - remove 'href=' from the return value
-			$replace 	= array(ltrim($forumInfo['forum_name'], '*'), e107::getUrl()->create('forum/forum/view', $forumInfo));
+			$replace 	= array(ltrim($forumInfo['forum_name'], '*'), e107::url('forum', 'forum', $forumInfo));
 			$FORUM_CRUMB['forum']['value'] = str_replace($search, $replace, $FORUM_CRUMB['forum']['value']);
 
 			$threadInfo['thread_id'] = intval($threadInfo['thread_id']);
 			$search 	= array('{THREAD_TITLE}', '{THREAD_HREF}');
-			$replace 	= array(vartrue($threadInfo['thread_name']), e107::getUrl()->create('forum/thread/view', $threadInfo)); // $thread->threadInfo - no reference found
+			$replace 	= array(vartrue($threadInfo['thread_name']), ''); // $thread->threadInfo - no reference found
 			$FORUM_CRUMB['thread']['value'] = str_replace($search, $replace, $FORUM_CRUMB['thread']['value']);
 
 			$FORUM_CRUMB['fieldlist'] = 'sitename,forums,parent,subparent,forum,thread';
@@ -1902,19 +1997,25 @@ class e107forum
 		}
 		else
 		{
+
+
+
 			$dfltsep = ' :: ';
-			$BREADCRUMB = "<a class='forumlink' href='".e_BASE."index.php'>".SITENAME."</a>".$dfltsep."<a class='forumlink' href='".e_PLUGIN."forum/forum.php'>".LAN_PLUGIN_FORUM_NAME."</a>".$dfltsep;
+			$BREADCRUMB = "<a class='forumlink' href='".e_HTTP."index.php'>".SITENAME."</a>".$dfltsep.
+			"<a class='forumlink' href='". e107::url('forum','index')."'>".LAN_PLUGIN_FORUM_NAME."</a>".$dfltsep;
+
 			if($forumInfo['sub_parent'])
 			{
 				$forum_sub_parent = (substr($forumInfo['sub_parent'], 0, 1) == '*' ? substr($forumInfo['sub_parent'], 1) : $forumInfo['sub_parent']);
-				$BREADCRUMB .= "<a class='forumlink' href='".e_PLUGIN."forum/forum_viewforum.php?{$forumInfo['forum_sub']}'>{$forum_sub_parent}</a>".$dfltsep;
+				$BREADCRUMB .= "<a class='forumlink' href='".e_PLUGIN_ABS."forum/forum_viewforum.php?{$forumInfo['forum_sub']}'>{$forum_sub_parent}</a>".$dfltsep;
 			}
 
 			$tmpFname = $forumInfo['forum_name'];
 			if(substr($tmpFname, 0, 1) == "*") { $tmpFname = substr($tmpFname, 1); }
+
 			if ($forum_href)
 			{
-				$BREADCRUMB .= "<a class='forumlink' href='".e_PLUGIN."forum/forum_viewforum.php?{$forumInfo['forum_id']}'>".$tp->toHTML($tmpFname, TRUE, 'no_hook,emotes_off')."</a>";
+				$BREADCRUMB .= "<a class='forumlink' href='".e107::url('forum', 'forum', $forumInfo)."'>".$tp->toHTML($tmpFname, TRUE, 'no_hook,emotes_off')."</a>";
 			} else
 			{
 				$BREADCRUMB .= $tmpFname;
@@ -2011,7 +2112,7 @@ class e107forum
 			if($sql->select('forum_post', 'post_id', 'post_thread = '.$threadId))
 			{
 				$postList = array();
-				while($row = $sql->fetch(MYSQL_ASSOC))
+				while($row = $sql->fetch())
 				{
 					$postList[] = $row['post_id'];
 				}
@@ -2066,7 +2167,7 @@ class e107forum
 		}
 		
 
-		$row = $sql->fetch(MYSQL_ASSOC);
+		$row = $sql->fetch();
 
 		//delete attachments if they exist
 		if($row['post_attachments'])
@@ -2104,6 +2205,42 @@ class e107forum
 		}
 		return $deleted; // return boolean. $threadInfo['thread_total_replies'];
 	}
+
+
+	/**
+	 *  Check for legacy Prefernces and upgrade if neccessary.
+	 */
+	public function upgradeLegacyPrefs()
+	{
+
+			e107::getMessage()->addDebug("Legacy Forum Menu Pref Detected. Upgrading..");
+
+			$legacyMenuPrefs = array(
+				'newforumposts_caption'     => 'caption',
+				'newforumposts_display'     => 'display',
+				'newforumposts_maxage'      => 'maxage',
+				'newforumposts_characters'  => 'chars',
+				'newforumposts_postfix'     => 'postfix',
+				'newforumposts_title'       => 'title'
+			);
+
+			if($newPrefs = e107::getConfig('menu')->migrateData($legacyMenuPrefs, true)) // returns false if no match found.
+			{
+				if(e107::getMenu()->setParms('forum','newforumposts_menu', $newPrefs) !== false)
+				{
+					e107::getMessage()->addDebug("Sucessfully Migrated newforumposts prefs from core to menu table. ");
+				}
+				else
+				{
+					e107::getMessage()->addDebug("Legacy Forum Menu Pref Detected. Upgrading..");
+				}
+			}
+
+	}
+
+
+
+
 
 }
 

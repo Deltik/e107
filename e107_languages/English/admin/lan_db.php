@@ -17,8 +17,8 @@ define("DBLAN_7", "Optimize SQL database");
 define("DBLAN_8", "Select to backup your core settings");
 define("DBLAN_9", "Backup core");
 define("DBLAN_10", "Database Utilities");
-define("DBLAN_11", "MySQL database");
-define("DBLAN_12", "optimized");
+define("DBLAN_11", "MySQL database [x] optimized");
+//define("DBLAN_12", "optimized");
 // define("DBLAN_13", "Back");
 // define("DBLAN_14", "Done");
 define("DBLAN_15", "Select to check for any available db updates");
@@ -128,5 +128,6 @@ define("DBLAN_107", "[folder] is not writable");
 define("DBLAN_108", "Created:");
 define("DBLAN_109", "Copied:");
 define("DBLAN_110", "Couldn't copy:");
+define("DBLAN_111", 		"Tables appear to be okay!");
 
 ?>

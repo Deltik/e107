@@ -35,7 +35,7 @@ define("US_DEBUG",FALSE);
 
 if (!USER)
 {	// Must be logged in to change settings
-	header('location:'.e_BASE.'index.php');
+	e107::redirect();
 	exit();
 }
 
@@ -132,7 +132,7 @@ $info = e107::user($inp);
 		//Only site admin is able to change setting for other admins
 if(!is_array($info) || ($info['user_admin'] == 1 && (!defined('ADMINPERMS') || ADMINPERMS !== '0')) || ((!defined('ADMINPERMS') || ADMINPERMS !== '0') && !getperms('4')))
 {
-	header('location:'.e_BASE.'index.php');
+	e107::redirect();
 	exit();
 }
 		$adminEdit = TRUE;		// Flag to indicate admin edit
@@ -140,7 +140,7 @@ if(!is_array($info) || ($info['user_admin'] == 1 && (!defined('ADMINPERMS') || A
 	else
 	{
 		//Non admin attempting to edit another user's ID
-		header('location:'.e_BASE.'index.php');
+		e107::redirect();
 		exit();
 	}
 
@@ -370,7 +370,7 @@ elseif (isset($_POST['SaveValidatedInfo']))
 		if ($userMethods->CheckPassword($_POST['currentpassword'], $udata['user_loginname'], $udata['user_password']) === false) // Use old data to validate
 
 		{  // Invalid password
-			echo "<br />".LAN_USET_22."<br />";
+			echo "<br />".LAN_INCORRECT_PASSWORD."<br />";
 			if(!$adminEdit)
 			{
 				require_once (FOOTERF);
@@ -452,7 +452,7 @@ if ($dataToSave && !$promptPassword)
 		validatorClass::addFieldTypes($userMethods->userVettingInfo,$changedData);
 
 		// print_a($changedData);
-		if (FALSE === $sql->db_Update('user', $changedData))
+		if (FALSE === $sql->update('user', $changedData))
 		{
 			$message .= '<br />'.LAN_USET_43;
 		}
@@ -476,10 +476,10 @@ if ($dataToSave && !$promptPassword)
 		if (false === $sql->retrieve('user_extended', 'user_extended_id', 'user_extended_id='.$inp))
 		{
 			// ***** Next line creates a record which presumably should be there anyway, so could generate an error if no test first
-			$sql->db_Select_gen("INSERT INTO #user_extended (user_extended_id, user_hidden_fields) values ('".$inp."', '')");
+			$sql->gen("INSERT INTO #user_extended (user_extended_id, user_hidden_fields) values ('".$inp."', '')");
 			//print_a('New extended fields added: '.$inp.'<br />');
 		}
-		if (false === $sql->db_Update('user_extended', $changedEUFData))
+		if (false === $sql->update('user_extended', $changedEUFData))
 		{
 			$message .= '<br />Error updating EUF';
 		}
@@ -582,7 +582,7 @@ if ($dataToSave && !$promptPassword)
 		// If user has changed display name, update the record in the online table
 	if (isset($changedUserData['user_name']) && !$_uid)
 	{
-		$sql->db_Update('online', "online_user_id = '".USERID.".".$changedUserData['user_name']."' WHERE online_user_id = '".USERID.".".USERNAME."'");
+		$sql->update('online', "online_user_id = '".USERID.".".$changedUserData['user_name']."' WHERE online_user_id = '".USERID.".".USERNAME."'");
 	}
 
 
@@ -596,7 +596,7 @@ if ($dataToSave && !$promptPassword)
 
 	if (e_QUERY == 'update')
 	{
-		header('Location: index.php');
+		e107::redirect();
 	}
 	
 	if($adminEdit && $message)
@@ -742,8 +742,8 @@ SELECT u.*, ue.* FROM #user AS u
 LEFT JOIN #user_extended AS ue ON ue.user_extended_id = u.user_id
 WHERE u.user_id=".intval($uuid);
 
-$sql->db_Select_gen($qry);
-$curVal=$sql->db_Fetch(MYSQL_ASSOC);
+$sql->gen($qry);
+$curVal=$sql->fetch();
 $curVal['user_class'] = varset($changedUserData['user_class'], $curVal['user_class']);
 $curVal['userclass_list'] = $userMethods->addCommonClasses($curVal, FALSE);
 
@@ -763,7 +763,7 @@ if (vartrue($_POST))
 //require_once (e_HANDLER."form_handler.php");
 //$rs = new form;
 
-$text = '<form method="post" action="'.$usersettings_form_action.'" id="dataform" class="form-horizontal" role="form" enctype="multipart/form-data" autocomplete="off">';
+$text = '<form method="post" action="'.vartrue($usersettings_form_action,e_REQUEST_URI).'" id="dataform" class="form-horizontal"  enctype="multipart/form-data" autocomplete="off">';
 
 //$text = (is_numeric($_uid) ? $rs->form_open("post", e_SELF."?".e_QUERY, "dataform", "", " class='form-horizontal' role='form' enctype='multipart/form-data'") : $rs->form_open("post", e_SELF, "dataform", "", " class='form-horizontal' role='form' enctype='multipart/form-data'"));
 

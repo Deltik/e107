@@ -12,7 +12,7 @@
 define('e_MINIMAL',true);
 require_once('../class2.php');
 
-if (!getperms("5|J")) { header('location:'.e_ADMIN.'admin.php'); exit; }
+if (!getperms("5|J")) { e107::redirect('admin'); exit; }
 
 e107::css('inline',"
 
@@ -488,7 +488,7 @@ class page_admin_ui extends e_admin_ui
 			'page_rating_flag' 	=> array('title'=> LAN_RATING, 		'tab' => 1,	'type' => 'boolean', 	'data'=>'int', 'width' => '5%', 'thclass' => 'center', 'class' => 'center' ),
 			'page_comment_flag' => array('title'=> LAN_COMMENTS,		'tab' => 1,	'type' => 'boolean', 	'data'=>'int', 'width' => '5%', 'thclass' => 'center', 'class' => 'center' ),
 			'page_password' 	=> array('title'=> LAN_PASSWORD, 		'tab' => 1, 'type' => 'text', 	'data'=>'str', 'width' => 'auto', 'writeParms'=>array('password'=>1, 'nomask'=>1, 'size' => 40, 'class' => 'tbox e-password', 'generate' => 1, 'strength' => 1, 'required'=>0)),								
-			'page_sef' 			=> array('title'=> LAN_SEFURL, 		'tab' => 1,	'type' => 'text', 'inline'=>true, 'width' => 'auto', 'writeParms'=>'size=xxlarge'),		
+			'page_sef' 			=> array('title'=> LAN_SEFURL, 		'tab' => 1,	'type' => 'text', 'inline'=>true, 'width' => 'auto', 'writeParms'=>'size=xxlarge&sef=page_title'),
 			'page_metakeys' 	=> array('title'=> LAN_KEYWORDS, 		'tab' => 1,	'type' => 'tags', 'width' => 'auto'),								
 			'page_metadscr' 	=> array('title'=> CUSLAN_11, 		'tab' => 1,	'type' => 'text', 'width' => 'auto', 'writeParms'=>'size=xxlarge'),	
 		
@@ -624,7 +624,8 @@ class page_admin_ui extends e_admin_ui
 			}
 		//	asort($this->cats);			
 			
-			$this->fields['page_chapter']['writeParms'] = $this->cats;
+			$this->fields['page_chapter']['writeParms']['optArray'] = $this->cats;
+			$this->fields['page_chapter']['writeParms']['size'] = 'xxlarge';
 
 		}
 
@@ -711,7 +712,10 @@ class page_admin_ui extends e_admin_ui
 		
 		function beforeUpdate($newdata,$olddata)
 		{
-			$newdata['menu_name'] = preg_replace('/[^\w-*]/','',$newdata['menu_name']);
+			if(isset($newdata['menu_name']))
+			{
+				$newdata['menu_name'] = preg_replace('/[^\w-*]/','',$newdata['menu_name']);
+			}
 
 			return $newdata;	
 		}		
@@ -722,6 +726,11 @@ class page_admin_ui extends e_admin_ui
 			$tp = e107::getParser();
 			$sql = e107::getDb();
 			$mes = e107::getMessage();
+
+			if(!isset($newdata['menu_name']))
+			{
+				return true;
+			}
 					
 			$menu_name = $tp->toDB($newdata['menu_name']); // not to be confused with menu-caption.
 				

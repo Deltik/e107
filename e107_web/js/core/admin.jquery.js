@@ -88,7 +88,7 @@ $(document).ready(function()
 		
 	
 		$('div.e-container').editable({
-			selector: '.e-editable',
+			selector: '.e-editable'
          });
 		
 //		$('.e-editable').editable();
@@ -156,7 +156,7 @@ $(document).ready(function()
             e.preventDefault();
             
             $("#left-panel").toggle(1000);
-            $("#right-panel").toggleClass("span10",0);
+            $("#right-panel").toggleClass("col-md-10 col-md-12"); //XXX Control animation direction?
 
         });
 
@@ -270,7 +270,10 @@ $(document).ready(function()
 				//	alert(data);
 				$("#"+target).css('width', data+'%');   	// update the progress bar width */
 				$("#"+target).html(data+'%');     		// display the numeric value */
-		    
+
+
+		        data = parseInt(data);
+
 				if(data > 99.999) {
 				
 					clearInterval(progresspump);
@@ -362,12 +365,12 @@ $(document).ready(function()
 						
 			var t = $(this).nextAll(".field-help");
 
-			var placement = 'right';	
+			var placement = 'top';
 			
-			if($(this).is("textarea"))
+		/*	if($(this).is("textarea"))
 			{
 				var placement = 'top';	
-			}
+			}*/
 
             var custplace = $(t).attr('data-placement'); // ie top|left|bottom|right
 
@@ -417,7 +420,7 @@ $(document).ready(function()
 			
 		});
 		
-		$(".e-tags").tag();
+	//	$(".e-tags").tag();
 		
 		
 
@@ -461,12 +464,13 @@ $(document).ready(function()
 		}
 		
 		// backend 
-		$(".e-password").pwdMeter({
+	/*
+	    $(".e-password").pwdMeter({
 	            minLength: 6,
 	            displayGeneratePassword: true,
 	            generatePassText: "Generate",
 	            randomPassLength: 12
-	    });
+	    });*/
 		
 		
 		
@@ -574,19 +578,55 @@ $(document).ready(function()
 		
 	
 		// Basic Delete Confirmation	
-		$("input.delete,button.delete").click(function(){
-  			var answer = confirm($(this).attr("data-confirm"));
-  			return answer // answer is a boolean
+		$('input.delete,button.delete,a[data-confirm]').click(function(){
+  			answer = confirm($(this).attr("data-confirm"));
+  			return answer; // answer is a boolean
 		});
 		
-		$("e-confirm").click(function(){
-  			var answer = confirm($(this).attr("title"));
-  			return answer // answer is a boolean
-		});    
-		
+		$(".e-confirm").click(function(){
+  			answer = confirm($(this).attr("title"));
+  			return answer; // answer is a boolean
+		});
 
-		
-		// Menu Manager Layout drop-down options
+
+        // see boot.php for main processing. (works only in admin)
+        $(".e-sef-generate").click(function(){
+
+            src         = $(this).attr("data-src");
+            target      = $(this).attr("data-target");
+            toconvert   = $('#'+src).val();
+            script      = window.location;
+
+            $.ajax({
+                type: "POST",
+                url: script,
+                data: { source: toconvert, mode: 'sef' }
+
+            }).done(function( data ) {
+
+                var a = $.parseJSON(data);
+          //      alert(a.converted);
+                if(a.converted)
+                {
+                    $('#'+target).val(a.converted);
+
+                    //	$('#uiAlert').notify({
+                    //		type: 'success',
+                    //       message: { text: 'Completed' },
+                    //        fadeOut: { enabled: true, delay: 2000 }
+                    //    }).show();
+
+                }
+            });
+
+        });
+
+
+
+
+
+
+    // Menu Manager Layout drop-down options
 		$("#menuManagerSelect").change(function(){
 			var link = $(this).val();
 			$("#menu_iframe").attr("src",link);			

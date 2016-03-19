@@ -35,7 +35,7 @@ $bcList = array(
 	"LAN_308"   => "LAN_USER_63", // Real Name
 	"LAN_403"   => "LAN_USER_64", // Site Stats
 	"LAN_404"   => "LAN_USER_65", // Last visit
-	"LAN_419"   => "LAN_USER_70", // Show
+	"LAN_419"   => "LAN_SHOW", // Show
 	"LAN_425"   => "LAN_USER_62" // Send Private Message
 );
 
@@ -87,7 +87,7 @@ if (isset($_POST['delp']))
 	if (USERID == $tmp[1] || (ADMIN && getperms("4")))
 	{
 		$sql->select("user", "user_sess", "user_id='". USERID."'");
-		$row = $sql->db_Fetch();
+		$row = $sql->fetch();
 		@unlink(e_AVATAR_UPLOAD.$row['user_sess']);
 		$sql->update("user", "user_sess='' WHERE user_id=".intval($tmp[1]));
 		header("location:".e_SELF."?id.".$tmp[1]);
@@ -105,7 +105,7 @@ e107::scStyle($sc_style);
 if(empty($USER_TEMPLATE)) // BC Fix for loading old templates. 
 {
 	e107::getMessage()->addDebug( "Using v1.x user template");
-	include_once(e107::coreTemplatePath('user')); //correct way to load a core template.	
+	include(e107::coreTemplatePath('user')); //correct way to load a core template. (don't use 'include_once' in case it has already been loaded).
 }
 else
 {
@@ -187,7 +187,8 @@ if (vartrue($records) > 30)
 
 if (isset($id))
 {
-	if ($id == 0)
+	$user_exists = $sql->count("user","(*)", "WHERE user_id = ".$id."");
+	if($id == 0 || $user_exists == false)
 	{
 		$text = "<div style='text-align:center'>".LAN_USER_49." ".SITENAME."</div>";
 		$ns->tablerender(LAN_ERROR, $text);
@@ -234,9 +235,9 @@ if (isset($id))
 	exit;
 }
 
-$users_total = $sql->db_Count("user","(*)", "WHERE user_ban = 0");
+$users_total = $sql->count("user","(*)", "WHERE user_ban = 0");
 
-if (!$sql->db_Select("user", "*", "user_ban = 0 ORDER BY user_id $order LIMIT $from,$records"))
+if (!$sql->select("user", "*", "user_ban = 0 ORDER BY user_id $order LIMIT $from,$records"))
 {
 	echo "<div style='text-align:center'><b>".LAN_USER_53."</b></div>";
 }

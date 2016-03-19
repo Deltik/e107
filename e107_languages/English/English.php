@@ -50,6 +50,7 @@ define("LAN_EDIT","Edit");
 define("LAN_DELETE","Delete");
 define("LAN_DEFAULT","Default");
 define("LAN_MORE", "More..");
+define("LAN_LESS", "..Less");
 define("LAN_READ_MORE", "Read more..");
 define("LAN_GOPAGE", "Go to page");
 define("LAN_GOTOPAGEX", "Go to page [x]");
@@ -84,7 +85,7 @@ define("LAN_DATE","Date");
 define("LAN_DATE_POSTED", "Date posted");
 define("LAN_JSCONFIRM","Are you sure?");
 define("LAN_IP", "IP Address");
-define("LAN_AUTHOR",	"Author");
+define("LAN_AUTHOR","Author");
 define("LAN_CATEGORY", "Category");
 define("LAN_GUEST", "Guest");
 define("LAN_NEXT", "Next");
@@ -93,6 +94,7 @@ define("LAN_LOGIN", "Login");
 define("LAN_LOGOUT", "Logout");
 define("LAN_SETTINGS", "Settings");
 define("LAN_PASSWORD", "Password");
+define("LAN_INCORRECT_PASSWORD", "Incorrect Password");
 define("LAN_TYPE", "Type");
 define("LAN_SCREENSHOT", "Screenshot");
 define("LAN_FILE", "File");
@@ -113,10 +115,14 @@ define("LAN_USER", "User");
 define("LAN_EMAIL","Email address");
 define("LAN_WROTE", "wrote"); // as in John wrote.."  ";
 define("LAN_RE_ORDER", "Re-order");
+define("LAN_RELATED", "Related");
 
 define("LAN_ENTER_USRNAME_EMAIL", "Please enter your username or email"); // admin php hover field admin name
 define("LAN_PWD_REQUIRED", "Password is required"); // admin php hover field admin password
-
+define("LAN_SHOW", "Show");
+define("LAN_GENERATE", "Generate");
+define("LAN_SUMMARY", "Summary");  // TODO   more files use summary replace
+define("LAN_REQUIRED_BLANK", "Required field(s) were left blank.");
 
 
 ?>

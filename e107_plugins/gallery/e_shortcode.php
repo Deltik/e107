@@ -23,10 +23,31 @@ class gallery_shortcodes extends e_shortcode
 	
 	function init()
 	{
-		$this->downloadable = e107::getPlugPref('gallery','downloadable');	
-		$pop_w 				= vartrue(e107::getPlugPref('gallery','pop_w'),1024);
-		$pop_h 				= vartrue(e107::getPlugPref('gallery','pop_h'),768);		
-		$this->attFull 		= 'w='.$pop_w.'&h='.$pop_h.'&x=1';
+		$this->downloadable = e107::getPlugPref('gallery','downloadable');
+		$prefW              = e107::getPlugPref('gallery','pop_w');
+		$prefH              = e107::getPlugPref('gallery','pop_h');
+		$pop_w 				= vartrue($prefW, 1024);
+		$pop_h 				= vartrue($prefH, 768);
+		$this->attFull 		= array('w'=>$pop_w, 'h'=>$pop_h, 'x'=>1, 'crop'=>0); // 'w='.$pop_w.'&h='.$pop_h.'&x=1';
+
+		e107::js('gallery', 'jslib/prettyPhoto/js/jquery.prettyPhoto.js','jquery');
+		e107::css('gallery', 'jslib/prettyPhoto/css/prettyPhoto.css','jquery');
+
+
+	$prettyPhoto = <<<JS
+$(document).ready(function(){
+    $("a[data-gal^='prettyPhoto']").prettyPhoto(
+	    {
+	    	hook: 'data-gal',
+	    	theme: 'pp_default',
+	    	overlay_gallery: false,
+	    	deeplinking: false
+	    }
+    );
+  });
+JS;
+
+	e107::js('footer-inline',$prettyPhoto,'jquery');
 	}
 			
 	function sc_gallery_caption($parm='')
@@ -77,11 +98,15 @@ class gallery_shortcodes extends e_shortcode
 		
 		$class 		= ($this->slideMode == TRUE) ? 'gallery-slideshow-thumb img-responsive img-rounded' : varset($parms['class'],'gallery-thumb img-responsive');
 	//	$rel 		= ($this->slideMode == TRUE) ? 'lightbox.SlideGallery' : 'lightbox.Gallery';
-			$rel 		= ($this->slideMode == TRUE) ? 'prettyPhoto[slide]' : 'prettyPhoto[gal]';
-		$att 		= 'aw='.$w.'&ah='.$h.'&x=1'; // 'aw=190&ah=150';
+		$rel 		= ($this->slideMode == TRUE) ? 'prettyPhoto[slide]' : 'prettyPhoto[gal]';
+
+		//$att        = array('aw'=>$w, 'ah'=>$h, 'x'=>1, 'crop'=>1);
+		$caption    = $tp->toAttribute($this->var['media_caption']) ;
+		$att        = array('w'=>$w, 'h'=>$h, 'class'=>$class, 'alt'=>$caption, 'x'=>1, 'crop'=>1);
+
 		
 		$srcFull = $tp->thumbUrl($this->var['media_url'], $this->attFull);
-		
+
 		if(vartrue($parms['actualPreview'])) 
 		{
 			$srcFull = $tp->replaceConstants($this->var['media_url'], 'full');
@@ -91,15 +116,15 @@ class gallery_shortcodes extends e_shortcode
 		elseif(isset($parms['thumbsrc'])) return $tp->thumbUrl($this->var['media_url'],$att);
 		elseif(isset($parms['imageurl'])) return $tp->replaceConstants($this->var['media_url'], 'full');
 		
-		$caption = $tp->toAttribute($this->var['media_caption']) ;	
+
 		$description = ($this->downloadable) ? " <a class='btn btn-xs btn-default btn-mini e-tip' title='Right-click > Save Link As' href='".$srcFull."'>Download</a>" : "";
-		
 		$description .= $tp->toAttribute($this->var['media_description']);
 		
 		$text = "<a class='".$class."' title=\"".$description."\" href='".$srcFull."'  data-gal='{$rel}'  >";
-		$text .= "<img class='".$class."' src='".$tp->thumbUrl($this->var['media_url'],$att)."'  alt=\"".$caption."\" />";
+
+		$text .= $tp->toImage($this->var['media_url'],$att);
 		$text .= "</a>";
-		
+
 		return $text;	
 	}
 	
@@ -153,7 +178,7 @@ class gallery_shortcodes extends e_shortcode
 		// we passs both fields, the router will convert one of them to 'cat' variable, based on the current URL config
 		$url = 'route::gallery/index/list?media_cat_category='.$this->curCat.'--AMP--media_cat_sef='.$this->var['media_cat_sef'].'--AMP--frm=--FROM--::full=1';
 		$parm = 'total='.$this->total.'&amount='.$this->amount.'&current='.$this->from.'&url='.rawurlencode($url); // .'&url='.$url;
-		$text .= e107::getParser()->parseTemplate("{NEXTPREV=".$parm."}");
+		$text = e107::getParser()->parseTemplate("{NEXTPREV=".$parm."}");
 		return $text;	
 	}
 	
@@ -174,15 +199,18 @@ class gallery_shortcodes extends e_shortcode
 	 */
 	function sc_gallery_portfolio($parms='')
 	{
+
+
+
 		$ns 	= e107::getRender();		
 		$parm 	= eHelper::scParams($parms);
-		$cat 	= ($parm['category']) ? $parm['category'] : vartrue(e107::getPlugPref('gallery','slideshow_category'), 1); //TODO Separate pref?
+		$cat 	= (!empty($parm['category'])) ? $parm['category'] : vartrue(e107::getPlugPref('gallery','slideshow_category'), 1); //TODO Separate pref?
 
 		$tmpl 	= e107::getTemplate('gallery','gallery');		
 		$limit 	= vartrue($parm['limit'], 6);
 		
-		$list = e107::getMedia()->getImages('gallery_'.$cat.'|gallery_image_'.$cat, 0, $limit);
-	
+		$list = e107::getMedia()->getImages('gallery_image|gallery_'.$cat.'|gallery_image_'.$cat, 0, $limit);
+
 		if(count($list) < 1 && vartrue($parm['placeholder']))
 		{
 			$list = array();
@@ -193,13 +221,14 @@ class gallery_shortcodes extends e_shortcode
 			}	
 		}
 		
-		//NOTE: Using tablerender() allows the theme developer to set the number of columns etc using col-xx-xx 
+		//NOTE: Using tablerender() allows the theme developer to set the number of columns etc using col-xx-xx
+		$text = '';
 		foreach($list as $val)
 		{
 			$this->var = $val;
 			$text .= $ns->tablerender('', $this->sc_gallery_thumb('class=gallery_thumb img-responsive img-home-portfolio'),'gallery_portfolio',true);	
 		}
-		
+
 		return $text;
 
 	}
@@ -221,7 +250,7 @@ class gallery_shortcodes extends e_shortcode
 		$amount 			= $parms[1] ? intval($parms[1]) : 3; // vartrue(e107::getPlugPref('gallery','slideshow_perslide'),3);
 		$parms 				= $parms[2];
 		$limit 				= (integer) vartrue($parms['limit'], 16);
-		$list 				= e107::getMedia()->getImages('gallery_'.$this->sliderCat.'|gallery_image_'.$this->sliderCat,0,$limit);
+		$list 				= e107::getMedia()->getImages('gallery_image|gallery_'.$this->sliderCat.'|gallery_image_'.$this->sliderCat,0,$limit);
 		$tmpl 				= e107::getTemplate('gallery','gallery');
 		$tmpl				= array_change_key_case($tmpl); // change template key to lowercase (BC fix)
 		$tmpl_key			= vartrue($parms['template'],'slideshow_slide_item');
@@ -230,6 +259,7 @@ class gallery_shortcodes extends e_shortcode
 		$cat 				= $catList['gallery_'.$this->sliderCat];
 
 		$count = 1;
+		$inner = '';
 		foreach($list as $row)
 		{
 			$this->setVars($row)
@@ -253,11 +283,13 @@ class gallery_shortcodes extends e_shortcode
 		$inner .= ($count != 1) ? "</div><!-- END SLIDES -->" : "";
 		return $inner;
 	}
-	
+
+
+
 	function sc_gallery_jumper($parm)
 	{
 		// echo "SlideCount=".$this->slideCount; 
-		if($this->slideCount ==1 ){ return "gallery-jumper must be loaded after Gallery-Slides"; }
+		if($this->slideCount ==1 && deftrue('E107_DBG_BASIC')){ return "gallery-jumper must be loaded after Gallery-Slides"; }
 			
 		$text = '';
 		for($i=1; $i < ($this->slideCount); $i++)

@@ -12,7 +12,7 @@
 require_once ('../class2.php');
 if(!getperms('9'))
 {
-	header('location:'.e_BASE.'index.php');
+	e107::redirect('admin');
 	exit();
 }
 
@@ -124,6 +124,8 @@ $ns->tablerender(UGFLAN_4, $mes->render().$text, 'core-ugflag');
  *
  * @return string JS source
  */
+
+ /*
 function headerjs()
 {
 	$ret = "
@@ -153,4 +155,6 @@ function headerjs()
 	
 	return $ret;
 }
+
+ */
 ?>

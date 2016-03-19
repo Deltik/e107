@@ -865,7 +865,7 @@ Following fields auto-filled in code as required:
 		}
 		else
 		{
-			$row = $db->db_Fetch(MYSQL_ASSOC);
+			$row = $db->db_Fetch();
 			if ($uid && ($uid != $row['user_id']))
 			{
 				$error = 'UID mismatch: '.$uid.'/'.$row['user_id'];
@@ -878,7 +878,7 @@ Following fields auto-filled in code as required:
 			{	// Valid user!
 				if ($row['user_ban'] != $newVal)		// We could implement a hierarchy here, so that an important status isn't overridden by a lesser one
 				{	// Only update if needed
-					$db->db_Update('user', '`user_ban` = '.$newVal.', `user_email` = \'\' WHERE `user_id` = '.$row['user_id'].' LIMIT 1');
+					$db->update('user', '`user_ban` = '.$newVal.', `user_email` = \'\' WHERE `user_id` = '.$row['user_id'].' LIMIT 1');
 					// Add to user audit log		TODO: Should we log to admin log as well?
 					$adminLog = e107::getAdminLog();
 					$adminLog->user_audit($logEvent, array('user_ban' => $newVal, 'user_email' => $row['user_email']), $row['user_id'], $row['user_loginname']);
@@ -947,7 +947,13 @@ class e_user_provider
 			}
 		}
 	}
-	
+
+	private function log($class,$method,$line)
+	{
+	//	e107::getLog()->add('XUP Debug', ($class.':'.$method.'-'.$line), E_LOG_INFORMATIVE, "XUP_DEBUG");
+	}
+
+
 	public function setBackUrl($url)
 	{
 		# system/xup/endpoint by default
@@ -956,6 +962,7 @@ class e_user_provider
 	
 	public function getProvider()
 	{
+		// $this->log(__CLASS__, __METHOD__, __LINE__);
 		return $this->_provider;
 	}
 	
@@ -975,6 +982,7 @@ class e_user_provider
 	
 	public function userId()
 	{
+
 		if($this->adapter && $this->adapter->getUserProfile()->identifier)
 		{
 			return $this->getProvider().'_'.$this->adapter->getUserProfile()->identifier;
@@ -1009,7 +1017,8 @@ class e_user_provider
 				$redirectUrl = e107::getUrl()->create($redirectUrl);
 			}
 		}
-		
+
+
 		if(e107::getUser()->isUser())
 		{
 			if($redirectUrl)
@@ -1022,14 +1031,17 @@ class e_user_provider
 		
 		$this->adapter = $this->hybridauth->authenticate($this->getProvider());
 		$profile = $this->adapter->getUserProfile();
-		
+
+		$this->log(__CLASS__, __METHOD__, __LINE__);
 		// returned back, if success...
 		if($profile->identifier)
 		{
+
 			$sql = e107::getDb();
 			$userMethods = e107::getUserSession();
 			
 			$plainPwd = $userMethods->generateRandomString('************'); // auto plain passwords
+
 			
 			// TODO - auto login name, shouldn't be used if system set to user_email login...
 			$userdata['user_loginname']     = $this->getProvider().$userMethods->generateUserLogin(e107::getPref('predefinedLoginName', '_..#..#..#'));
@@ -1064,11 +1076,14 @@ class e_user_provider
 			
 			// user_name, user_xup, user_email and user_loginname shouldn't match
 			$insert = (!empty($userdata['user_email'])) ? "OR user_email='".$userdata['user_email']."' " : "";
+
+			$this->log(__CLASS__, __METHOD__, __LINE__);
 			
-			if($sql->count("user", "(*)", "user_xup='".$sql->escape($this->userId())."' ".$insert." OR user_loginname='{$userdata['user_loginname']}' OR user_name='{$userdata['user_name']}'"))
+			if($uid = $sql->retrieve("user", "user_id", "user_xup='".$sql->escape($this->userId())."' ".$insert." OR user_loginname='{$userdata['user_loginname']}' OR user_name='{$userdata['user_name']}'"))
 			{
 				// $this->login($redirectUrl); // auto-login
 				e107::getUser()->loginProvider($this->userId());
+
 				if($redirectUrl) 
 				{
 					e107::getRedirect()->redirect($redirectUrl);
@@ -1080,7 +1095,8 @@ class e_user_provider
 			
 			if(empty($userdata['user_email']) && e107::getPref('disable_emailcheck', 0)==0) // Allow it if set-up that way. 
 			{
-				throw new Exception( "Signup failed! Can't access user email - registration without an email is impossible.".print_a($userdata,true), 4); // TODO lan
+				// Twitter will not provide email addresses.
+			//	throw new Exception( "Signup failed! Can't access user email - registration without an email is impossible.".print_a($userdata,true), 4); // TODO lan
 			}
 			
 			// other fields
@@ -1108,8 +1124,10 @@ class e_user_provider
 			// user model error
 			if($user->hasError())
 			{
+				e107::getLog()->add('XUP Signup Failure', $userdata, E_LOG_WARNING, "XUP_SIGNUP");
 				throw new Exception($user->renderMessages(), 5); 
 			}
+
 
 			### Successful signup!
 			//$user->set('provider', $this->getProvider());
@@ -1125,7 +1143,7 @@ class e_user_provider
 			if(true === $ret) return $this;
 			
 			// send email
-			if($emailAfterSuccess)
+			if($emailAfterSuccess && !empty($userdata['user_email']))
 			{
 				$user->set('user_password', $plainPwd)->email('signup'); 
 			}
@@ -1146,6 +1164,8 @@ class e_user_provider
 			return true;
 		}
 
+		$this->log(__CLASS__, __METHOD__, __LINE__);
+
 		return false;
 	}
 
@@ -1153,6 +1173,7 @@ class e_user_provider
 
 	public function login($redirectUrl = true)
 	{
+
 		if(!e107::getPref('social_login_active', false))
 		{
 			throw new Exception( "Signup failed! This feature is disabled.", 100); // TODO lan
@@ -1174,7 +1195,8 @@ class e_user_provider
 				$redirectUrl = e107::getUrl()->create($redirectUrl);
 			}
 		}
-		
+
+
 		if(e107::getUser()->isUser())
 		{
 			if($redirectUrl)
@@ -1186,7 +1208,8 @@ class e_user_provider
 		
 		$this->adapter = $this->hybridauth->authenticate($this->getProvider());
 		$check = e107::getUser()->setProvider($this)->loginProvider($this->userId(), false);
-		
+
+
 		if($redirectUrl)
 		{
 			e107::getRedirect()->redirect($redirectUrl);
@@ -1245,7 +1268,7 @@ class e_userperms
 	protected $full_perms = array();
 
 	protected $permSectionDiz = array(
-		'core'		=> ADMSLAN_74,
+		'core'		=> LAN_GENERAL,
 		'plugin'	=> ADLAN_CL_7,
 		'language'	=> ADLAN_132,
 		'main'		=> ADMSLAN_58
@@ -1311,7 +1334,7 @@ class e_userperms
 		"B"	=> array(LAN_COMMENTMAN,E_16_COMMENT, E_32_COMMENT),	    								// Moderate Comments
 		"6"	=> array(LAN_MEDIAMANAGER,E_16_FILE, E_32_FILE),											// File-Manager  - Upload /manage files - 
 		"A"	=> array(LAN_MEDIAMANAGER." (".LAN_ALL.")",E_16_IMAGES, E_32_IMAGES),						// Media-Manager All Areas. 
-		"A1"=> array(LAN_MEDIAMANAGER." (".LAN_CREATE."/".LAN_IMPORT.")",E_16_IMAGES, E_32_IMAGES),		// Media-Manager (Media Add/Import)
+		"A1"=> array(LAN_MEDIAMANAGER." (".LAN_UPLOAD."/".LAN_IMPORT.")",E_16_IMAGES, E_32_IMAGES),		// Media-Manager (Media Upload/Add/Import)
 		"A2"=> array(LAN_MEDIAMANAGER." (".LAN_CATEGORIES.")",E_16_IMAGES, E_32_IMAGES),				// Media-Manager (Media-Categories)
 		
 		
@@ -1446,8 +1469,10 @@ class e_userperms
 			$icon_16	= "";
 			$icon_32	= "";
 		}
-		
-		$par = "<tr>
+
+		$class = getperms($arg, $perms) ? 'active' : '';
+
+		$par = "<tr class='{$class}'>
 			<td style='text-align:center'>".$icon_16."</td>
 			<td style='text-align:center'>".$frm->checkbox('perms[]', $arg, getperms($arg, $perms))."</td>
 			<td>".$frm->label($label,'perms[]', $arg)."</td>
@@ -1618,6 +1643,40 @@ class e_userperms
 	
 	function renderPermTable($type,$a_perms='')
 	{
+
+
+
+		if($type == 'tabs')
+		{
+			$groupedList = $this->getPermList('grouped');
+			$tab = array();
+			foreach($groupedList as $section=>$list)
+			{
+				$text = '';
+				//	$text .= "\t\t<div class='field-section'><h4>".$prm->renderSectionDiz($section)."</h4>"; //XXX Lan - General
+				$text .= "\t\t<table class='table adminlist'>
+				<colgroup>
+					<col class='center' style='width:50px' />
+					<col style='width:50px' />
+					<col  />
+				</colgroup>
+				<tbody>";
+
+				foreach($list as $key=>$diz)
+				{
+					$text .= $this->checkb($key, $a_perms, $diz);
+				}
+
+				$text .= "</tbody></table>";
+
+				$tab[] = array('caption'=>$this->renderSectionDiz($section), 'text'=>$text);
+
+			}
+
+		//	return print_a($groupedList);
+			return e107::getForm()->tabs($tab);
+		}
+
 		$groupedList = $this->getPermList($type);
 			
 		if($type != 'grouped')

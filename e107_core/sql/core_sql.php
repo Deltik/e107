@@ -303,7 +303,7 @@ CREATE TABLE news (
   news_title varchar(255) NOT NULL default '',
   news_sef varchar(200) NOT NULL default '',
   news_body longtext NOT NULL,
-  news_extended text NOT NULL,
+  news_extended longtext NOT NULL,
   news_meta_keywords  varchar(255) NOT NULL default '',
   news_meta_description text NOT NULL,
   news_datestamp int(10) unsigned NOT NULL default '0',
@@ -361,6 +361,7 @@ CREATE TABLE online (
   online_pagecount tinyint(3) unsigned NOT NULL default '0',
   online_active int(10) unsigned NOT NULL default '0',
   online_agent varchar(255) NOT NULL default '',
+  online_language varchar(2) NOT NULL default '',
   KEY online_ip (online_ip)
 ) ENGINE=InnoDB;
 # --------------------------------------------------------
@@ -502,13 +503,14 @@ CREATE TABLE upload (
   upload_datestamp int(10) unsigned NOT NULL default '0',
   upload_name varchar(100) NOT NULL default '',
   upload_version varchar(10) NOT NULL default '',
-  upload_file varchar(100) NOT NULL default '',
+  upload_file varchar(180) NOT NULL default '',
   upload_ss varchar(100) NOT NULL default '',
   upload_description text NOT NULL,
   upload_demo varchar(100) NOT NULL default '',
   upload_filesize int(10) unsigned NOT NULL default '0',
   upload_active tinyint(3) unsigned NOT NULL default '0',
   upload_category tinyint(3) unsigned NOT NULL default '0',
+  upload_owner varchar(50) NOT NULL default '',
   PRIMARY KEY  (upload_id),
   KEY upload_active (upload_active)
 ) ENGINE=MyISAM;
@@ -567,6 +569,7 @@ CREATE TABLE userclass_classes (
   userclass_visibility smallint(5) signed NOT NULL default '0',
   userclass_type tinyint(1) unsigned NOT NULL default '0',
   userclass_icon varchar(250) NOT NULL default '',
+  userclass_perms text NOT NULL,
   PRIMARY KEY  (userclass_id)
 ) ENGINE=MyISAM;
 # --------------------------------------------------------

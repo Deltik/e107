@@ -12,12 +12,13 @@ $eplug_admin = true;
 require_once('../../class2.php');
 if (!getperms('P'))
 {
-	header('location:'.e_BASE.'index.php');
+	e107::redirect('admin');
 	exit;
 }
 
 
-e107::lan('forum', 'admin');
+e107::lan('forum', 'admin',true);
+e107::lan('forum','front', true);
 //e107::includeLan(e_PLUGIN.'forum/languages/'.e_LANGUAGE.'/English_admin.php');
 //e107::lan('forum','', 'front');
 
@@ -79,7 +80,7 @@ if(!deftrue('OLD_FORUMADMIN'))
 			'main/prefs' 		=> array('caption'=> LAN_PREFS, 'perm' => 'P'),
 			'opt2'              => array('divider'=>true),
 			'report/list'         => array('caption'=> FORLAN_116, 'perm'=>'P'),
-			'post/list'         => array('caption'=>"Latest Posts", 'perm'=>'P'),
+			'post/list'         => array('caption'=>FORLAN_188, 'perm'=>'P'),
 			'main/prune'		=> array('caption'=> LAN_PRUNE, 'perm' => 'P'),
 			'main/tools'        => array('caption'=>FORLAN_153, 'perm'=>'p')
 
@@ -98,8 +99,10 @@ if(!deftrue('OLD_FORUMADMIN'))
 			{
 				$this->adminMenu['opt3'] = array('divider'=>true);
 				$this->adminMenu['main/update'] = array('caption'=>"Redo v1.x Forum Upgrade", 'perm'=>0, 'uri'=>'{e_PLUGIN}forum/forum_update.php');
-			}
 
+
+
+			}
 
 		}
 	}
@@ -256,6 +259,11 @@ if(!deftrue('OLD_FORUMADMIN'))
 
 			require_once(e_PLUGIN.'forum/forum_class.php');
 			$this->forumObj	=  new e107forum;
+
+			if(E107_DEBUG_LEVEL > 0) // check fpr legacy prefs in debug mode. Should normally be done during upgrade.
+			{
+				$this->forumObj->upgradeLegacyPrefs();
+			}
 
 
 			if (!empty($_POST['do_prune']) && !empty($_POST['prune_days']) && !empty($_POST['pruneForum']))
@@ -1045,7 +1053,7 @@ if(!deftrue('OLD_FORUMADMIN'))
 
 		public function renderHelp()
 		{
-			return array('caption'=>'Help', 'text'=>"<p>Click the 'delete' button to delete the report. <br /><br />Click the 'view' button to view the topic/thread</p>");
+			return array('caption'=>LAN_HELP, 'text'=>FORLAN_189);
 
 		}
 
@@ -1204,7 +1212,7 @@ if(!deftrue('OLD_FORUMADMIN'))
 }
 
 
-
+/*
 $e_sub_cat = 'forum';
 
 require_once(e_ADMIN.'auth.php');
@@ -1999,7 +2007,7 @@ class forumAdmin
 				<th colspan='2'>".LAN_FORUM_1001."</th>
 				<th>".LAN_OPTIONS."</th>
 			</tr>";
-			while ($row = $sql->fetch(MYSQL_ASSOC))
+			while ($row = $sql->fetch())
 			{
 				$parentList[] = $row;
 			}
@@ -2041,7 +2049,7 @@ class forumAdmin
 				else
 				{
 					$forumList = array();
-					while ($row = $sql->fetch(MYSQL_ASSOC))
+					while ($row = $sql->fetch())
 					{
 						$forumList[] = $row;
 					}
@@ -2115,7 +2123,7 @@ class forumAdmin
 		{
 			if ($sql->select('forum', '*', "forum_id=$id"))
 			{
-				$row = $sql->fetch(MYSQL_ASSOC);
+				$row = $sql->fetch();
 			}
 		}
 		else
@@ -2180,7 +2188,7 @@ class forumAdmin
 		{
 			if ($sql->select('forum', '*', "forum_id=$id"))
 			{
-				$fInfo = $sql->fetch(MYSQL_ASSOC);
+				$fInfo = $sql->fetch();
 			}
 		}
 		else
@@ -2207,7 +2215,7 @@ class forumAdmin
 
 			$sql->select('forum', '*', 'forum_parent=0');
 			$text .= "<select name='forum_parent' class='tbox'>\n";
-			while (list($fid, $fname) = $sql->fetch(MYSQL_NUM))
+			while (list($fid, $fname) = $sql->fetch('num'))
 			{
 				$sel = ($fid == vartrue($fInfo['forum_parent']) ? "selected='selected'" : '');
 				$text .= "<option value='{$fid}' {$sel}>{$fname}</option>\n";
@@ -2404,11 +2412,11 @@ class forumAdmin
 
 			if(!$pref['image_post'])
 			{
-				$text .= "<br /><b>".FORLAN_139."</b>"; // TODO LAN
+				$text .= "<br /><b>".FORLAN_139."</b>"; //
 			}
 			if(!is_writable(e_PLUGIN.'forum/attachments'))
 			{
-				$text .= "<br /><b>Attachment dir (".e_PLUGIN_ABS.'forum/attachments'.") is not writable!</b>"; // TODO LAN
+				$text .= "<br /><b>Attachment dir (".e_PLUGIN_ABS.'forum/attachments'.") is not writable!</b>"; //
 			}
 
 			$text .= "</td>
@@ -2488,7 +2496,7 @@ class forumAdmin
 
 	function show_reported($sub_action) 
 	{
-		$rs = new form; // FIXME - update to $frm
+		$rs = new form;
 		$sql = e107::getDb();
 		$ns = e107::getRender(); 
 		$tp = e107::getParser();
@@ -2684,8 +2692,9 @@ class forumAdmin
 			</form>";
 			$ns->tablerender(LAN_FORUM_2003, $txt);  
 		}
-
-		// TODO: check media category on $frm->bbarea()
+*/
+		//
+/*
 		function show_rules()
 		{
 			$pref 	= e107::getPref();
@@ -2693,7 +2702,7 @@ class forumAdmin
 			$sql 	= e107::getDB();
 			$tp 	= e107::getParser();
 			$frm 	= e107::getForm();
-
+*/
 			/*
 			$sql->select("wmessage");
 			list($null) = $sql->fetch();
@@ -2704,7 +2713,7 @@ class forumAdmin
 			list($id, $adminrules, $wm_active6) = $sql->fetch();
 			*/
 			
-			
+/*
 			if($sql->select('generic','*',"gen_type='forum_rules_guest'"))
 			{
 				$guest_rules = $sql->fetch();
@@ -2816,4 +2825,5 @@ class forumAdmin
 
 		}
 	}
+		*/
 ?>

@@ -19,7 +19,7 @@ if(isset($_POST['newver']))
 
 if(! getperms("1"))
 {
-	header("location:".e_BASE."index.php");
+	e107::redirect('admin');
 	exit();
 }
 
@@ -601,7 +601,7 @@ $text .= "<fieldset class='e-hideme' id='core-prefs-email'>
 						</td>
 					</tr>
 					<tr>
-						<td><label for='contact_visibility'>Contact Form Visibility</label></td>
+						<td><label for='contact_visibility'>".PRFLAN_258."</label></td>
 						<td>
 							".$e_userclass->uc_dropdown('contact_visibility', varset( $pref['contact_visibility'],e_UC_PUBLIC), null, "tabindex='".$frm->getNext()."'")."
 							<div class='smalltext field-help'>Contact form will only be visible to this userclass group.</div>
@@ -870,7 +870,7 @@ $text .= "
 
 
 
-$elements = array(1=>'Register & Login', 2=> 'Login Only', 0=>LAN_DISABLED); 
+$elements = array(1=> PRFLAN_259, 2=> PRFLAN_260, 0=>LAN_DISABLED); 
 
 
 $text .= "
@@ -1028,7 +1028,7 @@ $text .= "
 				</colgroup>
 				<tbody>
 				<tr>
-						<td>Field options</td><td><table class='table table-striped table-condensed table-bordered' style='margin-bottom:0px'>
+						<td>".PRFLAN_261."</td><td><table class='table table-striped table-condensed table-bordered' style='margin-bottom:0px'>
 						<colgroup>
 					<col class='col-label' />
 					<col class='col-control' />
@@ -1043,7 +1043,7 @@ $text .= "
 							</td>
 						</tr>
 						<tr>
-							<td><label for='signup-option-password'>Password</label></td>
+							<td><label for='signup-option-password'>".LAN_PASSWORD."</label></td>
 							<td>
 								".$frm->radio('signup_option_password', 0, !$prefOptionPassword, array('label' => CUSTSIG_12))."
 								".$frm->radio('signup_option_password', 1, ($prefOptionPassword == 1), array('label' => CUSTSIG_14, 'disabled'=>true))."
@@ -1089,7 +1089,7 @@ $text .= "
 
 
 	<tr>
-						<td><label for='user-reg-secureveri'>Password in Email Confirmation</label></td>
+						<td><label for='user-reg-secureveri'>".PRFLAN_262."</label></td>
 						<td>
 							".$frm->radio_switch('user_reg_secureveri', $pref['user_reg_secureveri'], CUSTSIG_12, CUSTSIG_14)."
 						</td>
@@ -1469,7 +1469,7 @@ $text .= "
 					<tr>
 						<td><label for='cookie-name'>".PRFLAN_55."</label></td>
 						<td >".$frm->text('cookie_name', $pref['cookie_name'], 20)."
-						<div class='field-help'>Should be unique to this website.</div></td></tr>
+						<div class='field-help'>".PRFLAN_263.".</div></td></tr>
 					
 					<tr>
 						<td><label for='passwordencoding'>".PRFLAN_188.":</label></td>
@@ -1799,12 +1799,21 @@ $text .= "
 								
 		$text .= "
 					</tbody>
-			</table>
+			</table>";
+
+	if(E107_DEBUG_LEVEL > 0)
+	{
+
+
+		$text .= "
 			<table class='table adminform' style='margin-top: 20px'>
 				<colgroup>
 					<col class='col-label' />
 					<col class='col-control' />
 				</colgroup>
+				<thead>
+					<tr><th colspan='2'><span class='label label-warning'>DEPRECATED</span> Available only in DEBUG mode</th></tr>
+				</thead>
 				<tbody>
 					<tr>
 						<td>".PRFLAN_248."</td>
@@ -1836,8 +1845,21 @@ $text .= "
 					</tr>
 		";	
 					
+			$text .= "
+					</tbody></table>";
+
+	}
+	else
+	{
+		$text .= "<div>".
+			$frm->hidden('e_jslib_nocombine',1).
+			$frm->hidden('e_jslib_nocache', 1).
+			$frm->hidden('e_jslib_nobcache',1).
+			$frm->hidden('e_jslib_gzip',0).
+			"</div>";
+
+	}
 		$text .= "
-					</tbody></table>
 			".pref_submit('javascript')."
 					</fieldset>
 					

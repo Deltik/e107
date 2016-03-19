@@ -203,9 +203,10 @@ if (ADMIN && isset($queryinfo) && is_array($queryinfo))
 {
 	$c = 1;
 	$mySQLInfo = $sql->mySQLinfo;
-	echo "<div class='e-debug query-notice'><table class='fborder' style='width: 100%;'>
+	echo "<div class='e-debug query-notice'>
+		<table class='fborder table table-bordered table-striped' style='width: 100%;'>
 		<tr>
-		<td class='fcaption' style='width: 5%;'>ID</td><td class='fcaption' style='width: 95%;'>SQL Queries</td>\n</tr>\n";
+		<th class='fcaption' style='width: 5%;'>ID</th><th class='fcaption' style='width: 95%;'>SQL Queries</th>\n</tr>\n";
 	foreach ($queryinfo as $infovalue)
 	{
 		echo "<tr>\n<td class='forumheader3' style='width: 5%;'>{$c}</td><td class='forumheader3' style='width: 95%;'>{$infovalue}</td>\n</tr>\n";
@@ -347,6 +348,10 @@ if (abs($_serverTime - $lastSet) > 120)
 	//echo "SyncWithServerTime('{$_serverTime}', '{$_serverPath}', '{$_serverDomain}');
      //  </script>\n";
 }
+
+// All JavaScript settings are placed in the footer of the page with the library weight so that inline scripts appear
+// afterwards.
+e107::getJs()->renderJs('settings');
 
 e107::getJs()->renderJs('footer_inline', true);
 

@@ -16,9 +16,7 @@
 
 if (!defined('e107_INIT')) { exit; }
 
-/**
- * Subject of rewrite/rethinking after the pre-alpha
- */
+
 class e_media
 {
 	protected $imagelist = array();
@@ -40,9 +38,20 @@ class e_media
 		if(E107_DEBUG_LEVEL > 0)
 		{
 			$this->logging = true; 	
-		}	
-		
+		}
+
+		include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_image.php');
 	}
+
+
+	public function debug($val)
+	{
+
+		$this->logging = intval($val);
+	}
+
+
+
 	/**
 	 * Import files from specified path into media database. 
 	 * @param string $cat Category nickname
@@ -361,7 +370,7 @@ class e_media
 		$qry .= "ORDER BY media_cat_order";
 		
 		e107::getDb()->gen($qry);
-		while($row = e107::getDb()->fetch(MYSQL_ASSOC))
+		while($row = e107::getDb()->fetch())
 		{
 			$id = $row['media_cat_category'];
 			$ret[$id] = $row;
@@ -409,7 +418,7 @@ class e_media
 			$query .= " AND ( ".implode(" OR ",$searchinc)." ) " ;	
 		}
 		
-		return e107::getDb()->db_Select_gen($query);	
+		return e107::getDb()->gen($query);
 		*/
 	}
 	
@@ -495,7 +504,7 @@ class e_media
 			$query .= " LIMIT ".$from." ,".$amount;	
 		}
 		e107::getDb()->gen($query);
-		while($row = e107::getDb()->fetch(MYSQL_ASSOC))
+		while($row = e107::getDb()->fetch())
 		{
 			$id = $row['media_id'];
 			$ret[$id] = $row;
@@ -530,8 +539,8 @@ class e_media
 			$query .= " LIMIT ".$from." ,".$amount;	
 		}
 		
-		e107::getDb()->db_Select_gen($query);
-		while($row = e107::getDb()->db_Fetch(mySQL_ASSOC))
+		e107::getDb()->gen($query);
+		while($row = e107::getDb()->fetch(mySQL_ASSOC))
 		{
 			$id = $row['media_id'];
 			$ret[$id] = $row;
@@ -550,13 +559,13 @@ class e_media
 		$sql = e107::getDb();
 		$tp = e107::getParser();
 		
-		$text .= "<div style='margin-left:500px;text-align:center; position:relative;z-index:1000;float:left;display:none' id='{$formid}'>";
+		$text = "<div style='margin-left:500px;text-align:center; position:relative;z-index:1000;float:left;display:none' id='{$formid}'>";
 		$text .="<div style='-moz-box-shadow: 3px 3px 3px #808080;
 			-webkit-box-shadow: 3px 3px 3px #808080;
 			box-shadow: 3px 3px 3px #808080;
 			background-color:black;border:1px solid black;position:absolute; height:200px;width:205px;overflow-y:scroll; bottom:30px; right:100px'>";
 		
-		$total = ($sql->db_Select_gen("SELECT * FROM `#core_media` WHERE media_category = '_common' OR media_category = '".$cat."' ORDER BY media_category,media_datestamp DESC ")) ? TRUE : FALSE;		
+		$total = ($sql->gen("SELECT * FROM `#core_media` WHERE media_category = '_common' OR media_category = '".$cat."' ORDER BY media_category,media_datestamp DESC ")) ? TRUE : FALSE;
 		$text .= "<div style='font-size:120%;font-weight:bold;text-align:right;margin-right:10px'><a title='Close' style='text-decoration:none;color:white' href='#' onclick=\"expandit('{$formid}'); return false;\" >x</a></div>";
 			
 		while ($row = $sql->db_Fetch())
@@ -613,6 +622,8 @@ class e_media
 		else {
 			$option = $att;
 		}
+
+		$tp = e107::getParser();
 			
 		$frm 		= varset($option['from']) ? $option['from'] : 0;
 		$limit 		= varset($option['limit']) ? $option['limit'] : 20;
@@ -620,25 +631,34 @@ class e_media
 		$bbcode		= varset($option['bbcode']) ? $option['bbcode'] : null;
 		$navMode	= varset($option['nav']) ? TRUE : FALSE;
 		$search		= varset($option['search']) ? $option['search'] : null;
+		$prevId 	= $tagid."_prev"; // ID of image in Form.
 		
 		if($category !='_icon')
 		{
 			$cat 	= ($category) ? $category."+" : ""; // the '+' loads category '_common' as well as the chosen category. 
 			$images = $this->getImages($cat,$frm,$limit,$search);
 			$class 	= "media-select-image";
+			$classN = "media-select-image-none";
 			$w		= 120;
 			$h		= 100;
 			$total	= $this->countImages($cat,$search);
+			$onclick_clear = "parent.document.getElementById('{$tagid}').value = '';
+		 	parent.document.getElementById('".$prevId."').src = '".e_IMAGE_ABS."generic/nomedia.png';
+		 	 return false;";
 		}
 		else // Icons
 		{
 			$cat 	= "";
 			$images = $this->getIcons($cat,0,200);
 			$class 	= "media-select-icon";
+			$classN = "media-select-icon-none";
 			$w		= 64;
 			$h		= 64;
 			$total 	= 500;
 			$total	= $this->countImages("_icon_16|_icon_32|_icon_48|_icon_64",$search);
+			$onclick_clear = "parent.document.getElementById('{$tagid}').value = '';
+		 	parent.document.getElementById('".$prevId."').innerHTML= '';
+		 	 return false;";
 			// $total	= $this->countIcons($cat); //TODO
 		}
 		
@@ -647,7 +667,7 @@ class e_media
 	//	$total_images 	= $this->getImages($cat); // for use by next/prev in filter at some point. 
 	
 		$prevAtt		= '&aw='.vartrue($option['w'],$w); // .'&ah=100';	// Image Parsed back to Form as PREVIEW image. 	
-		$prevId 		= $tagid."_prev"; // ID of image in Form. 
+
 		$thumbAtt		= 'aw=120&ah=120';	// Thumbnail of the Media-Manager Preview. 	
 		
 		
@@ -683,28 +703,26 @@ class e_media
 		
 		if($bbcode == null) // e107 Media Manager - new-image mode. 
 		{
-			$onclick_clear = "parent.document.getElementById('{$tagid}').value = '';
-		 	parent.document.getElementById('".$prevId."').src = '".e_IMAGE_ABS."generic/blank.gif';
-		 	 return false;";
-			
-			$text .= "<a class='thumbnail {$class} media-select-none e-dialog-close' data-src='".varset($im['media_url'])."' style='vertical-align:middle;display:block;float:left;' href='#' onclick=\"{$onclick_clear}\" >
-			<div style='text-align:center;position: relative; top: 30%'>No image</div>
+
+			// TODO LAN.
+			$text .= "<a title='No Image' class='e-tip thumbnail {$class} ".$classN." media-select-none e-dialog-close' data-src='".varset($im['media_url'])."' style='vertical-align:middle;display:block;float:left;' href='#' onclick=\"{$onclick_clear}\" >
+			<span>".$tp->toGlyph('fa-ban')."</span>
 			</a>";		
 		}
 
 		$srch = array("{MEDIA_URL}","{MEDIA_PATH}");
 		
-		$w	= false;
+		$w	= false; //
 		$h = false;
+		$defaultResizeWidth = 400;
 			
 		if($bbcode) // ie. TinyMce Editor, not imagepicker(); 
 		{
 			e107::getBB()->setClass($category);
-			$w = e107::getBB()->resizeWidth(); // resize the image according to prefs. 
+			$defaultResizeWidth = e107::getBB()->resizeWidth(); // resize the image according to prefs.
 			$h = e107::getBB()->resizeHeight();
 			e107::getBB()->clearclass();
-				
-			
+
 		}
 		
 //		print_a($option);
@@ -722,7 +740,7 @@ class e_media
 		{
 			list($dbWidth,$dbHeight) = explode(" x ",$im['media_dimensions']);	
 				
-			$w = ($dbWidth > 400) ? 400 : intval($dbWidth);		
+			$w = ($dbWidth > $defaultResizeWidth) ? $defaultResizeWidth : intval($dbWidth);
 		//	$w = vartrue($w,0);
        //     $h = vartrue($w,0);		
 								
@@ -731,8 +749,10 @@ class e_media
 				
 			$realPath 		= $tp->thumbUrl($im['media_url'], $prevAtt); // Parsed back to Form as Preview Image. 
 			
-			$diz 			= $tp->toAttribute(varset($im['media_title']))."\n".varset($im['media_dimensions']);		
+			$diz 			= $tp->toAttribute(varset($im['media_name']))." (".str_replace(" ","", varset($im['media_dimensions'])).")";
 			$repl 			= array($im['media_url'],$media_path);
+
+			$media_alt      = $tp->toAttribute(vartrue($im['media_caption']));
 			
 			if($bbcode == null) // e107 Media Manager
 			{			
@@ -759,7 +779,7 @@ class e_media
 		 	
 		 	$img_url = ($cat !='_icon') ? e107::getParser()->thumbUrl($im['media_url'], $thumbAtt) : $media_path;
 			
-			$text .= "<a data-toggle='context' class='thumbnail {$class} e-tip' data-id='{$im['media_id']}' data-width='{$w}' data-height='{$h}' data-src='{$media_path}' data-bbcode='{$data_bb}' data-target='{$tagid}' data-path='{$im['media_url']}' data-preview='{$realPath}' title=\"".$diz."\" style='float:left' href='#' onclick=\"{$onclicki}\" >";
+			$text .= "<a data-toggle='context' class='thumbnail {$class} e-tip' data-id='{$im['media_id']}' data-width='{$w}' data-height='{$h}' data-src='{$media_path}' data-bbcode='{$data_bb}' data-target='{$tagid}' data-path='{$im['media_url']}' data-preview='{$realPath}' data-alt=\"".$media_alt."\" title=\"".$diz."\" style='float:left' href='#' onclick=\"{$onclicki}\" >";
 			$text .= "<img class='image-rounded' src='".$img_url."' alt=\"".$im['media_title']."\" title=\"{$diz}\" />";
 			$text .= "</a>\n\n";
 		}	
@@ -803,8 +823,12 @@ class e_media
 	}
 
 
-
-	function checkDupe($oldpath,$newpath)
+	/**
+	 * @param string $oldpath - path to pre-moved file (no e107 constants)
+	 * @param string $newpath - new path to move file to (no e107 constants)
+	 * @return bool|string returns false if duplciate entry found otherwise return new path.
+	 */
+	function checkDupe($oldpath, $newpath)
 	{
 		$mes = e107::getMessage();	
 		$tp = e107::getParser();
@@ -822,9 +846,11 @@ class e_media
 		if($sql->select("core_media","media_url","media_url LIKE '%".$tp->createConstants($newpath,'rel')."' LIMIT 1"))
 		{
 			// $mes->addWarning($newpath." detected in media-manager.");
-			$this->log("Import not performed. ".$newpath." detected in media table already.");	
-			$row = $sql->fetch();
-			$newpath = $row['media_url'];
+			$this->log("Import not performed. ".$newpath." detected in media table already.");
+
+			return false;
+			//$row = $sql->fetch();
+			//$newpath = $row['media_url']; // causes trouble with importFile() if {e_MEDIA_CONSTANT} returned.
 		}
 
 		return $newpath;	
@@ -833,7 +859,6 @@ class e_media
 
 	/**
 	 * Get all Glyphs
-	 * @todo Cache 
 	 */
 	function getGlyphs($type='fa4',$prefix = '')
 	{
@@ -904,7 +929,7 @@ class e_media
 		if($type == 'fa4')
 		{
 			$pattern = '/\.(fa-(?:\w+(?:-)?)+):before/';
-			$subject = e107::getFile()->getRemoteContent('http://netdna.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.css');
+			$subject = e107::getFile()->getRemoteContent('http://netdna.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.css');
 		//	print_a($subject);
 		}
 		elseif($type == 'fa3')
@@ -940,7 +965,8 @@ class e_media
 		if(!vartrue($this->mimePaths[$pmime]))
 		{
 			$this->log("Couldn't detect mime-type ($mime).");
-			$mes->add("Couldn't detect mime-type ($mime). Upload failed.", E_MESSAGE_ERROR);
+			$text = $text = str_replace('[x]',$mime,IMALAN_111);
+			$mes->add($text, E_MESSAGE_ERROR);
 			return FALSE;
 		}
 
@@ -950,8 +976,10 @@ class e_media
 		{
 			if(!mkdir($dir, 0755))
 			{
+
 				$this->log("Couldn't create folder ($dir).");
-				$mes->add("Couldn't create folder ($dir).", E_MESSAGE_ERROR);
+				$text = str_replace('[x]',$dir,IMALAN_112);
+				$mes->add($text, E_MESSAGE_ERROR);
 				return FALSE;
 			};
 		}
@@ -1019,7 +1047,7 @@ class e_media
 		$tp = e107::getParser();
 		$sql = e107::getDb();
 
-        if(!$oldpath) $oldpath = e_IMPORT.$file;
+        if(empty($oldpath)) $oldpath = e_IMPORT.$file;
 		
 		if(!file_exists($oldpath))
 		{
@@ -1031,7 +1059,7 @@ class e_media
 			}
 			$this->log("Line: ".__LINE__." Couldn't find the file: ".$oldpath);
 			$mes->addError("Couldn't find the file: ".$oldpath);
-			return;
+			return false;
 		}	
 			
 		$img_data = $this->mediaData($oldpath); // Basic File Info only
@@ -1042,9 +1070,15 @@ class e_media
 				$mes->addError("Couldn't generate path from file info:".$oldpath);
 				return FALSE;
 		}
-				
-		$newpath = $this->checkDupe($oldpath,$typePath.'/'.$file);
-		
+
+
+		if(!$newpath = $this->checkDupe($oldpath,$typePath.'/'.$file))
+		{
+			return $tp->createConstants($typePath.'/'.$file,'rel');
+		}
+
+		$newpath = $this->checkFileExtension($newpath, $img_data['media_type']);
+
 		if(!rename($oldpath, $newpath)) // e_MEDIA.$newpath was working before. 
 		{
 			$this->log("Couldn't move file from ".realpath($oldpath)." to ".e_MEDIA.$newpath);
@@ -1053,7 +1087,7 @@ class e_media
 		};
 		
 		$img_data['media_url']			= $tp->createConstants($newpath,'rel');
-		$img_data['media_name'] 		= $tp->toDB($file);
+		$img_data['media_name'] 		= $tp->toDB(basename($newpath));
 		$img_data['media_caption'] 		= $new_data['media_caption'];
 		$img_data['media_category'] 	= vartrue($category,'_common_image');
 		$img_data['media_description'] 	= $new_data['media_description'];
@@ -1074,7 +1108,37 @@ class e_media
 		
 		
 	}
-	
+
+
+	/**
+	 * Check File-name against mime-type and add missing extension if necessary.
+	 * @param $path
+	 * @param $mime
+	 * @return string
+	 */
+	private function checkFileExtension($path, $mime)
+	{
+		if(empty($mime))
+		{
+			return $path;
+		}
+
+		list($type,$ext) = explode("/",$mime);
+
+		$ext = str_replace("jpeg",'jpg',$ext);
+
+		if($type == 'image' && (substr($path,-3) != $ext))
+		{
+			return $path.".".$ext;
+		}
+		else
+		{
+			return $path;
+		}
+
+	}
+
+
 	
 	function browserCarouselItem($row = array())
 	{

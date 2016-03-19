@@ -16,7 +16,7 @@ require_once('class2.php');
 
 if (!varset($pref['maintainance_flag']) && !getperms('0')) // Allow main admin to test and view template before going offline.
 {
-	header('location: '.SITEURL);
+	e107::redirect();
 	exit();
 }
 
@@ -24,7 +24,9 @@ header('Content-type: text/html; charset=utf-8');
 
 include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/lan_'.e_PAGE);
 
-require_once(e_CORE.'shortcodes/batch/sitedown_shortcodes.php');
+// require_once(e_CORE.'shortcodes/batch/sitedown_shortcodes.php');
+
+$sitedown_shortcodes= e107::getScBatch('sitedown');
 
 if (!$SITEDOWN_TABLE)
 {
@@ -42,4 +44,4 @@ if (!$SITEDOWN_TABLE)
 	}
 }
 
-echo $tp->parseTemplate($SITEDOWN_TABLE, TRUE, $sitedown_shortcodes);
+echo $tp->parseTemplate($SITEDOWN_TABLE, true, $sitedown_shortcodes);

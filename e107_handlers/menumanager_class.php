@@ -216,7 +216,7 @@ class e_menuManager {
 		}
 
 		$file = urldecode($_GET['path']).".php";
-		$newurl = e_PLUGIN_ABS.$file."?id=".$_GET['id'];
+		$newurl = e_PLUGIN_ABS.$file."?id=".$_GET['id'].'&iframe=1';
 
      /*
 
@@ -365,10 +365,12 @@ class e_menuManager {
 
 			$efile = new e_file;
 			$efile->dirFilter = array('/', 'CVS', '.svn', 'languages');
+			$efile->fileFilter[] = '^e_menu\.php$';
+
 			$fileList = $efile->get_files(e_PLUGIN,"_menu\.php$",'standard',2);
 			
 			$this->menuAddMessage('Scanning for new menus', E_MESSAGE_DEBUG);
-			
+
 			$menuList = array(); // existing menus in table. 
 			if($result = $sql->retrieve('menus', 'menu_name', null, true))
 			{
@@ -491,7 +493,7 @@ class e_menuManager {
 				$location_count--;
 			}
 			$sql->select("menus", "*", "menu_path NOT REGEXP('[0-9]+') ");
-			while (list($menu_id, $menu_name, $menu_location, $menu_order) = $sql->fetch(MYSQL_NUM))
+			while (list($menu_id, $menu_name, $menu_location, $menu_order) = $sql->fetch('num'))
 			{
 				if (stristr($menustr, $menu_name) === FALSE)
 				{
@@ -538,20 +540,85 @@ class e_menuManager {
             return;
 		};
 		$row = $sql->fetch();
-		
-		// TODO lan
+
 		$text = "<div style='text-align:center;'>
 		<form  id='e-save-form' method='post' action='".e_SELF."?lay=".$this->curLayout."'>
         <fieldset id='core-menus-parametersform'>
-		<legend>Menu parameters ".$row['menu_name']."</legend>
-        <table class='table adminform'>
-		<tr>
-		<td>
-		Parameters (query string format):
-		".$frm->text('menu_parms', $row['menu_parms'], 900, 'class=e-save span7')."
-		</td>
-		</tr>
-		</table>";
+		<legend>".MENLAN_44." ".$row['menu_name']."</legend>
+        <table class='table '>
+        <colgroup>
+            <col class='col-label' />
+            <col class='col-control' />
+        </colgroup>
+
+		";
+
+		if(file_exists(e_PLUGIN.$row['menu_path']."e_menu.php")) // v2.x new e_menu.php
+		{
+			$plug = rtrim($row['menu_path'],'/');
+
+			$obj = e107::getAddon($plug,'e_menu');
+
+			if(!is_object($obj))
+			{
+				$text .= "<tr><td colspan='2' class='alert alert-danger'>{$plug} object not found. Try re-scanning plugin directories in Tools > Database. </td></tr>";
+			}
+			else
+			{
+
+				$menuName = substr($row['menu_name'],0,-5);
+			}
+
+
+			$fields = e107::callMethod($obj,'config',$menuName);
+
+			if(!$form = e107::getAddon($plug,'e_menu',$plug."_menu_form"))
+			{
+				$form = $frm;
+			}
+
+			$value = e107::unserialize($row['menu_parms']);
+
+			if(!empty($fields))
+			{
+				foreach($fields as $k=>$v)
+				{
+					$text .= "<tr><td class='text-left'>".$v['title']."</td>";
+					$v['writeParms']['class'] = 'e-save';
+					$i = $k;
+					if(!empty($v['multilan']))
+					{
+						$i = $k.'['.e_LANGUAGE.']';
+
+						if(isset($value[$k][e_LANGUAGE]))
+						{
+							$value[$k] = varset($value[$k][e_LANGUAGE],'');
+						}
+
+					}
+
+					$text .= "<td class='text-left'>".$form->renderElement($i, $value[$k], $v)."</td></tr>";
+				}
+			}
+			else
+			{
+				$text .= "<tr><td colspan='2' class='alert alert-danger'>No Fields Set in ".$row['menu_path']."e_menu.php</td></tr>";
+			}
+
+		}
+		else
+		{
+			$text .= "<tr>
+			<td>
+			".MENLAN_45."</td>
+			<td>
+			".$frm->text('menu_parms', $row['menu_parms'], 900, 'class=e-save&size=xxlarge')."
+			</td>
+			</tr>";
+		}
+
+		$text .= "</table>";
+
 	/*
 		
 			$text .= "
@@ -784,11 +851,27 @@ class e_menuManager {
 	function menuSaveParameters()
 	{
 		$sql = e107::getDb();
-		$parms = $sql->escape(strip_tags($_POST['menu_parms']));
-		
-		$check = $sql->db_Update("menus", "menu_parms='".$parms."' WHERE menu_id=".intval($_POST['menu_id'])."");
-		
-		
+
+		$id = intval($_POST['menu_id']);
+
+		if(isset($_POST['menu_parms']))
+		{
+			$parms = $sql->escape(strip_tags($_POST['menu_parms']));
+		}
+		else
+		{
+			unset($_POST['menu_id'], $_POST['mode'], $_POST['menuActivate'], $_POST['menuSetCustomPages']);
+
+			$parms = $sql->escape(e107::serialize($_POST));
+
+			if(e_DEBUG == true)
+			{
+			//	return array('msg'=>print_r($_POST,true),'error'=>true);
+			}
+		}
+
+		$check = $sql->update("menus", "menu_parms=\"".$parms."\" WHERE menu_id=".$id."");
+
 		if($check)
 		{
 			return array('msg'=>'All Okay','error'=>false);
@@ -798,6 +881,7 @@ class e_menuManager {
 		}
 		elseif(false === $check)
 		{
+
 			return array('msg'=>LAN_UPDATED_FAILED,'error'=>true);
             
 		}
@@ -812,7 +896,7 @@ class e_menuManager {
 
 	function menuSaveVisibility() // Used by Ajax
 	{
-		global $admin_log;
+
 		$sql = e107::getDb();
 
 		$pagelist = explode("\r\n", $_POST['pagelist']);
@@ -825,7 +909,7 @@ class e_menuManager {
 		$pageparms = preg_replace("#\|$#", "", $pageparms);
 		$pageparms = (trim($_POST['pagelist']) == '') ? '' : $pageparms;
 
-		if($sql->db_Update("menus", "menu_class='".intval($_POST['menu_class'])."', menu_pages='{$pageparms}' WHERE menu_id=".intval($_POST['menu_id'])))
+		if($sql->update("menus", "menu_class='".intval($_POST['menu_class'])."', menu_pages='{$pageparms}' WHERE menu_id=".intval($_POST['menu_id'])))
 		{
 			e107::getLog()->add('MENU_02',$_POST['menu_class'].'[!br!]'.$pageparms.'[!br!]'.$this->menuId,E_LOG_INFORMATIVE,'');
 						
@@ -1350,7 +1434,7 @@ class e_menuManager {
 						$cl = ($this->dragDrop) ? "'portlet" : "regularMenu";
 						
 						$menuText .= "\n<div class='column' id='area-".$menu."'>\n\n";
-						while($row = $sql9->fetch(MYSQL_ASSOC))
+						while($row = $sql9->fetch())
 						{
 							$menuText .= "\n\n\n <!-- Menu Start ".$row['menu_name']. "-->\n";
 							$menuText .= "<div class='{$cl}' id='block-".$row['menu_id']."-".$menu."'>\n";
@@ -1502,7 +1586,7 @@ class e_menuManager {
 
 		if($conf)
 		{
-			$text .= '<a class="menu-btn" target="_top" href="'.e_SELF.'?lay='.$this->curLayout.'&amp;mode=conf&amp;path='.urlencode($conf).'&amp;id='.$menu_id.'" 
+			$text .= '<a data-modal-caption="Configure Menu" class="e-modal-menumanager menu-btn" target="_top" href="'.e_SELF.'?lay='.$this->curLayout.'&amp;mode=conf&amp;path='.urlencode($conf).'&amp;id='.$menu_id.'&iframe=1"
 			title="Configure menu"><i class="S16 e-configure-16"></i></a>';
 		}
 		
@@ -1573,8 +1657,11 @@ class e_menuManager {
 		
 		if($mode == 'parms') 
 		{
-			$ret = $this->menuSaveParameters();	
-		//	echo json_encode($ret);
+			$ret = $this->menuSaveParameters();
+			if(!empty($ret['error']))
+			{
+				echo json_encode($ret);
+			}
 			return;
 		}
 		

@@ -86,6 +86,13 @@ class e_thumbpage
 
 		// Config
 		include($self.'/e107_config.php');
+
+		// support early include feature
+		if(isset($CLASS2_INCLUDE) && !empty($CLASS2_INCLUDE))
+		{
+			 require_once(realpath(dirname(__FILE__).'/'.$CLASS2_INCLUDE));
+		}
+
 		$tmp = $self.'/'.$HANDLERS_DIRECTORY;
 
 		//Core functions - now API independent
@@ -251,6 +258,8 @@ class e_thumbpage
 			$this->sendHeaders($thumbnfo);
 		
 
+				//$bench->end()->logResult('thumb.php', $_GET['src'].' - 304 not modified');
+			// 	exit;
 			// check browser cache
 			if (@$_SERVER['HTTP_IF_MODIFIED_SINCE'] && ($thumbnfo['lmodified'] <= strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE'])) && (isset($_SERVER['HTTP_IF_NONE_MATCH']) && trim($_SERVER['HTTP_IF_NONE_MATCH']) == $thumbnfo['md5s']))
 			{
@@ -274,7 +283,12 @@ class e_thumbpage
 		{
 		    $thumb = PhpThumbFactory::create($this->_src_path);
 			$sizeUp = ($this->_request['w'] > 110) ? true : false; // don't resizeUp the icon images. 
-		   	$thumb->setOptions(array('correctPermissions' => true, 'resizeUp' => $sizeUp, 'jpegQuality' => $this->_thumbQuality));
+		   	$thumb->setOptions(array(
+		   	    'correctPermissions'    => true,
+		   	    'resizeUp'              => $sizeUp,
+		   	    'jpegQuality'           => $this->_thumbQuality,
+			    'interlace'             => true // improves performance
+		    ));
 			
 		}
 		catch (Exception $e)
@@ -350,6 +364,7 @@ class e_thumbpage
 		}
 		//header('Pragma:');
 		header('Cache-Control: must-revalidate');
+	//	header('Cache-Control: public, max-age=3600');
 		header('Last-Modified: '.gmdate('D, d M Y H:i:s', $thumbnfo['lmodified']).' GMT');
 		header('Content-Length: '.$thumbnfo['fsize']);
 		header('Content-Disposition: filename='.$thumbnfo['basename']); // important for right-click save-as. 

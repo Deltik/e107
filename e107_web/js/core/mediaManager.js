@@ -33,10 +33,11 @@ $(document).ready(function()
 		var margin_bottom 	= $('#margin-bottom').val();	
 		var margin_right 	= $('#margin-right').val();	
 		var margin_left 	= $('#margin-left').val();	
-		var _float 			= $('#float').val();	
+		var _float 			= $('#float').val();
+		var alt             = $('#alt').val();
 
-									
-		if(margin_right !='' && margin_right !== undefined)
+
+        if(margin_right !='' && margin_right !== undefined)
 		{				
 			style  = style + 'margin-right:' + margin_right + 'px;';	
 		}
@@ -95,7 +96,12 @@ $(document).ready(function()
 			{
 				bb = bb + ' style='+style;			
 			}
-			
+
+            if(alt != '')
+            {
+			    bb = bb + '&alt=' + alt;
+            }
+
 			bb = bb + ']';
 			bb = bb + path;
 			bb = bb + '[/img]';
@@ -129,7 +135,7 @@ $(document).ready(function()
 				var width		= $(this).attr('data-width');
 				var height		= ''; // disable for now - will be updated by bb parser. // $(this).attr('data-height');		
 				var type		= $(this).attr('data-type');
-			
+			    var alt         = $(this).attr('data-alt');
 		
 			//	return;
 			//	alert(width);			
@@ -169,13 +175,13 @@ $(document).ready(function()
 				$('#src').attr('src',src);	// working old
 				
 				$('#width').val(width);	
-				$('#height').val(height);		
-				
-			
-			
-				
-				
-				$('img#' + target + "_prev", window.top.document).attr('src',preview); // set new value
+				$('#height').val(height);
+                $('#alt').val(alt);
+
+
+
+
+        $('img#' + target + "_prev", window.top.document).attr('src',preview); // set new value
 					
 					
 				if(type == 'glyph')
@@ -498,7 +504,7 @@ $(document).ready(function()
 	        // General settings
 		        runtimes : "html5,html4",
 		        url : upath,
-		        max_file_size : "10mb",
+		        max_file_size : "20mb",
 		        chunk_size : "1mb",
 		        unique_names : false,
 		 
@@ -508,8 +514,10 @@ $(document).ready(function()
 		        // Specify what files to browse for
 		        filters : [
 		            {title : "Image files", extensions : extImg || "jpg,gif,png,jpeg"},
-		            {title : "Zip files", extensions : extArchive || "zip,gz"},
-		            {title : "Document files", extensions : extDoc || "pdf,doc,docx,xls,xlsm"}
+		            {title : "Zip files", extensions : extArchive || "zip,gz,rar"},
+		            {title : "Document files", extensions : extDoc || "pdf,doc,docx,xls,xlsm,xml"},
+					{title : "Media files", extensions: 'mp3,mp4,wav,ogg,webm,mid,midi,'},
+					{title : "Other files", extensions: 'torrent,txt'}
 		        ],
 		        preinit : {
             		Init: function(up, info) {

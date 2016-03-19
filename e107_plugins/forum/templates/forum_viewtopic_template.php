@@ -315,9 +315,9 @@ $FORUM_VIEWTOPIC_TEMPLATE['start'] 	= "
 	<div class='row-fluid'>
 		<div>{BACKLINK}</div>
 	</div>
-	
+
 	<div class='row row-fluid'>
-		<div class='col-md-9 span9 pull-left'><h3>{THREADNAME}</h3></div><div class='col-md-3 span3 pull-right right text-right' style='padding-top:10px'>{BUTTONSX}</div>
+		<div class='col-md-9 span9 pull-left'><h3>{THREADNAME}</h3></div><div class='col-md-3 span3 pull-right right text-right' style='padding-top:10px'>{TRACK} {BUTTONSX}</div>
 	</div>
 	
 	{MESSAGE}
@@ -338,9 +338,9 @@ $FORUM_VIEWTOPIC_TEMPLATE['thread'] = "
 													</div>
 
 												{NEWFLAG} {ANON_IP}</div>
-												<div class='col-xs-4 text-muted span4 text-muted muted'><small>{THREADDATESTAMP=relative}</small></div>
+												<div class='col-xs-4 col-sm-3 text-muted span4 text-muted muted'><small>{THREADDATESTAMP=relative}</small></div>
 												<div class='col-xs-5 text-muted span5 text-muted muted right text-right'><small>{LASTEDIT}{LASTEDITBY=link}</small></div>
-												<div class='col-xs-3 col-sm-1 span1 right text-right'>{POSTOPTIONS}</div>
+												<div class='col-xs-3 col-sm-2 span1 right text-right'>{POSTOPTIONS}</div>
 										
 										</div>
 
@@ -386,15 +386,28 @@ $FORUM_VIEWTOPIC_TEMPLATE['thread'] = "
 									";
 
 $FORUM_VIEWTOPIC_TEMPLATE['end'] = "</ul>
-<div class='row row-fluid clearfix'>
-<div class='col-xs-12'><hr /></div>
-		<div class='col-md-3 span3 pull-left'>{GOTOPAGES}</div>
-		<div class='col-xs-12 col-md-6 text-center span6 center'>{QUICKREPLY}</div>
-		<div class='col-xs-12 col-md-3 span3 pull-right right '>{BUTTONSX}</div>
+<div class='col-xs-12'>
+	<hr />
+</div>
+<div class='row'>
+	<div class='col-xs-12 col-md-4'></div>
+	<div class='col-xs-12 col-md-4 text-center'>
+		{GOTOPAGES}
 	</div>
-	{THREADSTATUS}
-	
-	";
+	<div class='col-xs-12 col-md-4'>
+		<div class='pull-right'>
+			{BUTTONSX}
+		</div>
+	</div>
+</div>
+<div class='row'>
+	<div class='col-xs-12 col-md-6 col-md-offset-3'>
+		{QUICKREPLY}
+	</div>
+</div>
+<small class='text-muted'>{MODERATORS}</small>
+{THREADSTATUS}
+";
 
 
 

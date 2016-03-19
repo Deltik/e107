@@ -8,12 +8,36 @@ define("BOOTSTRAP", 	3);
 define("FONTAWESOME", 	4);
 define('VIEWPORT', 		"width=device-width, initial-scale=1.0");
 
-e107::js("url", 			"http://netdna.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js");
-e107::css('url', 			'http://netdna.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css');
-e107::css('url', 			"http://netdna.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css");
+
+/* @see https://www.cdnperf.com */
+// Warning: Some bootstrap CDNs are not compiled with popup.js
+// use https if e107 is using https.
+
+e107::js("url", 			"https://cdn.jsdelivr.net/bootstrap/3.3.6/js/bootstrap.min.js", 'jquery', 2);
+
+if($bootswatch = e107::pref('theme', 'bootswatch',false))
+{
+	e107::css('url', 'https://maxcdn.bootstrapcdn.com/bootswatch/3.3.6/'.$bootswatch.'/bootstrap.min.css');
+}
+else
+{
+	e107::css('url', 'https://cdn.jsdelivr.net/bootstrap/3.3.6/css/bootstrap.min.css');
+}
+
+e107::css('url',    'https://cdn.jsdelivr.net/fontawesome/4.5.0/css/font-awesome.min.css');
+
+
+
+
+
+/* @example prefetch  */
+//e107::link(array('rel'=>'prefetch', 'href'=>THEME.'images/browsers.png'));
+
+
 
 e107::js("footer-inline", 	"$('.e-tip').tooltip({container: 'body'})"); // activate bootstrap tooltips. 
-					
+
+// Legacy Stuff.
 define('OTHERNEWS_COLS',false); // no tables, only divs. 
 define('OTHERNEWS_LIMIT', 3); // Limit to 3. 
 define('OTHERNEWS2_COLS',false); // no tables, only divs. 
@@ -308,7 +332,7 @@ $LAYOUT['modern_business_home'] =  <<<TMPL
 	<div class="container">	
 	{ALERTS}
 <!-- Start Menu 1 --> 
-	{MENU=1}
+	{MENU=10}
 <!-- End Menu 1 --> 
 	</div>
 	
@@ -331,7 +355,6 @@ $LAYOUT['modern_business_home'] =  <<<TMPL
         <div class="row">
             <div class="col-lg-12">
             	{WMESSAGE}   
-            <hr>
           </div>
         </div><!-- /.row -->
       </div><!-- /.container -->
@@ -351,7 +374,7 @@ $LAYOUT['modern_business_home'] =  <<<TMPL
           </div>
           
 		  {SETSTYLE=portfolio}
-		  {SETIMAGE: w=700&h=500&crop=1}
+		  {SETIMAGE: w=400&h=400&crop=1}
 		  {GALLERY_PORTFOLIO: placeholder=1&limit=6}   
 		  
         </div><!-- /.row -->

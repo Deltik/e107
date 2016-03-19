@@ -148,7 +148,7 @@ class user_class
 		{
 			if($this->sql_r->field('userclass_classes','userclass_parent') &&  $this->sql_r->select('userclass_classes', '*', 'ORDER BY userclass_parent', 'nowhere')) // The order statement should give a consistent return
 			{
-				while ($row = $this->sql_r->fetch(MYSQL_ASSOC))
+				while ($row = $this->sql_r->fetch())
 				{
 					$this->class_tree[$row['userclass_id']] = $row;
 					$this->class_tree[$row['userclass_id']]['class_children'] = array();		// Create the child array in case needed
@@ -487,12 +487,9 @@ class user_class
 
 		if ($optlist)
 		{
-			$opt_arr = explode(',',$optlist);
+			$opt_arr = array_map('trim', explode(',',$optlist));
 		}
-		foreach ($opt_arr as &$v)
-		{
-			$v = trim($v);
-		}
+
 		$opt_arr = array_flip($opt_arr);		// This also eliminates duplicates which could arise from applying the other options, although shouldn't matter
 
 		if (isset($opt_arr['no-excludes'])) unset($opt_arr['no-excludes']);
@@ -551,8 +548,9 @@ class user_class
 				if (!array_key_exists($uc_id,$this->fixed_classes)
 				&& (   getperms('0')
 					|| (
-						(!isset($optlist['matchclass']) || check_class($uc_id))
-						&& (!isset($optlist['filter']) || check_class($row['userclass_visibility']))
+						(!isset($opt_arr['matchclass']) || check_class($uc_id))
+						&&
+						(!isset($opt_arr['filter']) || check_class($row['userclass_visibility']))
 					   )
 					)
 					)
@@ -1083,7 +1081,7 @@ class user_class
 		$qry = "SELECT user_id,{$fieldList} FROM `#user` WHERE user_class REGEXP '{$class_regex}' ORDER BY '{$orderBy}'";
 		if ($this->sql_r->db_Select_gen($qry))
 		{
-			while ($row = $this->sql_r->db_Fetch(MYSQL_ASSOC))
+			while ($row = $this->sql_r->db_Fetch())
 			{
 				$ret[$row['user_id']] = $row;
 			}
@@ -1901,7 +1899,7 @@ class user_class_admin extends user_class
 							'userclass_parent' => e_UC_MEMBER,
 							'userclass_visibility' => e_UC_ADMIN
 							),
-						array('userclass_id' => e_UC_BOT, 'userclass_name' => UC_LAN_10,
+						array('userclass_id' => e_UC_BOTS, 'userclass_name' => UC_LAN_10,
 							'userclass_description' => UCSLAN_88,
 							'userclass_editclass' => e_UC_MAINADMIN,
 							'userclass_parent' => e_UC_PUBLIC,

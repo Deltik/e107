@@ -13,7 +13,7 @@ if(!defined("USER_WIDTH")){ define("USER_WIDTH","width:95%"); }
 
 
 
-if (!$FORUM_VIEW_START)
+if (empty($FORUM_VIEW_START))
 {
 $FORUM_VIEW_START = "
 
@@ -55,7 +55,7 @@ $FORUM_VIEW_START = "
 	</tr>";
 }
 
-if(!$FORUM_VIEW_START_CONTAINER)
+if(empty($FORUM_VIEW_START_CONTAINER))
 {
 	$FORUM_VIEW_START_CONTAINER = "
 	<div style='text-align:center'>
@@ -71,7 +71,7 @@ if(!$FORUM_VIEW_START_CONTAINER)
 }
 
 
-if (!$FORUM_VIEW_FORUM) {
+if (empty($FORUM_VIEW_FORUM)) {
 	$FORUM_VIEW_FORUM = "
 		<tr>
 		<td style='vertical-align:middle; text-align:center; width:3%' class='forumheader3'>{ICON}</td>
@@ -93,7 +93,8 @@ if (!$FORUM_VIEW_FORUM) {
 		</tr>";
 }
 
-if (!$FORUM_VIEW_FORUM_STICKY) {
+if (empty($FORUM_VIEW_FORUM_STICKY))
+{
 	$FORUM_VIEW_FORUM_STICKY = "
 		<tr>
 		<td style='vertical-align:middle; text-align:center; width:3%' class='forumheader3'>{ICON}</td>
@@ -115,7 +116,8 @@ if (!$FORUM_VIEW_FORUM_STICKY) {
 		</tr>";
 }
 
-if (!$FORUM_VIEW_FORUM_ANNOUNCE) {
+if (empty($FORUM_VIEW_FORUM_ANNOUNCE))
+{
 	$FORUM_VIEW_FORUM_ANNOUNCE = "
 		<tr>
 		<td style='vertical-align:middle; text-align:center; width:3%' class='forumheader3'>{ICON}</td>
@@ -137,7 +139,8 @@ if (!$FORUM_VIEW_FORUM_ANNOUNCE) {
 		</tr>";
 }
 
-if (!$FORUM_VIEW_END) {
+if (empty($FORUM_VIEW_END))
+{
 	$FORUM_VIEW_END = "
 		</table>
 		</div>
@@ -191,7 +194,7 @@ if (!$FORUM_VIEW_END) {
 }
 
 
-if(!$FORUM_VIEW_END_CONTAINER)
+if(empty($FORUM_VIEW_END_CONTAINER))
 {
 	$FORUM_VIEW_END_CONTAINER = "
 		<table style='".USER_WIDTH."'>
@@ -206,7 +209,7 @@ if(!$FORUM_VIEW_END_CONTAINER)
 }
 
 
-if (!$FORUM_VIEW_SUB_START)
+if (empty($FORUM_VIEW_SUB_START))
  {
 	$FORUM_VIEW_SUB_START = "
 	<tr>
@@ -224,7 +227,8 @@ if (!$FORUM_VIEW_SUB_START)
 	";
 }
 
-if (!$FORUM_VIEW_SUB) {
+if (empty($FORUM_VIEW_SUB))
+{
 	$FORUM_VIEW_SUB = "
 	<tr>
 		<td class='forumheader3' style='text-align:center'>{NEWFLAG}</td>
@@ -236,7 +240,8 @@ if (!$FORUM_VIEW_SUB) {
 	";
 }
 
-if (!$FORUM_VIEW_SUB_END) {
+if (empty($FORUM_VIEW_SUB_END))
+{
 	$FORUM_VIEW_SUB_END = "
 	</table><br /><br />
 	</div>
@@ -245,12 +250,13 @@ if (!$FORUM_VIEW_SUB_END) {
 	";
 }
 
-if (!$FORUM_IMPORTANT_ROW) {
+if (empty($FORUM_IMPORTANT_ROW)) {
 	$FORUM_IMPORTANT_ROW = "<tr><td class='forumheader'>&nbsp;</td><td colspan='5'  class='forumheader'><span class='mediumtext'><b>".LAN_FORUM_1006."</b></span></td></tr>";
 }
 
 
-if (!$FORUM_NORMAL_ROW) {
+if (empty($FORUM_NORMAL_ROW))
+{
 	$FORUM_NORMAL_ROW = "<tr><td class='forumheader'>&nbsp;</td><td colspan='5'  class='forumheader'><span class='mediumtext'><b>".LAN_FORUM_1007."</b></span></td></tr>";
 }
 
@@ -310,7 +316,7 @@ $FORUM_VIEWFORUM_TEMPLATE['item'] 				= "<tr>
 
 													</td>
 													</div>
-														<td >{REPLIESX}</td><td class='hidden-xs'>{VIEWSX}</td>
+														<td class='text-center'>{REPLIESX}</td><td class='hidden-xs text-center'>{VIEWSX}</td>
 													<td class='hidden-xs'><small>{LASTPOSTUSER} {LASTPOSTDATE} </small><div class='span2 right pull-right'>{ADMINOPTIONS}</div></td>
 													</tr>\n";
 
@@ -320,15 +326,15 @@ $FORUM_VIEWFORUM_TEMPLATE['item-announce'] 		= $FORUM_VIEWFORUM_TEMPLATE['item']
 
 $FORUM_VIEWFORUM_TEMPLATE['sub-header']			= "<tr>
 													<th colspan='2'>".LAN_FORUM_1002."</th>
-													<th>".LAN_FORUM_0003."</th>
-													<th class='hidden-xs'>".LAN_FORUM_0002."</th>
+													<th class='text-center'>".LAN_FORUM_0003."</th>
+													<th class='hidden-xs text-center'>".LAN_FORUM_0002."</th>
 													<th class='hidden-xs'>".LAN_FORUM_0004."</th>
 												</tr>";
 
 $FORUM_VIEWFORUM_TEMPLATE['sub-item']			= "<tr><td>{NEWFLAG}</td>
 												<td><div>{SUB_FORUMTITLE}</div><small>{SUB_DESCRIPTION}</small></td>
-												<td>{SUB_REPLIESX}</td>
-												<td class='hidden-xs'>{SUB_THREADSX}</td>
+												<td class='text-center'>{SUB_REPLIESX}</td>
+												<td class='hidden-xs text-center'>{SUB_THREADSX}</td>
 												<td class='hidden-xs'><small>{SUB_LASTPOSTUSER} {SUB_LASTPOSTDATE}</small></td>
 												</tr>\n";
 

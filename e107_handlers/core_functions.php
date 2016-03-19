@@ -307,7 +307,7 @@ if (!function_exists('asortbyindex'))
 if (!function_exists('r_emote')) 
 {
 	/**
-	 * @DEPRECATED
+	 * Still in use.
 	 */
 	function r_emote()
 	{
@@ -331,10 +331,24 @@ if (!function_exists('r_emote'))
 			$value = ($value2 ? $value2 : $value);
 			$value = ($value == '&|') ? ':((' : $value;
 			$value = " ".$value." ";
-			//TODO CSS class
-			$str .= "\n<a href=\"javascript:addtext('$value',true)\"><img src='$key' alt='' /></a> ";
+
+		//	$str .= "\n<a class='addEmote' data-emote=\"".$value."\" href=\"javascript:addtext('$value',true)\"><img src='$key' alt='' /></a> ";
+			$str .= "\n<a class='addEmote' data-emote=\"".$value."\" href=\"#\"><img src='$key' alt='' /></a> ";
 		}
-	
+
+		$JS = "
+
+		$('.addEmote').click(function(){
+
+			val = $(this).attr('data-emote')
+			addtext(val,true);
+			return false;
+		});
+		";
+
+		e107::js('footer-inline',$JS);
+
+
 		return "<div class='spacer'>".$str."</div>";
 	}
 }
@@ -408,6 +422,11 @@ class e_array {
         if ($ArrayData == ""){
             return false;
         }
+
+        if(is_array($ArrayData))
+        {
+            return false;
+        }
         
         // Saftety mechanism for 0.7 -> 0.8 transition. 
         if(substr($ArrayData,0,2)=='a:' || substr($ArrayData,0,2)=='s:')
@@ -415,12 +434,19 @@ class e_array {
             $dat = unserialize($ArrayData);
             $ArrayData = $this->WriteArray($dat,FALSE);
         }
-        
+
+        $ArrayData = trim($ArrayData);
+
+        if(strtolower(substr($ArrayData,0,5)) != 'array')
+        {
+            return false;
+        }
         
         $data = "";
-        $ArrayData = '$data = '.trim($ArrayData).';';
+        $ArrayData = '$data = '.$ArrayData.';';
         @eval($ArrayData);
-        if (!isset($data) || !is_array($data)) {
+        if (!isset($data) || !is_array($data))
+        {
             trigger_error("Bad stored array data - <br /><br />".htmlentities($ArrayData), E_USER_ERROR);
             return false;
         }

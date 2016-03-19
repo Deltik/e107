@@ -5,7 +5,7 @@
 require_once('../../class2.php');
 if (!getperms('P')) 
 {
-	header('location:'.e_BASE.'index.php');
+	e107::redirect('admin');
 	exit;
 }
 
@@ -170,6 +170,11 @@ class social_ui extends e_admin_ui
 					"keys"    => array ( "id" => "", "secret" => "" ),
 					"scope"   => ""
 				),
+/*
+				"Instagram" => array (
+					"enabled" => true,
+					"keys"	 => array ( "id" => "", "secret" => "" )
+				),*/
 
 				"LinkedIn" => array (
 					"enabled" => true,
@@ -188,16 +193,15 @@ class social_ui extends e_admin_ui
 					"keys"    => array ( "key" => "", "secret" => "" )
 				),
 				*/
+				"Steam" => array (
+					"enabled" => true,
+					"keys"	 => array ( "key" => "" )
+				),
 
 				"Twitter" => array (
 					"enabled" => true,
 					"keys"    => array ( "key" => "", "secret" => "" )
 				),
-
-
-
-
-
 
 
 
@@ -212,6 +216,8 @@ class social_ui extends e_admin_ui
 				"LinkedIn"		=> "https://www.linkedin.com/secure/developer",
 				"Foursquare"	=> "https://www.foursquare.com/oauth/",
 				"Github"		=> "https://github.com/settings/applications/new",
+				"Steam"			=> "http://steamcommunity.com/dev/apikey",
+				"Instagram"     => "http://instagram.com/developer"
 			);
 
 
@@ -257,8 +263,12 @@ class social_ui extends e_admin_ui
 		{
 			$this->testUrl = SITEURL."?route=system/xup/test";
 
-			$notice = "Note: In most cases you will need to obtain an id and secret key from one of the providers. Click the blue links below to configure.
-					<br />You may test your configuration with the following URL: <a href='".$this->testUrl."' rel='external'>".$this->testUrl."</a>";
+			$notice = "Note: In most cases you will need to obtain an id and secret key from one of the providers. Click the blue links to the right to configure.
+					<br />You may test your configuration with the following URL:<br /><a href='".$this->testUrl."' rel='external'>".$this->testUrl."</a>";
+
+			$callBack = SITEURL."index.php";
+			$notice .= "<br /><br />Your callback URL is: </br ><a href='".$callBack."'>".$callBack."</a>";
+
 
 			return array("caption"=>"Help",'text'=> $notice);
 
@@ -294,14 +304,23 @@ class social_ui extends e_admin_ui
 					</tr>
 
 
-					<tr>
-						<td>Application Keys and IDs <br /></td>
-						<td>
+
+					<tr><td colspan='2'>
 							<table class='table table-bordered table-striped'>
 							<colgroup>
-								<col class='col-label' />
+								<col style='width:10%' />
 								<col class='col-control' />
+								<col class='col-control' />
+								<col style='width:20%' />
 							</colgroup>
+							<thead>
+								<tr>
+									<th>Provider</th>
+									<th>Key/ID</th>
+									<th>Secret</th>
+									<th class='center'>Signup/Login</th>
+								</tr>
+							</thead>
 
 					";
 
@@ -312,46 +331,68 @@ class social_ui extends e_admin_ui
 
 			foreach($this->social_logins as $prov=>$val)
 			{
-
-				$label = varset($this->social_external[$prov]) ? "<a class='e-tip' rel='external' title='Get a key from the provider' href='".$social_external[$prov]."'>".$prov."</a>" : $prov;
+				$textKeys = '';
+				$textScope = '';
+				$keyCount= array();
+				$label = varset($this->social_external[$prov]) ? "<a class='e-tip' rel='external' title='Get a key from the provider' href='".$this->social_external[$prov]."'>".$prov."</a>" : $prov;
 				$radio_label = strtolower($prov);
 				$text .= "
 					<tr>
 						<td><label for='social-login-".$radio_label."-enabled'>".$label."</label></td>
-						<td>
+
 						";
 				foreach($val as $k=>$v)
 				{
+
+
 					switch ($k) {
 						case 'enabled':
 							$eopt = array('class'=>'e-expandit');
-							$text .= $frm->radio_switch('social_login['.$prov.'][enabled]', vartrue($pref['social_login'][$prov]['enabled']),'','',$eopt);
+							$textEnabled = $frm->radio_switch('social_login['.$prov.'][enabled]', vartrue($pref['social_login'][$prov]['enabled']),'','',$eopt);
 							break;
 
 						case 'keys':
 							// $cls = vartrue($pref['single_login'][$prov]['keys'][$tk]) ? "class='e-hideme'" : '';
 							$sty = vartrue($pref['social_login'][$prov]['keys'][vartrue($tk)]) ? "" : "e-hideme";
-							$text .= "<div class='e-expandit-container {$sty}' id='option-{$prov}' >";
+					//		$text .= "<div class='e-expandit-container {$sty}' id='option-{$prov}' >";
 							foreach($v as $tk=>$idk)
 							{
-								$eopt = array('placeholder'=> $tk, 'size'=>'xxlarge');
-								$text .= "<br />".$frm->text('social_login['.$prov.'][keys]['.$tk.']', vartrue($pref['social_login'][$prov]['keys'][$tk]), 100, $eopt);
+								$eopt = array( 'size'=>'block-level');
+								$keyCount[] = 1;
+								$textKeys .= "<td>".$frm->text('social_login['.$prov.'][keys]['.$tk.']', vartrue($pref['social_login'][$prov]['keys'][$tk]), 100, $eopt)."</td>";
 							}
-							$text .= "</div>";
+						//	$text .= "</div>";
 
 							break;
 
 						case 'scope':
-							$text .= $frm->hidden('social_login['.$prov.'][scope]','email');
+							$textScope .= $frm->hidden('social_login['.$prov.'][scope]','email');
 							break;
 
 						default:
 
 							break;
 					}
+
+
+
+
 				}
 
-				$text .= "</td>
+
+
+					if(empty($keyCount))
+					{
+						$textKeys = "<td>&nbsp;</td><td>&nbsp;</td>";
+					}
+					elseif(count($keyCount) == 1)
+					{
+						$textKeys .= "<td>&nbsp;</td>";
+					}
+
+				$text .= $textKeys."<td class='center'>".$textEnabled.$textScope."</td>";
+
+				$text .= "
 					</tr>
 					";
 			}
@@ -427,7 +468,7 @@ class social_ui extends e_admin_ui
 
 ";
 			$tabs = array();
-			$tabs[] = array('caption'=>"Apps", 'text'=>$text);
+			$tabs[] = array('caption'=>"Applications", 'text'=>$text);
 			$tabs[] = array('caption'=>'Pages', 'text'=>$text2);
 
 			$ret =  $frm->open('social','post',null, 'class=form-horizontal').$frm->tabs($tabs);

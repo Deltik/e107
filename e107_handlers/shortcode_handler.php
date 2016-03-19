@@ -748,6 +748,8 @@ class e_parse_shortcode
 		
 		if (is_object($extraCodes))
 		{
+
+
 	
 			$this->addedCodes = &$extraCodes;
 			
@@ -798,7 +800,8 @@ class e_parse_shortcode
 		}
 
 
-		$ret = preg_replace_callback('#\{(\S[^\x02]*?\S)\}#', array(&$this, 'doCode'), $text);
+		$ret = preg_replace_callback('#\{([A-Z][^\x02]*?\S)\}#', array(&$this, 'doCode'), $text); // must always start with uppercase letter
+		// $ret = preg_replace_callback('#\{(\S[^\x02]*?\S)\}#', array(&$this, 'doCode'), $text);
 		$this->parseSCFiles = $saveParseSCFiles; // Restore previous value
 		$this->addedCodes = $saveCodes;
 		$this->eVars = $saveVars; // restore eVars
@@ -834,13 +837,15 @@ class e_parse_shortcode
 		{
 			if ($this->eVars->isVar($matches[1]))
 			{
-				return $this->eVars->$matches[1];
+				$match1 = $matches[1]; // php7 fix.
+				return $this->eVars->$match1;
 			}
 		}
 		if (strpos($matches[1], E_NL) !== false)
 		{
 			return $matches[0];
 		}
+
 
 		if(preg_match('/^([A-Z_]*):(.*)/', $matches[1], $newMatch))
 		{
@@ -1299,6 +1304,8 @@ class e_shortcode
 	 * Sets wrapper id (to be retrieved from the registry while parsing)
 	 * Example e107::getScBatch('contact')->wrapper('contact/form');
 	 * which results in using the $CONTACT_WRAPPER['form'] wrapper in the parsing phase
+	 * Template cannot be loaded via include, only by getTemplate or getCoreTemplate
+	 * e107::getScBatch() must be used also.
 	 */
 	public function wrapper($id = null)
 	{

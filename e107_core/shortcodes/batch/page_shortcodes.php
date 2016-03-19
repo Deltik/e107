@@ -88,7 +88,7 @@ class cpage_shortcodes extends e_shortcode
 	
 	function sc_cpagesubtitle()
 	{
-		$subtitle = $this->var['sub_title'];
+		$subtitle = varset($this->var['sub_title']);
 		return $subtitle ? e107::getParser()->toHTML($subtitle, true, 'TITLE') : '';
 	}
 
@@ -201,6 +201,7 @@ class cpage_shortcodes extends e_shortcode
 		elseif($path[0] !== '{') $path = '{e_MEDIA}'.$path;
 		
 		$thumb = $tp->thumbUrl($path);
+		$dimensions = $tp->thumbDimensions('double');
 		$type = varset($parms[2]['type'], 'tag');
 
 		switch($type)
@@ -210,12 +211,12 @@ class cpage_shortcodes extends e_shortcode
 			break;
 
 			case 'link':
-				return '<a href="'.$tp->replaceConstants($path, 'abs').'" class="cpage-image" rel="external image"><img class="cpage-image" src="'.$src.'" alt="'.varset($parms[1]['alt']).'" /></a>';
+				return '<a href="'.$tp->replaceConstants($path, 'abs').'" class="cpage-image" rel="external image"><img class="cpage-image" src="'.$thumb.'" alt="'.varset($parms[1]['alt']).'" '.$dimensions.' /></a>';
 			break;
 
 			case 'tag':
 			default:
-				return '<img class="cpage-image" src="'.$thumb.'" alt="'.varset($parms[1]['alt']).'" />';
+				return '<img class="cpage-image" src="'.$thumb.'" alt="'.varset($parms[1]['alt']).'" '.$dimensions.' />';
 			break;
 		}
 	}
@@ -267,12 +268,14 @@ class cpage_shortcodes extends e_shortcode
 		
 		$buttonText = (empty($this->var['menu_button_text'])) ? LAN_READ_MORE : $this->var['menu_button_text'];
 		$buttonUrl	= (empty($this->var['menu_button_url'])) ? $url : $tp->replaceConstants($this->var['menu_button_url']);
-		
+		$buttonTarget = (empty($this->var['menu_button_target'])) ? '' : ' target="'.$this->var['menu_button_target'].'" '; //TODO add pref to admin area.
+
 		$text = vartrue($options['text'], $buttonText);
 		$size = vartrue($options['size'], "");
+
 		$inc = ($size) ? " btn-".$size : "";
 		
-		return '<a class="cpage btn btn-primary btn-cpage'.$inc.'" href="'.$buttonUrl.'">'.$text.'</a>';
+		return '<a class="cpage btn btn-primary btn-cpage'.$inc.'" href="'.$buttonUrl.'" '.$buttonTarget.'>'.$text.'</a>';
 	}	
 	
 	
@@ -281,7 +284,12 @@ class cpage_shortcodes extends e_shortcode
 		$tp 	= e107::getParser(); 
 	//
 		return $tp->toHTML($this->var['menu_title'], true, 'TITLE');
-	}	
+	}
+
+	function sc_cmenuname($parm='')
+	{
+		return $this->var['menu_name'];
+	}
 
 
 	function sc_cmenubody($parm='')
@@ -305,8 +313,10 @@ class cpage_shortcodes extends e_shortcode
 		{
 			return $img;	
 		}
-		
-		return "<img class='img-responsive img-rounded' src='".$img."' alt='' />";
+
+		$dimensions = $tp->thumbDimensions();
+
+		return "<img class='img-responsive img-rounded' src='".$img."' alt='' ".$dimensions." />";
 	}
 	
 	function sc_cmenuicon($parm='')

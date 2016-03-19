@@ -13,7 +13,7 @@
 require_once("../class2.php");
 if (!getperms("Z"))
 {
-	header("location:".e_BASE."index.php");
+	e107::redirect('admin');
 	exit;
 }
 
@@ -127,9 +127,9 @@ class pluginmanager_form extends e_form
 			{
 		  		$text .= ($this->plug['plugin_installflag'] ? "<a class='btn btn-default' href=\"".e_SELF."?uninstall.{$this->plug['plugin_id']}\" title='".EPL_ADLAN_1."'  >".ADMIN_UNINSTALLPLUGIN_ICON."</a>" : "<a class='btn' href=\"".e_SELF."?install.{$this->plug['plugin_id']}\" title='".EPL_ADLAN_0."' >".ADMIN_INSTALLPLUGIN_ICON."</a>");
                            //   $text .= ($this->plug['plugin_installflag'] ? "<button type='button' class='delete' value='no-value' onclick=\"location.href='".e_SELF."?uninstall.{$this->plug['plugin_id']}'\"><span>".EPL_ADLAN_1."</span></button>" : "<button type='button' class='update' value='no-value' onclick=\"location.href='".e_SELF."?install.{$this->plug['plugin_id']}'\"><span>".EPL_ADLAN_0."</span></button>");
-				if (PLUGIN_SHOW_REFRESH && !vartrue($this->plug_vars['plugin_php']))
+				if (e_DEBUG && !vartrue($this->plug_vars['plugin_php']))
 				{
-					$text .= "<br /><br /><input type='button' class='btn btn-default button' onclick=\"location.href='".e_SELF."?refresh.{$this->plug['plugin_id']}'\" title='".'Refresh plugin settings'."' value='".'Refresh plugin settings'."' /> ";
+			//		$text .= "<br /><br /><input type='button' class='btn btn-default button' onclick=\"location.href='".e_SELF."?refresh.{$this->plug['plugin_id']}'\" title='".'Refresh plugin settings'."' value='".'Refresh plugin settings'."' /> ";
 				}
 			}
 			else
@@ -161,6 +161,13 @@ class pluginmanager_form extends e_form
 		  //	$text .= "<br /><input type='button' class='btn' onclick=\"location.href='".e_SELF."?upgrade.{$this->plug['plugin_id']}'\" title='".EPL_UPGRADE." to v".$this->plug_vars['@attributes']['version']."' value='".EPL_UPGRADE."' />";
 			$text .= "<a class='btn btn-default' href='".e_SELF."?upgrade.{$this->plug['plugin_id']}' title=\"".EPL_UPGRADE." to v".$this->plug_vars['@attributes']['version']."\" >".ADMIN_UPGRADEPLUGIN_ICON."</a>";
 		}
+
+		if ($this->plug['plugin_installflag'] && e_DEBUG == true)
+		{
+				$text .= "<a class='btn btn-default' href='".e_SELF."?refresh.".$this->plug['plugin_id']."' title='".'Repair plugin settings'."'> ".ADMIN_REPAIRPLUGIN_ICON."</a>";
+		}
+
+
 
 		$text .="</div>	";
 				
@@ -788,12 +795,13 @@ class pluginManager{
 				e107::getLog()->add('PLUGMAN_03', $logInfo, E_LOG_INFORMATIVE, '');
 			}
 
-			if($_POST['delete_files'])
+			if(!empty($_POST['delete_files'])  && ($plug['plugin_installflag'] == true))
 			{
-				include_once(e_HANDLER.'file_class.php');
-				$fi = new e_file;
-				$result = $fi->rmtree(e_PLUGIN.$eplug_folder);
-				$text .= ($result ? '<br />'.EPL_ADLAN_86.e_PLUGIN.$eplug_folder : '<br />'.EPL_ADLAN_87.'<br />'.EPL_ADLAN_31.' <b>'.e_PLUGIN.$eplug_folder.'</b> '.EPL_ADLAN_32);
+				if(!empty($eplug_folder))
+				{
+					$result = e107::getFile()->rmtree(e_PLUGIN.$eplug_folder);
+					$text .= ($result ? '<br />'.EPL_ADLAN_86.e_PLUGIN.$eplug_folder : '<br />'.EPL_ADLAN_87.'<br />'.EPL_ADLAN_31.' <b>'.e_PLUGIN.$eplug_folder.'</b> '.EPL_ADLAN_32);
+				}
 			}
 			else
 			{
@@ -937,31 +945,32 @@ class pluginManager{
 
 
 // -----------------------------------------------------------------------------
+// TODO FIXME - This needs cleaning: e107::getMessage(), limit the globals, etc. 
 
    function pluginInstall()
    {
         global $plugin,$admin_log,$eplug_folder;
-			$text = $plugin->install_plugin($this->id);
+		$text = $plugin->install_plugin($this->id);
 		
 		$log = e107::getAdminLog();
 			
 			
 			
-			if ($text === FALSE)
-			{ // Tidy this up
-				$this->show_message(EPL_ADLAN_99, E_MESSAGE_ERROR);
-			}
-			else
-			{
-				 $plugin->save_addon_prefs('update');
-				 $info = $plugin->getinfo($this->id);
-				 
-				 $name = deftrue($info['plugin_name'],$info['plugin_name']). " v".$info['plugin_version']. "({e_PLUGIN}".$info['plugin_path'].")";
-				 
-				$log->log_event('PLUGMAN_01', $name, E_LOG_INFORMATIVE, '');
-			
-				$this->show_message($text, E_MESSAGE_SUCCESS);
-			}
+		if ($text === FALSE)
+		{ // Tidy this up
+			$this->show_message(EPL_ADLAN_99, E_MESSAGE_ERROR);
+		}
+		else
+		{
+			$plugin->save_addon_prefs('update');
+			$info = $plugin->getinfo($this->id);
+			 
+			$name = deftrue($info['plugin_name'],$info['plugin_name']). " v".$info['plugin_version']. "({e_PLUGIN}".$info['plugin_path'].")";
+			 
+			$log->log_event('PLUGMAN_01', $name, E_LOG_INFORMATIVE, '');
+		
+			$this->show_message($text, E_MESSAGE_SUCCESS);
+		}
 
    }
 
@@ -1067,12 +1076,13 @@ class pluginManager{
    {
        global $plug;
 
-			$plug = $plugin->getinfo($this->id);
+			$plug = e107::getSingleton('e107plugin')->getinfo($this->id);
 
 			$_path = e_PLUGIN.$plug['plugin_path'].'/';
 			if(file_exists($_path.'plugin.xml'))
 			{
-				$text .= $plugin->install_plugin_xml($this->id, 'refresh');
+				// $text .= $plugin->install_plugin_xml($this->id, 'refresh');
+				e107::getSingleton('e107plugin')->refresh($plug['plugin_path']);
 				e107::getLog()->add('PLUGMAN_04', $this->id.':'.$plug['plugin_path'], E_LOG_INFORMATIVE, '');
 			}
 
@@ -2370,7 +2380,7 @@ class pluginBuilder
 			$text .= "
 			<div class='buttons-bar center'>
 			".$frm->hidden('newplugin', $this->pluginName)."
-			".$frm->admin_button('step', 3,'other',EPL_ADLAN_111)."
+			".$frm->admin_button('step', 3,'other', LAN_GENERATE)."
 			</div>";
 			
 			$text .= $frm->close();
@@ -2747,7 +2757,7 @@ $template = <<<TEMPLATE
 	<category>{CATEGORY_CATEGORY}</category>
 	<copyright>{COPYRIGHT_COPYRIGHT}</copyright>
 	<adminLinks>
-		<link url="admin_config.php" description="{ADMINLINKS_DESCRIPTION}" icon="" iconSmall="" primary="true" >LAN_CONFIGURE</link>
+		<link url="admin_config.php" description="{ADMINLINKS_DESCRIPTION}" icon="" iconSmall="" icon128="" primary="true" >LAN_CONFIGURE</link>
 	</adminLinks>
 	{PLUGINPREFS}
 </e107Plugin>
@@ -3279,7 +3289,7 @@ $text = "\n
 require_once('../../class2.php');
 if (!getperms('P')) 
 {
-	header('location:'.e_BASE.'index.php');
+	e107::redirect('admin');
 	exit;
 }
 

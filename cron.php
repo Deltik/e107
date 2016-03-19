@@ -65,8 +65,8 @@ require_once(realpath(dirname(__FILE__)."/class2.php"));
 	}
 
 
-e107::getCache()->CachePageMD5 = '_';
-e107::getCache()->set('cronLastLoad',time(),TRUE,FALSE,TRUE);
+// e107::getCache()->CachePageMD5 = '_';
+@file_put_contents(e_CACHE.'cronLastLoad.php',time());
 
 
 
@@ -78,7 +78,7 @@ e107::getCache()->set('cronLastLoad',time(),TRUE,FALSE,TRUE);
 	$sql = e107::getDb();
 	if($sql->select("cron",'cron_function,cron_tab','cron_active =1'))
 	{
-		while($row = $sql->fetch(MYSQL_ASSOC))
+		while($row = $sql->fetch())
 		{
 			list($class,$function) = explode("::",$row['cron_function'],2);			
 			$key = $class."__".$function;

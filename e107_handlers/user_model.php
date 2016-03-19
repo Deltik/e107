@@ -906,7 +906,7 @@ class e_user_model extends e_admin_model
 	 * data to user model
 	 * @return e_user_model
 	 */
-	public function mergePostedData()
+	public function mergePostedData($strict = true, $sanitize = true, $validate = true)
     {
     	$posted = $this->getPostedData();
     	foreach ($posted as $key => $value)
@@ -1557,7 +1557,9 @@ class e_user extends e_user_model
 		$userlogin = new userlogin();
 		$userlogin->login($xup, '', 'provider', false, true);
 		
-		$userdata  = $userlogin->getUserData(); 
+		$userdata  = $userlogin->getUserData();
+
+		e107::getLog()->add('XUP Debug', (__CLASS__.':'.__METHOD__.'-'.__LINE__), E_LOG_INFORMATIVE, "XUP_DEBUG");
 		
 		$this->setSessionData(true)->setData($userdata);
 			
@@ -1681,21 +1683,49 @@ class e_user extends e_user_model
 		// query DB
 		$sql = e107::getDb();
 		$where = array();
+		$userdata = array();
+
 		foreach ($connected as $providerId) 
 		{
 			$adapter = Hybrid_Auth::getAdapter($providerId);
 			
 			if(!$adapter->getUserProfile()->identifier) continue;
-			
-			$id = $providerId.'_'.$adapter->getUserProfile()->identifier;
+
+			$profile = $adapter->getUserProfile();
+
+			$userdata['user_name']  = $sql->escape($profile->displayName);
+			$userdata['user_image'] = $profile->photoURL; // avatar
+
+			$id = $providerId.'_'.$profile->identifier;
 			$where[] = "user_xup='".$sql->escape($id)."'";
 		}
+
+
 		$where = implode(' OR ', $where);
-		if($sql->db_Select('user', 'user_id, user_password, user_xup', $where))
+		if($sql->select('user', 'user_id, user_name, user_image, user_password, user_xup', $where))
 		{
-			$user = $sql->db_Fetch();
+
+			$user = $sql->fetch();
 			e107::getUserSession()->makeUserCookie($user);
 			$this->setSessionData();
+
+			// Update display name or avatar image if they have changed.
+			if(($userdata['user_name'] != $user['user_name']) || ($userdata['user_image'] != $user['user_image']))
+			{
+
+				if($sql->update('user', "user_name='".$userdata['user_name']."', user_image='".$userdata['user_image']."' WHERE user_id=".$user['user_id']." LIMIT 1")!==false)
+				{
+					e107::getLog()->add('User Profile Updated', $userdata, E_LOG_INFORMATIVE, "XUP_LOGIN", LOG_TO_ADMIN, array('user_id'=>$user['user_id'],'user_name'=>$user['user_name']));
+				}
+				else
+				{
+					e107::getLog()->add('User Profile Update Failed', $userdata, E_LOG_WARNING, "XUP_LOGIN", LOG_TO_ADMIN, array('user_id'=>$user['user_id'],'user_name'=>$user['user_name']));
+				}
+			}
+
+			unset($user['user_password']);
+			e107::getLog()->user_audit(USER_AUDIT_LOGIN,'', $user['user_id'], $user['user_name']);
+			// e107::getLog()->add('XUP Login', $user, E_LOG_INFORMATIVE, "LOGIN", LOG_TO_ROLLING, array('user_id'=>$user['user_id'],'user_name'=>$user['user_name']));
 		}
 		
 		return $this;
@@ -2383,7 +2413,7 @@ class e_user_extended_model extends e_admin_model
 	 * data to user extended model
 	 * @return e_user_extended_model
 	 */
-	public function mergePostedData()
+	public function mergePostedData($strict = true, $sanitize = true, $validate = true)
     {
     	$posted = $this->getPostedData();
     	foreach ($posted as $key => $value)
@@ -2493,7 +2523,7 @@ class e_user_extended_structure_model extends e_model
 	/**
 	 * Loading of single structure row not allowed for front model
 	 */
-	public function load()
+	public function load($id = null, $force = false)
 	{
 		return $this;
 	}
@@ -2732,7 +2762,7 @@ class e_user_pref extends e_front_model
 	 * @param boolean $force
 	 * @return boolean success
 	 */
-	public function save($from_post = false, $force = false)
+	public function save($from_post = false, $force = false, $session_messages = false)
 	{
 		if($this->_user->getId())
 		{

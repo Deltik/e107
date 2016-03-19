@@ -53,7 +53,7 @@ define("LAN_FORUM_0025", "It is now");  // LAN_37
 define("LAN_FORUM_0027", "You have read"); // LAN_196
 define("LAN_FORUM_0028", "of these posts."); // LAN_197
 define("LAN_FORUM_0029", "All new posts have been read."); // LAN_198
-define("LAN_FORUM_0030", "List tracked topics"); // LAN_393
+define("LAN_FORUM_0030", "Tracked topics"); // LAN_393
 define("LAN_FORUM_0031", "The users of this forum have made a total of [x] posts."); // LAN_192 and LAN_404
 define("LAN_FORUM_0032", "topic"); // LAN_411
 define("LAN_FORUM_0033", "topics"); // LAN_413
@@ -132,6 +132,8 @@ define("LAN_FORUM_1016", "Poll"); // FORLAN_23
 define("LAN_FORUM_1017", "Go to"); // LAN_401 (p?)
 define("LAN_FORUM_1018", "New topic");
 // define("LAN_FORUM_1019", "Are you sure?"); // new
+define("LAN_FORUM_1020", "Modify");
+
 
 // starting at LAN_FORUM_2xxx => forum_viewtopic.php
 define("LAN_FORUM_2001", "Previous topic"); // LAN_389 
@@ -214,7 +216,7 @@ define("LAN_FORUM_3026", "Post topic as"); // LAN_400 (p)
 define("LAN_FORUM_3028", "Add Poll"); // new // poll - partly in e107_plugins/poll/poll_class.php
 define("LAN_FORUM_3038", "Normal"); // LAN_1
 define("LAN_FORUM_3039", "Deactivate emoticons for this post"); // LAN_FORUMPOST_EMOTES
-define("LAN_FORUM_3040", "Enable email tracking (email sent when reply is posted)"); // LAN_380
+define("LAN_FORUM_3040", "Enable/disable email tracking (email sent when reply is posted)"); // LAN_380
 // missing 41-21
 
 // forum_posted_template
@@ -298,6 +300,17 @@ define("LAN_FORUM_7006","Result"); // LAN_FORUM_7006
 define("LAN_FORUM_7007","Found in thread"); // LAN_FORUM_7007
 define("LAN_FORUM_7008","NOT FOUND"); // LAN_FORUM_7008
 define("LAN_FORUM_7009","No uploaded files found"); // LAN_FORUM_7009
+
+
+
+// -------- Tracking Email ------------
+
+define("LAN_FORUM_8001", "A new post has been made by [x] under the topic [y] at [z].");
+define("LAN_FORUM_8002", "Please click the following link to view the full post ...");
+define("LAN_FORUM_8003", "Email notifications for this topic are now turned on.");
+define("LAN_FORUM_8004", "Email notifications for this topic are now turned off.");
+
+
 
 
 

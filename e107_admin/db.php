@@ -16,7 +16,7 @@ define("EXPORT_PATH","{e_THEME}".$theme."/install/");
 
 if(!getperms('0'))
 {
-	header('location:'.e_BASE.'index.php');
+	e107::redirect('admin');
 	exit();
 }
 
@@ -987,7 +987,7 @@ class system_tools
 		
 		if($sql->gen($query))
 		{
-			while ($row = $sql->fetch(MYSQL_NUM))
+			while ($row = $sql->fetch('num'))
 			{
 	   			 $qry[] = $row[0];
 			}
@@ -1006,7 +1006,7 @@ class system_tools
 			$mes->addError("Query Failed: ".$query);
 			return;
 		}
-		while ($row = mysql_fetch_array($result, MYSQL_NUM))
+		while ($row = mysql_fetch_array($result, 'num'))
 		{
    			 $qry[] = $row[0];
 		}
@@ -1194,7 +1194,7 @@ class system_tools
 				</colgroup>
 				<thead>
 				<tr>
-					<th>".$frm->checkbox_toggle('check-all-verify', 'xml_prefs')." ".LAN_PREFS."</th>
+					<th class='form-inline'>".$frm->checkbox_toggle('check-all-verify', 'xml_prefs')." &nbsp;".LAN_PREFS."</th>
 					<th class='right'>".DBLAN_98."</th>
 
 				</tr>
@@ -1202,6 +1202,7 @@ class system_tools
 				<tbody>
 
 				";
+				//TODO Add support for plugin Prefs.
 
 					$pref_types  = e107::getConfig()->aliases;
 					unset($pref_types['core_old'], $pref_types['core_backup']);
@@ -1230,7 +1231,7 @@ class system_tools
 				</colgroup>
 				<thead>
 				<tr>
-					<th>".$frm->checkbox_toggle('check-all-verify', 'xml_tables').DBLAN_97."</th>
+					<th class='form-inline'>".$frm->checkbox_toggle('check-all-verify', 'xml_tables')." &nbsp;".DBLAN_97."</th>
 					<th class='right'>".DBLAN_98."</th>
 
 				</tr>
@@ -1311,17 +1312,18 @@ class system_tools
 	 * Optimize SQL
 	 * @return none
 	 */
-	private function optimizesql($mySQLdefaultdb) //FIXME Use mysql class. 
+	private function optimizesql($mySQLdefaultdb) 
 	{
-	//	global $mes;
-		$result = mysql_list_tables($mySQLdefaultdb);
-		while($row = mysql_fetch_row($result))
+		$mes = e107::getMessage();
+		$tables = e107::getDb()->tables();
+		
+		foreach($tables as $table)
 		{
-			mysql_query("OPTIMIZE TABLE ".$row[0]);
+			e107::getDb()->gen("OPTIMIZE TABLE ".$table);
 		}
 
-	//	$mes->add(DBLAN_11." $mySQLdefaultdb ".DBLAN_12, E_MESSAGE_SUCCESS);
-		e107::getRender()->tablerender(DBLAN_10.SEP.DBLAN_7, DBLAN_11." $mySQLdefaultdb ".DBLAN_12);
+		$mes->addSuccess(e107::getParser()->lanVars(DBLAN_11, $mySQLdefaultdb));
+		e107::getRender()->tablerender(DBLAN_10.SEP.DBLAN_7, $mes->render());
 	}
 
 	/**
@@ -1356,8 +1358,8 @@ class system_tools
 
 	//	e107::getConfig($type)->aliases
 
-		e107::getDb()->db_Select_gen("SELECT e107_name FROM #core WHERE e107_name LIKE ('plugin_%') ORDER BY e107_name");
-		while ($row = e107::getDb()->db_Fetch())
+		e107::getDb()->gen("SELECT e107_name FROM #core WHERE e107_name LIKE ('plugin_%') ORDER BY e107_name");
+		while ($row = e107::getDb()->fetch())
 		{
 			$key = str_replace("plugin_","",$row['e107_name']);
 			$selected = (varset($_GET['type'])==$key) ? "selected='selected'" : "";
@@ -1629,7 +1631,7 @@ function db_adminmenu() //FIXME - has problems when navigation is on the LEFT in
  */
 function exportXmlFile($prefs,$tables,$package=FALSE,$debug=FALSE)
 {
-	$xml = e107::getSingleton('xmlClass');
+	$xml = e107::getXml();
 	$tp = e107::getParser();
 	$mes = e107::getMessage();
 
@@ -1700,7 +1702,7 @@ function table_list()
 
 	foreach($tables as $e107tab)
 	{
-		$count = e107::getDb()->db_Select_gen("SELECT * FROM #".$e107tab);
+		$count = e107::getDb()->gen("SELECT * FROM #".$e107tab);
 
 		if($count)
 		{
@@ -1930,8 +1932,8 @@ function verify_sql_record() // deprecated by db_verify.php ( i think).
 			$dbtables = array();
 
 			//get all tables in the db
-			$sql2->db_Select_gen("SHOW TABLES");
-			while($row2 = $sql2->db_Fetch())
+			$sql2->gen("SHOW TABLES");
+			while($row2 = $sql2->fetch())
 			{
 				$dbtables[] = $row2[0];
 			}
@@ -1951,7 +1953,7 @@ function verify_sql_record() // deprecated by db_verify.php ( i think).
 			ORDER BY r.rate_table, r.rate_itemid";
 			$data = array('type' => 'rate', 'table' => 'rate_table', 'itemid' => 'rate_itemid', 'id' => 'rate_id');
 
-			if(!$sql->db_Select_gen($query))
+			if(!$sql->gen($query))
 			{
 				$text .= verify_sql_record_displayresult(DBLAN_49, $data['type']);
 			}
@@ -1963,7 +1965,7 @@ function verify_sql_record() // deprecated by db_verify.php ( i think).
 				//array which will hold all db tables
 				$dbtables = verify_sql_record_gettables();
 
-				while($row = $sql->db_Fetch())
+				while($row = $sql->fetch())
 				{
 
 					$ctype = $data['type'];
@@ -1977,8 +1979,8 @@ function verify_sql_record() // deprecated by db_verify.php ( i think).
 					if(in_array(MPREFIX.$ctable, $dbtables))
 					{
 
-						$sql3->db_Select_gen("SHOW COLUMNS FROM ".MPREFIX.$ctable);
-						while($row3 = $sql3->db_Fetch())
+						$sql3->gen("SHOW COLUMNS FROM ".MPREFIX.$ctable);
+						while($row3 = $sql3->fetch())
 						{
 							//find the auto_increment field, since that's the most likely key used
 							if($row3['Extra'] == 'auto_increment')
@@ -2018,7 +2020,7 @@ function verify_sql_record() // deprecated by db_verify.php ( i think).
 			ORDER BY c.comment_type, c.comment_item_id";
 			$data = array('type' => 'comments', 'table' => 'comment_type', 'itemid' => 'comment_item_id', 'id' => 'comment_id');
 
-			if(!$sql->db_Select_gen($query))
+			if(!$sql->gen($query))
 			{
 				$text .= verify_sql_record_displayresult(DBLAN_49, $data['type']);
 			}
@@ -2036,7 +2038,7 @@ function verify_sql_record() // deprecated by db_verify.php ( i think).
 				$cobj = new comment();
 				$e_comment = $cobj->get_e_comment();
 
-				while($row = $sql->db_Fetch())
+				while($row = $sql->fetch())
 				{
 
 					$ctype = $data['type'];
@@ -2101,7 +2103,7 @@ function verify_sql_record() // deprecated by db_verify.php ( i think).
 							if($installed = $sql2->db_Select("plugin", "*", "plugin_path = '".$var['plugin_path']."' AND plugin_installflag = '1' "))
 							{
 								$qryp = str_replace("{NID}", $citemid, $var['qry']);
-								if(!$sql2->db_Select_gen($qryp))
+								if(!$sql2->gen($qryp))
 								{
 									$err[] = array('type' => $ctable, 'sqlid' => $cid, 'table' => $ctable, 'itemid' => $citemid, 'table_exist' => TRUE);
 								}

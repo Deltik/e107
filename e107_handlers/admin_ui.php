@@ -1035,6 +1035,12 @@ class e_admin_dispatcher
 		{
 			define('e_ADMIN_UI', true);
 		}
+
+		if(!empty($_GET['iframe']))
+		{
+			define('e_IFRAME', true);
+		}
+
 		require_once(e_ADMIN.'boot.php');
 		
 		if(null === $request || !is_object($request))
@@ -1473,7 +1479,7 @@ class e_admin_dispatcher
 		foreach($this->adminMenu as $key => $val)
 		{
 
-			if(!empty($val['perm']) && !getperms($val['perm']))
+			if(isset($val['perm']) && $val['perm']!=='' && !getperms($val['perm']))
 			{
 				continue;
 			}
@@ -1563,7 +1569,7 @@ class e_admin_dispatcher
 
 
 		if(empty($var)) return '';
-		
+
 		$request = $this->getRequest();
 		if(!$selected) $selected = $request->getMode().'/'.$request->getAction();
 		$selected = vartrue($this->adminMenuAliases[$selected], $selected);
@@ -2198,7 +2204,8 @@ class e_admin_controller
 		session_write_close();
 
 		// do redirect
-		header('Location: '.$url);
+		e107::redirect($url);
+	//	header('Location: '.$url);
 		exit;
 	}
 
@@ -2555,8 +2562,15 @@ class e_admin_controller_ui extends e_admin_controller
 	{
 		return deftrue($this->pluginTitle, $this->pluginTitle);
 	}
-	
-	
+
+	/**
+	 * Get Sort Field data
+	 * @return string
+	 */
+	public function getSortField()
+	{
+		return $this->sortField;
+	}
 	
 	/**
 	 * Get Tab data
@@ -3274,10 +3288,18 @@ class e_admin_controller_ui extends e_admin_controller
 				case 'datestamp':
 					if(!is_numeric($value))
 					{
-						if(vartrue($attributes['writeParms']))
+						if(!empty($attributes['writeParms']))
 						{
-							parse_str($attributes['writeParms'],$opt);	
+							if(is_string($attributes['writeParms']))
+							{
+								parse_str($attributes['writeParms'],$opt);
+							}
+							elseif(is_array($attributes['writeParms']))
+							{
+								$opt = $attributes['writeParms'];
+							}
 						}
+
 						
 						$format = $opt['type'] ? ('input'.$opt['type']) : 'inputdate';
 						$value = trim($value) ? e107::getDate()->toTime($value, $format) : 0;
@@ -3414,7 +3436,7 @@ class e_admin_controller_ui extends e_admin_controller
 
 			// Make query
 			$sql = e107::getDb();
-			if($qry && $sql->db_Select_gen($qry, $debug))
+			if($qry && $sql->gen($qry, $debug))
 			{
 				while ($res = $sql->db_Fetch())
 				{
@@ -3769,7 +3791,7 @@ class e_admin_controller_ui extends e_admin_controller
 			// filter for WHERE and FROM clauses
 			$searchable_types = array('text', 'textarea', 'bbarea', 'url', 'ip', 'tags', 'email', 'int', 'integer', 'str', 'string', 'number'); //method? 'user',
 			
-			if($var['type'] == 'method' && ($var['data'] == 'string' || $var['data'] == 'str'))
+			if($var['type'] == 'method' && !empty($var['data']) && ($var['data'] == 'string' || $var['data'] == 'str'))
 			{
 				$searchable_types[] = 'method';
 			}
@@ -4065,7 +4087,13 @@ class e_admin_controller_ui extends e_admin_controller
 		// Scenario I - use request owned POST data - toForm already executed
 		$model->setPostedData($_posted, null, false, false) // insert() or update() dbInsert();
 			->save(true);
-			
+
+
+
+	//	if(!empty($_POST))
+		{
+
+		}
 			
 		// Scenario II - inner model sanitize
 		//$this->getModel()->setPosted($this->convertToData($_POST, null, false, true);
@@ -4075,7 +4103,9 @@ class e_admin_controller_ui extends e_admin_controller
 		{
 			// callback (if any)
 			$new_data 		= $model->getData();
-			$id 			= $model->getId(); 
+			$id 			= $model->getId();
+
+			e107::getAddonConfig('e_admin',null,'process', $this, $id);
 
 			// Trigger Admin-ui event. 'post' 
 			if($triggerName = $this->getEventTriggerName($_posted['etrigger_submit'],'after')) // 'created' or 'updated';
@@ -4266,10 +4296,7 @@ class e_admin_ui extends e_admin_controller_ui
 			}
 		}
 
-		if(!empty($_POST))
-		{
-			e107::getAddonConfig('e_admin',null,'process', $this);
-		}
+
 
 
 	}
@@ -4925,7 +4952,8 @@ class e_admin_ui extends e_admin_controller_ui
 	 */
 	public function InlineAjaxPage()
 	{
-		$this->logajax('Field not found');
+		$this->logajax("Inline Ajax Triggered");
+
 		$protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
 		if(!vartrue($_POST['name']) || !vartrue($this->fields[$_POST['name']]))
 		{
@@ -4951,14 +4979,16 @@ class e_admin_ui extends e_admin_controller_ui
 			return;
 		}
 		
-		$this->logajax("OK?");
+
 		
 		$model = $this->getModel()->load($this->getId());
 		$_POST = array(); //reset post
 		$_POST[$_name] = $_value; // set current field only
 		
 		// generic handler - same as regular edit form submit
+
 		$this->convertToData($_POST);
+
 		$model->setPostedData($_POST, null, false, false)
 			->setParam('validateAvailable', true) // new param to control validate of available data only, reset on validate event
 			->update(true);
@@ -4970,25 +5000,32 @@ class e_admin_ui extends e_admin_controller_ui
 			header("Status: 400 Bad Request", true, 400);
 			$this->logajax("Bad Request");
 			// DEBUG e107::getMessage()->addError('Error test.', $model->getMessageStackName())->addError('Another error test.', $model->getMessageStackName());
-			
+
+
 			if(E107_DEBUG_LEVEL) $message = e107::getMessage()->get('debug', $model->getMessageStackName(), true);
 			else $message = e107::getMessage()->get('error', $model->getMessageStackName(), true);
 			
 			if(!empty($message)) echo implode(' ', $message);
-			$this->logajax($message);
+			$this->logajax(implode(' ', $message));
 			return;
 		}
 
+		//TODO ? afterInline trigger?
 		$res = $this->_manageSubmit('beforeUpdate', 'afterUpdate', 'onUpdateError', 'edit');
 	}
 
 	// Temporary - but useful. :-)
 	public function logajax($message)
 	{
-		return;
-		
+		if(e_DEBUG !== true)
+		{
+			return;
+		}
+
 		$message = date('r')."\n".$message."\n";
+		$message .= "\n_POST\n";
 		$message .= print_r($_POST,true);
+		$message .= "\n_GET\n";
 		$message .= print_r($_GET,true);
 		$message .= "---------------";
 		
@@ -5460,6 +5497,7 @@ class e_admin_ui extends e_admin_controller_ui
 	public function _setModel()
 	{
 		// try to create dataFields array if missing
+
 		if(!$this->dataFields)
 		{
 			$this->dataFields = array();
@@ -5471,7 +5509,7 @@ class e_admin_ui extends e_admin_controller_ui
 					continue;
 				}
 
-				if($att['type'] == 'comma' && (!vartrue($att['data']) || !vartrue($att['rule'])))
+				if(varset($att['type']) == 'comma' && (empty($att['data']) || empty($att['rule'])))
 				{
 					$att['data'] = 'set';
 					$att['validate'] = 'set';
@@ -5481,19 +5519,29 @@ class e_admin_ui extends e_admin_controller_ui
 					$att['rule'] = $_parms;
 					unset($_parms);
 				}
-				if(($key !== 'options' && false !== varset($att['data']) && null !== $att['type'] && !vartrue($att['noedit'])) || vartrue($att['forceSave']))
+
+				if(!empty($att['data']) && $att['data'] == 'array' && ($this->getAction() == 'inline')) // FIX for arrays being saved incorrectly with inline editing.
+				{
+					$att['data'] = 'set';
+				}
+
+				if(($key !== 'options' && false !== varset($att['data']) && null !== varset($att['type'],null) && !vartrue($att['noedit'])) || vartrue($att['forceSave']))
 				{
 					$this->dataFields[$key] = vartrue($att['data'], 'str');
 				}
+
+
+
 			}
 		}
+
 		// TODO - do it in one loop, or better - separate method(s) -> convertFields(validate), convertFields(data),...
 		if(!$this->validationRules)
 		{
 			$this->validationRules = array();
 			foreach ($this->fields as $key => $att)
 			{
-				if(null === $att['type'] || vartrue($att['noedit']))
+				if(null === varset($att['type'], null) || vartrue($att['noedit']))
 				{
 					continue;
 				}
@@ -5768,6 +5816,11 @@ class e_admin_form_ui extends e_form
 			{
 				$fields[$k]['inline'] = false;
 			}
+		}
+
+		if(!$controller->getSortField())
+		{
+			$fields['options']['sort'] = false;
 		}
 
 		// ------------------------------------------
@@ -6428,7 +6481,8 @@ class e_admin_form_ui extends e_form
 	public function getElementId()
 	{
 		$controller = $this->getController();
-		return str_replace('_', '-', ($controller->getPluginName() == 'core' ? 'core-'.$controller->getTableName() : 'plugin-'.$controller->getPluginName()));
+		$name = str_replace('_', '-', ($controller->getPluginName() == 'core' ? 'core-'.$controller->getTableName() : 'plugin-'.$controller->getPluginName()));
+		return e107::getForm()->name2id($name); // prevent invalid ids.
 	}
 
 	/**

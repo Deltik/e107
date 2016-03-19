@@ -16,7 +16,7 @@ if (!defined('e107_INIT'))
 
 if (!e107::isInstalled('banner'))
 {
-	header("location:".e_BASE."index.php"); 
+	e107::redirect();
 	exit;
 }
 
@@ -37,7 +37,8 @@ if(e_QUERY)
 	$ip = e107::getIPHandler()->getIP(FALSE);
 	$newip = (strpos($row['banner_ip'], "{$ip}^") !== FALSE) ? $row['banner_ip'] : "{$row['banner_ip']}{$ip}^"; // what does this do?
 	$sql->update("banner", "banner_clicks = banner_clicks + 1, `banner_ip` = '{$newip}' WHERE `banner_id` = '{$query_string}'");
-	header("Location: {$row['banner_clickurl']}");
+//	header("Location: {$row['banner_clickurl']}");
+	e107::redirect($row['banner_clickurl']);
 	exit;
 }
 

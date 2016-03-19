@@ -21,11 +21,12 @@ class sitelinks
 	var $sefList = array();
 
 	function getlinks($cat=1)
-	{	
+	{
+
 		$this->eLinkList = array(); // clear the array in case getlinks is called 2x on the same page.
 		$sql = e107::getDb('sqlSiteLinks');
 		$ins = ($cat > 0) ? "link_category = ".intval($cat)." AND " : "";
-		$query = "SELECT * FROM #links WHERE ".$ins."  link_class IN (".USERCLASS_LIST.") ORDER BY link_order ASC";
+		$query = "SELECT * FROM #links WHERE ".$ins."  ((link_class >= 0 AND link_class IN (".USERCLASS_LIST.")) OR (link_class < 0 AND link_class NOT IN (".USERCLASS_LIST.")) ) ORDER BY link_order ASC";
 		if($sql->gen($query))
 		{
 			while ($row = $sql->fetch())
@@ -790,7 +791,7 @@ i.e-cat_users-32{ background-position: -555px 0; width: 32px; height: 32px; }
 			
 			$array_functions = array(
 			0 => array(e_ADMIN_ABS.'administrator.php', ADLAN_8,	ADLAN_9,	'3', 2, E_16_ADMIN, E_32_ADMIN),
-			1 => array(e_ADMIN_ABS.'updateadmin.php', 	ADLAN_10,	ADLAN_11,	'', 2, E_16_ADPASS, E_32_ADPASS),
+			1 => array(e_ADMIN_ABS.'updateadmin.php', 	ADLAN_10,	ADLAN_11,	false, 2, E_16_ADPASS, E_32_ADPASS),
 			2 => array(e_ADMIN_ABS.'banlist.php', 		ADLAN_34,	ADLAN_35,	'4', 2, E_16_BANLIST, E_32_BANLIST),
 			4 => array(e_ADMIN_ABS.'cache.php', 		ADLAN_74,	ADLAN_75,	'C', 1, E_16_CACHE, E_32_CACHE),
 			5 => array(e_ADMIN_ABS.'cpage.php', 		ADLAN_42,	ADLAN_43,	'5|J', 3, E_16_CUST, E_32_CUST),
@@ -1483,10 +1484,11 @@ i.e-cat_users-32{ background-position: -555px 0; width: 32px; height: 32px; }
 	{	
 		$sql 		= e107::getDb('sqlSiteLinks');
 		$ins 		= ($cat > 0) ? "link_category = ".intval($cat)." AND " : "";
-		$query 		= "SELECT * FROM #links WHERE ".$ins."  link_class IN (".USERCLASS_LIST.") ORDER BY link_order,link_parent ASC";
-		$ret 		= array();
+		$query 		= "SELECT * FROM #links WHERE ".$ins." ((link_class >= 0 AND link_class IN (".USERCLASS_LIST.")) OR (link_class < 0 AND link_class NOT IN (".USERCLASS_LIST.")) ) ORDER BY link_order,link_parent ASC";
+
 		$outArray 	= array();
-		$data 		= $sql->retrieve($query,true);  
+		$data 		= $sql->retrieve($query,true);
+
 
 		return $this->compile($data, $outArray);		
 	}
@@ -1588,10 +1590,14 @@ i.e-cat_users-32{ background-position: -555px 0; width: 32px; height: 32px; }
 		if(isset($data['link_active'])) return $data['link_active'];
 		
 		$dbLink = e_HTTP. e107::getParser()->replaceConstants($data['link_url'], TRUE, TRUE);
-		
+	//	$dbLink =  e107::getParser()->replaceConstants($data['link_url'], TRUE, TRUE);
+
+		$dbLink = str_replace("//","/",$dbLink); // precaution for e_HTTP inclusion above.
+
 		if(E107_DBG_PATH)
 		{
-		//	e107::getMessage()->addDebug("db=".$dbLink);
+			e107::getMessage()->addDebug("<h3>Sitelinks::isActive</h3>
+				db=".$dbLink."<br />url=".e_REQUEST_URI."<br /><br />");
 		}
 	
 		if($exactMatch)

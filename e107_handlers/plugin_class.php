@@ -39,6 +39,7 @@ class e107plugin
 		'e_frontpage',
 		'e_latest', // @Deprecated  - see e_dashboard
 		'e_status', //@Deprecated  - see e_dashboard
+		'e_menu', // experimental.
 		'e_search',
 		'e_shortcode',
 		'e_module',
@@ -59,7 +60,8 @@ class e107plugin
 		'e_related',
 		'e_rss',
 		'e_upload',
-		'e_user'
+		'e_user',
+		'e_library', // For third-party libraries are defined by plugins/themes.
 	);
 
 
@@ -188,7 +190,8 @@ class e107plugin
 	/**
 	 * Returns an array containing details of all plugins in the plugin table - should normally use e107plugin::update_plugins_table() first to
 	 * make sure the table is up to date. (Primarily called from plugin manager to get lists of installed and uninstalled plugins.
-	 * @return array plugin details
+	 * @param string $path
+	 * @return int
 	 */
 	function getId($path)
 	{
@@ -196,7 +199,7 @@ class e107plugin
 
 		if ($sql->select("plugin", "plugin_id", "plugin_path = '".(string) $path."' LIMIT 1"))
 		{
-			$row = $sql->fetch(MYSQL_ASSOC);
+			$row = $sql->fetch();
 			return intval($row['plugin_id']);
 		}
 		
@@ -317,7 +320,7 @@ class e107plugin
 		if ($sql->select('plugin', "*")) // Read all the plugin DB info into an array to save lots of accesses
 
 		{
-			while ($row = $sql->fetch(MYSQL_ASSOC))
+			while ($row = $sql->fetch())
 			{
 				$pluginDBList[$row['plugin_path']] = $row;
 				$pluginDBList[$row['plugin_path']]['status'] = 'read';
@@ -1355,17 +1358,17 @@ class e107plugin
 
 	/**
 	 * Install routine for XML file
-	 * @param object $id (the number of the plugin in the DB) or the path to the plugin folder. eg. 'forum' 
-	 * @param object $function install|upgrade|uninstall|refresh (adds things that are missing, but doesn't change any existing settings)
-	 * @param object $options [optional] an array of possible options - ATM used only for uninstall:
+	 * @param mixed $id (the number of the plugin in the DB) or the path to the plugin folder. eg. 'forum'
+	 * @param string $function install|upgrade|uninstall|refresh (adds things that are missing, but doesn't change any existing settings)
+	 * @param array $options [optional] an array of possible options - ATM used only for uninstall:
 	 * 			'delete_userclasses' - to delete userclasses created
 	 * 			'delete_tables' - to delete DB tables
 	 * 			'delete_xfields' - to delete extended fields
 	 * 			'delete_ipool' - to delete icon pool entry
 	 * 			+ any defined in <pluginname>_setup.php in the uninstall_options() method.
-	 * @return TBD
+	 * @return void
 	 */
-	function install_plugin_xml($id, $function = '', $options = FALSE)
+	function install_plugin_xml($id, $function = '', $options = null)
 	{	
 			
 		$pref = e107::getPref();
@@ -1376,20 +1379,20 @@ class e107plugin
 		$error = array(); // Array of error messages
 		$canContinue = TRUE; // Clear flag if must abort part way through
 
-		if(is_string($id)) // Plugin Path. 
-		{
-			$id = $this->getId($id); 
-			$plug = $this->getinfo($id); // Get plugin info from DB		
-		}
-		elseif(is_array($id))
+		if(is_array($id)) // plugin info array
 		{
 			$plug = $id;	
-			$id = $plug['plugin_id'];
+			$id = (int) $plug['plugin_id'];
 		}
-		else 
+		elseif(is_numeric($id)) // plugin database id
 		{
 			$id = (int) $id;
 			$plug = $this->getinfo($id); // Get plugin info from DB	
+		}
+		else // Plugin Path.
+		{
+			$id = $this->getId($id);
+			$plug = $this->getinfo($id); // Get plugin info from DB
 		}
 				
 		$this->current_plug = $plug;
@@ -1430,7 +1433,7 @@ class e107plugin
 		}
 			
 		// Load install language file and set lan_global pref. 
-		$this->XmlLanguageFiles($function, $plug_vars['languageFiles'], 'pre'); // First of all, see if there's a language file specific to install
+		$this->XmlLanguageFiles($function, varset($plug_vars['languageFiles']), 'pre'); // First of all, see if there's a language file specific to install
 
 		// Next most important, if installing or upgrading, check that any dependencies are met
 		if ($canContinue && ($function != 'uninstall') && isset($plug_vars['dependencies']))
@@ -1793,7 +1796,7 @@ class e107plugin
 						}
 						break;
 					case 'mysql': // all should be lowercase
-						if (isset($dv['@attributes']['min_version']) && (version_compare($dv['@attributes']['min_version'], mysql_get_server_info(), '<=') === FALSE))
+						if (isset($dv['@attributes']['min_version']) && (version_compare($dv['@attributes']['min_version'], e107::getDb()->mySqlServerInfo(), '<=') === FALSE))
 						{
 							$error[] = EPL_ADLAN_75.$dv['@attributes']['min_version'];
 							$canContinue = FALSE;
@@ -2114,7 +2117,7 @@ class e107plugin
 					$data['title'] 		= $v['@value'];
 					$data['sef'] 		= vartrue($v['@attributes']['sef']);
 				//	$data['type'] = $v['@attributes']['type']; //TODO
-					$data['class'] 		= $this->getPerm($v['@attributes']['perm'], 'member');
+					$data['class'] 		= $this->getPerm(varset($v['@attributes']['perm']), 'member');
 					
 					$status = e107::getMedia()->createCategory($data) ? E_MESSAGE_SUCCESS : E_MESSAGE_ERROR;
 					$mes->add("Adding Media Category: {$data['category']}", $status);				
@@ -2408,6 +2411,18 @@ class e107plugin
 	//	{
 			$setup_file = e_PLUGIN.$path.'/'.$path.'_setup.php';
 	//	}
+
+
+
+		if(!is_readable($setup_file) && substr($path,-5) == "_menu")
+		{
+			$setup_file = e_PLUGIN.$path.'/'.str_replace("_menu","",$path).'_setup.php';
+		}
+
+		if(deftrue('E107_DBG_INCLUDES'))
+		{
+			e107::getMessage()->addDebug("Checking for SetUp File: ".$setup_file);
+		}
 
 		if (is_readable($setup_file))
 		{

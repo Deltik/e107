@@ -46,7 +46,7 @@ if(isset($_POST['fsearch']))
 
 if ($action == 'exit')
 {
-	header("Location: ".SITEURL);
+	e107::redirect();
 	exit;
 }
 
@@ -79,7 +79,7 @@ if ($action == "comments")
 	}
 	else // posts by IP currently disabled (see Query filtering - top of the page)
 	{
-		header("Location:".SITEURL."index.php");
+		e107::redirect();
 		exit;
 		/*$dip = $id;
 		if (strlen($dip) == 8)
@@ -155,7 +155,7 @@ elseif ($action == 'forums')
 
 	if(!$user_name)
 	{
-		header("Location:".SITEURL);
+		e107::redirect();
 		exit;
 	}
 
@@ -194,7 +194,11 @@ elseif ($action == 'forums')
 	ORDER BY p.post_datestamp DESC LIMIT {$from}, 10
 	";
 
-	if (!$sql->db_Select_gen($qry))
+	$debug = deftrue('e_DEBUG');
+
+	$sqlp = e107::getDb('posts');
+
+	if (!$sqlp->gen($qry))
 	{
 		$ftext .= "<span class='mediumtext'>".UP_LAN_8.'</span>';
 	}
@@ -204,10 +208,13 @@ elseif ($action == 'forums')
 		$vars = new e_vars();
 
 		$userposts_forum_table_string = '';
-		while(true)
+		while($row = $sqlp->fetch())
 		{
-			$row = $sql->db_Fetch(MYSQL_ASSOC);
-			if(empty($row)) break;
+
+			if(empty($row))
+			{
+				continue; 
+			}
 
 			$datestamp = $gen->convert_date($row['post_datestamp'], 'short');
 			if ($row['thread_datestamp'] == $row['post_datestamp'])
@@ -232,7 +239,8 @@ elseif ($action == 'forums')
 
 		$vars->emptyVars();
 
-		$ftotal = $sql->total_results;
+		$ftotal = $sqlp->totalResults();
+
 		$parms = $ftotal.",10,".$from.",".e_REQUEST_SELF."?[FROM].forums.".$id;
 		$vars->NEXTPREV = $ftotal ? $tp->parseTemplate("{NEXTPREV={$parms}}") : '';
 		if($vars->NEXTPREV) $vars->NEXTPREV =  str_replace('{USERPOSTS_NEXTPREV}', $vars->NEXTPREV, $USERPOSTS_TEMPLATE['np_table']);
@@ -257,7 +265,7 @@ elseif ($action == 'forums')
 }
 else
 {
-	header("Location: ".SITEURL);
+	e107::redirect();
 	exit;
 }
 

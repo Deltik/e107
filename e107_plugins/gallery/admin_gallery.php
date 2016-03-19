@@ -19,7 +19,7 @@ $eplug_admin = true;
 require_once("../../class2.php");
 if (!getperms("P") || !e107::isInstalled('gallery'))
 {
-	header("location:".e_BASE."index.php");
+	e107::redirect('admin');
 	exit() ;
 }
 
@@ -105,7 +105,7 @@ class gallery_cat_admin_ui extends e_admin_ui
 		protected $perPage 		= 10; //no limit
 		protected $listOrder = 'media_cat_order';
 
-	 	protected $listQry = "SELECT * FROM #core_media_cat WHERE media_cat_owner = 'gallery' "; // without any Order or Limit. 
+	 	protected $listQry = "SELECT * FROM `#core_media_cat` WHERE media_cat_owner = 'gallery' "; // without any Order or Limit. 
 	 	
 	//		protected $listQry = "SELECT * FROM #core_media  "; // without any Order or Limit. 
 	//	protected $editQry = "SELECT * FROM #faq_info WHERE faq_info_id = {ID}";
@@ -114,13 +114,14 @@ class gallery_cat_admin_ui extends e_admin_ui
 			'checkboxes'			=> array('title'=> '',				'type' => null, 			'width' =>'5%', 'forced'=> TRUE, 'thclass'=>'center', 'class'=>'center'),
 		//	'media_cat_id'			=> array('title'=> LAN_ID,			'type' => 'number',			'width' =>'5%', 'forced'=> TRUE, 'readonly'=>TRUE),
          	'media_cat_image' 		=> array('title'=> LAN_IMAGE,		'type' => 'image', 			'data' => 'str',		'width' => '100px',	'thclass' => 'center', 'class'=>'center', 'readParms'=>'thumb=60&thumb_urlraw=0&thumb_aw=60','readonly'=>FALSE,	'batch' => FALSE, 'filter'=>FALSE),			
-         	'media_cat_owner' 		=> array('title'=> "Owner",			'type' => 'hidden',			'width' => 'auto', 'thclass' => 'left', 'readonly'=>FALSE, 'writeParms' =>'value=gallery'),
-			'media_cat_category' 	=> array('title'=> LAN_CATEGORY,	'type' => 'hidden',			'width' => 'auto', 'thclass' => 'left', 'readonly'=>TRUE),		
+         	'media_cat_owner' 		=> array('title'=> "Owner",			'type' => 'hidden',			'nolist'=>true, 'width' => 'auto', 'thclass' => 'left', 'readonly'=>FALSE, 'writeParms' =>'value=gallery'),
+			'media_cat_category' 	=> array('title'=> LAN_CATEGORY,	'type' => 'hidden',			'nolist'=>true, 'width' => 'auto', 'thclass' => 'left', 'readonly'=>TRUE),
 			'media_cat_title' 		=> array('title'=> LAN_TITLE,		'type' => 'text',			'width' => 'auto', 'thclass' => 'left', 'readonly'=>FALSE),
+            'media_cat_sef'         => array('title'=> LAN_SEFURL,      'type'=>'text',             'inline'=>true, 'width'=>'auto',  'thclass' => 'left'),
          	'media_cat_diz' 		=> array('title'=> LAN_DESCRIPTION,	'type' => 'bbarea',			'width' => '30%', 'readParms' => 'expand=...&truncate=150&bb=1','readonly'=>FALSE), // Display name
 			'media_cat_class' 		=> array('title'=> LAN_VISIBILITY,	'type' => 'userclass',		'width' => 'auto', 'data' => 'int', 'filter'=>TRUE, 'batch'=>TRUE),
-			'media_cat_order' 		=> array('title'=> LAN_ORDER,		'type' => 'text',			'width' => '5%', 'thclass' => 'right', 'class'=> 'right' ),								
-			'options' 				=> array('title'=> LAN_OPTIONS,		'type' => null,				'width' => '10%', 'forced'=>TRUE, 'thclass' => 'center last', 'class' => 'center')
+			'media_cat_order' 		=> array('title'=> LAN_ORDER,		'type' => 'text',			'width' => 'auto', 'thclass' => 'center', 'class'=> 'center' ),
+			'options' 				=> array('title'=> LAN_OPTIONS,		'type' => null,				'width' => '5%', 'forced'=>TRUE, 'thclass' => 'center last', 'class' => 'right')
 		);
 	
 		

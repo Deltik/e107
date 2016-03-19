@@ -53,6 +53,7 @@ class social_shortcodes extends e_shortcode
 	public $var;	
 	/**
 	 * {XURL_ICONS: size=2x}
+	 * {XURL_ICONS: type=facebook,twitter,vimeo}
 	 */	
 	function sc_xurl_icons($parm='')
 	{
@@ -73,7 +74,30 @@ class social_shortcodes extends e_shortcode
  			
 		
 	
-		$class = (vartrue($parm['size'])) ?  'fa-'.$parm['size'] : '';
+		$class      = (vartrue($parm['size'])) ?  'fa-'.$parm['size'] : '';
+		$tooltipPos = vartrue($parm['tip-pos'], 'top');
+
+		if(isset($parm['tip']))
+		{
+			$tooltip = ($parm['tip'] == 'false' || empty($parm['tooltip'])) ? '' : 'e-tip';
+		}
+		else
+		{
+			$tooltip = 'e-tip';
+		}
+
+		if(!empty($parm['type']))
+		{
+			$newList = array();
+			$tmp = explode(",",$parm['type']);
+			foreach($tmp as $v)
+			{
+				$newList[$v] = $social[$v];
+
+			}
+
+			$social = $newList;
+		}
 
 		$text = '';
 
@@ -83,17 +107,14 @@ class social_shortcodes extends e_shortcode
 			if($data['href'] != '')
 			{
 
-				 $text .= '<a rel="external" href="'.$data['href'].'" class="e-tip social-icon social-'.$id.'" title="'.$data['title'].'">
-				 	<span class="fa fa-'.$id.' '.$class.'"></span>
-				 </a>';
-				 
-				 $text .= "\n";	
+				 $text .= '<a rel="external" href="'.$data['href'].'" data-tooltip-position="'.$tooltipPos.'" class="'.$tooltip.' social-icon social-'.$id.'" title="'.$data['title'].'"><span class="fa fa-'.$id.' '.$class.'"></span></a>';
+				 $text .= "\n";
 			}
 		}
 
 		if($text !='')
 		{
-			return 	'<p class="xurl-social-icons">'.$text.'</p>';
+			return 	'<p class="xurl-social-icons hidden-print">'.$text.'</p>';
 		}
 
 	}	
@@ -109,7 +130,14 @@ class social_shortcodes extends e_shortcode
 		}
 		
 		$sc = e107::getScBatch('signup');
-		$text = "<p>Sign in with:</p>";
+
+		$text = '';
+
+		if(!empty($parm['label']))
+		{
+			$text .= "<p>Sign in with:</p>";
+		}
+
 		$text .= $sc->sc_signup_xup_login($parm);
 		$text .= "
 		<div class='clearfix'></div><hr class='clearfix' />";
@@ -173,11 +201,8 @@ class social_shortcodes extends e_shortcode
 
 		$providers = $this->getProviders();
 
-
-		if(empty($parm)) // No parms so use prefs instead.
+		if(empty($parm['providers'])) // No parms so use prefs instead.
 		{
-
-			$parm['dropdown'] = ($pref['sharing_mode'] == 'dropdown') ? 1 : 0;
 			$parm['providers']  = !empty($pref['sharing_providers']) ? array_keys($pref['sharing_providers']) : array_keys($providers);
 		}
 		else
@@ -185,9 +210,12 @@ class social_shortcodes extends e_shortcode
 			$parm['providers']  = array_keys($providers);
 		}
 
+		if(empty($parm['dropdown']))
+		{
+			$parm['dropdown'] = ($pref['sharing_mode'] == 'dropdown') ? 1 : 0;
+		}
 
 
-		
 		$url 			= varset($parm['url'], 		$defaultUrl);
 		$title 			= varset($parm['title'], 	$defaultTitle) ;
 		$description 	= varset($parm['title'], 	$defaultDiz);
@@ -198,11 +226,6 @@ class social_shortcodes extends e_shortcode
 		$size			= varset($parm['size'],		'md');
 
 
-
-
-
-
-	
 		$data = array('u'=> rawurlencode($url), 't'=> rawurlencode($title), 'd'	=> rawurlencode($description), 'm' => rawurlencode($media));
 		
 		if(!vartrue($parm['dropdown']))
@@ -222,6 +245,15 @@ class social_shortcodes extends e_shortcode
 	//	$hashtags .= str_replace(array(" ",'#'),"", $hashtags); // "#mytweet";
 
 		$hashtags = $this->getHashtags($tags);
+
+		if(isset($parm['tip']))
+		{
+			$tooltip = ($parm['tip'] == 'false' || empty($parm['tooltip'])) ? '' : 'e-tip';
+		}
+		else
+		{
+			$tooltip = 'e-tip';
+		}
 
 
 
@@ -256,7 +288,7 @@ class social_shortcodes extends e_shortcode
 
 
 			
-			$opt[$k] = "<a class='e-tip btn ".$butSize." btn-default social-share'  target='_blank' title='".$val["title"]."' href='".$shareUrl."'>".$tp->toIcon($val["icon"])."</a>";	
+			$opt[$k] = "<a class='".$tooltip." btn ".$butSize." btn-default social-share'  target='_blank' title='".$val["title"]."' href='".$shareUrl."'>".$tp->toIcon($val["icon"])."</a>";
 		}
 		
 		// Show only Email, Facebook, Twitter and Google. 
@@ -268,17 +300,32 @@ class social_shortcodes extends e_shortcode
 				unset($opt[$v]);	
 			}	
 		}
+		elseif(!empty($parm['type']))
+		{
+			$newlist = array();
+			$tmp = explode(",",$parm['type']);
+			foreach($tmp as $v)
+			{
+				$newlist[$v] = $opt[$v];
+			}
+
+			$opt = $newlist;
+
+		//	print_a($opt);
+		}
 		
 		if(vartrue($parm['dropdown']))
 		{
 			$dir = ($parm['dropdown'] == 'right') ? 'pull-right' : '';
-	
-			$text = '<div class="btn-group '.$dir.'">
-				  <a class="e-tip btn btn-dropdown btn-default btn-'.$size.' dropdown-toggle" data-toggle="dropdown" href="#" title="Share">'.$label.'</a>
+			$class = varset($parm['class'],'btn-group');
+
+
+			$text = '<div class="social-share btn-group hidden-print '.$dir.'">
+				  <a class="'.$tooltip.' btn btn-dropdown btn-default btn-'.$size.' dropdown-toggle" data-toggle="dropdown" href="#" title="Share">'.$label.'</a>
 				 
-				  <ul class="dropdown-menu" role="menu"  style="min-width:435px">
+				  <ul class="dropdown-menu" role="menu" >
 				  
-				    <li><div class="btn-group" style="padding-left: 7px;">'.implode("\n",$opt).'</div></li>
+				    <li><div class="'.$class.'">'.implode("\n",$opt).'</div></li>
 				  </ul>
 				</div>';
 		
@@ -287,10 +334,9 @@ class social_shortcodes extends e_shortcode
 		else
 		{
 			
-		
-			
-			
-			return '<div class="btn-group text-center">'.implode("\n",$opt)."</div>";
+			$class = varset($parm['class'],'btn-group social-share');
+
+			return '<div class="'.$class.' text-center hidden-print">'.implode("\n",$opt)."</div>";
 		
 		}	
 		

@@ -276,7 +276,7 @@ class users_admin_ui extends e_admin_ui
  		'user_password' 	=> array('title' => LAN_PASSWORD,	'tab'=>0, 'type' => 'method',	'data'=>'str', 'width' => 'auto'), //TODO add md5 option to form handler?
 		'user_sess' 		=> array('title' => 'Session',		'tab'=>0, 'noedit'=>true, 'type' => 'text',	'width' => 'auto'), // Photo
  		'user_image' 		=> array('title' => LAN_USER_07,	'tab'=>0, 'type' => 'dropdown',	'data'=>'str', 'width' => 'auto'), // Avatar
- 		'user_email' 		=> array('title' => LAN_EMAIL,		'tab'=>0, 'type' => 'text', 'inline'=>true, 'data'=>'str',	'width' => 'auto'),
+ 		'user_email' 		=> array('title' => LAN_EMAIL,		'tab'=>0, 'type' => 'text', 'inline'=>true, 'data'=>'str',	'width' => 'auto', 'writeParms'=>array('size'=>'xxlarge')),
 		'user_hideemail' 	=> array('title' => LAN_USER_10,	'tab'=>0, 'type' => 'boolean', 'data'=>'int',	'width' => 'auto', 'thclass'=>'center', 'class'=>'center', 'filter'=>true, 'batch'=>true, 'readParms'=>'trueonly=1'),
 		'user_xup' 			=> array('title' => 'Xup',			'tab'=>0, 'noedit'=>true, 'type' => 'text', 'data'=>'str',	'width' => 'auto'),
 		'user_class' 		=> array('title' => LAN_USER_12,	'tab'=>0, 'type' => 'userclasses' , 'data'=>'str', 'inline'=>true, 'writeParms' => 'classlist=classes,new', 'readParms'=>'classlist=classes,new&defaultLabel=--', 'filter'=>true, 'batch'=>true),
@@ -288,7 +288,7 @@ class users_admin_ui extends e_admin_ui
 		'user_ip' 			=> array('title' => LAN_USER_18,	'tab'=>0, 'noedit'=>true, 'type' => 'ip',		'width' => 'auto'),
 		//	'user_prefs' 		=> array('title' => LAN_USER_20,	'type' => 'text', 	'width' => 'auto'),
 		'user_visits' 		=> array('title' => LAN_USER_21,	'tab'=>0, 'noedit'=>true, 'type' => 'int', 'width' => 'auto','thclass'=>'right','class'=>'right'),
-		'user_admin' 		=> array('title' => LAN_USER_22,	'tab'=>0, 'type' => 'boolean', 'width' => 'auto', 'thclass'=>'center', 'class'=>'center', 'filter'=>true, 'batch'=>true, 'readParms'=>'trueonly=1'),
+		'user_admin' 		=> array('title' => LAN_USER_22,	'tab'=>0, 'type' => 'method', 'width' => 'auto', 'thclass'=>'center', 'class'=>'center', 'filter'=>true, 'batch'=>true, 'readParms'=>'trueonly=1'),
 		'user_perms' 		=> array('title' => LAN_USER_23,	'tab'=>0, 'type' => 'method', 'data'=>'str',	'width' => 'auto'),
 		'user_pwchange'		=> array('title' => LAN_USER_24,	'tab'=>0, 'noedit'=>true, 'type'=>'datestamp' , 'width' => 'auto'),
 					
@@ -2288,6 +2288,27 @@ class users_admin_form_ui extends e_admin_form_ui
 {
 
 
+	function user_admin($curval,$mode, $att)
+	{
+		$att['type'] = 'boolean';
+
+//		$uid = $this->getController()->getModel()->get('user_id');
+		$perms = $this->getController()->getModel()->get('user_perms');
+
+		if($mode == 'read'  || (str_replace(".","",$perms) == '0'))
+		{
+			return $this->renderValue('user_admin',$curval,$att);
+		}
+
+		if($mode == 'write')
+		{
+			return $this->renderElement('user_admin',$curval,$att);
+		}
+
+
+	}
+
+
 	function user_extended($curval,$mode, $att)
 	{
 		if($mode == 'read')
@@ -2319,9 +2340,12 @@ class users_admin_form_ui extends e_admin_form_ui
 
 	function user_perms($curval,$mode)
 	{
-		if($mode == 'read')
+		$perms = $this->getController()->getModel()->get('user_perms');
+		$uid = $this->getController()->getModel()->get('user_id');
+
+		if($mode == 'read' || (str_replace(".","",$perms) == '0' && $uid == USERID))
 		{
-			$uid = $this->getController()->getModel()->get('user_id');
+
 			return e107::getUserPerms()->renderPerms($curval,$uid);		
 		}
 		if($mode == 'write')
@@ -2373,10 +2397,18 @@ class users_admin_form_ui extends e_admin_form_ui
 		{
 			return 	$bo;
 		}
+
+		$perms = $this->getController()->getModel()->get('user_perms');
+
 		if($mode == 'write')
 		{
-			$frm = e107::getForm();
-			return $frm->select('user_ban',$bo,$curval);	
+
+			if(str_replace(".","",$perms) == '0')
+			{
+				return "<div style='width:120px'>".vartrue($bo[$curval],' ')."</div>";
+			}
+
+			return $this->select('user_ban',$bo,$curval);
 		}	
 			
 		return vartrue($bo[$curval],' '); // ($curval == 1) ? ADMIN_TRUE_ICON : '';	
@@ -2494,13 +2526,15 @@ class users_admin_form_ui extends e_admin_form_ui
 
 		$opts = array();
 
+		$opts['usersettings'] = LAN_EDIT;
+
 		if ($row['user_perms'] != "0")
 		{
 			// disabled user info <option value='userinfo'>".USRLAN_80."</option>
 		//	$text .= "<option value='usersettings'>".LAN_EDIT."</option>";
 
 
-			$opts['usersettings'] = LAN_EDIT;
+
 
 			// login/logout As
 			if(getperms('0') && !($row['user_admin'] && getperms('0', $row['user_perms'])))

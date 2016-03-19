@@ -16,34 +16,44 @@ if(!defined('e107_INIT'))
 }
 
 e107::lan('forum', "front", true);
+
+if(!deftrue('BOOTSTRAP'))
+{
+	$bcDefs = array(
+		'LAN_413'   => 'LAN_FORUM_2046',
+		'LAN_400'   => 'LAN_EDIT',
+		'LAN_401'   => 'LAN_FORUM_2041',
+		'LAN_406'   => 'LAN_EDIT',
+		'LAN_435'   => 'LAN_DELETE',
+		'LAN_397'   => 'LAN_FORUM_2044',
+		'LAN_398'   => 'LAN_FORUM_4007'
+
+	);
+
+	e107::getLanguage()->bcDefs($bcDefs);
+}
+
+
 define('NAVIGATION_ACTIVE','forum');
 
 $e107 = e107::getInstance();
 $tp = e107::getParser();
 $ns = e107::getRender();
 
-if (!$e107->isInstalled('forum'))
+if (!e107::isInstalled('forum'))
 {
-	header('Location: '.e_BASE.'index.php');
+	e107::redirect();
 	exit;
 }
 
-if (isset($_POST['fjsubmit']))
-{
-	header('location:' . e107::getUrl()->create('forum/forum/view', array('id'=>(int) $_POST['forumjump']), 'full=1&encode=0'));
-	exit;
-}
 
 $highlight_search = isset($_POST['highlight_search']);
 
 if (!e_QUERY)
 {
-//	var_dump(e_QUERY);
-//	exit;
 	//No parameters given, redirect to forum home
 	$url = e107::url('forum','index','full');
 	e107::getRedirect()->go($url);
-//	header('Location:' . e107::getUrl()->create('forum/forum/main', array(), 'full=1&encode=0'));
 	exit;
 }
 
@@ -59,15 +69,25 @@ if(vartrue($_GET['id']) && isset($_GET['dl']))
 	exit;
 }
 
-if(e_AJAX_REQUEST && varset($_POST['action']) == 'quickreply')
+if(e_AJAX_REQUEST)
 {
-	$forum->ajaxQuickReply();
+    if(varset($_POST['action']) == 'quickreply')
+	{
+		$forum->ajaxQuickReply();
+	}
+
+	if(varset($_POST['action']) == 'track')
+	{
+		$forum->ajaxTrack();
+	}
+
+	if(MODERATOR)
+	{
+		$forum->ajaxModerate();
+	}
+
 }
-	
-if(e_AJAX_REQUEST && MODERATOR) // see javascript above. 
-{
-	$forum->ajaxModerate();
-}
+
 		
 if (isset($_GET['last']))
 {
@@ -81,11 +101,15 @@ if(isset($_GET['f']) && $_GET['f'] == 'post')
 
 $thread->init();
 
+
+/*
 if(isset($_POST['track_toggle']))
 {
 	$thread->toggle_track();
 	exit;
-}
+}*/
+
+
 
 if(!empty($_GET['f']))
 {
@@ -241,10 +265,15 @@ $tVars->NEXTPREV .= "<a class='btn btn-default btn-sm btn-small' href='" . $e107
 if ($forum->prefs->get('track') && USER)
 {
 	$img = ($thread->threadInfo['track_userid'] ? IMAGE_track : IMAGE_untrack);
+
+/*
 	$url = $e107->url->create('forum/thread/view', array('id' => $thread->threadId), 'encode=0'); // encoding could break AJAX call
+
+	$url = e107::url('forum','index');
+
 	$tVars->TRACK .= "
 			<span id='forum-track-trigger-container'>
-			<a class='btn btn-default btn-sm btn-small' href='{$url}' id='forum-track-trigger'>{$img}</a>
+			<a class='btn btn-default btn-sm btn-small e-ajax' data-target='forum-track-trigger' href='{$url}' id='forum-track-trigger'>{$img}</a>
 			</span>
 			<script type='text/javascript'>
 			e107.runOnLoad(function(){
@@ -260,11 +289,21 @@ if ($forum->prefs->get('track') && USER)
 				});
 			}, document, true);
 			</script>
-	";
+	";*/
+
+	$tVars->TRACK = "<a id='forum-track-button' href='#' title=\"".LAN_FORUM_3040."\" data-token='".e_TOKEN."' data-forum-insert='forum-track-button'  data-forum-post='".$thread->threadInfo['thread_forum_id']."' data-forum-thread='".$thread->threadInfo['thread_id']."' data-forum-action='track' name='track' class='e-tip btn btn-default' >".$img."</a>
+";
+
 }
 
+$modUser = array();
+foreach ( $forum->modArray as $user)
+{
+	$modUser[] = "<a href='".e107::getUrl()->create('user/profile/view', $user)."'>".$user['user_name']."</a>";
+}
 
-$tVars->MODERATORS = LAN_FORUM_2003.": ". implode(', ', $forum->modArray);
+$tVars->MODERATORS = LAN_FORUM_2003.": ". implode(', ', $modUser);
+unset($modUser);
 
 $tVars->THREADSTATUS = (!$thread->threadInfo['thread_active'] ? LAN_FORUM_2004 : '');
 
@@ -444,7 +483,7 @@ if ($forum->checkPerm($thread->threadInfo['thread_forum_id'], 'post') && $thread
 		</div>
 		<div class='center text-center form-group'>
 			<input type='submit' data-token='".e_TOKEN."' data-forum-insert='".$ajaxInsert."' data-forum-post='".$thread->threadInfo['thread_forum_id']."' data-forum-thread='".$threadId."' data-forum-action='quickreply' name='reply' value='".LAN_FORUM_2006. "' class='btn btn-success button' />
-			<input type='hidden' name='thread_id' value='$thread_parent' />
+			<input type='hidden' name='thread_id' value='".$threadId."' />
 		</div>
 		
 		</form>";
@@ -532,20 +571,23 @@ function showmodoptions()
 		$delId = $postInfo['post_id'];
 	}
 
+	$editQRY =  array('f'=>'edit', 'id'=>$postInfo['post_thread'], 'post'=>$postInfo['post_id']);
+	$editURL = e107::url('forum','post','', array('query'=> $editQRY));
+// $e107->url->create('forum/thread/edit', array('id' => $postInfo['post_id']))
 	$ret .= "
 		<div>
-		<a href='" . $e107->url->create('forum/thread/edit', array('id' => $postInfo['post_id']))."'>" . IMAGE_admin_edit . "</a>
+		<a class='e-tip' href='" . $editURL."' title=\"".LAN_EDIT."\">" . IMAGE_admin_edit . "</a>
 		<input type='image' " . IMAGE_admin_delete . " name='delete{$type}_{$delId}' value='thread_action' onclick=\"return confirm_('{$type}', {$postInfo['post_forum']}, {$postInfo['post_thread']}, '{$postInfo['user_name']}')\" />
 		<input type='hidden' name='mod' value='1'/>
 		";
 	if ($type == 'Thread')
 	{
-		$moveUrl     = e107::url('forum','move', array('thread_id'=>$postInfo['post_thread']));
+		$moveUrl = e107::url('forum','move', array('thread_id'=>$postInfo['post_thread']));
 		$ret .= "<a href='" . $moveUrl."'>" . IMAGE_admin_move2 . "</a>";
 	}
 	else
 	{
-		$ret .= "<a href='" . $e107->url->create('forum/thread/split', array('id' => $postInfo['post_id']))."'>" . IMAGE_admin_split . '</a>';
+		$ret .= "<a href='" . $e107->url->create('forum/thread/split', array('id' => $postInfo['post_id']))."'>" . defset('IMAGE_admin_split') . '</a>';
 
 	}
 	$ret .= "
@@ -734,12 +776,12 @@ class e107ForumThread
 			exit;
 		}
 
-		$totalPosts = $this->threadInfo['thread_total_replies']; //  + 1; // add 1 for the original post . ie. not a reply.
+		$totalPosts = $this->threadInfo['thread_total_replies'] + 1; // add +1 for the original post. ie. not a reply.
 		$this->pages = ceil(($totalPosts)  / $this->perPage);
 		$this->noInc = false;
 	}
 
-
+/*
 
 	function toggle_track()
 	{
@@ -763,6 +805,7 @@ class e107ForumThread
 			exit();
 		}
 	}
+*/
 
 	/**
 	 * @return bool|null|string|void
@@ -792,8 +835,16 @@ class e107ForumThread
 				$postInfo = $forum->postGet($postId,'post');
 				$postNum = $forum->postGetPostNum($postInfo['post_thread'], $postId);
 				$postPage = ceil($postNum / $forum->prefs->get('postspage'));
-				$url = e107::getUrl()->create('forum/thread/view', array('id' => $postInfo['post_thread'], 'name' => $postInfo['thread_name'], 'page' => $postPage), 'full=1&encode=0');
-				header('location: '.$url);
+
+				$url = e107::url('forum', 'topic', $postInfo, array(
+					'query'    => array(
+						'p' => $postPage, // proper page number
+					),
+					'fragment' => 'post-' . $postId, // jump page to post
+					'mode'=>'full'
+				));
+
+				e107::redirect($url);
 				exit;
 				break;
 

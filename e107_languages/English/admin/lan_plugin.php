@@ -126,7 +126,7 @@ define ('EPL_ADLAN_107',"Build an admin-area and xml file for:");
 define ('EPL_ADLAN_108',"Check language files:");
 define ('EPL_ADLAN_109',"Basic Info.");
 // define ('EPL_ADLAN_110',"Preferences");
-define ('EPL_ADLAN_111',"Generate");
+// define ('EPL_ADLAN_111',"Generate");// LAN_GENERATE
 define ('EPL_ADLAN_112',"Review all fields and modify if necessary.");
 define ('EPL_ADLAN_113',"Review ALL tabs before clicking 'Generate'.");
 define ('EPL_ADLAN_114',"Plugin Builder");
@@ -269,8 +269,8 @@ define ('EPL_ADLAN_227',"Scan for Changes");
 define ('EPL_ADLAN_228',"Plugin folders are scanned every [x] minutes for changes. Click the button below to scan now.");
 define ('EPL_ADLAN_229',"Refresh");
 
-define('LAN_UPGRADE_SUCCESSFUL', "Upgrade Successful");
-define('LAN_INSTALL_SUCCESSFUL', "Installation Successful");
-define('LAN_INSTALL_FAIL', "Instalation Failed");
+define('LAN_UPGRADE_SUCCESSFUL', "Upgrade successful");
+define('LAN_INSTALL_SUCCESSFUL', "Installation successful");
+define('LAN_INSTALL_FAIL', "Installation failed!");
 
 ?>

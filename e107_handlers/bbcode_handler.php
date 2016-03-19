@@ -37,6 +37,7 @@ class e_bbcode
 		$pref = e107::getPref();
 		
 		$this->core_bb = array(
+		'alert',
 		'blockquote', 'img', 'i', 'u', 'center',
 		'_br', 'color', 'size', 'code',
 		 'flash', 'link', 'email',
@@ -412,8 +413,30 @@ class e_bbcode
 		{
 			return;
 		}
+
+		if(substr(ltrim($text),0,6) == '[html]' && $type == 'img') // support for html img tags inside [html] bbcode.
+		{
+			$tmp = e107::getParser()->getTags($text,'img');
+
+			if(!empty($tmp['img']))
+			{
+				$mtch = array();
+				foreach($tmp['img'] as $k)
+				{
+					$mtch[1][] = str_replace('"','',trim($k['src']));
+					// echo $k['src']."<br />";
+				}
+
+			}
+
+		}
+		else // regular bbcode;
+		{
+			preg_match_all("/\[".$type."(?:[^\]]*)?]([^\[]*)(?:\[\/".$type."])/im",$text,$mtch);
+		}
+
 		
-		preg_match_all("/\[".$type."(?:[^\]]*)?]([^\[]*)(?:\[\/".$type."])/im",$text,$mtch);
+
 		
 		$ret = array();
 		
@@ -422,6 +445,7 @@ class e_bbcode
 			$tp = e107::getParser();
 			foreach($mtch[1] as $i)
 			{
+
 				if(substr($i,0,4)=='http')
 				{
 					$ret[] = $i;
@@ -429,6 +453,10 @@ class e_bbcode
 				elseif(substr($i,0,3)=="{e_")
 				{
 					$ret[] = $tp->replaceConstants($i,'full');
+				}
+				elseif(strpos($i,'thumb.php')!==false || strpos($i,'media/img/')!==false || strpos($i,'theme/img/')!==false) // absolute path.
+				{
+					$ret[] = SITEURLBASE.$i;
 				}
 				else
 				{
@@ -571,7 +599,7 @@ class e_bbcode
         $doc->loadHTML($html);
 
         $tmp = $doc->getElementsByTagName($tag);
-        
+
         $var = array();
 
         $attributes = array('class','style','width','height','src','alt','href');

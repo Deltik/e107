@@ -65,9 +65,7 @@ else
     $e107CorePage->setPage();
 
 	require_once(HEADERF);
-	
-	echo $e107CorePage->pageOutput['text'];
-	
+	e107::getRender()->tablerender($e107CorePage->pageOutput['caption'], $e107CorePage->pageOutput['text'], 'cpage');
 	require_once(FOOTERF);
 	exit;
 }
@@ -151,7 +149,7 @@ class pageClass
 			$this->debug .= "<b>pageSelected</b> ".$this->pageSelected." <br />";
 		}
 		
-		$books = e107::getDb()->retrieve("SELECT chapter_id,chapter_sef,chapter_name FROM #page_chapters ORDER BY chapter_id ASC" , true);
+		$books = e107::getDb()->retrieve("SELECT chapter_id,chapter_sef,chapter_name,chapter_parent FROM #page_chapters ORDER BY chapter_id ASC" , true);
 				
 		foreach($books as $row)
 		{
@@ -183,7 +181,7 @@ class pageClass
 				$id = 0;
 			break;
 		}
-		e107::setRegistry('core/pages/request', array('action' => $request, 'id' => $id));
+		e107::setRegistry('core/page/request', array('action' => $request, 'id' => $id));
 	}
 
 	
@@ -288,10 +286,10 @@ class pageClass
 	}
 
 
-
-
 	/**
-	 * Parse the Book/Chapter "listChapters' template 
+	 * Parse the Book/Chapter "listChapters' template
+	 * @param int $book
+	 * @return array
 	 */
 	function listChapters($book=1)
 	{
@@ -300,7 +298,7 @@ class pageClass
 		$frm = e107::getForm();
 		
 		// retrieve book information. 
-		if(!$brow = $sql->retrieve('page_chapters','chapter_name,chapter_template','chapter_id = '.intval($book).' AND chapter_visibility IN ('.USERCLASS_LIST.') LIMIT 1'))
+		if(!$brow = $sql->retrieve('page_chapters','chapter_name,chapter_template,chapter_meta_description','chapter_id = '.intval($book).' AND chapter_visibility IN ('.USERCLASS_LIST.') LIMIT 1'))
 		{
 			$layout = 'default';
 		}
@@ -342,7 +340,7 @@ class pageClass
 		
 		if($sql->select("page_chapters", "*", "chapter_parent = ".intval($book)."  AND chapter_visibility IN (".USERCLASS_LIST.") ORDER BY chapter_order ASC "))
 		{
-			$text .= $template['start']; 
+			$text = $tp->simpleParse($template['start'],$bvar);
 			
 			while($row = $sql->fetch())
 			{
@@ -371,7 +369,7 @@ class pageClass
 
 			}
 			
-			$text .= $template['end'];		
+			$text .= $tp->simpleParse($template['end'], $bvar);		
 			
 		}
 		else
@@ -386,7 +384,9 @@ class pageClass
 
 
 	/**
-	 * Handle Chapter Icon Glyphs. 
+	 * Handle Chapter Icon Glyphs.
+	 * @param $icon
+	 * @return null|string
 	 */
 	private function chapterIcon($icon)
 	{
@@ -394,7 +394,7 @@ class pageClass
 			
 		if(!vartrue($icon))
 		{
-			return;	
+			return null;
 		}
 					
 		if($glyph = $tp->toGlyph($icon))
@@ -435,10 +435,10 @@ class pageClass
             if($row['chapter_meta_keywords']) define('META_KEYWORDS', eHelper::formatMetaKeys($row['chapter_meta_keywords']));
         }
 		
-		$bookId = $row['chapter_parent'];
+		//$bookId = $row['chapter_parent'];
 		$bookSef = $this->getSef($row['chapter_parent']);
 		$bookTitle = $this->getName($row['chapter_parent']);
-		
+
 		$urlData = array(
 			'chapter_id' 	=> $row['chapter_id'],
 			'chapter_name'	=> $tp->toHtml($row['chapter_name']),
@@ -482,21 +482,28 @@ class pageClass
 				$pageArray = $sql->db_getList();
 
 				$header = $tp->simpleParse($template['start'],$var);
-				$text .= $tp->parseTemplate($header,true); // for parsing {SETIMAGE} etc. 
+				$text = $tp->parseTemplate($header,true); // for parsing {SETIMAGE} etc.
 				
 				foreach($pageArray as $page)
 				{
-					$data = array(
+					/*$data = array(
 						'title' => $page['page_title'],
 						'text'	=> $tp->toHtml($page['page_text'],true)
-					);
-					
+					);*/
+					$page['chapter_id']     = $page['page_chapter'];
+					$page['chapter_name']   =  $this->getName($page['page_chapter']);
+					$page['chapter_parent'] = $this->getParent($page['page_chapter']);
 					$page['chapter_sef'] = $this->getSef($page['page_chapter']); // $chapter_sef;
-					$page['book_sef'] = $bookSef; 
+
+					$page['book_id']    = $page['chapter_parent'];
+					$page['book_name']  =  $this->getName($page['chapter_parent']);
+					$page['book_sef'] = $bookSef;
 					
 				//	$this->page = $page;
 					$this->batch->setVars($page);
 				//	$this->batch->setVars(new e_vars($data))->setScVar('page', $this->page);
+
+
 					
 
 				//	$url = e107::getUrl()->create('page/view', $page, 'allow=page_id,page_sef,chapter_sef,book_sef');
@@ -534,7 +541,7 @@ class pageClass
 		LEFT JOIN #user AS u ON p.page_author = u.user_id
 		WHERE p.page_id=".intval($this->pageID); // REMOVED AND p.page_class IN (".USERCLASS_LIST.") - permission check is done later 
 
-		
+
 		
 		
 		if(!$sql->gen($query))
@@ -563,6 +570,7 @@ class pageClass
 			$this->page['np'] = '';
 			$this->page['err'] = TRUE;
 			$this->page['cachecontrol'] = false;
+
 			
 			// -------------------------------------
 			
@@ -629,23 +637,46 @@ class pageClass
 	//	$this->batch->setVars(new e_vars($ret))->setScVar('page', $this->page); // Removed in favour of $this->var (cross-compatible with menus and other parts of e107 that use the same shortcodes) 
 	
 		// ---- New --- -
-		$this->page['page_text'] 	= $this->pageToRender;
-		$this->page['np'] 			= $pagenav;
-		$this->page['rating'] 		= $rating;
-		$this->page['comments'] 	= $comments;
-		$this->page['err'] 			= FALSE;
-		$this->page['cachecontrol'] = (isset($this->page['page_password']) && !$this->page['page_password'] && $this->authorized === true);	
-		
+		$this->page['page_text'] 	    = $this->pageToRender;
+		$this->page['np'] 			    = $pagenav;
+		$this->page['rating'] 		    = $rating;
+		$this->page['comments'] 	    = $comments;
+		$this->page['err'] 			    = false;
+		$this->page['cachecontrol']     = (isset($this->page['page_password']) && !$this->page['page_password'] && $this->authorized === true);
+		$this->page['chapter_id']       = $this->page['page_chapter'];
+		$this->page['chapter_name']     = $this->getName($this->page['page_chapter']);
+		$this->page['chapter_sef']      = $this->getSef($this->page['page_chapter']);
+		$this->page['chapter_parent']   = $this->getParent($this->page['page_chapter']);
+		$this->page['book_id']          = $this->page['chapter_parent'];
+		$this->page['book_parent']      = $this->getParent($this->page['chapter_parent']);
+		$this->page['book_sef']         = $this->getSef($this->page['chapter_parent']);
+		$this->page['book_name']        = $this->getName($this->page['chapter_parent']);
 		// -----------------
-	
-	
+
+
 		$this->batch->setVars($this->page);
 		
 		
 		define('e_PAGETITLE', eHelper::formatMetaTitle($this->page['page_title']));
 		if($this->page['page_metadscr']) define('META_DESCRIPTION', eHelper::formatMetaDescription($this->page['page_metadscr']));
 		if($this->page['page_metakeys']) define('META_KEYWORDS', eHelper::formatMetaKeys($this->page['page_metakeys']));
-		//return $ret;
+
+		$tp = e107::getParser();
+
+		if($tp->isImage($this->page['menu_image']))
+		{
+			$mimg = $tp->thumbUrl($this->page['menu_image'],'w=800', false, true);
+			e107::meta('og:image',$mimg);
+		}
+
+		$images = e107::getBB()->getContent('img',$this->pageText);
+		foreach($images as $im)
+		{
+			$im = $tp->ampEncode($im);
+			e107::meta('og:image',($im));
+		}
+
+			//return $ret;
 	}
 
 	public function checkCache()
@@ -696,7 +727,6 @@ class pageClass
 	{
 		if(null !== $this->cacheData)
 		{
-			
 			return $this->renderCache();
 		}
 		if(true === $this->authorized)
@@ -705,19 +735,25 @@ class pageClass
 			$vars = $this->batch->getParserVars();
 			
 			$template = str_replace('{PAGECOMMENTS}', '[[PAGECOMMENTS]]', $this->template['start'].$this->template['body'].$this->template['end']);
-			$ret = $this->renderPage($template);
+			$arr = $this->renderPage($template);
 
 			if(!empty($this->template['page']))
 			{
-				$ret = str_replace(array('{PAGE}', '{PAGECOMMENTS}'), array($ret, '[[PAGECOMMENTS]]'), $this->template['page']);
+				$ret = str_replace(array('{PAGE}', '{PAGECOMMENTS}'), array($arr['text'], '[[PAGECOMMENTS]]'), $this->template['page']);
 			}
+			else
+			{
+				$ret = $arr['text'];
+			}
+
 			$ret = e107::getParser()->parseTemplate($ret, true, $this->batch);
 
-			if($vars->cachecontrol) $this->setCache($ret, $this->batch->sc_cpagetitle(), $this->page['page_comment_flag']);
+			if(is_object($vars) && $vars->cachecontrol) $this->setCache($ret, $this->batch->sc_cpagetitle(), $this->page['page_comment_flag']);
 			
 			//return str_replace('[[PAGECOMMENTS]]', $this->batch->cpagecomments(), $ret);
-            $this->pageOutput = array('text' => str_replace('[[PAGECOMMENTS]]', $this->batch->cpagecomments(), $ret));
-            return;
+            $this->pageOutput = array('text' => str_replace('[[PAGECOMMENTS]]', $this->batch->cpagecomments(), $ret), 'caption'=>$arr['caption'],'mode'=>$arr['mode']);
+
+            return null;
 		}
 		
 		$extend = new e_vars;
@@ -762,7 +798,8 @@ class pageClass
 		}
 
 		// return $this->renderPage($template, $extend);
-        $this->pageOutput = array('text' => $this->renderPage($template, $extend));
+		$tmp = $this->renderPage($template, $extend);
+        $this->pageOutput = array('text' => $tmp['text'], 'caption'=>$tmp['caption'], 'mode'=>$tmp['mode']);
 	}
 	
 	public function renderPage($template, $vars = null)
@@ -786,7 +823,9 @@ class pageClass
             $mode = vartrue($this->template['tableRender'], 'cpage-page-view');
         }
 
-		return e107::getRender()->tablerender($this->page['page_title'], $ret, $mode, true);
+		return array('caption'=>$this->page['page_title'], 'text'=>$ret, 'mode'=>$mode);
+
+	//	return e107::getRender()->tablerender($this->page['page_title'], $ret, $mode, true); //table style not parsed in hearder yet.
 		
 	}
 
@@ -962,7 +1001,7 @@ class pageClass
 			}
 			else
 			{
-				e107::getMessage()->addError(LAN_PAGE_7);
+				e107::getMessage()->addError(LAN_INCORRECT_PASSWORD);
 			}
 		}
 		else

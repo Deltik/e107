@@ -55,13 +55,13 @@ function loadJSAddons()
 	e107::css('core', 	'bootstrap-select/bootstrap-select.min.css', 'jquery');
 	e107::js('core', 	'bootstrap-select/bootstrap-select.min.js', 'jquery', 2);
 	
-	e107::css('core', 	'bootstrap-multiselect/css/bootstrap-multiselect.css', 'jquery');
+//	e107::css('core', 	'bootstrap-multiselect/css/bootstrap-multiselect.css', 'jquery');
 	e107::js('core', 	'bootstrap-multiselect/js/bootstrap-multiselect.js', 'jquery', 2);
 
 	// TODO: remove typeahead.
 	e107::js('core', 	'bootstrap-jasny/js/jasny-bootstrap.js', 'jquery', 2);
 	
-	e107::css('core', 	'bootstrap-datetimepicker/css/datetimepicker.css', 'jquery');
+	e107::css('core', 	'bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css', 'jquery');
 	e107::js('core', 	'bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js', 'jquery', 2);
 	
 	e107::js('core',	'jquery.h5validate.min.js','jquery',2);
@@ -75,10 +75,10 @@ function loadJSAddons()
 	//e107::css('core', 	'chosen/chosen.css', 'jquery');
 	//e107::js('core', 	'chosen/chosen.jquery.min.js', 'jquery', 2);
 	
-	e107::js('core', 	'password/jquery.pwdMeter.js', 'jquery', 2);
+	// e107::js('core', 	'password/jquery.pwdMeter.js', 'jquery', 2); // loaded in form-handler.
 	
 	// e107::css('core', 	'bootstrap-tag/bootstrap-tag.css', 'jquery');
-	e107::js('core', 	'bootstrap-tag/bootstrap-tag.js', 'jquery', 2);
+//	e107::js('core', 	'bootstrap-tag/bootstrap-tag.js', 'jquery', 2);
 	
 		
 //	e107::js("core",	"tags/jquery.tagit.js","jquery",3);
@@ -453,12 +453,12 @@ if (count($js_body_onload)) $body_onload = " onload=\"".implode(" ",$js_body_onl
 /*
  * Admin LAN
  * TODO - remove it from here
- */
+ *//*
 e107::js('inline',"
 	(".e_jshelper::toString(LAN_JSCONFIRM).").addModLan('core', 'delete_confirm');
 	(".e_jshelper::toString(LAN_DELETE).").addModLan('core', 'delete');
 
-",'prototype',5);
+",'prototype',5);*/
 
 // [JSManager] Load JS Includes - Zone 5 - After theme_head, before e107:loaded trigger
 
@@ -508,17 +508,23 @@ echo getAlert();
 		
         return '
        
-         <div id="uiModal" class="modal hide fade" tabindex="-1" role="dialog"  aria-hidden="true">
-            <div class="modal-header">
-            	<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-             	<h4 class="modal-caption">&nbsp;</h4>
-             </div>
-             <div class="modal-body">
-             <p>Loading…</p>
-             </div>
-             <div class="modal-footer">
-                <a href="#" data-dismiss="modal" class="btn btn-primary">Close</a>
-            </div>
+         <div id="uiModal" class="modal  fade" tabindex="-1" role="dialog"  aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+				<div class="modal-content">
+					<div class="modal-header">
+            			<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+             			<h4 class="modal-caption">&nbsp;</h4>
+            		 </div>
+
+             		<div class="modal-body">
+             			<p>Loading…</p>
+             		</div>
+
+             		<div class="modal-footer">
+                		<a href="#" data-dismiss="modal" class="btn btn-primary">Close</a>
+            		</div>
+               </div>
+		    </div>
         </div>';        
             
     }

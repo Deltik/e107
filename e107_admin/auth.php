@@ -24,7 +24,7 @@ define('e_CAPTCHA_FONTCOLOR','#F9A533');
 
 // Required for a clean v1.x -> v2 upgrade. 
 $core = e107::getConfig('core'); 		
-if($core->get('admintheme') != 'bootstrap' && $core->get('admintheme') != 'bootstrap3')
+if($core->get('admintheme') != 'bootstrap3')
 {
 	$core->update('admintheme','bootstrap3');
 	$core->update('adminstyle','infopanel');
@@ -35,7 +35,7 @@ if($core->get('admintheme') != 'bootstrap' && $core->get('admintheme') != 'boots
 }
 
 // Check Admin-Perms for current language and redirect if necessary. 
-if(USER && !getperms('0') && vartrue($pref['multilanguage']) && !getperms(e_LANGUAGE))
+if(USER && !getperms('0') && vartrue($pref['multilanguage']) && !getperms(e_LANGUAGE) && empty($_E107['no_language_perm_check']))
 {
 	$lng = e107::getLanguage();
 
@@ -127,7 +127,7 @@ else
 		{
 			$admin_log->e_log_event(4, __FILE__."|".__FUNCTION__."@".__LINE__, "LOGIN", LAN_ROLL_LOG_11, "U: ".$tp->toDB($_POST['authname']), FALSE, LOG_TO_ROLLING);
 			echo "<script type='text/javascript'>document.location.href='../index.php'</script>\n";
-		//	header("location: ../index.php");
+
 			e107::getRedirect()->redirect('admin.php?failed');
 			exit;
 		}
@@ -294,11 +294,31 @@ class auth
 	// NOTE: this should NOT be a template of the admin-template, however themes may style it using css. 
 	
 		$class = (e_QUERY == 'failed') ? "class='e-shake'" : "";
-			
+
+
+
 		$text = "<form id='admin-login' method='post' action='".e_SELF."' {$incChap} >
 		<div id='logo' ><img src='".e_IMAGE."logo_template_large.png' alt='login' /></div>
 		<div id='login-admin' class='center'>
-		<div {$class}>
+		<div>";
+
+		if(e_QUERY == 'failed')
+		{
+			e107::lan('core', 'login');
+			$text .= "<div class='alert alert-danger'>".LAN_LOGIN_21."</div>";
+			$text .= "<script type='text/javascript'>
+				window.setTimeout(function() {
+			    $('.alert').fadeTo(500, 0).slideUp(500, function(){
+			        $(this).remove();
+			    });
+			}, 5000);
+			</script>";
+
+		}
+
+
+
+		$text .= "
 		<div class='panel well panel-primary'>
 			<div class='panel-heading'><h3 class='panel-title'>".LAN_HEADER_04."</h3></div>
 
@@ -306,13 +326,13 @@ class auth
 		    <div class='field'>
 		    	<label for='username'>".ADLAN_89."</label> 
 		    	<input class='tbox e-tip' type='text' autofocus required='required' name='authname' placeholder='".ADLAN_89."' id='username' size='30' value='' maxlength='".varset($pref['loginname_maxlength'], 30)."' />
-		    	<div class='field-help'>".LAN_ENTER_USRNAME_EMAIL."</div>
+		    	<div class='field-help' data-placement='right'>".LAN_ENTER_USRNAME_EMAIL."</div>
 		   	</div>			
 		
 		    <div class='field'>
 		    	<label for='userpass'>".ADLAN_90."</label>
-		    	<input class='tbox e-tip' type='password' required='required' name='authpass' placeholder='".ADLAN_90."' id='userpass' size='30' value='' maxlength='30' />
-		    	<div class='field-help'>".LAN_PWD_REQUIRED."</div>
+		    	<input class='tbox e-tip'  type='password' required='required' name='authpass' placeholder='".ADLAN_90."' id='userpass' size='30' value='' maxlength='30' />
+		    	<div class='field-help' data-placement='right'>".LAN_PWD_REQUIRED."</div>
 		    </div>";
 		
 		if ($use_imagecode)
@@ -424,6 +444,7 @@ class auth
 				{
 					return $row;
 				}
+
 			}
 		}
 		return array("authfail", "reason"=>$reason);
