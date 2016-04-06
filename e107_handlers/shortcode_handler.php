@@ -80,6 +80,8 @@ class e_parse_shortcode
 	 * @var array
 	 */
 	protected $wrappers = array();
+	protected $wrapper = null;  // current wrapper being processed.
+	protected $wrapperDebugDone = false;
 	
 	/**
 	 * Former $sc_style global variable. Internally used - performance reasons
@@ -409,7 +411,7 @@ class e_parse_shortcode
 		}
 		elseif(E107_DBG_BBSC || E107_DBG_SC)
 		{
-			echo "<h3>Couldn't Load: <b>".$path." with class-name: {$className} and pluginName {$pluginName}</b></h3>";
+			echo "<div class='alert alert-danger'>Couldn't Load: <b>".$path."</b> with class-name:<b> {$className}</b> and pluginName <b>{$pluginName}</b></div>";
 			
 		}
 
@@ -754,16 +756,23 @@ class e_parse_shortcode
 			$this->addedCodes = &$extraCodes;
 			
 			// TEMPLATEID_WRAPPER support - see contact template
-			// must be registered in e_shortcode object (batch) via wrapper() method before parsing
+			// must be registered in e_shortcode object (batch) via () method before parsing
 			// Do it only once per parsing cylcle and not on every doCode() loop - performance
 			if(method_exists($this->addedCodes, 'wrapper'))
 			{
 				// $cname = get_class($this->addedCodes);
 
+
 				$tmpWrap = e107::templateWrapper($this->addedCodes->wrapper());
 				if(!empty($tmpWrap)) // FIX for #3 above.
 				{
 					$this->wrappers = array_merge($this->wrappers,$tmpWrap);
+					$this->wrapper = $this->addedCodes->getWrapperID();
+
+				}
+				elseif(E107_DBG_BBSC)
+				{
+				//	e107::getMessage()->addDebug("Wrapper Empty: ".$this->addedCodes->wrapper());
 				}
 
 			}
@@ -1092,7 +1101,22 @@ class e_parse_shortcode
 			}
 		}
 
+		if(E107_DBG_BBSC && $this->wrapperDebugDone==false && !empty($this->wrappers))
+		{
+			list($wrapTmpl, $wrapID1, $wrapID2) = explode('/',$this->wrapper,3);
 
+			$wrapActive = strtoupper($wrapTmpl)."_WRAPPER['".$wrapID1."']";
+			if(!empty($wrapID2))
+			{
+				$wrapActive .= "['".$wrapID2."']";
+			}
+
+		//	e107::getMessage()->addDebug("Active Wrapper: \$".$wrapActive);
+			$this->wrapperDebugDone = true;
+			global $db_debug;
+
+			$db_debug->logCode(3, $this->wrapper,null,  '<pre>To use, add to the '.$wrapTmpl.' template:<br />$'.$wrapActive.'[\'SHORTCODE_NAME\'] = "(html before){---}(html after)";</pre>');
+		}
 
 		if (isset($ret) && ($ret != '' || is_numeric($ret)))
 		{
@@ -1290,6 +1314,9 @@ class e_shortcode
 	 */
 	protected $scVars = null;
 
+	/**
+	 * e_shortcode constructor.
+	 */
 	public function __construct()
 	{
 		$this->scVars = new e_vars();
@@ -1316,6 +1343,13 @@ class e_shortcode
 
 		return $this;
 	}
+
+
+	public function getWrapperID()
+	{
+		return $this->wrapper;
+	}
+
 
 	/**
 	 * Set external array data to be used in the batch

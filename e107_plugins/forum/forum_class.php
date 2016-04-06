@@ -49,6 +49,7 @@ class e107forum
 //	var $fieldTypes = array();
 	private $userViewed, $permList;
 	public $modArray, $prefs;
+	private $forumData = array();
 
 	public function __construct($update= false)
 	{
@@ -75,7 +76,7 @@ class e107forum
 			$this->setDefaults();
 		}
 		
-	
+		$this->getForumData();
 //		var_dump($this->prefs);
 
 /*
@@ -102,6 +103,67 @@ class e107forum
 		$this->fieldTypes['forum']['forum_lastpost_user']	 	= 'int';
 */
 	}
+
+	/**
+	 * Grab the forum data up front to reduce LEFT JOIN usage. Currently only forum_id and forum_sef but may be expanded as needed.
+	 */
+	private function getForumData()
+	{
+		$data = e107::getDb()->retrieve("SELECT forum_id, forum_sef, forum_class FROM `#forum`", true); // no ordering for better performance.
+
+		$newData = array();
+		foreach($data as $row)
+		{
+			$id = $row['forum_id'];
+			$newData[$id ] = $row;
+		}
+		$this->forumData = $newData;
+	}
+
+	function getForumSef($threadInfo)
+	{
+
+		$forumId = !empty($threadInfo['post_forum']) ? $threadInfo['post_forum'] : $threadInfo['thread_forum_id'];
+
+		if(!empty($this->forumData[$forumId]['forum_sef']))
+		{
+				$ret =  $this->forumData[$forumId]['forum_sef'];
+		}
+		else
+		{
+			$ret = null;
+		}
+	
+		return $ret;
+
+	}
+
+	function getForumClassMembers($forumId, $type='view')
+	{
+
+		$fieldTypes = array('view' => 'forum_class');
+		$field = $fieldTypes[$type];
+
+		if(isset($this->forumData[$forumId][$field]))
+		{
+			$class = $this->forumData[$forumId]['forum_class'];
+
+			if($class == 0 || ($class > 250 && $class < 256))
+			{
+				return $class;
+			}
+
+
+			$qry = "SELECT user_id, user_name, user_class FROM `#user` WHERE FIND_IN_SET(".$class.", user_class) OR user_class = ".$class." ORDER by user_name LIMIT 50"; // FIND_IN_SET(user_class, ".$class.")
+			$users = e107::getDb()->retrieve($qry, true);
+
+			return $users;
+		}
+
+		return false;
+
+	}
+
 
 	/**
 	 * @param $user integer userid (if empty "anon" will be used)
@@ -150,7 +212,10 @@ class e107forum
 
         $array 	= $sql->retrieve('forum_post','post_user,post_attachments','post_id='.$post_id);
         $attach = e107::unserialize($array['post_attachments']);
-        $file 	= $this->getAttachmentPath($array['post_user']).varset($attach['file'][$file_id]);
+
+        $filename = is_array($attach['file'][$file_id]) ? $attach['file'][$file_id]['file'] : $attach['file'][$file_id];
+
+        $file 	= $this->getAttachmentPath($array['post_user']).varset($filename);
 
         // Check if file exists. Send file for download if it does, return 404 error code when file does not exist. 
  		if(file_exists($file))
@@ -162,6 +227,7 @@ class e107forum
  		    if(E107_DEBUG_LEVEL > 0)
 	        {
 	            echo "Couldn't find file: ".$file;
+	            print_a($attach);
 	            return;
 	        }
 
@@ -261,6 +327,8 @@ class e107forum
 			exit;
 		}
 
+		$trackByEmail = ($this->prefs->get('trackemail',true)) ? true : false;
+
 		$sql = e107::getDb();
 
 		if($sql->select('forum_track', '*', "track_userid=".USERID." AND track_thread=".$threadID))
@@ -268,7 +336,7 @@ class e107forum
 			if($this->track('del', USERID, $threadID))
 			{
 				$ret['html'] = IMAGE_untrack;
-				$ret['msg'] = LAN_FORUM_8004; // "Email notifications for this topic are now turned off. ";
+				$ret['msg'] = ($trackByEmail) ? LAN_FORUM_8004 : LAN_FORUM_8006 ; // "Email notifications for this topic are now turned off. ";
 				$ret['status'] = 'info';
 			}
 			else
@@ -282,7 +350,7 @@ class e107forum
 		{
 			if($this->track('add', USERID, $threadID))
 			{
-				$ret['msg'] = LAN_FORUM_8003; // "Email notifications for this topic are now turned on. ";
+				$ret['msg'] = ($trackByEmail) ? LAN_FORUM_8003 : LAN_FORUM_8005; // "Email notifications for this topic are now turned on. ";
 				$ret['html']  = IMAGE_track;
 				$ret['status'] = 'ok';
 			}
@@ -532,6 +600,9 @@ class e107forum
 				$this->permList[$key.'_list'] = implode(',', array_keys($tmp));
 			}
 		}
+
+
+		// print_a($this->permList);
 	}
 
 	
@@ -665,7 +736,15 @@ class e107forum
 				$forumInfo['forum_lastpost_user'] = 0;
 				$forumInfo['forum_lastpost_user_anon'] = $postInfo['post_user_anon'];
 			}
-			$threadInfo['thread_lastpost'] = $postInfo['post_datestamp'];
+
+			$threadInfo['thread_lastpost'] = !empty($postInfo['post_edit_datestamp']) ? $postInfo['post_edit_datestamp'] : $postInfo['post_datestamp'];
+
+			if(!empty($postInfo['post_edit_user']))
+			{
+				$threadInfo['thread_lastuser'] = $postInfo['post_edit_user'];
+			}
+
+
 			$threadInfo['thread_total_replies'] = 'thread_total_replies + 1';
 
 			$info = array();
@@ -675,6 +754,10 @@ class e107forum
 			$info['_FIELD_TYPES']['thread_total_replies'] = 'cmd';
 
 			$result = $sql->update('forum_thread', $info);
+
+			e107::getMessage()->addDebug("Updating Thread with: ".print_a($info,true));
+
+
 		  	e107::getEvent()->trigger('user_forum_topic_updated', $info);
 		}
 
@@ -743,7 +826,12 @@ class e107forum
 		{
 		  	e107::getEvent()->trigger('user_forum_topic_created', $info);
 			$postInfo['post_thread'] = $newThreadId;
-			$newPostId = $this->postAdd($postInfo, false);
+
+			if(!$newPostId = $this->postAdd($postInfo, false))
+			{
+				e107::getMessage()->addDebug("There was a problem: ".print_a($postInfo,true));
+			}
+
 			$this->threadMarkAsRead($newThreadId);
 			$threadInfo['thread_sef'] = $this->getThreadsef($threadInfo);
 
@@ -925,16 +1013,29 @@ class e107forum
 			$ret = array();
 			while($row = $sql->fetch())
 			{
-				$row['thread_sef'] = eHelper::title2sef($row['thread_name'],'dashl');
+
+				$row['thread_sef'] = $this->getThreadSef($row); // eHelper::title2sef($row['thread_name'],'dashl');
+
 				$ret[] = $row;
 			}
 		}
 		else
 		{
-			e107::getMessage()->addDebug("Query Failed: ".$qry);
+			e107::getMessage()->addDebug('Query failed ('.__METHOD__.' ): '.str_replace('#', MPREFIX,$qry));
 
 		}
-		if('post' === $start) { return $ret[0]; }
+
+	//	print_a($ret);
+
+		if($start === 'post')
+		{
+			$ret[0]['forum_sef']= $this->getForumSef($ret[0]);
+			$ret[0]['thread_sef'] = $this->getThreadSef($ret[0]);
+
+			return $ret[0];
+		}
+
+
 		return $ret;
 	}
 
@@ -1316,13 +1417,15 @@ class e107forum
 			$sql->select('user', 'user_id, user_name','user_admin = 1 ORDER BY user_name ASC');
 			while($row = $sql->fetch())
 			{
-				$this->modArray[$row['user_id']] = $row['user_name'];
+				$this->modArray[$row['user_id']] = $row;
 			}
 		}
 		else
 		{
-			$this->modArray = $this->e107->user_class->get_users_in_class($uclass, 'user_name', true);
+			$this->modArray = e107::getUserClass()->get_users_in_class($uclass, 'user_name', true);
 		}
+
+
 		return $this->modArray;
 	}
 
@@ -1545,8 +1648,9 @@ class e107forum
 		$tp = e107::getParser();
 
 		$trackingPref = $this->prefs->get('track');
+		$trackingEmailPref = $this->prefs->get('trackemail',true);
 
-		if(empty($trackingPref))
+		if(empty($trackingPref) || empty($trackingEmailPref))
 		{
 			return false;
 		}
@@ -1950,6 +2054,8 @@ class e107forum
 
 		$tp = e107::getParser();
 		$frm = e107::getForm();
+
+		$forumTitle = e107::pref('forum','title', LAN_PLUGIN_FORUM_NAME);
 		
 		global $FORUM_CRUMB, $forumInfo, $threadInfo, $thread;
 		global $BREADCRUMB,$BACKLINK;  // Eventually we should deprecate BACKLINK
@@ -1964,7 +2070,7 @@ class e107forum
 			$FORUM_CRUMB['sitename']['value'] = str_replace($search, $replace, $FORUM_CRUMB['sitename']['value']);
 
 			$search 	= array('{FORUMS_TITLE}', '{FORUMS_HREF}');
-			$replace 	= array(LAN_PLUGIN_FORUM_NAME, e107::url('forum','index'));
+			$replace 	= array($forumTitle, e107::url('forum','index'));
 			$FORUM_CRUMB['forums']['value'] = str_replace($search, $replace, $FORUM_CRUMB['forums']['value']);
 
 			$search 	= array('{PARENT_TITLE}', '{PARENT_HREF}');
@@ -2002,7 +2108,7 @@ class e107forum
 
 			$dfltsep = ' :: ';
 			$BREADCRUMB = "<a class='forumlink' href='".e_HTTP."index.php'>".SITENAME."</a>".$dfltsep.
-			"<a class='forumlink' href='". e107::url('forum','index')."'>".LAN_PLUGIN_FORUM_NAME."</a>".$dfltsep;
+			"<a class='forumlink' href='". e107::url('forum','index')."'>".$forumTitle."</a>".$dfltsep;
 
 			if($forumInfo['sub_parent'])
 			{
@@ -2036,7 +2142,7 @@ class e107forum
 
 		$breadcrumb = array();
 		
-		$breadcrumb[]	= array('text'=> LAN_PLUGIN_FORUM_NAME		, 'url'=> e107::url('forum','index'));
+		$breadcrumb[]	= array('text'=> $forumTitle	, 'url'=> e107::url('forum','index'));
 		
 		if($forumInfo['sub_parent'])
 		{

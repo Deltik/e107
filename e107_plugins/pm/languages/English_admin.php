@@ -26,20 +26,20 @@ define("ADLAN_PM_23", "Restrict PM use to");
 define("ADLAN_PM_24", "Number of PMs to show per page");
 define("ADLAN_PM_25", "Enable PM email notifications");
 define("ADLAN_PM_26", "Allow user to request read receipt email notifications");
-define("ADLAN_PM_27", "Allow posting of attachments");
+define("ADLAN_PM_27", "Userclass which may include attachments");
 define("ADLAN_PM_28", "Maximum attachment size");
 define("ADLAN_PM_29", "Allow sending to all members");
-define("ADLAN_PM_30", "Allow sending to multiple recipients");
-define("ADLAN_PM_31", "Userclass allowed to send to userclass");
+define("ADLAN_PM_30", "Userclass which may send to more than one user at a time");
+define("ADLAN_PM_31", "Userclass which may to send to entire userclasses");
 //define("ADLAN_PM_32", "Update Settings");
 define("ADLAN_PM_33", "Inactive (no limits)");
 define("ADLAN_PM_34", "PM counts");
 define("ADLAN_PM_35", "PM box sizes");
-define("ADLAN_PM_36", "Userclass");
+// define("ADLAN_PM_36", "Userclass");
 define("ADLAN_PM_37", "Count limits");
 define("ADLAN_PM_38", "Size limits (in KB)");
-define("ADLAN_PM_39", "Inbox");
-define("ADLAN_PM_40", "Outbox");
+// define("ADLAN_PM_39", "Inbox");
+// define("ADLAN_PM_40", "Outbox");
 define("ADLAN_PM_41", "There are currently no limits set.");
 //define("ADLAN_PM_42", "Update Limits");
 //define("ADLAN_PM_43", "Add New Limit");
@@ -75,7 +75,7 @@ define("ADLAN_PM_79", "--ORPHANS-- unused attachments deleted. --MISSING-- missi
 define("ADLAN_PM_80", "Preference formats updated");
 define("ADLAN_PM_81", "Maximum number of PMs to send immediately");
 define("ADLAN_PM_82", "If sending more than this, they are added to a queue and sent out using the cron task");
-
+define("ADLAN_PM_83", "Users may only send messages to users in this class");
 
 
 ?>

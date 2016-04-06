@@ -204,12 +204,27 @@ if(e_AJAX_REQUEST && MODERATOR) // see javascript above.
 
 if(varset($pref['track_online']))
 {
-	$member_users = $sql->db_Count('online', '(*)', "WHERE online_location REGEXP('viewforum.php.id=$forumId\$') AND online_user_id != 0");
-	$guest_users = $sql->db_Count('online', '(*)', "WHERE online_location REGEXP('viewforum.php.id=$forumId\$') AND online_user_id = 0");
+//	$member_users = $sql->count('online', '(*)', "WHERE online_location REGEXP('viewforum.php.id=$forumId\$') AND online_user_id != 0");
+//	$guest_users = $sql->count('online', '(*)', "WHERE online_location REGEXP('viewforum.php.id=$forumId\$') AND online_user_id = 0");
+	$member_users = $sql->count('online', '(*)', "WHERE online_location LIKE('".$tp->filter(e_REQUEST_URI)."%') AND online_user_id != 0");
+	$guest_users = $sql->count('online', '(*)', "WHERE online_location LIKE('".$tp->filter(e_REQUEST_URI)."%') AND online_user_id = 0");
+
+
 	$users = $member_users+$guest_users;
+
+}
+else
+{
+	$users = 0;
+	$member_users= 0;
+	$guest_users = 0;
+
+
 }
 
 require_once(HEADERF);
+
+
 $text='';
 // TODO - message batch shortcode
 if ($message)
@@ -244,13 +259,11 @@ if ($pages)
 	}
 }
 
-if($forum->checkPerm($forumId, 'post'))
+if($forum->checkPerm($forumId, 'thread')) //new thread access only.
 {
-
 	$ntUrl = e107::url('forum','post')."?f=nt&amp;id=". $forumId;
-//	$ntUrl = e107::getUrl()->create('forum/thread/new', array('id' => $forumId));
 	$fVars->NEWTHREADBUTTON = "<a href='".$ntUrl."'>".IMAGE_newthread.'</a>';
-	$fVars->NEWTHREADBUTTONX = newthreadjump($ntUrl); // "<a class='btn btn-primary' href='".."'>New Thread</a>";
+	$fVars->NEWTHREADBUTTONX = newthreadjump($ntUrl);
 }
 
 if(!BOOTSTRAP)
@@ -275,10 +288,17 @@ if(substr($forum_info['sub_parent'], 0, 1) == '*')
 }
 
 $forum->set_crumb(true, '', $fVars); // set $BREADCRUMB (and $BACKLINK)
-
+$modUser = array();
+foreach ( $modArray as $user)
+{
+	$modUser[] = "<a href='".e107::getUrl()->create('user/profile/view', $user)."'>".$user['user_name']."</a>";
+}
 $fVars->FORUMTITLE = $forumInfo['forum_name'];
-$fVars->MODERATORS = LAN_FORUM_1009.': '.implode(', ', $modArray);
+$fVars->MODERATORS = LAN_FORUM_1009.': '.implode(', ', $modUser);
 $fVars->BROWSERS = '';
+
+
+
 if(varset($pref['track_online']))
 {
 	$fVars->BROWSERS = $users.' '.($users == 1 ? LAN_FORUM_0059 : LAN_FORUM_0060).' ('.$member_users.' '.($member_users == 1 ? LAN_FORUM_0061 : LAN_FORUM_0062).", ".$guest_users." ".($guest_users == 1 ? LAN_FORUM_0063 : LAN_FORUM_0064).')';
@@ -319,6 +339,55 @@ else // v1.x
 }
 
 
+// ----------------- { VIEWABLE_BY } ---------------------------
+
+if($users = $forum->getForumClassMembers($forumId))
+{
+	$userList = array();
+	if(is_array($users))
+	{
+		foreach($users as $user)
+		{
+				$userList[] = "<a href='".e107::getUrl()->create('user/profile/view', $user)."'>".$user['user_name']."</a>";
+		}
+
+		$viewable = implode(', ', $userList);;
+	}
+	elseif($users == 0)
+	{
+		$viewable = '';
+	}
+	else
+	{
+		$viewable =  e107::getUserClass()->getFixedClassDescription($users);
+	}
+
+}
+
+if(!empty($viewable))
+{
+
+	$fVars->VIEWABLE_BY = "
+
+						<div class='panel panel-default' style='margin-top:10px'>
+							<div class='panel-heading'>Viewable by</div>
+								<div class='panel-body'>
+									".$viewable."
+								</div>
+							</div>
+						</div>
+				";
+}
+else
+{
+	$fVars->VIEWABLE_BY = '';
+}
+
+
+// ------------------------------------------------------------
+///TODO  XXX All these $fVars items need to be put into a shortcode class so they can be parsed with parms and wrappers. Big Job!
+
+
 
 $fVars->SEARCH = "
 	<form method='get' class='form-inline input-append' action='".e_BASE."search.php'>
@@ -330,14 +399,29 @@ $fVars->SEARCH = "
 	</p>
 	</form>";
 
-if($forum->checkPerm($forumId, 'post'))
-{
-	$fVars->PERMS = LAN_FORUM_0043.' - '.LAN_FORUM_0045.' - '.LAN_FORUM_0047;
-}
-else
-{
-	$fVars->PERMS = LAN_FORUM_0044.' - '.LAN_FORUM_0046.' - '.LAN_FORUM_0048;
-}
+
+	// ----- Perm Display ---
+
+	$permDisplay = array();
+
+	$permDisplay['topics'] = ($forum->checkPerm($forumId, 'thread')) ? LAN_FORUM_0043 : LAN_FORUM_0044;
+	if($forum->checkPerm($forumId, 'post'))
+	{
+		$permDisplay['post'] =LAN_FORUM_0045;
+		$permDisplay['edit'] = LAN_FORUM_0047;
+	}
+	else
+	{
+		$permDisplay['post'] =LAN_FORUM_0046;
+		$permDisplay['edit'] = LAN_FORUM_0048;
+	}
+
+
+	$fVars->PERMS = implode(' - '.$permDisplay);
+
+
+	// -------------------------------
+
 
 $sticky_threads = 0;
 $stuck = false;
@@ -447,6 +531,7 @@ echo "<script type=\"text/javascript\">
 require_once(FOOTERF);
 
 
+
 function parse_thread($thread_info)
 {
 	global $forum, $FORUM_VIEW_FORUM, $FORUM_VIEW_FORUM_STICKY, $FORUM_VIEW_FORUM_ANNOUNCE, $gen, $menu_pref, $threadsViewed;
@@ -506,11 +591,19 @@ function parse_thread($thread_info)
 	$tVars->THREADDATE = $gen->convert_date($thread_info['thread_datestamp'], 'forum');
 	
 	$tVars->THREADTIMELAPSE = $gen->computeLapse($thread_info['thread_datestamp'],time(), false, false, 'short'); //  convert_date($thread_info['thread_datestamp'], 'forum');
-	
+
+
+
+	/// ---------- Icon ----------------
+
 	$tVars->ICON = ($newflag ? IMAGE_new : IMAGE_nonew);
 	if ($tVars->REPLIES >= $forum->prefs->get('popular', 10))
 	{
 	  $tVars->ICON = ($newflag ? IMAGE_new_popular : IMAGE_nonew_popular);
+	}
+	elseif(empty($tVars->REPLIES) && defined('IMAGE_noreplies'))
+	{
+		 $tVars->ICON = IMAGE_noreplies;
 	}
 
 	$tVars->THREADTYPE = '';
@@ -528,6 +621,16 @@ function parse_thread($thread_info)
 	{
 		$tVars->ICON = IMAGE_closed;
 	}
+
+// $tVars->ICON = $tVars->REPLIES;
+
+	// ------------------------------------------------------
+
+
+
+
+
+
 
 	$thread_name = strip_tags($tp->toHTML($thread_info['thread_name'], false, 'no_hook, emotes_off'));
 	if(isset($thread_info['thread_options']['poll']))
@@ -678,11 +781,11 @@ function parse_thread($thread_info)
 		$_TEMPLATE = "<tr id='thread-{$threadId}'>".substr($_TEMPLATE,4);	
 	}
 	
-	if(!BOOTSTRAP)
+	if(!deftrue('BOOTSTRAP'))
 	{
-		$tVars->REPLIESX = 	$tVars->REPLIES;
-		$tVars->VIEWSX	 = $tVars->VIEWS;
-		$tVars->ADMINOPTIONS = $tVars->ADMIN_ICONS;
+		$tVars->REPLIESX        = 	$tVars->REPLIES;
+		$tVars->VIEWSX	        = $tVars->VIEWS;
+		$tVars->ADMINOPTIONS    = $tVars->ADMIN_ICONS;
 	}
 	
 	
@@ -908,7 +1011,9 @@ function fpages($thread_info, $replies)
 function newthreadjump($url)
 {
 	global $forum;
-	$jumpList = $forum->forumGetAllowed('view');	
+	$jumpList = $forum->forumGetAllowed('view');
+
+
 	$text = '<div class="btn-group">
     <a href="'.$url.'" class="btn btn-primary">'.LAN_FORUM_1018.'</a>
     <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">

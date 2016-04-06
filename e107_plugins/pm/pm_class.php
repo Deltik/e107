@@ -19,6 +19,13 @@ class private_message
 	protected 	$e107;
 	protected	$pmPrefs;
 
+
+	public function prefs()
+	{
+		return $this->pmPrefs;
+	}
+
+
 	/**
 	 *	Constructor
 	 *
@@ -128,6 +135,7 @@ class private_message
 		{	// Send triggered by user - may be immediate or bulk dependent on number of recipients
 			$vars['options'] = '';
 			if(isset($vars['receipt']) && $vars['receipt']) {$pm_options .= '+rr+';	}
+
 			if(isset($vars['uploaded']))
 			{
 				foreach($vars['uploaded'] as $u)
@@ -163,16 +171,20 @@ class private_message
 				'pm_option' => $pm_options,				/* Options associated with PM - '+rr' for read receipt */
 				'pm_size' => $pmsize
 				);
+
+		//	print_a($info);
+		//	print_a($vars);
 		}
 
-		if(isset($vars['to_userclass']) || isset($vars['to_array']))
+		if(!empty($vars['pm_userclass']) || isset($vars['to_array']))
 		{
-			if(isset($vars['to_userclass']))
+			if(!empty($vars['pm_userclass']))
 			{
 				$toclass = e107::getUserClass()->uc_get_classname($vars['pm_userclass']);
 				$tolist = $this->get_users_inclass($vars['pm_userclass']);
 				$ret .= LAN_PM_38.": {$toclass}<br />";
 				$class = TRUE;
+				$info['pm_sent_del'] = 1; // keep the outbox clean and limited to 1 entry when sending to an entire class.
 			}
 			else
 			{
@@ -333,12 +345,12 @@ class private_message
 
 	/**
 	 * Convinient url assembling shortcut
-	 */
+	 *//*
 	public function url($action, $params = array(), $options = array())
 	{
 		if(strpos($action, '/') === false) $action = 'view/'.$action;
 		e107::getUrl()->create('pm/'.$action, $params, $options);
-	}
+	}*/
 
 	/**
 	 *	Send an email to notify of a PM
@@ -350,20 +362,25 @@ class private_message
 	 *
 	 *	@return none
 	 */
-	function pm_send_notify($uid, $pmInfo, $pmid, $attach_count = 0)
+	function pm_send_notify($uid, $pmInfo, $pmid, $attach_count = 0) //TODO Add Template.
 	{
 		require_once(e_HANDLER.'mail.php');
 		$subject = LAN_PM_100.SITENAME;
-	//	$pmlink = $this->url('show', 'id='.$pmid, 'full=1&encode=0'); //TODO broken - replace with e_url.php configuration.
-		$pmlink = SITEURLBASE.e_PLUGIN_ABS."pm/pm.php?show.".$pmid;
+
+	//	$pmlink = SITEURLBASE.e_PLUGIN_ABS."pm/pm.php?show.".$pmid;
+
+		$pmlink = e107::url('pm','index').'?show.'.$pmid;
 		$txt = LAN_PM_101.SITENAME."\n\n";
 		$txt .= LAN_PM_102.USERNAME."\n";
 		$txt .= LAN_PM_103.$pmInfo['pm_subject']."\n";
+
 		if($attach_count > 0)
 		{
 			$txt .= LAN_PM_104.$attach_count."\n";
 		}
+
 		$txt .= LAN_PM_105."\n".$pmlink."\n";
+
 		sendemail($pmInfo['to_info']['user_email'], $subject, $txt, $pmInfo['to_info']['user_name']);
 	}
 
@@ -375,7 +392,7 @@ class private_message
 	 *
 	 * 	@return none
 	 */
-	function pm_send_receipt($pmInfo)
+	function pm_send_receipt($pmInfo) //TODO Add Template.
 	{
 		require_once(e_HANDLER.'mail.php');
 		$subject = LAN_PM_106.$pmInfo['sent_name'];
@@ -385,6 +402,7 @@ class private_message
 		$txt .= LAN_PM_108.date('l F dS Y h:i:s A', $pmInfo['pm_sent'])."\n";
 		$txt .= LAN_PM_103.$pmInfo['pm_subject']."\n";
 		$txt .= LAN_PM_105."\n".$pmlink."\n";
+
 		sendemail($pmInfo['from_email'], $subject, $txt, $pmInfo['from_name']);
 	}
 
@@ -532,14 +550,26 @@ class private_message
 	function pm_getuid($var)
 	{
 		$sql = e107::getDb();
-		$var = strip_if_magic($var);
-		$var = str_replace("'", '&#039;', trim($var));		// Display name uses entities for apostrophe
-		if($sql->select('user', 'user_id, user_name, user_class, user_email', "user_name LIKE '".$sql->escape($var, FALSE)."'"))
+
+		if(is_numeric($var))
+		{
+			$where = "user_id = ".intval($var);
+		}
+		else
+		{
+			$var = strip_if_magic($var);
+			$var = str_replace("'", '&#039;', trim($var));		// Display name uses entities for apostrophe
+			$where = "user_name LIKE '".$sql->escape($var, FALSE)."'";
+		}
+
+		if($sql->select('user', 'user_id, user_name, user_class, user_email', $where))
 		{
 			$row = $sql->fetch();
 			return $row;
 		}
-		return FALSE;
+
+		return false;
+
 	}
 
 
@@ -600,11 +630,13 @@ class private_message
 		ORDER BY pm.pm_sent DESC
 		LIMIT ".$from.", ".$limit."
 		";
+
 		if($sql->gen($qry))
 		{
-			$total_messages = $sql->total_results;		// Total number of messages
+			$total_messages = $sql->foundRows(); 		// Total number of messages
 			$ret['messages'] = $sql->db_getList();
 		}
+
 		$ret['total_messages'] = $total_messages;		// Should always be defined
 		return $ret;
 	}
@@ -632,6 +664,7 @@ class private_message
 		SELECT SQL_CALC_FOUND_ROWS pm.*, u.user_image, u.user_name FROM #private_msg AS pm
 		LEFT JOIN #user AS u ON u.user_id = pm.pm_to
 		WHERE pm.pm_from='{$uid}' AND pm.pm_sent_del = '0'
+
 		ORDER BY pm.pm_sent DESC
 		LIMIT ".$from.', '.$limit;
 		
@@ -653,28 +686,56 @@ class private_message
 	 *
 	 *	@return none
 	 *
-	 *	@todo Can we use core send routine?
 	 */
 	function send_file($pmid, $filenum)
 	{
 		$pm_info = $this->pm_get($pmid);
+
 		$attachments = explode(chr(0), $pm_info['pm_attachments']);
+
 		if(!isset($attachments[$filenum]))
 		{
-			return FALSE;
+			return false;
 		}
+
 		$fname = $attachments[$filenum];
 		list($timestamp, $fromid, $rand, $file) = explode("_", $fname, 4);
-		$filename = getcwd()."/attachments/{$fname}";
+
+
+		$filename = false; // getcwd()."/attachments/{$fname}";
+
+		$pathList = array();
+		$pathList[] = e_PLUGIN."pm/attachments/"; // getcwd()."/attachments/"; // legacy path.
+		$pathList[] = e107::getFile()->getUserDir($fromid, false, 'attachments'); // new media path.
+
+		foreach($pathList as $path)
+		{
+			$tPath = $path.$fname;
+
+			if(is_file($tPath))
+			{
+				$filename = $tPath;
+				break;
+			}
+
+		}
+
+		if(empty($filename) || !is_file($filename))
+		{
+			return false;
+		}
+
 
 		if($fromid != $pm_info['pm_from'])
 		{
-			return FALSE;
+			return false;
 		}
-		if(!is_file($filename))
-		{
-			return FALSE;
-		}
+
+	//	e107::getFile()->send($filename); // limited to Media and system folders. Won't work for legacy plugin path.
+	//	exit;
+
+
+
 		@set_time_limit(10 * 60);
 		@e107_ini_set("max_execution_time", 10 * 60);
 		while (@ob_end_clean()); // kill all output buffering else it eats server resources
@@ -718,6 +779,12 @@ class private_message
 			fclose($res);
 		}
 	}
+
+
+
+
+
+
 
 
 	

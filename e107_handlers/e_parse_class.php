@@ -3173,9 +3173,9 @@ class e_parser
     protected $allowedTags        = array('html', 'body','div','a','img','table','tr', 'td', 'th', 'tbody', 'thead', 'colgroup', 'b',
                                         'i', 'pre','code', 'strong', 'u', 'em','ul', 'ol', 'li','img','h1','h2','h3','h4','h5','h6','p',
                                         'div','pre','section','article', 'blockquote','hgroup','aside','figure','figcaption', 'abbr','span', 'audio', 'video', 'br',
-                                        'small', 'caption', 'noscript', 'hr', 'section'
+                                        'small', 'caption', 'noscript', 'hr', 'section', 'iframe'
                                    );
-    protected $scriptTags 		= array('script','applet','iframe','form','input','button'); //allowed when $pref['post_script'] is enabled.
+    protected $scriptTags 		= array('script','applet','form','input','button'); //allowed when $pref['post_script'] is enabled.
 	
 	protected $blockTags		= array('pre','div','h1','h2','h3','h4','h5','h6','blockquote'); // element includes its own line-break. 
 
@@ -3426,6 +3426,10 @@ class e_parser
 
 		$spin = null;
 		$rotate = null;
+		$fixedW = null;
+		$prefix = null;
+		$size = null;
+		$tag = 'span';
 
 	//	return print_r($fa4,true);
 		
@@ -3436,6 +3440,7 @@ class e_parser
 			$tag 	= 'i';
 			$spin   = !empty($parm['spin']) ? ' fa-spin' : '';
 			$rotate = !empty($parm['rotate']) ? ' fa-rotate-'.intval($parm['rotate']) : '';
+			$fixedW = !empty($parm['fw']) ? ' fa-fw' : "";
 		}
 		elseif(deftrue("BOOTSTRAP")) 
 		{
@@ -3456,7 +3461,7 @@ class e_parser
 
 		$idAtt = (!empty($parm['id'])) ? "id='".$parm['id']."' " : '';
 		
-		$text = "<".$tag." {$idAtt}class='".$prefix.$id.$size.$spin.$rotate."'></".$tag.">" ;
+		$text = "<".$tag." {$idAtt}class='".$prefix.$id.$size.$spin.$rotate.$fixedW."'></".$tag.">" ;
 		$text .= ($space !== false) ? $space : "";
 		
 		return $text;
@@ -4408,36 +4413,39 @@ return;
 
 		// Disable Shortcodes in pre/code
 
-       foreach($this->nodesToDisableSC as $node)
+       foreach($this->nodesToDisableSC as $key => $node)
        {
-			$value = $node->C14N();
+		    $value = $node->C14N();
 
-			if(empty($value))
-			{
-				continue;
-			}
+		    if(empty($value))
+		    {
+		        continue;
+		    }
 
-			$value = str_replace("&#xD;","\r",$value);
+		    $value = str_replace("&#xD;", "\r", $value);
 
-	        if($node->nodeName == 'pre')
-            {
-                $value = preg_replace('/^<pre[^>]*>/','',$value);
-                $value = str_replace("</pre>", "", $value);
-            }
+		    if($node->nodeName == 'pre')
+		    {
+		        $value = preg_replace('/^<pre[^>]*>/', '', $value);
+		        $value = str_replace("</pre>", "", $value);
+		        $value = str_replace("<br></br>", PHP_EOL, $value);
+		    }
 
-            if($node->nodeName == 'code')
-            {
-                $value = preg_replace('/^<code[^>]*>/','',$value);
-                $value = str_replace("</code>", "", $value);
-            }
+		    if($node->nodeName == 'code')
+		    {
+		        $value = preg_replace('/^<code[^>]*>/', '', $value);
+		        $value = str_replace("</code>", "", $value);
+		        $value = str_replace("<br></br>", PHP_EOL, $value);
+		    }
 
-			$value = str_replace('{','{{{',$value); // temporarily change {e_XXX} to {{{e_XXX}}}
-			$value = str_replace('}','}}}',$value); // temporarily change {e_XXX} to {{{e_XXX}}}
+		    $value = str_replace('{', '{{{', $value); // temporarily change {e_XXX} to {{{e_XXX}}}
+		    $value = str_replace('}', '}}}', $value); // temporarily change {e_XXX} to {{{e_XXX}}}
 
-	     //  $value = htmlentities(htmlentities($value)); // Crashes apache.
-	        $node->nodeValue =  $value; // Crashes apache sometimes FIXME! .
+		    $newNode = $doc->createElement($node->nodeName);
+		    $newNode->nodeValue = $value;
 
-        }
+		    $node->parentNode->replaceChild($newNode, $node);
+       }
 
 
 

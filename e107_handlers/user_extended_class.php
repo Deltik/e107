@@ -173,10 +173,15 @@ class e107_user_extended
 					case EUF_DATE :
 					case EUF_LANGUAGE :
 					case EUF_PREDEFINED :
-					case EUF_CHECKBOX :
+
 					case EUF_RADIO :
 						$target['_FIELD_TYPES'][$k] = 'todb';
 						break;
+
+					case EUF_CHECKBOX :
+						$target['_FIELD_TYPES'][$k] = 'array';
+						break;
+
 					
 					case EUF_INTEGER :
 						$target['_FIELD_TYPES'][$k] = 'int';
@@ -465,7 +470,7 @@ class e107_user_extended
 	  {
 	  	return false;
 	  }
-	  
+
 	  switch ($type)
 	  {
 		case EUF_INTEGER :
@@ -477,6 +482,7 @@ class e107_user_extended
 		  break;
 
 		case EUF_TEXTAREA:
+		case EUF_CHECKBOX :
 		  $db_type = 'TEXT';
 		 break;
 
@@ -486,7 +492,7 @@ class e107_user_extended
 		case EUF_DB_FIELD :
 		case EUF_LANGUAGE :
 		case EUF_PREDEFINED :
-		case EUF_CHECKBOX :
+
 		  $db_type = 'VARCHAR(255)';
 		 break;
 		 
@@ -500,7 +506,7 @@ class e107_user_extended
 		break;
 
 	  }
-	  if($type != EUF_DB_FIELD && $type != EUF_TEXTAREA && $default != '')
+	  if($type != EUF_DB_FIELD && ($type != EUF_TEXTAREA) && ($type != EUF_CHECKBOX) && !empty($default))
 	  {
 		$default_text = " DEFAULT '".$tp -> toDB($default, true)."'";
 	  }
@@ -708,10 +714,23 @@ class e107_user_extended
 		$fname 		= "ue[user_".$struct['user_extended_struct_name']."]";
 		$required	= vartrue($struct['user_extended_struct_required']) == 1 ? "required"  : "";
 		$fid		= $frm->name2id($fname);
-		
+		$placeholder = (!empty($parms[4])) ? "placeholder=\"".$tp->toAttribute($parms[4])."\"" : "";
+
+		$class = "form-control tbox";
+
+		if(!empty($parms[5]))
+		{
+			$class .= " e-tip";
+			$title = "title=\"".$tp->toAttribute($parms[5])."\"";
+		}
+		else
+		{
+			$title = '';
+		}
+
 		if(strpos($include, 'class') === FALSE)
 		{
-			$include .= " class='form-control tbox' ";
+			$include .= " class='".$class."' ";
 		}
 
 
@@ -719,7 +738,7 @@ class e107_user_extended
 		{
 			case EUF_TEXT :  //textbox
 			case EUF_INTEGER :  //integer
-		 		$ret = "<input id='{$fid}' type='text' name='{$fname}' value='{$curval}' {$include} {$required} />";
+		 		$ret = "<input id='{$fid}' type='text' name='{$fname}' {$title} value='{$curval}' {$include} {$required} {$placeholder} />";
 			
 		  		return $ret;
 		  	break;
@@ -764,6 +783,18 @@ class e107_user_extended
 		  break;
 
         case EUF_CHECKBOX : //checkboxes
+
+		//	print_a($choices);
+			if(!is_array($curval))
+			{
+				$curval = e107::unserialize($curval);
+			}
+
+
+
+			return e107::getForm()->checkboxes($fname.'[]',$choices, $curval, array('useLabelValues'=>1));
+/*
+
 			foreach($choices as $choice)
 			{
 				$choice = trim($choice);
@@ -785,7 +816,7 @@ class e107_user_extended
 				
 				if(deftrue('BOOTSTRAP'))
 				{
-					$ret .= $frm->checkbox($fname,$val,($curval == $val),array('label'=>$label, 'required'=> $struct['user_extended_struct_required']));	
+					$ret .= $frm->checkbox($fname.'[]',$val,($curval == $val), array('label'=>$label));
 				}
 				else 
 				{
@@ -793,12 +824,17 @@ class e107_user_extended
 					$ret .= "<input {$include} type='checkbox' name='{$fname}[]' value='{$val}' {$chk} /> {$label}<br />";
 				}
 			}
+
+
 			
 			return $ret;
+
+*/
+
 		break;
 
 		case EUF_DROPDOWN : //dropdown
-		  $ret = "<select {$include} id='{$fid}' name='{$fname}' {$required} >\n";
+		  $ret = "<select {$include} id='{$fid}' name='{$fname}' {$required} {$title} >\n";
 		  $ret .= "<option value=''>&nbsp;</option>\n";  // ensures that the user chose it.
 		  foreach($choices as $choice)
 		  {
@@ -859,7 +895,7 @@ class e107_user_extended
 				break;
 
 			case EUF_TEXTAREA : //textarea
-				return "<textarea id='{$fid}' {$include} name='{$fname}'  {$required} >{$curval}</textarea>";
+				return "<textarea id='{$fid}' {$include} name='{$fname}'  {$required} {$title}>{$curval}</textarea>";
 				break;
 
 			case EUF_DATE : //date
@@ -937,6 +973,11 @@ class e107_user_extended
 	}
 
 
+	/**
+	 * @param $contents
+	 * @param bool|false $no_cache
+	 * @return array
+	 */
 	function parse_extended_xml($contents, $no_cache = FALSE)
 	{
 		if($no_cache == FALSE && $this->extended_xml)
@@ -1088,6 +1129,55 @@ class e107_user_extended
 		$temp = new $className();
 		if (!method_exists($className, 'getValue')) return '???-???';
 		return $temp->getValue($value);
+	}
+
+
+	/**
+	 * Render Extended User Field Data in a read-only fashion.
+	 * @param $value
+	 * @param $type
+	 * @return array|string
+	 */
+	function renderValue($value, $type='')
+	{
+
+		//TODO FIXME Add more types.
+
+		switch($type)
+		{
+			case EUF_CHECKBOX:
+					$value = e107::unserialize($value);
+
+					if(!empty($value))
+					{
+
+						sort($value);
+						return implode('<br />',$value);
+
+					/*
+						$text = '<ul>';
+						foreach($uVal as $v)
+						{
+							$text .= "<li>".$v."</li>";
+
+						}
+						$text .= "</ul>";
+						$ret_data = $text;*/
+					}
+				break;
+
+			case EUF_DATE :		//check for 0000-00-00 in date field
+					if($value == '0000-00-00') { $value = ''; }
+					return $value;
+					break;
+
+
+			default:
+				return $value;
+				// code to be executed if n is different from all labels;
+		}
+
+
 	}
 
 }

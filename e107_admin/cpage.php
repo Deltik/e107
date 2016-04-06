@@ -560,7 +560,7 @@ class page_admin_ui extends e_admin_ui
 			  		'menu_title'	   	=> array('title'=> CUSLAN_65, 	    'forced'=> TRUE, 	'type' => 'text', 		'inline'=>true,		'width'=>'20%'),
 			
 				
-				  	'menu_name' 		=> array('title'=> CUSLAN_64, 	    'type' => 'text', 	'inline'=>true,	'width' => '10%','nolist'=>false, "help"=>"Will be listed in the Menu-Manager under this name. Must use ASCII characters only."),
+				  	'menu_name' 		=> array('title'=> CUSLAN_64, 	    'type' => 'text', 	'inline'=>false,	'width' => '10%','nolist'=>false, "help"=>"Will be listed in the Menu-Manager under this name. Must use ASCII characters only."),
 					'menu_template' 	=> array('title'=> CUSLAN_67,  	    'type' => 'dropdown', 	'width' => '15%', 'filter' => true, 'batch'=>true, 'inline'=>true, 'writeParms'=>''),
           			'menu_class' 		=> array('title'=> LAN_USERCLASS,   'type' => 'userclass', 	'data'=>'int', 'inline'=>true, 'width' => 'auto',  'filter' => true, 'batch' => true),
 		
@@ -588,7 +588,7 @@ class page_admin_ui extends e_admin_ui
 			
 			$this->fields['page_template']['writeParms'] = $this->templates;			
 			$this->fields['menu_template']['writeParms'] = e107::getLayouts('', 'menu', 'front', '', true, false); 
-			$this->fields['menu_name']['writeParms'] 	= array('pattern'=>'^[\w-]*'); 
+			$this->fields['menu_name']['writeParms'] 	= array('pattern'=>'^[a-z0-9-]*');
 			
 			
 			$tmp = e107::getLayouts('', 'chapter', 'front', '', true, false);
@@ -680,7 +680,7 @@ class page_admin_ui extends e_admin_ui
 		function beforeCreate($newdata,$olddata)
 		{
 			$newdata['menu_name'] = preg_replace('/[^\w-*]/','-',$newdata['menu_name']);
-			
+
 			if(empty($newdata['page_sef']))
 			{
 				if(!empty($newdata['page_title']))
@@ -693,13 +693,20 @@ class page_admin_ui extends e_admin_ui
 				}
 		
 			}
-			else 
+			else
 			{
 				$newdata['page_sef'] = eHelper::secureSef($newdata['page_sef']);
 			}
+
 			
 			$sef = e107::getParser()->toDB($newdata['page_sef']);
-			
+
+			if(isset($newdata['page_title']) && isset($newdata['page_title']) && empty($newdata['page_title']) && empty($newdata['menu_name']))
+			{
+				e107::getMessage()->addError(CUSLAN_79);
+				return false;
+			}
+
 			if(e107::getDb()->count('page', '(*)', "page_sef='{$sef}'"))
 			{
 				e107::getMessage()->addError(CUSLAN_57);

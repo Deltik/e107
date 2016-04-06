@@ -16,7 +16,14 @@ if(!defined('e107_INIT'))
 	require_once('../../class2.php');
 }
 
-
+if(USER)
+{
+	define('e_TINYMCE_TEMPLATE', 'member'); // allow images / videos.
+}
+else
+{
+	define('e_TINYMCE_TEMPLATE', 'public');
+}
 
 define('NAVIGATION_ACTIVE','forum'); // ??
 
@@ -219,7 +226,9 @@ class forum_post_handler
 		if(E107_DEBUG_LEVEL > 0)
 		{
 			require_once(HEADERF);
+
 			e107::getRender()->tablerender('Debug', "Redirecting to: <a href='".$url."'>".$url."</a>");
+			echo e107::getMessage()->render();
 			require_once(FOOTERF);
 			exit;
 
@@ -781,18 +790,11 @@ class forum_post_handler
 			{
 				foreach($uploadResult as $ur)
 				{
-					//$postInfo['post_entry'] .= $ur['txt'];
-					//	$_tmp = $ur['type'].'*'.$ur['file'];
-					//	if($ur['thumb']) { $_tmp .= '*'.$ur['thumb']; }
-					//	if($ur['fname']) { $_tmp .= '*'.$ur['fname']; }
-
 					$type = $ur['type'];
-					$newValues[$type][] = $ur['file'];
-					// $attachments[] = $_tmp;
+					$newValues[$type][] = array('file'=>$ur['file'], 'name'=>$ur['fname'], 'size'=>$ur['size']);
 				}
 
-				//	$postInfo['_FIELD_TYPES']['post_attachments'] = 'array';
-				$postInfo['post_attachments'] = e107::serialize($newValues); //FIXME XXX - broken encoding when saved to DB.
+				$postInfo['post_attachments'] = e107::serialize($newValues);
 			}
 //		var_dump($uploadResult);
 
@@ -988,15 +990,20 @@ class forum_post_handler
 
 			if($uploadResult = $this->processAttachments())
 			{
-				$attachments = explode(',', $this->data['post_attachments']);
+				// $attachments = explode(',', $this->data['post_attachments']);
+				$newValues   = e107::unserialize($this->data['post_attachments']);
 				foreach($uploadResult as $ur)
 				{
-					$_tmp = $ur['type'].'*'.$ur['file'];
-					if($ur['thumb']) { $_tmp .= '*'.$ur['thumb']; }
-					if($ur['fname']) { $_tmp .= '*'.$ur['fname']; }
-					$attachments[] = $_tmp;
+				//	$_tmp = $ur['type'].'*'.$ur['file'];
+				//	if($ur['thumb']) { $_tmp .= '*'.$ur['thumb']; }
+				//	if($ur['fname']) { $_tmp .= '*'.$ur['fname']; }
+				//	$attachments[] = $_tmp;
+
+					$type = $ur['type'];
+					$newValues[$type][] = array('file'=>$ur['file'], 'name'=>$ur['fname'], 'size'=>$ur['size']);
 				}
-				$postVals['post_attachments'] = implode(',', $attachments);
+				$postVals['post_attachments'] = e107::serialize($newValues);
+				// $postVals['post_attachments'] = implode(',', $attachments);
 			}
 
 			$postVals['post_edit_datestamp']    = time();
@@ -1046,9 +1053,25 @@ class forum_post_handler
 			return;
 		}
 
+		e107::getMessage()->addDebug(print_a($this->data,true));
+
 		$postVals['post_edit_datestamp']    = time();
 		$postVals['post_edit_user']         = USERID;
 		$postVals['post_entry']             = $_POST['post'];
+
+		if($uploadResult = $this->processAttachments())
+		{
+			$newValues   = e107::unserialize($this->data['post_attachments']);
+
+			foreach($uploadResult as $ur)
+			{
+				$type = $ur['type'];
+				$newValues[$type][] = array('file'=>$ur['file'], 'name'=>$ur['fname'], 'size'=>$ur['size']);
+			}
+
+			$postVals['post_attachments'] = e107::serialize($newValues);
+		}
+
 
 		$this->forumObj->postUpdate($this->data['post_id'], $postVals);
 
@@ -1074,23 +1097,33 @@ class forum_post_handler
 	}
 
 
-
-
-
+	/**
+	 * @return array
+	 */
 	function processAttachments()
 	{
 
 		$ret = array();
 
+		e107::getMessage()->addDebug("Processing Attachments");
+
+
 		if (isset($_FILES['file_userfile']['error']))
 		{
-			require_once(e_HANDLER.'upload_handler.php');
+
+				e107::getMessage()->addDebug("Attachment Detected");
 
 			// retrieve and create attachment directory if needed
-			$attachmentDir = $this->forumObj->getAttachmentPath(USERID, true);
+			//$attachmentDir = $this->forumObj->getAttachmentPath(USERID, true);
 
-			if($uploaded = process_uploaded_files($attachmentDir, 'attachment', ''))
+		//	e107::getMessage()->addDebug("Attachment Directory: ".$attachmentDir);
+
+			if($uploaded = e107::getFile()->getUploaded('attachments', 'attachment', array( 'max_file_count' => 5)))
 			{
+
+				e107::getMessage()->addDebug("Uploaded Data: ".print_a($uploaded,true));
+
+
 				foreach($uploaded as $upload)
 				{
 					//print_a($upload); exit;
@@ -1163,7 +1196,7 @@ class forum_post_handler
 						}
 						if($_txt && $_file)
 						{
-							$ret[] = array('type' => $_type, 'txt' => $_txt, 'file' => $_file, 'thumb' => $_thumb, 'fname' => $_fname);
+							$ret[] = array('type' => $_type, 'txt' => $_txt, 'file' => $_file, 'thumb' => $_thumb, 'fname' => $upload['origname'], 'size'=>$upload['size']);
 						}
 					}
 					else
@@ -1175,6 +1208,11 @@ class forum_post_handler
 				}
 
 				return $ret;
+			}
+			else
+			{
+				// e107::getMessage()->addError('There was a problem with the attachment.');
+				// e107::getMessage()->addDebug(print_a($_FILES['file_userfile'],true));
 			}
 		}
 		/* no file uploaded at all, proceed with creating the topic or reply

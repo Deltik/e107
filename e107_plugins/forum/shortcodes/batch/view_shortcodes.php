@@ -11,12 +11,15 @@ if (!defined('e107_INIT')) { exit; }
 class plugin_forum_view_shortcodes extends e_shortcode
 {
 	protected $e107;
+	protected $defaultImgAttachSize = false;
 
 	function __construct()
 	{
 		parent::__construct();
 		$this->e107 = e107::getInstance();
 		$this->forum = 	new e107forum();
+
+		$this->defaultImgAttachSize = e107::pref('forum','maxwidth',false); // don't resize here if set to 0.
 	}
 
 	function sc_top($parm='')
@@ -105,12 +108,29 @@ class plugin_forum_view_shortcodes extends e_shortcode
 			$txt = '';
 		
 			$attachArray = e107::unserialize($this->postInfo['post_attachments']);
-			//print_a($attachArray); 
+
+
+			if(!empty($this->defaultImgAttachSize))
+			{
+				$tp->thumbWidth($this->defaultImgAttachSize); // set the attachment size.
+			}
+			//print_a($attachArray);
+
 			foreach($attachArray as $type=>$vals)
 			{
 				foreach($vals as $key=>$file)
 				{
-					list($date,$user, $name) = explode("_", $file, 3); 
+					if(is_array($file))
+					{
+
+						$name = !empty($file['name']) ? $file['name'] : $file['file'];
+
+						$file = $file['file'];
+					}
+					else
+					{
+							list($date,$user, $name) = explode("_", $file, 3);
+					}
 
 					switch($type)
 					{
@@ -130,15 +150,22 @@ class plugin_forum_view_shortcodes extends e_shortcode
 						break;
 
 						case 'img': //Always use thumb to hide the hash.
-						
+
+
+
+
 						//	return $baseDir.$file; 
 							if(file_exists($baseDir.$file))
 							{
 								$thumb = $tp->thumbUrl($baseDir.$file,'x=1',true);
 								$full = $tp->thumbUrl($baseDir.$file,'w=1000&x=1', true);
-							
-								$inc = (vartrue($parm['modal'])) ? "data-toggle='modal' data-target='#".$parm['modal']."' " : "";
-								$images[] = "<a  {$inc} rel='external' href='{$full}' class='forum-attachment-image' ><img class='thumbnail' src='{$thumb}' alt='' /></a>";
+
+								//TODO Use jQuery zoom instead.
+
+								$caption = $name;
+
+								$inc = (vartrue($parm['modal'])) ? "data-modal-caption=\"".$caption."\" data-target='#uiModal' " : "";
+								$images[] = "<a  {$inc} rel='external' href='{$full}' class='forum-attachment-image e-modal' ><img class='thumbnail' src='{$thumb}' alt='' /></a>";
 							}
 							elseif(ADMIN)
 							{

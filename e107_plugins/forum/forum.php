@@ -92,7 +92,7 @@ if(isset($_GET['f']))
 $fVars = new e_vars;
 $gen = new convert;
 
-$fVars->FORUMTITLE = LAN_PLUGIN_FORUM_NAME;
+$fVars->FORUMTITLE = e107::pref('forum','title', LAN_PLUGIN_FORUM_NAME);
 $fVars->THREADTITLE = LAN_FORUM_0002;
 $fVars->REPLYTITLE = LAN_FORUM_0003;
 $fVars->LASTPOSTITLE = LAN_FORUM_0004;
@@ -262,7 +262,7 @@ if (USER && vartrue($allread) != TRUE && $total_new_threads && $total_new_thread
 $trackPref = $forum->prefs->get('track');
 if (USER && vartrue($trackPref) && e_QUERY != 'track')
 {
-	$fVars->INFO .= "<br /><a href='".e_SELF."?track'>".LAN_FORUM_0030.'</a>';
+	$fVars->INFO .= "<br /><a href='".e107::url('forum','track')."'>".LAN_FORUM_0030.'</a>';
 }
 
 $fVars->FORUMINFO = 
@@ -330,7 +330,8 @@ foreach ($forumList['parents'] as $parent)
 	$status = parse_parent($parent);
 	$pVars->PARENTSTATUS = $status;
 
-	$pVars->PARENTNAME = "<a id='".$frm->name2id($parent['forum_name'])."'>".$parent['forum_name']."</a>";
+//	$pVars->PARENTNAME = "<a id='".$frm->name2id($parent['forum_name'])."'>".$parent['forum_name']."</a>";
+	$pVars->PARENTNAME = $parent['forum_name'];
 	$forum_string .= $tp->simpleParse($FORUM_MAIN_PARENT, $pVars);
 	if (!count($forumList['forums'][$parent['forum_id']]))
 	{
@@ -338,7 +339,7 @@ foreach ($forumList['parents'] as $parent)
 	}
 	else
 	{
-//TODO: Rework the restricted string
+			//TODO: Rework the restricted string
 		foreach($forumList['forums'][$parent['forum_id']] as $f)
 		{
 			if ($f['forum_class'] == e_UC_ADMIN && ADMIN)
@@ -390,6 +391,10 @@ function parse_forum($f, $restricted_string = '')
 
 		$fVars->NEWFLAG = "<a href='".$e107->url->create('forum/forum/mfar', $f)."'>".IMAGE_new.'</a>';
 	}
+	elseif(empty($f['forum_replies']) && defined('IMAGE_noreplies'))
+	{
+		$fVars->NEWFLAG = IMAGE_noreplies;
+	}
 	else
 	{
 		$fVars->NEWFLAG = IMAGE_nonew;
@@ -412,7 +417,7 @@ function parse_forum($f, $restricted_string = '')
 	$fVars->FORUMSUBFORUMS = '';
 	
 	
-	
+
 	
 	
 	$badgeReplies = ($f['forum_replies']) ? "badge-info" : "";
@@ -648,6 +653,9 @@ function forum_track()
 	global $forum;
 
 	$trackPref = $forum->prefs->get('track');
+	$trackEmailPref = $forum->prefs->get('trackemail',true);
+
+
 	if(empty($trackPref))
 	{
 		echo "Disabled";
@@ -686,6 +694,9 @@ function forum_track()
 	$sql = e107::getDb();
 	$tp = e107::getParser();
 
+	$trackDiz = ($trackEmailPref) ? LAN_FORUM_3040 : LAN_FORUM_3041;
+
+
 	if($trackedThreadList = $forum->getTrackedThreadList(USERID, 'list'))
 	{
 
@@ -718,7 +729,7 @@ function forum_track()
 			//	$data['UNTRACK'] = "<a class='btn btn-default' href='".e_SELF."?untrack.".$row['thread_id']."'>".LAN_FORUM_0070."</a>";
 
 
-				$data['UNTRACK'] = "<a id='".$buttonId."' href='#' title=\"".LAN_FORUM_3040."\" data-token='".e_TOKEN."' data-forum-insert='".$buttonId."'  data-forum-post='".$row['thread_forum_id']."' data-forum-thread='".$row['thread_id']."' data-forum-action='track' name='track' class='btn btn-primary' >".IMAGE_track."</a>";
+				$data['UNTRACK'] = "<a id='".$buttonId."' href='#' title=\"".$trackDiz."\" data-token='".e_TOKEN."' data-forum-insert='".$buttonId."'  data-forum-post='".$row['thread_forum_id']."' data-forum-thread='".$row['thread_id']."' data-forum-action='track' name='track' class='btn btn-primary' >".IMAGE_track."</a>";
 
 				$forum_trackstring .= $tp->simpleParse($FORUM_TRACK_MAIN, $data);
 			}

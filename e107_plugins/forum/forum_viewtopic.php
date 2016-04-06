@@ -179,7 +179,7 @@ if($thread->message)
 //{
 if(e107::isInstalled('poll'))
 {
-	$_qry = 'SELECT * FROM `#polls` WHERE `poll_datestamp` = ' . $thread->threadId;
+	$_qry = 'SELECT p.*, u.user_id, u.user_name FROM `#polls` AS p LEFT JOIN `#user` AS u ON p.poll_admin_id = u.user_id WHERE p.poll_datestamp = ' . $thread->threadId;
 	if($sql->gen($_qry))
 	{
 		if (!defined('POLLCLASS'))
@@ -199,34 +199,43 @@ if(file_exists(THEME.'forum_design.php')) // legacy file
 	include_once (THEME.'forum_design.php');
 }
 
-if (!vartrue($FORUMSTART))
-{
-	if(file_exists(THEME.'forum_viewtopic_template.php'))
-	{
-		require_once(THEME.'forum_viewtopic_template.php');
-	}
-	elseif(file_exists(THEME.'templates/forum/forum_viewtopic_template.php'))
-	{
-		require_once(THEME.'templates/forum/forum_viewtopic_template.php'); 
-	}
-	elseif(file_exists(THEME.'forum_template.php'))
-	{
-		require_once(THEME.'forum_template.php');
-	}
-	else
-	{
-		require_once(e_PLUGIN.'forum/templates/forum_viewtopic_template.php');
-	}
-}
 
 
 // New in v2.x
-if(is_array($FORUM_VIEWTOPIC_TEMPLATE) && deftrue('BOOTSTRAP',false))
+if(deftrue('BOOTSTRAP',false))
 {
+	$FORUM_VIEWTOPIC_TEMPLATE = e107::getTemplate('forum','forum_viewtopic');
+
+	// print_a($FORUM_VIEWTOPIC_TEMPLATE);
+
 	$FORUMSTART 			= $FORUM_VIEWTOPIC_TEMPLATE['start'];
 	$FORUMTHREADSTYLE		= $FORUM_VIEWTOPIC_TEMPLATE['thread'];
 	$FORUMEND				= $FORUM_VIEWTOPIC_TEMPLATE['end'];
-	$FORUMREPLYSTYLE 		= $FORUM_VIEWTOPIC_TEMPLATE['replies'];	
+	$FORUMREPLYSTYLE 		= $FORUM_VIEWTOPIC_TEMPLATE['replies'];
+	$FORUMDELETEDSTYLE      = $FORUM_VIEWTOPIC_TEMPLATE['deleted'];
+}
+else
+{
+	if (!vartrue($FORUMSTART))
+	{
+		if(file_exists(THEME.'forum_viewtopic_template.php'))
+		{
+			require_once(THEME.'forum_viewtopic_template.php');
+		}
+		elseif(file_exists(THEME.'templates/forum/forum_viewtopic_template.php'))
+		{
+			require_once(THEME.'templates/forum/forum_viewtopic_template.php');
+		}
+		elseif(file_exists(THEME.'forum_template.php'))
+		{
+			require_once(THEME.'forum_template.php');
+		}
+		else
+		{
+			require_once(e_PLUGIN.'forum/templates/forum_viewtopic_template.php');
+		}
+	}
+
 }
 
 //TODO Clean up this mess!!
@@ -264,7 +273,20 @@ $tVars->NEXTPREV .= "<a class='btn btn-default btn-sm btn-small' href='" . $e107
 
 if ($forum->prefs->get('track') && USER)
 {
+	// BC Fix for old template.
+	if(!defined('IMAGE_track'))
+	{
+		define('IMAGE_track', 		'<img src="'.img_path('track.png').'" alt="'.LAN_FORUM_4009.'" title="'.LAN_FORUM_4009.'" class="icon S16 action" />');
+	}
+
+	if(!defined('IMAGE_untrack'))
+	{
+		define('IMAGE_untrack', 	'<img src="'.img_path('untrack.png').'" alt="'.LAN_FORUM_4010.'" title="'.LAN_FORUM_4010.'" class="icon S16 action" />');
+	}
+
+
 	$img = ($thread->threadInfo['track_userid'] ? IMAGE_track : IMAGE_untrack);
+
 
 /*
 	$url = $e107->url->create('forum/thread/view', array('id' => $thread->threadId), 'encode=0'); // encoding could break AJAX call
@@ -291,7 +313,10 @@ if ($forum->prefs->get('track') && USER)
 			</script>
 	";*/
 
-	$tVars->TRACK = "<a id='forum-track-button' href='#' title=\"".LAN_FORUM_3040."\" data-token='".e_TOKEN."' data-forum-insert='forum-track-button'  data-forum-post='".$thread->threadInfo['thread_forum_id']."' data-forum-thread='".$thread->threadInfo['thread_id']."' data-forum-action='track' name='track' class='e-tip btn btn-default' >".$img."</a>
+
+	$trackDiz = ($forum->prefs->get('trackemail',true)) ? LAN_FORUM_3040 : LAN_FORUM_3041;
+
+	$tVars->TRACK = "<a id='forum-track-button' href='#' title=\"".$trackDiz."\" data-token='".deftrue('e_TOKEN','')."' data-forum-insert='forum-track-button'  data-forum-post='".$thread->threadInfo['thread_forum_id']."' data-forum-thread='".$thread->threadInfo['thread_id']."' data-forum-action='track' name='track' class='e-tip btn btn-default' >".$img."</a>
 ";
 
 }
@@ -424,6 +449,9 @@ if (!$FORUMREPLYSTYLE) $FORUMREPLYSTYLE = $FORUMTHREADSTYLE;
 $alt = false;
 
 $i = $thread->page;
+
+$sc = e107::getScBatch('view', 'forum');
+
 foreach ($postList as $postInfo)
 {
 	if($postInfo['post_options'])
@@ -445,23 +473,29 @@ foreach ($postList as $postInfo)
 		$postInfo['thread_start'] = false;
 		$alt = !$alt;
 
+		$sc->setScVar('postInfo', $postInfo);
+
 		if($postInfo['post_status'])
 		{
 			$_style = (isset($FORUMDELETEDSTYLE_ALT) && $alt ? $FORUMDELETEDSTYLE_ALT : $FORUMDELETEDSTYLE);
+			$sc->wrapper('forum_viewtopic/deleted');
 		}
 		else
 		{
 			$_style = (isset($FORUMREPLYSTYLE_ALT) && $alt ? $FORUMREPLYSTYLE_ALT : $FORUMREPLYSTYLE);
+			$sc->wrapper('forum_viewtopic/replies');
 		}
-
-		$forum_shortcodes = e107::getScBatch('view', 'forum')->setScVar('postInfo', $postInfo);
-		$forrep .= $tp->parseTemplate($_style, true, $forum_shortcodes) . "\n";
+		
+	//	$forum_shortcodes = e107::getScBatch('view', 'forum')->setScVar('postInfo', $postInfo)->wrapper('forum/viewtopic');
+		$forrep .= $tp->parseTemplate($_style, true, $sc) . "\n";
 	}
 	else
 	{
 		$postInfo['thread_start'] = true;
-		$forum_shortcodes = e107::getScBatch('view', 'forum')->setScVar('postInfo', $postInfo);
-		$forthr = $tp->parseTemplate($FORUMTHREADSTYLE, true, vartrue($forum_shortcodes)) . "\n";
+		$sc->setScVar('postInfo', $postInfo);
+		$sc->wrapper('forum_viewtopic/thread');
+	//	$forum_shortcodes = e107::getScBatch('view', 'forum')->setScVar('postInfo', $postInfo)->wrapper('forum/viewtopic');
+		$forthr = $tp->parseTemplate($FORUMTHREADSTYLE, true, vartrue($sc)) . "\n";
 	}
 }
 unset($loop_uid);
@@ -531,7 +565,8 @@ require_once (HEADERF);
 
 if ($forum->prefs->get('enclose'))
 {
-	$ns->tablerender(LAN_FORUM_1001, $forumstring, $mes->render(). array('forum_viewtopic', 'main'));
+	$forumTitle = e107::pref('forum','title', LAN_PLUGIN_FORUM_NAME);
+	$ns->tablerender($forumTitle, $mes->render().$forumstring,  array('forum_viewtopic', 'main'));
 }
 else
 {

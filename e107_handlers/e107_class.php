@@ -1863,6 +1863,93 @@ class e107
 		$jshandler->resetDependency();
 	}
 
+
+	/**
+	 * Throw log/info/warnings/errors to the Chrome/Firefox Console.
+	 * @param $name
+	 * @param null $var
+	 * @param string $type
+	 */
+	public static function debug($name, $var = null, $type = 'log')
+	{
+
+	    $nl = "\r\n";
+	//	echo "alert('hi');";
+		$text = '';
+
+	    switch($type) {
+	        case 'log':
+	           $text .= 'console.log("'.$name.'");'.$nl;
+	        break;
+	        case 'info':
+	           $text .= 'console.info("'.$name.'");'.$nl;
+	        break;
+	        case 'warning':
+	           $text .= 'console.warn("'.$name.'");'.$nl;
+	        break;
+	        case 'error':
+	           $text .= 'console.error("'.$name.'");'.$nl;
+	        break;
+	    }
+
+	    if (!empty($var))
+	    {
+	        if (is_object($var) || is_array($var))
+	        {
+	            $object = json_encode($var);
+
+	           $text .= 'var object'.preg_replace('~[^A-Z|0-9]~i',"_",$name).' = \''.str_replace("'","\'",$object).'\';'.$nl;
+	           $text .= 'var val'.preg_replace('~[^A-Z|0-9]~i',"_",$name).' = eval("(" + object'.preg_replace('~[^A-Z|0-9]~i',"_",$name).' + ")" );'.$nl;
+
+	            switch($type)
+	            {
+	                case 'log':
+	                   $text .= 'console.debug(val'.preg_replace('~[^A-Z|0-9]~i',"_",$name).');'.$nl;
+	                break;
+	                case 'info':
+	                   $text .= 'console.info(val'.preg_replace('~[^A-Z|0-9]~i',"_",$name).');'.$nl;
+	                break;
+	                case 'warning':
+	                   $text .= 'console.warn(val'.preg_replace('~[^A-Z|0-9]~i',"_",$name).');'.$nl;
+	                break;
+	                case 'error':
+	                   $text .= 'console.error(val'.preg_replace('~[^A-Z|0-9]~i',"_",$name).');'.$nl;
+	                break;
+	            }
+	        }
+	        else
+	        {
+	            switch($type)
+	            {
+	                case 'log':
+	                   $text .= 'console.debug("'.str_replace('"','\\"',$var).'");'.$nl;
+	                break;
+	                case 'info':
+	                   $text .= 'console.info("'.str_replace('"','\\"',$var).'");'.$nl;
+	                break;
+	                case 'warning':
+	                   $text .= 'console.warn("'.str_replace('"','\\"',$var).'");'.$nl;
+	                break;
+	                case 'error':
+	                   $text .= 'console.error("'.str_replace('"','\\"',$var).'");'.$nl;
+	                break;
+	            }
+	        }
+	    }
+
+
+		e107::js('footer-inline', $text);
+
+	}
+
+
+
+
+
+
+
+
+
 	/**
 	 * Retrieve JS Helper object
 	 *
@@ -2244,7 +2331,7 @@ class e107
 		
 		if(ADMIN && E107_DBG_INCLUDES)
 		{
-			e107::getMessage()->addDebug( "template path=".$path );	
+			e107::getMessage()->addDebug( "Attempting to load Template File: ".$path );
 		}
 		
 		$id = str_replace('/', '_', $id);
@@ -2336,7 +2423,7 @@ class e107
 	 * @param boolean $merge
 	 * @return array
 	 */
-	public function getTemplateInfo($plug_name = null, $id, $key = null, $override = true, $merge = false)
+	public static function getTemplateInfo($plug_name = null, $id, $key = null, $override = true, $merge = false)
 	{
 		if($plug_name)
 		{
@@ -2454,12 +2541,20 @@ class e107
             {
                 if(isset($SC_WRAPPER))
                 {
+                    if(E107_DBG_BBSC)
+                    {
+                        e107::getMessage()->addDebug("Found wrapper: ".$SC_WRAPPER);
+                    }
                     self::scStyle($SC_WRAPPER);
                 }
 
                 // ID_WRAPPER support
                 if(isset($$wrapper) && !empty($$wrapper) && is_array($$wrapper))
                 {
+                    if(E107_DBG_BBSC)
+                    {
+                        e107::getMessage()->addDebug("Found ID wrapper: ".$wrapper);
+                    }
                     self::setRegistry($wrapperRegPath, $$wrapper);
                 }
             }
@@ -3395,7 +3490,7 @@ class e107
 	{
 		// ssl_enabled pref not needed anymore, scheme is auto-detected
 		$this->HTTP_SCHEME = 'http';
-		if(isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on')
+		if(!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off')
 		{
 			$this->HTTP_SCHEME =  'https';
 		}

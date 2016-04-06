@@ -271,8 +271,8 @@ class users_admin_ui extends e_admin_ui
 	
 		'user_name' 		=> array('title' => LAN_USER_01,	'tab'=>0, 'type' => 'text',	'inline'=>true, 'data'=>'str', 'width' => 'auto','thclass' => 'left first'), // Display name
  		'user_loginname' 	=> array('title' => LAN_USER_02,	'tab'=>0, 'type' => 'text',	'data'=>'str', 'width' => 'auto'), // User name
- 		'user_login' 		=> array('title' => LAN_USER_03,	'tab'=>0, 'type' => 'text',	'data'=>'str', 'width' => 'auto'), // Real name (no real vetting)
- 		'user_customtitle' 	=> array('title' => LAN_USER_04,	'tab'=>0, 'type' => 'text',	'data'=>'str', 'width' => 'auto'), // No real vetting
+ 		'user_login' 		=> array('title' => LAN_USER_03,	'tab'=>0, 'type' => 'text',	'inline'=>true, 'data'=>'str', 'width' => 'auto'), // Real name (no real vetting)
+ 		'user_customtitle' 	=> array('title' => LAN_USER_04,	'tab'=>0, 'type' => 'text',	'inline'=>true, 'data'=>'str', 'width' => 'auto'), // No real vetting
  		'user_password' 	=> array('title' => LAN_PASSWORD,	'tab'=>0, 'type' => 'method',	'data'=>'str', 'width' => 'auto'), //TODO add md5 option to form handler?
 		'user_sess' 		=> array('title' => 'Session',		'tab'=>0, 'noedit'=>true, 'type' => 'text',	'width' => 'auto'), // Photo
  		'user_image' 		=> array('title' => LAN_USER_07,	'tab'=>0, 'type' => 'dropdown',	'data'=>'str', 'width' => 'auto'), // Avatar
@@ -350,22 +350,23 @@ class users_admin_ui extends e_admin_ui
 		
 		// Extended fields - FIXME - better field types
 		
-		if($sql->select('user_extended_struct', '*', "user_extended_struct_type > 0 AND user_extended_struct_text != '_system_' ORDER BY user_extended_struct_parent ASC"))
+		if($rows = $sql->retrieve('user_extended_struct', '*', "user_extended_struct_type > 0 AND user_extended_struct_text != '_system_' ORDER BY user_extended_struct_parent ASC",true))
 		{
 			// TODO FIXME use the handler to build fields and field attributes
 			// FIXME a way to load 3rd party language files for extended user fields
 			e107::coreLan('user_extended'); 	
-			while ($row = $sql->fetch())
+			foreach ($rows as $row)
 			{
 				$field = "user_".$row['user_extended_struct_name'];
 				// $title = ucfirst(str_replace("user_","",$field));
 				$label = $tp->toHtml($row['user_extended_struct_text'],false,'defs');
-				$this->fields[$field] = array('title' => $label,'width' => 'auto', 'type'=>'method', 'method'=>'user_extended', 'data'=>false, 'tab'=>1, 'noedit'=>false);
+				$this->fields[$field] = array('title' => $label,'width' => 'auto', 'type'=>'method', 'readParms'=>array('ueType'=>$row['user_extended_struct_type']), 'method'=>'user_extended', 'data'=>false, 'tab'=>1, 'noedit'=>false);
 			
 				$this->extended[] = $field;
 				$this->extendedData[$field] = $row;
 			}
 		}
+
 		$this->fields['user_signature']['writeParms']['data'] = e107::getUserClass()->uc_required_class_list("classes");
 		
 		$this->fields['user_signature'] = array('title' => LAN_USER_09,	'type' => 'textarea', 'data'=>'str',	'width' => 'auto');
@@ -494,16 +495,16 @@ class users_admin_ui extends e_admin_ui
 	}
 	
 
-
 	function saveExtended($new_data)
 	{
 		$update = array();
+		$fieldtype = array();
 		foreach($this->extended as $key) // Grab Extended field data.
 		{
-			$update[$key] = vartrue($new_data['ue'][$key],'_NULL_');
+			$update['data'][$key] = vartrue($new_data['ue'][$key],'_NULL_');
 		}
 
-		e107::getMessage()->addDebug(print_a($update,true));
+		e107::getUserExt()->addFieldTypes($update);
 
 		if(!empty($update))
 		{
@@ -2315,6 +2316,13 @@ class users_admin_form_ui extends e_admin_form_ui
 		{
 			$field = $att['field'];
 			$data =  $this->getController()->getListModel()->get($field); // ($att['field']);
+
+
+			return e107::getUserExt()->renderValue($data, $att['ueType']);
+
+			return print_a($att,true);
+
+
 			return $data;
 
 		}

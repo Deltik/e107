@@ -441,9 +441,27 @@ class e_array {
         {
             return false;
         }
-        
+
+		if(strpos($ArrayData,"0 => \'")!=false)
+		{
+             $ArrayData = stripslashes($ArrayData);
+		}
+
+	    $ArrayData = str_replace('=&gt;','=>',$ArrayData); //FIX for PDO encoding of strings. .
+
+
+	    if(trim($ArrayData) == 'Array') // Something went wrong with storage.
+        {
+            $debug = debug_backtrace(false);
+            e107::getMessage()->addDebug("Bad Array Storage found: ". print_a($debug,true));
+
+            return array();
+        }
+
         $data = "";
         $ArrayData = '$data = '.$ArrayData.';';
+
+
         @eval($ArrayData);
         if (!isset($data) || !is_array($data))
         {
@@ -466,10 +484,14 @@ class e_array {
         if (!is_array($ArrayData)) {
             return false;
         }
+
         $Array = var_export($ArrayData, true);
-        if ($AddSlashes == true) {
+
+        if ($AddSlashes == true)
+        {
             $Array = addslashes($Array);
         }
+
         return $Array;        
     }
 

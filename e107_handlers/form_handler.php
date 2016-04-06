@@ -1059,6 +1059,125 @@ class e_form
 
 	}
 
+
+	/**
+	 * Render a simple user dropdown list.
+	 * @param string $name - form field name
+	 * @param null $val - current value
+	 * @param array $options
+	 * @param string $options['group'] if == 'class' then users will be sorted into userclass groups.
+	 * @param string $options['fields']
+	 * @param string $options['classes'] - single or comma-separated list of user-classes members to include.
+	 * @param string $options['excludeSelf'] = exlude logged in user from list.
+	 * @param string $options['return'] if == 'array' an array is returned.
+	 * @return string select form element.
+	 */
+	public function userlist($name, $val=null, $options=array())
+	{
+
+		$fields = (!empty($options['fields']))  ? $options['fields'] :  "user_id,user_name,user_class";
+		$class =  (!empty($options['classes']))   ? $options['classes'] : e_UC_MEMBER ; // all users sharing the same class as the logged-in user.
+
+		$class = str_replace(" ","",$class);
+
+		switch ($class)
+		{
+			case e_UC_ADMIN:
+				$where = "user_admin = 1";
+				$classList = e_UC_ADMIN;
+				break;
+
+			case e_UC_MEMBER:
+				$where = "user_ban = 0";
+				$classList = e_UC_MEMBER;
+				break;
+
+			case e_UC_NOBODY:
+				return "";
+				break;
+
+			case 'matchclass':
+				$where = "user_class REGEXP '(^|,)(".str_replace(",","|", USERCLASS).")(,|$)'";
+				$classList = USERCLASS;
+				$clist = explode(",",USERCLASS);
+				if(count($clist) > 1 && !isset($options['group'])) // group classes by default if more than one found.
+				{
+					$options['group'] = 'class';
+				}
+			break;
+
+			default:
+				$where = "user_class REGEXP '(^|,)(".str_replace(",","|", $class).")(,|$)'";
+				$classList = $class;
+				break;
+		}
+
+
+
+		$users =   e107::getDb()->retrieve("user",$fields, "WHERE ".$where." ORDER BY user_name LIMIT 1000",true);
+
+		if(empty($users))
+		{
+			return "Unavailable";
+		}
+
+		$opt = array();
+
+		if(!empty($options['group']) && $options['group'] == 'class')
+		{
+			$classes = explode(',',$classList);
+
+			foreach($classes as $cls)
+			{
+				$cname = e107::getUserClass()->getName($cls);
+
+				$cname = str_replace('_',' ', trim($cname));
+				foreach($users as $u)
+				{
+					$uclass = explode(',',$u['user_class']);
+
+					if(($classList == e_UC_ADMIN) || ($classList == e_UC_MEMBER) || in_array($cls,$uclass))
+					{
+						$id = $u['user_id'];
+
+						if(!empty($options['excludeSelf']) && ($id == USERID))
+						{
+							continue;
+						}
+
+						$opt[$cname][$id] = $u['user_name'];
+					}
+				}
+
+
+			}
+
+		}
+		else
+		{
+			foreach($users as $u)
+			{
+				$id = $u['user_id'];
+				$opt[$id] = $u['user_name'];
+			}
+
+		}
+
+
+		ksort($opt);
+
+
+		if(!empty($options['return']) && $options['return'] == 'array') // can be used by user.php ajax method..
+		{
+			return $opt;
+		}
+
+		return $this->select($name,$opt,$val,$options, varset($options['default'],null));
+
+	}
+
+
+
 	/**
 	 * User auto-complete search
 	 *
@@ -1069,7 +1188,7 @@ class e_form
 	 * @param array|string $options [optional] 'readonly' (make field read only), 'name' (db field name, default user_name)
 	 * @return string HTML text for display
 	 */
-	function userpicker($name_fld, $id_fld, $default_name, $default_id, $options = array())
+	function userpicker($name_fld, $id_fld='', $default_name, $default_id, $options = array())
 	{
 		if(!is_array($options))
 		{
@@ -1098,6 +1217,8 @@ class e_form
 			'options'  => $default_options,
 		);
 
+		//TODO FIXME Filter by userclass.  - see $frm->userlist().
+
 		$options = array_replace_recursive($defaults, $options);
 
 		$ret = $this->text($name_fld, $default_id, 20, $options);
@@ -1125,11 +1246,14 @@ class e_form
 		
 		return e107::getRate()->renderLike($table,$id,$options); 	
 	}
-		
-	
-	
-	
 
+
+	/**
+	 * File Upload form element.
+	 * @param $name
+	 * @param array $options (optional)  array('multiple'=>1)
+	 * @return string
+	 */
 	function file($name, $options = array())
 	{
 		$options = $this->format_options('file', $name, $options);
@@ -1505,6 +1629,7 @@ class e_form
 	function checkboxes($name, $option_array, $checked, $options=array())
 	{
 		$name = (strpos($name, '[') === false) ? $name.'[]' : $name;
+
 		if(!is_array($checked)) $checked = explode(",",$checked);
 		
 		$text = "";
@@ -1518,6 +1643,12 @@ class e_form
 				$key = $k;
 				$c = in_array($k, $checked) ? true : false;
 			}
+			elseif(!empty($options['useLabelValues']))
+			{
+				$key = $label;
+				//print_a($label);
+				$c = in_array($label, e107::getParser()->toDB($checked)) ? true : false;
+			}
 			else
 			{
 				$key = 1;
@@ -1528,6 +1659,8 @@ class e_form
 
 			$text .= $this->checkbox($cname, $key, $c, $label);
 		}
+
+	//	return print_a($checked,true);
 
 		if(!empty($text))
 		{
@@ -1615,7 +1748,7 @@ class e_form
 	 */
 	function radio($name, $value, $checked = false, $options = null)
 	{
-		
+
 		if(!is_array($options)) parse_str($options, $options);
 		
 		if(is_array($value))
@@ -1656,6 +1789,8 @@ class e_form
 		{
 			$text .= "<span>".$labelFound."</span></label>";
 		}
+
+
 		
 		return $text;
 	}
@@ -1674,6 +1809,12 @@ class e_form
 		
 		$options_on = varset($options['enabled'],array());
 		$options_off = varset($options['disabled'],array());
+
+		unset($options['enabled'],$options['disabled']);
+
+		$options_on = array_merge($options_on, $options);
+		$options_off = array_merge($options_off, $options);
+
 		
 		if(vartrue($options['class']) == 'e-expandit' || vartrue($options['expandit'])) // See admin->prefs 'Single Login' for an example. 
 		{
@@ -1698,6 +1839,8 @@ class e_form
 			
 			$text = $this->radio($name, 1, $checked_enabled, $options_on)." 	".$this->radio($name, 0, !$checked_enabled, $options_off);	
 		}
+
+
 
 		return $text;
 		
@@ -2592,7 +2735,8 @@ class e_form
 			'autocomplete' 	=> '',
 			'maxlength'		=> '',
 			'wrap'          => '',
-			'maxlength'     => ''
+			'multiple'      => '',
+
 			//	'multiple' => false, - see case 'select'
 		);
 
@@ -2630,6 +2774,7 @@ class e_form
 
 			case 'radio':
 				//$def_options['class'] = ' ';
+				$def_options = array('class' => '');
 				unset($def_options['size'], $def_options['selected']);
 				break;
 
@@ -3192,7 +3337,8 @@ class e_form
 					{
 						//return  $this->options($field, $value, $attributes, $id); 
 						// consistent method arguments, fixed in admin cron administration
-						 return $this->options($parms, $value, $id, $attributes); // OLD breaks admin->cron 'options' column
+						$attributes['type'] = null; // prevent infinite loop.
+						return $this->options($parms, $value, $id, $attributes);
 					}
 				}
 
@@ -3594,7 +3740,7 @@ class e_form
 						$ttl = $expand."<button class='btn btn-default btn-xs btn-mini pull-right' {$dataAttr}>" . LAN_MORE . "</button>";
 					}
 					
-					$expands = '<a href="#'.$elid.'-expand" class="e-show-if-js e-expandit">'.defset($ttl, $ttl)."</a>";
+					$expands = '<a href="#'.$elid.'-expand" class="e-show-if-js e-expandit e-expandit-inline">'.defset($ttl, $ttl)."</a>";
 				}
 
 				$oldval = $value;
