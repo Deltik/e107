@@ -45,11 +45,12 @@ class e107_user_extended
 	private $extended_xml = FALSE;
 	public $typeArray;				// Cross-reference between names of field types, and numeric ID (must be public)
 	private $reserved_names;		// List of field names used in main user DB - not allowed in extended DB
-	public $fieldDefinitions;		// Array initialised from DB by constructor - currently all fields
+	public $fieldDefinitions    = array();	// Array initialised from DB by constructor - currently all fields
 	public $catDefinitions;			// Categories
-	private $nameIndex;				// Array for field name lookup - initialised by constructor
-	public $systemCount = 0;		// Count of system fields - always zero ATM
-	public $userCount = 0;			// Count of non-system fields
+	private $nameIndex          = array();	// Array for field name lookup - initialised by constructor
+	public $systemCount         = 0;		// Count of system fields - always zero ATM
+	public $userCount           = 0;			// Count of non-system fields
+	private $fieldPermissions   = array(); // Field Permissionss with field name as key.
 
 	public function __construct()
 	{
@@ -65,6 +66,7 @@ class e107_user_extended
 		define('EUF_PREDEFINED',9); // should be EUF_LIST IMO
 		define('EUF_CHECKBOX',10);
 		define('EUF_PREFIELD',11); // should be EUF_PREDEFINED, useful when creating fields from e.g. plugin XML
+		define('EUF_ADDON', 12);  // defined within e_user.php addon
 
 		$this->typeArray = array(
 			'text' => 1,
@@ -78,6 +80,7 @@ class e107_user_extended
 			'list' => 9,
 			'checkbox'	=> 10,
 			'predefined' => 11, // DON'T USE IT IN PREDEFINED FIELD XML!!! Used in plugin installation routine.
+			'addon'     => 12
 		);
 
 		$this->user_extended_types = array(
@@ -91,6 +94,7 @@ class e107_user_extended
 			8 => UE_LAN_8,
 			9 => UE_LAN_9,
 			10=> UE_LAN_10
+		//	12=> UE_LAN_10
 		);
 
 		//load array with field names from main user table, so we can disallow these
@@ -109,7 +113,6 @@ class e107_user_extended
 		// Read in all the field and category fields
 		// At present we load all fields into common array - may want to split system and non-system
 		$this ->catDefinitions = array();		// Categories array
-		$this->fieldDefinitions = array();		// Field definitions array
 		$this->nameIndex = array();				// Index of names => field IDs
 		$this->systemCount = 0;
 		$this->userCount = 0;
@@ -125,6 +128,8 @@ class e107_user_extended
 				else
 				{	// Its a field definition
 					$this->fieldDefinitions[$row['user_extended_struct_id']] = $row;
+					$id = 'user_'.$row['user_extended_struct_name'];
+					$this->fieldPermissions[$id] = array('read'=>$row['user_extended_struct_read'], 'write'=>$row['user_extended_struct_write']);
 					$this->nameIndex['user_'.$row['user_extended_struct_name']] = $row['user_extended_struct_id'];			// Create name to ID index
 					if ($row['user_extended_struct_text'] == '_system_')
 					{
@@ -139,14 +144,24 @@ class e107_user_extended
 		}
 	}
 
+	/**
+	 * Check read/write access on extended user-fields
+	 * @param string $field eg. user_something
+	 * @param string $type read|write
+	 * @return boolean true if
+	 */
+	public function hasPermission($field, $type='read')
+	{
+		$class = ($type == 'read') ? $this->fieldPermissions[$field]['read'] : $this->fieldPermissions[$field]['write'];
+		return check_class($class);
+	}
+
 
 
 	/**
 	 *	Check for reserved field names.
 	 *	(Names which clash with the 'normal' user table aren't allowed)
-	 *
 	 *	@param string $name - name of field bweing checked (no 'user_' prefix)
-	 *
 	 *	@return boolean TRUE if disallowed name
 	 */
 	public function user_extended_reserved($name)
@@ -537,7 +552,7 @@ class e107_user_extended
 	  return $this->user_extended_add($name, '_system_', $type, $source, '', $default, 0, 255, 255, 255, 0, 0);
 	}
 
-	function user_extended_add($name, $text, $type, $parms, $values, $default, $required, $read, $write, $applicable, $order='', $parent)
+	function user_extended_add($name, $text='', $type='', $parms='', $values='', $default='', $required='', $read='', $write='', $applicable='', $order='', $parent='')
 	{
 		
 		$sql = e107::getDb('ue');
@@ -555,70 +570,72 @@ class e107_user_extended
 			$type = $this->typeArray[$type];
 	  	}
 
-		if($this->user_extended_field_exist($name))
+		if($this->user_extended_field_exist($name) && $sql->field('user_extended', 'user_'.$name)!==false)
 		{
 			return true;
 		}
 
-		if (!$this->user_extended_reserved($name))
+		if ($this->user_extended_reserved($name))
 		{
-			$field_info = $this->user_extended_type_text($type, $default);
-		
-			// wrong type
-			if(false === $field_info)
-			{
-				e107::getMessage()->addDebug("\$field_info is false ".__METHOD__);
-				return false;
-			}
-		
-			if($order === '' && $field_info)
-			{
-			  if($sql->select('user_extended_struct','MAX(user_extended_struct_order) as maxorder','1'))
-			  {
-				$row = $sql->fetch();
-				if(is_numeric($row['maxorder']))
-				{
-				  $order = $row['maxorder']+1;
-				}
-			  }
-			}
-			// field of type category
-			if($field_info)
-			{
-				$sql->gen('ALTER TABLE #user_extended ADD user_'.$tp -> toDB($name, true).' '.$field_info);
-			}
-
-		/*	TODO
-				$extStructInsert = array(
-				'user_extended_struct_id'           => '_NULL_',
-				'user_extended_struct_name'         => '',
-				'user_extended_struct_text'         => '',
-				'user_extended_struct_type'         => '',
-				'user_extended_struct_parms'        => '',
-				'user_extended_struct_values'       => '',
-				'user_extended_struct_default'      => '',
-				'user_extended_struct_read'         => '',
-				'user_extended_struct_write'        => '',
-				'user_extended_struct_required'     => '',
-				'user_extended_struct_signup'       => '',
-				'user_extended_struct_applicable'   => '',
-				'user_extended_struct_order'        => '',
-				'user_extended_struct_parent'       => ''
-
-			);
-
-		*/
-
-			$rest = $sql->insert('user_extended_struct',"null,'".$tp -> toDB($name, true)."','".$tp -> toDB($text, true)."','".intval($type)."','".$tp -> toDB($parms, true)."','".$tp -> toDB($values, true)."', '".$tp -> toDB($default, true)."', '".intval($read)."', '".intval($write)."', '".intval($required)."', '0', '".intval($applicable)."', '".intval($order)."', '".intval($parent)."'");
-
-
-			if ($this->user_extended_field_exist($name))
-			{
-			  return TRUE;
-			}
+			return false;
 		}
 
-		return FALSE;
+		$field_info = $this->user_extended_type_text($type, $default);
+		
+		// wrong type
+		if(false === $field_info)
+		{
+			e107::getMessage()->addDebug("\$field_info is false ".__METHOD__);
+			return false;
+		}
+		
+		if($order === '' && $field_info)
+		{
+		  if($sql->select('user_extended_struct','MAX(user_extended_struct_order) as maxorder','1'))
+		  {
+			$row = $sql->fetch();
+			if(is_numeric($row['maxorder']))
+			{
+			  $order = $row['maxorder']+1;
+			}
+		  }
+		}
+		// field of type category
+		if($field_info)
+		{
+			$sql->gen('ALTER TABLE #user_extended ADD user_'.$tp -> toDB($name, true).' '.$field_info);
+		}
+
+		/*	TODO
+			$extStructInsert = array(
+			'user_extended_struct_id'           => '_NULL_',
+			'user_extended_struct_name'         => '',
+			'user_extended_struct_text'         => '',
+			'user_extended_struct_type'         => '',
+			'user_extended_struct_parms'        => '',
+			'user_extended_struct_values'       => '',
+			'user_extended_struct_default'      => '',
+			'user_extended_struct_read'         => '',
+			'user_extended_struct_write'        => '',
+			'user_extended_struct_required'     => '',
+			'user_extended_struct_signup'       => '',
+			'user_extended_struct_applicable'   => '',
+			'user_extended_struct_order'        => '',
+			'user_extended_struct_parent'       => ''
+			);
+		*/
+
+		if(!$this->user_extended_field_exist($name))
+		{
+			$sql->insert('user_extended_struct',"null,'".$tp -> toDB($name, true)."','".$tp -> toDB($text, true)."','".intval($type)."','".$tp -> toDB($parms, true)."','".$tp -> toDB($values, true)."', '".$tp -> toDB($default, true)."', '".intval($read)."', '".intval($write)."', '".intval($required)."', '0', '".intval($applicable)."', '".intval($order)."', '".intval($parent)."'");
+		}
+
+		if($this->user_extended_field_exist($name))
+		{
+		    return true;
+		}
+
+		return false;
 	}
 
 
@@ -709,8 +726,8 @@ class e107_user_extended
 		
 		$parms 		= explode("^,^",$struct['user_extended_struct_parms']);
 		$include 	= preg_replace("/\n/", " ", $tp->toHtml($parms[0]));
-		$regex 		= $tp->toText($parms[1]);
-		$regexfail 	= $tp->toText($parms[2]);
+		$regex 		= $tp->toText(varset($parms[1]));
+		$regexfail 	= $tp->toText(varset($parms[2]));
 		$fname 		= "ue[user_".$struct['user_extended_struct_name']."]";
 		$required	= vartrue($struct['user_extended_struct_required']) == 1 ? "required"  : "";
 		$fid		= $frm->name2id($fname);
@@ -905,7 +922,7 @@ class e107_user_extended
 					$curval = '';
 				}
 			
-				return e107::getForm()->datepicker($fname,$curval,'format=yyyy-mm-dd');	
+				return e107::getForm()->datepicker($fname,$curval,array('format'=>'yyyy-mm-dd','return'=>'string'));
 				break;
 
 			case EUF_LANGUAGE : // language

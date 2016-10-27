@@ -27,33 +27,14 @@ include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_'.e_PAGE);
 $e_sub_cat = 'prefs';
 e107::lan('core','mailout','admin');
 
-e107::js('inline',"
-	function disp(type) 
-	{
-		if(type == 'smtp')
-		{
-			$('#smtp').show('slow');
-			$('#sendmail').hide('slow');
-			return;
-		}
 
-		if(type =='sendmail')
-		{
-            $('#smtp').hide('slow');
-			$('#sendmail').show('slow');
-			return;
-		}
-
-		$('#smtp').hide('slow');
-		$('#sendmail').hide('slow');
-	}
-",'jquery');
 
 
 require_once (e_ADMIN."auth.php");
 
 $e_userclass = e107::getUserClass(); 
 require_once (e_HANDLER."user_extended_class.php");
+require_once(e_HANDLER.'mailout_admin_class.php');		// Admin tasks handler
 $ue = new e107_user_extended();
 $core_pref = e107::getConfig();
 
@@ -259,13 +240,21 @@ function sendTest()
 		$mailheader_e107id = USERID;
 		$pref = e107::pref('core');
 
-		$add = ($pref['mailer']) ? " (".strtoupper($pref['mailer']).")" : ' (PHP)';
+		$add = ($pref['mailer']) ? " (".strtoupper($pref['mailer']).") " : ' (PHP)';
+
+		if($pref['mailer'] == 'smtp')
+		{
+			$add .= "Port: ".varset($pref['smtp_port'],25);
+			$add .= " - ".str_replace("secure=", "", $pref['smtp_options']);
+		}
+
+
 		$sendto = trim($_POST['testaddress']);
 		
 		
 		$eml = array(); 
 		
-		$eml['email_subject']		= LAN_MAILOUT_113." ".SITENAME.$add;
+		$eml['email_subject']		= LAN_MAILOUT_113." ".$add;
 		$eml['email_sender_email']	= null; 
 		$eml['email_sender_name']	= null;
 		$eml['email_replyto']		= null;
@@ -374,6 +363,13 @@ $text .= "<div class='field-spacer'>".$tp->parseTemplate("{IMAGESELECTOR={$parms
 $sLogo = siteinfo_shortcodes::sc_logo();
 */
 
+if(!empty($pref['sitebutton']) && strpos($pref['sitebutton'],'{')===false && file_exists(e_IMAGE.$pref['sitebutton']))
+{
+	$pref['sitebutton'] = '{e_IMAGE}'.$pref['sitebutton'];
+}
+
+
+
 $text .= $frm->imagepicker('sitebutton',$pref['sitebutton'],'','help='.PRFLAN_225);
 
 $text .= "
@@ -381,19 +377,19 @@ $text .= "
 					</tr>
 					<tr>
 						<td><label for='sitelogo'>".PRFLAN_214."</label></td>
-						<td>".$frm->imagepicker('sitelogo',$pref['sitelogo'],'','help='.PRFLAN_226)."</td>
+						<td>".$frm->imagepicker('sitelogo',$pref['sitelogo'],'','w=200&help='.PRFLAN_226)."</td>
 					</tr>
 					<tr>
 						<td><label for='sitetag'>".PRFLAN_5."</label></td>
 						<td>
-							".$frm->textarea('sitetag', $tp->toForm($pref['sitetag']), 3, 59)."
+							".$frm->textarea('sitetag', $tp->toForm($pref['sitetag']), 3, 59, array('size'=>'xxlarge'))."
 							<div class='field-help'>".PRFLAN_227."</div>
 						</td>
 					</tr>
 					<tr>
 						<td><label for='sitedescription'>".PRFLAN_6."</label></td>
 						<td>
-							".$frm->textarea('sitedescription', $tp->toForm($pref['sitedescription']), 3, 80)."
+							".$frm->textarea('sitedescription', $tp->toForm($pref['sitedescription']), 3, 80, array('size'=>'xxlarge'))."
 							<div class='field-help'>".PRFLAN_228."</div>
 						</td>
 					</tr>
@@ -401,7 +397,7 @@ $text .= "
 					<tr>
 						<td><label for='sitedisclaimer'>".PRFLAN_9."</label></td>
 						<td>
-							".$frm->textarea('sitedisclaimer',$tp->toForm( $pref['sitedisclaimer']), 3, 80)."
+							".$frm->textarea('sitedisclaimer',$tp->toForm( $pref['sitedisclaimer']), 3, 80, array('size'=>'xxlarge'))."
 							<div class='field-help'>".PRFLAN_229."</div>
 						</td>
 					</tr>
@@ -425,26 +421,26 @@ $text .= "<fieldset class='e-hideme' id='core-prefs-email'>
 				<tr>
 					<td><label for='siteadmin'>".PRFLAN_7."</label></td>
 					<td>
-						".$frm->text('siteadmin', SITEADMIN, 100)."
+						".$frm->text('siteadmin', SITEADMIN, 100, array('size'=>'xlarge'))."
 					</td>
 					</tr>
 					<tr>
 						<td><label for='siteadminemail'>".PRFLAN_8."</label></td>
 						<td>
-							".$frm->text('siteadminemail', SITEADMINEMAIL, 100)."
+							".$frm->text('siteadminemail', SITEADMINEMAIL, 100, array('size'=>'xlarge'))."
 						</td>
 					</tr>
 					<tr>
 						<td><label for='replyto-name'>".PRFLAN_174."</label></td>
 						<td>
-							".$frm->text('replyto_name', $pref['replyto_name'], 100)."
+							".$frm->text('replyto_name', $pref['replyto_name'], 100, array('size'=>'xlarge'))."
 							<div class='smalltext field-help'>".PRFLAN_175."</div>
 						</td>
 					</tr>
 					<tr>
 						<td><label for='replyto-email'>".PRFLAN_176."</label></td>
 						<td>
-							".$frm->text('replyto_email', $pref['replyto_email'], 100)."
+							".$frm->text('replyto_email', $pref['replyto_email'], 100, array('size'=>'xlarge'))."
 							<div class='smalltext field-help'>".PRFLAN_177."</div>
 						</td>
 					</tr>
@@ -458,115 +454,13 @@ $text .= "<fieldset class='e-hideme' id='core-prefs-email'>
 					</tr>
 		
 					<tr>
-						<td style='vertical-align:top'><label for='mailer'>".LAN_MAILOUT_115."</label><br /></td>
-						<td>
-						<select class='tbox' name='mailer' id='mailer' onchange='disp(this.value)'>\n";
-						$mailers = array('php','smtp','sendmail');
-						foreach($mailers as $opt)
-						{
-							$sel = ($pref['mailer'] == $opt) ? "selected='selected'" : '';
-							$text .= "<option value='{$opt}' {$sel}>{$opt}</option>\n";
-						}
-						$text .="</select> <span class='field-help'>".LAN_MAILOUT_116."</span><br />";
-		
+						<td style='vertical-align:top'><label for='mailer'>".PRFLAN_267."</label><br /></td>
+						<td>";
 
 
-			// SMTP. -------------->
-			$smtp_opts = explode(',',varset($pref['smtp_options'],''));
+				$text .= mailoutAdminClass::mailerPrefsTable($pref);
 
 
-			$smtpdisp = ($pref['mailer'] != 'smtp') ? "style='display:none;'" : '';
-			$text .= "<div id='smtp' {$smtpdisp}>
-			<table class='table adminlist' style='margin-right:auto;margin-left:0px;border:0px'>
-			<colgroup>
-				<col class='col-label' />
-				<col class='col-control' />
-			</colgroup>
-			";
-			$text .= "
-			<tr>
-				<td><label for='smtp_server'>".LAN_MAILOUT_87.":&nbsp;&nbsp;</label></td>
-				<td>
-				<input class='tbox' type='text' name='smtp_server' id='smtp_server'  size='40' value='".vartrue($pref['smtp_server'])."' maxlength='50' autocomplete='off' />
-				</td>
-			</tr>
-	
-			<tr>
-				<td><label for='smtp_username'>".LAN_MAILOUT_88.":&nbsp;(".LAN_OPTIONAL.")&nbsp;&nbsp;</label></td>
-				<td style='width:50%;' >
-				<input class='tbox' type='text' name='smtp_username' id='smtp_username' size='40' value=\"".vartrue($pref['smtp_username'])."\" maxlength='50' autocomplete='off' />
-				</td>
-			</tr>
-	
-			<tr>
-				<td><label for='smtp_password'>".LAN_MAILOUT_89.":&nbsp;(".LAN_OPTIONAL.")&nbsp;&nbsp;</label></td>
-				<td>
-				<input class='tbox' type='password' name='smtp_password' id='smtp_password' size='40' value='".vartrue($pref['smtp_password'])."' maxlength='50' autocomplete='off' />
-				</td>
-			</tr>
-
-			<tr>
-				<td><label for='smtp_options'>".LAN_MAILOUT_90."</label></td><td>
-				";
-
-		$sslOpts = array(
-				'smtp_ssl' 		=> LAN_MAILOUT_92,
-				'smtp_tls'		=> LAN_MAILOUT_93,
-				'smtp_pop3auth'	=> LAN_MAILOUT_91
-		);
-
-	//	$text .= $frm->select('smtp_options', $sslOpts, $smtp_opts, '', LAN_MAILOUT_96);
-
-
-			$text .="<select class='tbox' name='smtp_options' id='smtp_options'>\n
-				<option value=''>".LAN_MAILOUT_96."</option>\n";
-			$selected = (in_array('secure=SSL',$smtp_opts) ? " selected='selected'" : '');
-			$text .= "<option value='smtp_ssl'{$selected}>".LAN_MAILOUT_92."</option>\n";
-			$selected = (in_array('secure=TLS',$smtp_opts) ? " selected='selected'" : '');
-			$text .= "<option value='smtp_tls'{$selected}>".LAN_MAILOUT_93."</option>\n";
-			$selected = (in_array('pop3auth',$smtp_opts) ? " selected='selected'" : '');
-			$text .= "<option value='smtp_pop3auth'{$selected}>".LAN_MAILOUT_91."</option>\n";
-			$text .= "</select>";
-
-
-			$text .= "<span class='field-help'>".LAN_MAILOUT_94."</span></td></tr>";
-		
-			$text .= "<tr>
-				<td><label for='smtp_keepalive'>".LAN_MAILOUT_57."</label></td><td>\n";
-
-			$text .= $frm->radio_switch('smtp_keepalive', $pref['smtp_keepalive'])."
-				</td>
-				</tr>";
-
-
-			$text .= "<tr>
-				<td><label for='smtp_useVERP'>".LAN_MAILOUT_95."</label></td><td>".$frm->radio_switch('smtp_useVERP',(in_array('useVERP',$smtp_opts)))."
-
-				</td>
-				</tr>
-				</table></div>";
-
-
-			/* FIXME - posting SENDMAIL path triggers Mod-Security rules. 
-			// Sendmail. -------------->
-				
-				$text .= "<div id='sendmail' {$senddisp}><table style='margin-right:0px;margin-left:auto;border:0px'>";
-				$text .= "
-				<tr>
-				<td>".LAN_MAILOUT_20.":&nbsp;&nbsp;</td>
-				<td>
-				<input class='tbox' type='text' name='sendmail' size='60' value=\"".(!$pref['sendmail'] ? "/usr/sbin/sendmail -t -i -r ".$pref['siteadminemail'] : $pref['sendmail'])."\" maxlength='80' />
-				</td>
-				</tr>
-			
-				</table></div>";
-			*/
-				$senddisp = (varset($pref['mailer']) != 'sendmail') ? "e-hideme" : '';
-				$text .= "<div class='s-message info {$senddisp}' id='sendmail' >
-							Not available in this release
-						</div>";
-						
-						
 				$text .="</td>
 				</tr>
 			
@@ -589,7 +483,7 @@ $text .= "<fieldset class='e-hideme' id='core-prefs-email'>
 					<tr>
 						<td><label for='sitecontactinfo'>".PRFLAN_162."</label></td>
 						<td>
-							".$frm->textarea('sitecontactinfo', $pref['sitecontactinfo'], 6, 59)."
+							".$frm->textarea('sitecontactinfo', $pref['sitecontactinfo'], 6, 59, array('size'=>'xxlarge'))."
 							<div class='smalltext field-help'>".PRFLAN_163."</div>
 						</td>
 					</tr>
@@ -607,6 +501,17 @@ $text .= "<fieldset class='e-hideme' id='core-prefs-email'>
 							<div class='smalltext field-help'>Contact form will only be visible to this userclass group.</div>
 						</td>
 					</tr>
+						<tr>
+						<td><label for='contact-filter'>".PRFLAN_270."</label></td>
+						<td>
+							".$frm->textarea('contact_filter', $pref['contact_filter'], 5, 59, array('size'=>'xxlarge'))."
+							<div class='smalltext field-help'>".PRFLAN_271."</div>
+						</td>
+					</tr>
+
+
+
+
 					<tr>
 						<td><label for='contact-emailcopy'>".PRFLAN_164."</label></td>
 						<td>";
@@ -623,6 +528,7 @@ $text .= "<fieldset class='e-hideme' id='core-prefs-email'>
 
 						</td>
 					</tr>
+
 						</tbody>
 			</table>
 			".pref_submit('email')."
@@ -895,7 +801,7 @@ $text .= "
 					<tr>
 						<td><label for='user-reg-veri'>".PRFLAN_154."</label></td>
 						<td>
-							".$frm->select_open('user_reg_veri');
+							".$frm->select_open('user_reg_veri', array('size'=>'xlarge'));
                             $veri_list = array(PRFLAN_152,PRFLAN_31,PRFLAN_153);
 
 							foreach($veri_list as $v => $v_title)
@@ -916,7 +822,7 @@ $text .= "
 					
 					 <tr>
 						<td><label for='allowemaillogin'>".PRFLAN_184."</label></td>
-						<td>".$frm->select_open('allowEmailLogin');
+						<td>".$frm->select_open('allowEmailLogin', array('size'=>'xlarge'));
                      //   $login_list = array(PRFLAN_201,PRFLAN_202,PRFLAN_203);
                         $login_list = array(
 	                        2 => PRFLAN_203,
@@ -963,7 +869,7 @@ $text .= "
 							<div class='field-help'>".PRFLAN_266."</div>
 								</div>
 							<div class='form-group clearfix'>".
-							$frm->textarea('membersonly_exceptions', $pref['membersonly_exceptions'], 3, 1, 'placeholder='.PRFLAN_206)."
+							$frm->textarea('membersonly_exceptions', $pref['membersonly_exceptions'], 3, 1, 'size=xxlarge&placeholder='.PRFLAN_206)."
 							<div class='field-help'>".PRFLAN_207."</div></div>
 
 							</div>
@@ -1127,14 +1033,14 @@ $text .= "
 					<tr>
 						<td><label for='signup-text'>".PRFLAN_126."</label></td>
 						<td>
-							".$frm->textarea('signup_text', $pref['signup_text'], 3, 80)."
+							".$frm->textarea('signup_text', $pref['signup_text'], 3, 80, array('size'=>'xxlarge'))."
 						</td>
 					</tr>
 
 					<tr>
 						<td><label for='signup-text-after'>".PRFLAN_140."</label></td>
 						<td>
-							".$frm->textarea('signup_text_after', $pref['signup_text_after'], 3, 80)."
+							".$frm->textarea('signup_text_after', $pref['signup_text_after'], 3, 80, array('size'=>'xxlarge'))."
 						</td>
 					</tr>
 					
@@ -1294,6 +1200,13 @@ $text .= "
 						<td>
 							".r_userclass('post_script',$pref['post_script'],'off','nobody,member,admin,main,classes')."
 							<div class='smalltext field-help'>".PRFLAN_216."</div>
+						</td>
+					</tr>
+						<tr>
+						<td><label for='inline-editing'>".PRFLAN_268.":</label></td>
+						<td>
+							".$frm->userclass('inline_editing',$pref['inline_editing'],'off','nobody,admin,main,classes,no-excludes')."
+							<div class='smalltext field-help'>".PRFLAN_269."</div>
 						</td>
 					</tr>
 					<tr>
@@ -1480,9 +1393,27 @@ $text .= "
 					
 					<tr>
 						<td><label for='passwordencoding'>".PRFLAN_188.":</label></td>
-						<td>
-							".$frm->radio_switch('passwordEncoding', varset($pref['passwordEncoding'], 0), PRFLAN_190, PRFLAN_189)."
-							<div class='smalltext field-help'>".PRFLAN_191."</div>
+
+							";
+
+						$pwdEncodeOpts = array();
+
+						if(function_exists('password_verify')) // ie. php 5.5 or higher
+						{
+							$pwdEncodeOpts[3]	 = "PHP Default (Preferred)";
+
+						}
+
+						$pwdEncodeOpts[1] = PRFLAN_190;
+						$pwdEncodeOpts[0] = PRFLAN_189;
+
+						$text .= (isset($pwdEncodeOpts[3]) && $pref['passwordEncoding']!=3) ? "<td class='has-warning'>" : "<td>";
+						$text .= $frm->select('passwordEncoding', $pwdEncodeOpts,  varset($pref['passwordEncoding'], 0));
+
+				//	$text .= $frm->radio_switch('passwordEncoding', varset($pref['passwordEncoding'], 0), PRFLAN_190, PRFLAN_189);
+
+						$text .= "
+							<div class='smalltext field-help'></div>
 						</td>
 					</tr>
 					<tr>";
@@ -1626,7 +1557,7 @@ $text .= "
 							'asc'	=> PRFLAN_237
 						);
 					
-					$text .= $frm->select('comments_sort',$comment_sort, $pref['comments_moderate'])."
+					$text .= $frm->select('comments_sort',$comment_sort, $pref['comments_moderate'], array('size'=>'xlarge'))."
 						</td>
 					</tr>
 					
@@ -1866,11 +1797,63 @@ $text .= "
 			"</div>";
 
 	}
-		$text .= "
-			".pref_submit('javascript')."
-					</fieldset>
-					
-					";
+
+$text .= pref_submit('javascript');
+
+// [e_LANGUAGEDIR]/[e_LANGUAGE]/lan_library_manager.php
+e107::lan('core', 'library_manager');
+
+$text .= '<h4 class="caption">' . LAN_LIBRARY_MANAGER_25 . '</h4>';
+
+$text .= '<table width="100%" class="table table-striped" cellpadding="0" cellspacing="0">';
+$text .= '<thead>';
+$text .= '<tr>';
+$text .= '<th>' . LAN_LIBRARY_MANAGER_13 . '</th>';
+$text .= '<th class="text-center">' . LAN_LIBRARY_MANAGER_21 . '</th>';
+$text .= '<th class="text-center">' . LAN_LIBRARY_MANAGER_14 . '</th>';
+$text .= '<th class="text-center">' . LAN_LIBRARY_MANAGER_18 . '</th>';
+$text .= '<th>' . LAN_LIBRARY_MANAGER_19 . '</th>';
+$text .= '<th></th>';
+$text .= '</tr>';
+$text .= '</thead>';
+$text .= '<tbody>';
+
+$libraries = e107::library('info');
+foreach($libraries as $machineName => $library)
+{
+	$details = e107::library('detect', $machineName);
+
+	if(empty($details['name']))
+	{
+		continue;
+	}
+
+	$name = libraryGetName($machineName, $details);
+	$provider = libraryGetProvider($details);
+	$status = libraryGetStatus($details);
+	$links = libraryGetLinks($details);
+
+	$text .= '<tr>';
+	$text .= '<td>' . $name . '</td>';
+	$text .= '<td class="text-center">' . $provider . '</td>';
+	$text .= '<td class="text-center">' . $details['version'] . '</td>';
+	$text .= '<td class="text-center">' . $status . '</td>';
+	$text .= '<td>' . $details['error_message'] . '</td>';
+	$text .= '<td>' . $links . '</td>';
+	$text .= '</tr>';
+}
+
+if(empty($libraries))
+{
+	$text .= '<tr>';
+	$text .= '<td colspan="6">' . LAN_LIBRARY_MANAGER_26 . '</td>';
+	$text .= '</tr>';
+}
+
+$text .= '</tbody>';
+$text .= '</table>';
+
+$text .= "</fieldset>";
 					
 		/*			
 		e107::js('inline',"			
@@ -2023,3 +2006,109 @@ function prefs_adminmenu()
 	e107::getNav()->admin("Basic ".LAN_OPTIONS.'--id--prev_nav', 'core-prefs-main', $var);
 }
 
+/**
+ * Helper function to get library's name.
+ */
+function libraryGetName($machineName, $details)
+{
+	$text = e107::getParser()->lanVars(LAN_LIBRARY_MANAGER_27, array($machineName));
+	return '<span data-toggle="tooltip" data-placement="top" title="' . $text . '">' . $details['name'] . '</span>';
+}
+
+/**
+ * Helper function to get links.
+ */
+function libraryGetLinks($details)
+{
+	$homepage = libraryGetHomepage($details);
+	$download = libraryGetDownload($details);
+
+	if ($homepage && $download)
+	{
+		return $homepage . ' | ' . $download;
+	}
+
+	if($homepage)
+	{
+		return $homepage;
+	}
+
+	if($download)
+	{
+		return $download;
+	}
+}
+
+/**
+ * Helper function to get homepage link.
+ */
+function libraryGetHomepage($details)
+{
+	if (empty($details['vendor_url']))
+	{
+		return false;
+	}
+
+	$href = $details['vendor_url'];
+	$title = $details['name'];
+
+	return '<a href="' . $href . '" title="' . $title . '" target="_blank">' . LAN_LIBRARY_MANAGER_15 . '</a>';
+}
+
+/**
+ * Helper function to get download link.
+ */
+function libraryGetDownload($details)
+{
+	if (empty($details['download_url']))
+	{
+		return false;
+	}
+
+	$href = $details['download_url'];
+	$title = $details['name'];
+
+	return '<a href="' . $href . '" title="' . $title . '" target="_blank">' . LAN_LIBRARY_MANAGER_16 . '</a>';
+}
+
+/**
+ * Helper function to get provider.
+ */
+function libraryGetProvider($details)
+{
+	$text = 'e107';
+	$provider = LAN_LIBRARY_MANAGER_24;
+
+	if(varset($details['plugin'], false) == true)
+	{
+		$text = $details['plugin'];
+		$provider = LAN_LIBRARY_MANAGER_22;
+	}
+
+	if(varset($details['theme'], false) == true)
+	{
+		$text = $details['theme'];
+		$provider = LAN_LIBRARY_MANAGER_23;
+	}
+
+	return '<span data-toggle="tooltip" data-placement="top" title="' . $text . '">' . $provider . '</span>';
+}
+
+/**
+ * Helper function to get status.
+ */
+function libraryGetStatus($details)
+{
+	$tp = e107::getParser();
+
+	if($details['installed'] == true)
+	{
+		$icon = $tp->toGlyph('glyphicon-ok');
+		$text = LAN_OK;
+		return '<span class="text-success" data-toggle="tooltip" data-placement="top" title="' . $text . '">' . $icon . '</span>';
+	}
+
+	$icon = $tp->toGlyph('glyphicon-remove');
+	$text = $details['error'];
+	return '<span class="text-danger" data-toggle="tooltip" data-placement="top" title="' . $text . '">' . $icon . '</span>';
+}

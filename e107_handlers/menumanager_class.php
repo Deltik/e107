@@ -369,7 +369,9 @@ class e_menuManager {
 
 			$fileList = $efile->get_files(e_PLUGIN,"_menu\.php$",'standard',2);
 			
-			$this->menuAddMessage('Scanning for new menus', E_MESSAGE_DEBUG);
+		//	$this->menuAddMessage('Scanning for new menus', E_MESSAGE_DEBUG);
+
+			e107::getDebug()->log("Scanning for new menus",E107_DBG_BASIC);
 
 			$menuList = array(); // existing menus in table. 
 			if($result = $sql->retrieve('menus', 'menu_name', null, true))
@@ -584,7 +586,7 @@ class e_menuManager {
 				foreach($fields as $k=>$v)
 				{
 					$text .= "<tr><td class='text-left'>".$v['title']."</td>";
-					$v['writeParms']['class'] = 'e-save';
+				//	$v['writeParms']['class'] = 'e-save';
 					$i = $k;
 					if(!empty($v['multilan']))
 					{
@@ -597,7 +599,15 @@ class e_menuManager {
 
 					}
 
-					$text .= "<td class='text-left'>".$form->renderElement($i, $value[$k], $v)."</td></tr>";
+					if(!empty($v['help']))
+					{
+						$v['writeParms']['title'] = e107::getParser()->toAttribute($v['help']);
+					}
+
+					$text .= "<td class='text-left'>".$form->renderElement($i, $value[$k], $v);
+
+
+					$text .= "</td></tr>";
 				}
 			}
 			else
@@ -1112,10 +1122,20 @@ class e_menuManager {
 		
 		$pageMenu = array();
 		$pluginMenu = array();
+
+		$done = array();
 		
-		$sql->select("menus", "menu_name, menu_id, menu_pages, menu_path", "1 GROUP BY menu_name ORDER BY menu_name ASC");
+		$sql->select("menus", "menu_name, menu_id, menu_pages, menu_path", "1 ORDER BY menu_name ASC");
 		while ($row = $sql->fetch())
 		{
+
+			if(in_array($row['menu_name'],$done))
+			{
+				continue;
+			}
+
+			$done[] = $row['menu_name'];
+
 			if(is_numeric($row['menu_path']))
 			{
 				$pageMenu[] = $row;	
@@ -1315,7 +1335,6 @@ class e_menuManager {
 	//	}
 		if(strstr($str, "SETSTYLE"))
 		{
-			$tmp = explode("=", $str);
 			$style = preg_replace("/\{SETSTYLE=(.*?)\}/si", "\\1", $str);
 
 			$this->style = $style;
@@ -1336,7 +1355,9 @@ class e_menuManager {
 	//	}
 		elseif(strstr($str, "NAVIGATION"))
 		{
-			echo "<span class='label label-info'>Navigation Area</span>";
+			$cust = preg_replace("/\W*\{NAVIGATION(.*?)(\+.*)?\}\W*/si", "\\1", $str);
+			$tp->parseTemplate("{NAVIGATION".$cust."}",true);
+		//	echo "<span class='label label-info'>Navigation Area</span>";
 		}
 		elseif(strstr($str, "ALERT"))
 		{
@@ -1364,12 +1385,12 @@ class e_menuManager {
 			echo $tp->parseTemplate("{SETIMAGE".$cust."}",true);
 		//	echo $this->renderPanel('Embedded Custom Menu',$cust);
 		}
-		elseif(strstr($str, "{WMESSAGE"))
+		/*elseif(strstr($str, "{WMESSAGE"))
 		{
 			echo "<div class=text style='padding: 30px; text-align: center'>[Welcome Message Area]</div>";
 		//	echo $this->renderPanel('Embedded Custom Menu',$cust);
-		}
-			elseif(strstr($str, "{FEATUREBOX"))
+		}*/
+		elseif(strstr($str, "{FEATUREBOX"))
 		{
 			echo "<div class=text style='padding: 80px; text-align: center'>[Featurebox Area]</div>";
 		//	echo $this->renderPanel('Embedded Custom Menu',$cust);
@@ -1591,9 +1612,9 @@ class e_menuManager {
 		}
 		
 		$editLink = e_SELF."?enc=".base64_encode('lay='.$this->curLayout.'&parmsId='.$menu_id.'&iframe=1');
-		$text .= '<a data-modal-caption="Configure parameters" class="e-menumanager-option menu-btn e-tip" target="_top" href="'.$editLink.'" title="Configure parameters"><i class="S16 e-edit-16" ></i></a>';
+		$text .= '<a data-modal-caption="Configure parameters" class="e-menumanager-option menu-btn" target="_top" href="'.$editLink.'" title="Configure parameters"><i class="S16 e-edit-16" ></i></a>';
 
-		$text .= '<a title="'.LAN_DELETE.'" id="remove-'.$menu_id.'-'.$menu_location.'" class="e-tip delete e-menumanager-delete menu-btn" href="'.e_SELF.'?configure='.$this->curLayout.'&amp;mode=deac&amp;id='.$menu_id.'"><i class="S16 e-delete-16"></i></a>
+		$text .= '<a title="'.LAN_DELETE.'" id="remove-'.$menu_id.'-'.$menu_location.'" class="delete e-menumanager-delete menu-btn" href="'.e_SELF.'?configure='.$this->curLayout.'&amp;mode=deac&amp;id='.$menu_id.'"><i class="S16 e-delete-16"></i></a>
 		
 		<span id="status-'.$menu_id.'" style="display:none">'.($rep == true ? "" : "insert").'</span>
 		</span></div>';
@@ -1605,7 +1626,7 @@ class e_menuManager {
 		if(!$this->dragDrop)
 		{
 				
-			return "<b class='muted' style='color:#2F2F2F;text-align:left'>".$caption."</b><br />". $text;
+			return "<span class='muted'>".$caption."</span><br />". $text;
 		//	return;
 	
 

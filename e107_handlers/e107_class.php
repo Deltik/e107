@@ -152,6 +152,7 @@ class e107
 		'e_admin_dispatcher'			 => '{e_HANDLER}admin_ui.php',
 		'e_admin_form_ui'				 => '{e_HANDLER}admin_ui.php',
 		'e_admin_log'					 => '{e_HANDLER}admin_log_class.php',
+		'e_front_model'					 => '{e_HANDLER}model_class.php',
 		'e_admin_model'					 => '{e_HANDLER}model_class.php',
 		'e_admin_request'				 => '{e_HANDLER}admin_ui.php',
 		'e_admin_response'				 => '{e_HANDLER}admin_ui.php',
@@ -775,10 +776,16 @@ class e107
 	 * @param string $regpath additional registry path
 	 * @return Object
 	 */
-	public static function getSingleton($class_name, $path = true, $regpath = '')
+	public static function getSingleton($class_name, $path = true, $regpath = '',$vars=null)
 	{
 
 		$id = 'core/e107/singleton/'.$class_name.$regpath;
+
+		if(!empty($vars))
+		{
+			$id .= '/';
+			$id .= is_array($vars) ? crc32(serialize($vars)): crc32($vars);
+		}
 
 		//singleton object found - overload not possible
 		if(self::getRegistry($id))
@@ -821,7 +828,7 @@ class e107
 		}
 		if(class_exists($class_name, false))
 		{
-			e107::setRegistry($id, new $class_name());
+			e107::setRegistry($id, new $class_name($vars));
 		}
 
 		return self::getRegistry($id);
@@ -1225,9 +1232,9 @@ class e107
 	 *
 	 * @return e107Email
 	 */
-	public static function getEmail()
+	public static function getEmail($overrides=null)
 	{
-		return self::getSingleton('e107Email', true);
+		return self::getSingleton('e107Email', true, null, $overrides);
 	}
 
 
@@ -1547,6 +1554,22 @@ class e107
 		return $user;
 	}
 
+
+	/**
+	 * Retrieve front or admin Model.
+	 * @param string $type
+	 * @return object e_front_model or e_admin_model;
+	 */
+	public static function getModel($type='front')
+	{
+		if($type === 'front')
+		{
+			return self::getObject('e_front_model');
+		}
+
+		return self::getObject('e_admin_model');
+	}
+
 	/**
 	 * Retrieve user model object.
 	 *
@@ -1684,13 +1707,19 @@ class e107
 	 *  - 'load': Loads a library.
 	 * @param string $library
 	 *  The name of the library to detect/load.
+	 * @param string $variant
+	 *   (Optional for 'load') The name of the variant to load. Note that only one variant of a library can be loaded
+	 *   within a single request. The variant that has been passed first is used; different variant names in subsequent
+	 *   calls are ignored.
 	 *
 	 * @return array|boolean
 	 *  - In case of 'detect': An associative array containing registered information for the library specified by
 	 *    $name, or FALSE if the library $name is not registered.
 	 *  - In case of 'load': An associative array of the library information.
+	 *  - In case of 'info': An associative array containing registered information for all libraries, the registered
+	 *    information for the library specified by $name, or FALSE if the library $name is not registered.
 	 */
-	public static function library($action, $library)
+	public static function library($action = '', $library = null, $variant = null)
 	{
 		$libraryHandler = e107::getLibrary();
 
@@ -1701,7 +1730,11 @@ class e107
 				break;
 
 			case 'load':
-				return $libraryHandler->load($library);
+				return $libraryHandler->load($library, $variant);
+				break;
+
+			case 'info':
+				return $libraryHandler->info($library);
 				break;
 		}
 	}
@@ -1754,7 +1787,7 @@ class e107
 			case 'theme':
 				// data is e.g. 'jslib/mytheme.js'
 				if(null !== $zone) $jshandler->headerTheme($data, $zone, $pre, $post);
-				else $jshandler->headerTheme($data, 5, $pre, $post);
+				else $jshandler->footerTheme($data, 5, $pre, $post);
 			break;
 				
 			case 'inline':
@@ -2064,7 +2097,7 @@ class e107
 
 		$elist = self::getPref($filename.'_list');
 		
-		if($elist)
+		if(!empty($elist))
 		{
 			foreach(array_keys($elist) as $key)
 			{
@@ -2117,6 +2150,7 @@ class e107
 			{
 				if(E107_DBG_INCLUDES)
 				{
+					//$debug_backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 6);
 					$mes->addDebug('Executing <strong>'.$class_name.' :: '.$method_name.'()</strong>');
 				}
 				return call_user_func(array($obj, $method_name),$param, $param2);
@@ -2152,7 +2186,16 @@ class e107
 			break;
 
 			case 'front':
-				$for = isset($user_pref['sitetheme']) ? $user_pref['sitetheme'] : e107::getPref('sitetheme');
+
+				if(defined('USERTHEME') && USERTHEME !==false)
+				{
+					$for = USERTHEME;
+				}
+				else
+				{
+					$for = isset($user_pref['sitetheme']) ? $user_pref['sitetheme'] : e107::getPref('sitetheme');
+				}
+
 			break;
 		}
 		if(!$path) return $for;
@@ -2825,14 +2868,15 @@ class e107
 
 	/**
 	 * Static (easy) sef-url creation method (works with e_url.php @see /index.php)
-	 * @param string $plugin
-	 * @param $key
-	 * @param array $row
-	 * @param array $options
-	 *  (optional) An associative array of additional options, with the following elements:
-	 *   - 'mode': abs | full
-	 *   - 'query': An array of query key/value-pairs (without any URL-encoding) to append to the URL.
-	 *   - 'fragment': A fragment identifier (named anchor) to append to the URL. Do not include the leading '#' character.
+	 *
+	 * @param string    $plugin - plugin folder name
+	 * @param string    $key assigned in e_url.php configuration.
+	 * @param array     $row Array of variables in url config.
+	 * @param array     $options  (optional) An associative array of additional options, with the following elements:
+	 * @param string    $options['mode']  abs | full
+	 * @param array     $options['query']  An array of query key/value-pairs (without any URL-encoding) to append to the URL.
+	 * @param string    $options['fragment'] A fragment identifier (named anchor) to append to the URL. Do not include the leading '#' character.
+	 * @param bool      $options['legacy'] When true legacy urls will be generated regardless of mod-rewrite status.
 	 * @return string
 	 */
 	public static function url($plugin='',$key, $row=array(), $options = array())
@@ -2856,7 +2900,12 @@ class e107
 			$key = $tmp[1];
 		}
 
-		$tmp = e107::getAddonConfig('e_url');
+		if(!$tmp = self::getRegistry('core/e107/addons/e_url'))
+		{
+			$tmp = e107::getAddonConfig('e_url');
+			self::setRegistry('core/e107/addons/e_url',$tmp);
+		}
+
 		$tp = e107::getParser();
 
 		$pref = self::getPref('e_url_alias');
@@ -2904,13 +2953,17 @@ class e107
 			}
 
 
-			if(deftrue('e_MOD_REWRITE') && ($active == true))  // Search-Engine-Friendly URLs active.
+			if(deftrue('e_MOD_REWRITE') && ($active == true) && empty($options['legacy']))  // Search-Engine-Friendly URLs active.
 			{
 				$rawUrl = $tp->simpleParse($tmp[$plugin][$key]['sef'], $row);
 
 				if($options['mode'] == 'full')
 				{
 					$sefUrl = SITEURL.$rawUrl;
+				}
+				elseif($options['mode'] == 'raw')
+				{
+					$sefUrl = $rawUrl;
 				}
 				else
 				{
@@ -3248,7 +3301,7 @@ class e107
 			return array_walk($input, array('self', 'filter_request'), $type);
 		}
 
-				
+
 		if($type == "_POST" || ($type == "_SERVER" && ($key == "QUERY_STRING")))
 		{
 			if($type == "_POST" && ($base64 == FALSE))
@@ -3313,14 +3366,29 @@ class e107
 			}
 		
 		}
+
+		if($type == '_GET') // Basic XSS check.
+		{
+			if(stripos($input, "<script")!==false || stripos($input, "%3Cscript")!==false)
+			{
+				header('HTTP/1.0 400 Bad Request', true, 400);
+				if(deftrue('e_DEBUG'))
+				{
+					echo "Bad Request: ".__METHOD__." : ". __LINE__;
+				}
+				exit();
+			}
+
+		}
 		
 		if($type == "_SERVER")
 		{
+
 			if(($key == "QUERY_STRING") && (
 				strpos(strtolower($input),"../../")!==FALSE 
-				|| strpos(strtolower($input),"php:")!==FALSE
-				|| strpos(strtolower($input),"data:")!==FALSE
-				|| strpos(strtolower($input),strtolower("%3Cscript"))!==FALSE
+				|| stripos($input,"php:")!==FALSE
+				|| stripos($input,"data:")!==FALSE
+				|| stripos($input,"%3cscript")!==FALSE
 				))
 			{
 	
@@ -3369,10 +3437,13 @@ class e107
 			exit();
 		} 
 		
-		if($base64 != TRUE)
+		if($base64 != true)
 		{
-			self::filter_request(base64_decode($input),$key,$type,TRUE);
+			self::filter_request(base64_decode($input),$key,$type,true);
 		}
+
+
+
 	}
 
 
@@ -3753,12 +3824,14 @@ class e107
 		}
 		// FIXME - basic security - add url sanitize method to e_parse
 		$check = rawurldecode($requestUri); // urlencoded by default
+
 		// a bit aggressive XSS protection... convert to e.g. htmlentities if you are not a bad guy
 		$checkregx = $no_cbrace ? '[<>\{\}]' : '[<>]';
 		if(preg_match('/'.$checkregx.'/', $check))
 		{
-			header('HTTP/1.1 403 Forbidden');
-			exit;
+			// header('HTTP/1.1 403 Forbidden');
+			$requestUri = filter_var($requestUri, FILTER_SANITIZE_URL);
+			// exit;
 		}
 
 		// e_MENU fix
@@ -3819,6 +3892,8 @@ class e107
 			  || ($isPluginDir && (strpos(e_PAGE,'_admin.php') !== false || strpos(e_PAGE,'admin_') === 0 || strpos($e107Path, 'admin/') !== FALSE)) // Plugin admin file or directory
 			  || (vartrue($eplug_admin) || deftrue('ADMIN_AREA'))		// Admin forced
 			  || (preg_match('/^\/(.*?)\/user(settings\.php|\/edit)(\?|\/)(\d+)$/i', $_SERVER['REQUEST_URI']) && ADMIN)
+			  || ($isPluginDir && e_PAGE == 'prefs.php') //BC Fix for old plugins
+			  || ($isPluginDir && e_PAGE == 'config.php') // BC Fix for old plugins
 			)
 		{
 			$inAdminDir = TRUE;
@@ -3827,7 +3902,7 @@ class e107
 		{
 			$temp = substr($e107Path, strpos($e107Path, '/') +1);
 			$plugDir = substr($temp, 0, strpos($temp, '/'));
-			define('e_CURRENT_PLUGIN', $plugDir);
+			define('e_CURRENT_PLUGIN', rtrim($plugDir,'/'));
 			define('e_PLUGIN_DIR', e_PLUGIN.e_CURRENT_PLUGIN.'/');
 			define('e_PLUGIN_DIR_ABS', e_PLUGIN_ABS.e_CURRENT_PLUGIN.'/');
 		}
@@ -3866,7 +3941,7 @@ class e107
 		{
 			define('e_LOGIN', SITEURL.(file_exists(e_BASE.'customlogin.php') ? 'customlogin.php' : 'login.php'));	
 		}
-		
+
 		return $this;
 	}
 
@@ -4345,7 +4420,8 @@ class e107
 		if(null === self::$_instance) return;
 		
 		$print = defined('E107_DBG_TIMEDETAILS') && E107_DBG_TIMEDETAILS;
-		!$print || print('Destructing $e107: <br />');
+
+		!$print || print('<table class="table table-striped table-condensed"><tr><td colspan="3"><b>Destructing $e107</b></td></tr>');
 		$vars = get_object_vars($this);
 		foreach ($vars as $name => $value) 
 		{
@@ -4353,10 +4429,10 @@ class e107
 			{
 				if(method_exists($value, '__destruct'))
 				{
-					!$print || print('object [property] using __destruct(): '.$path.' - '.get_class($value).'<br />');
+					!$print || print('<tr><td>object [property] using __destruct()</td><td>'.$name.'</td><td>'.get_class($value).'</td></tr>');
 					$value->__destruct();
 				}
-				else !$print || print('object [property]: '.$name.' - '.get_class($value).'<br />');
+				else !$print || print('<tr><td>object [property]</td><td>'.$name.'</td><td>'.get_class($value).'</td></tr>');
 				$this->$name = null;
 			}
 		}
@@ -4366,14 +4442,21 @@ class e107
 			{
 				if(method_exists($reg, '__destruct'))
 				{
-					!$print || print('object [registry] using __destruct(): '.$path.' - '.get_class($reg).'<br />');
+					!$print || print('<tr><td>object [registry] using __destruct()</td><td>'.$path.'</td><td>'.get_class($reg).'</td></tr>');
 					$reg->__destruct();
 				}
-				else !$print || print('object [registry]: '.$path.' - '.get_class($reg).'<br />');
+				else !$print || print('<tr><td>object [registry]</td><td>'.$path.'</td><td>'.get_class($reg).'</td></tr>');
 				unset(self::$_registry[$path]);
 			}
-			
+
+
 		}
+
+		if($print)
+		{
+			echo "</table>";
+		}
+
 		self::$_registry = null;
 		self::$_instance = null;
 	}

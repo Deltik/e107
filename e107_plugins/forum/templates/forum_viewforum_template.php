@@ -284,11 +284,10 @@ $FORUM_CRUMB['forum']['value'] = "{FORUM_TITLE}";
 
 // New in v2.x - requires a bootstrap theme be loaded.  
 
-// <small>{BREADCRUMB}</small>  //FIXME Breadcrumb looks crummy
-//TODO Find a good place to put a {SEARCH} dropdown. 
+//TODO Find a good place to put a {SEARCH} dropdown.
 
 $FORUM_VIEWFORUM_TEMPLATE['start'] 				= "";
-$FORUM_VIEWFORUM_TEMPLATE['header'] 			= "<div class=' row-fluid'><div>{BACKLINK}</div>	</div>
+$FORUM_VIEWFORUM_TEMPLATE['header'] 			= "<div class=' row-fluid'><div>{BREADCRUMB}</div></div>
 													<div class='row row-fluid'>
 													<div class='col-md-9 span9 pull-left'><h3>{FORUMTITLE}</h3></div>
 													<div class='col-md-3 span3 pull-right right' style='padding-top:10px'>{NEWTHREADBUTTONX}</div></div>
@@ -309,7 +308,7 @@ $FORUM_VIEWFORUM_TEMPLATE['item'] 				= "<tr>
 													<div class='row'>
 														<div class='col-xs-12 col-md-9'>
 														{THREADNAME}
-														<div><small>by {POSTER} {THREADTIMELAPSE} &nbsp;</small></div>
+														<div><small>".LAN_FORUM_1004.": {POSTER} {THREADTIMELAPSE} &nbsp;</small></div>
 														</div><div class='col-xs-12 col-md-3 text-right'> {PAGESX}</div>
 														</div>
 														<div class='row'>
@@ -353,13 +352,15 @@ $FORUM_VIEWFORUM_TEMPLATE['footer'] 				= "</table>
 
 												<div>
 													<div class='panel panel-default' style='margin-top:50px'>
-													<div class='panel-heading'>Status Keys</div>
+													<div class='panel-heading'>".LAN_FORUM_8011."</div>
 													<div class='panel-body'>
 													{ICONKEY}
 
 													</div>
 													</div>
 												</div>
+												<div class='forum-perms'>{PERMS}</div>
+
 												{VIEWABLE_BY}
 
 												";
@@ -384,21 +385,9 @@ $FORUM_VIEWFORUM_TEMPLATE['iconkey'] 			= "
 
 
 
+// $FORUM_VIEWFORUM_WRAPPER['THREADNAME']          = "<span class='label label-info'>{---}</span>";
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-?>

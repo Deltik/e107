@@ -271,7 +271,7 @@ define("PRFLAN_253", "Disable consolidated scripts browser cache:");
 define("PRFLAN_254", "Email &amp; Contact Info");
 define("PRFLAN_255", "File Uploading");
 define("PRFLAN_256", "Advanced Options");
-define("PRFLAN_257", "Javascript Framework");
+define("PRFLAN_257", "Libraries");
 
 define("PRFLAN_258", "Contact Form Visibility");
 define("PRFLAN_259", "Register & Login");
@@ -283,7 +283,9 @@ define("PRFLAN_263", "Should be unique to this website");
 define("PRFLAN_264", "Frontpage is login page (login.php)");
 define("PRFLAN_265", "Frontpage is splash page (membersonly.php)");
 define("PRFLAN_266", "When logged out, which page should the user be directed to?");
+define("PRFLAN_267", "Emailing method");
 
-
-
-?>
+define("PRFLAN_268", "Frontend Inline-Editing");
+define("PRFLAN_269", "Admins with this userclass (and the appropriate admin permissions) will be able to edit html directly via the frontend area.");
+define("PRFLAN_270", "Contact Form Filtering");
+define("PRFLAN_271", "Ignore form submissions containing these words or phrases. One per line.");

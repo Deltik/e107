@@ -169,6 +169,24 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 	};
 
 	/**
+	 * Behavior to initialize tooltips on elements with data-toggle="tooltip" attribute.
+	 *
+	 * @type {{attach: e107.behaviors.bootstrapTooltip.attach}}
+	 */
+	e107.behaviors.bootstrapTooltip = {
+		attach: function (context, settings)
+		{
+			if(typeof $.fn.tooltip !== 'undefined')
+			{
+				$(context).find('[data-toggle="tooltip"]').once('bootstrap-tooltip').each(function ()
+				{
+					$(this).tooltip();
+				});
+			}
+		}
+	};
+
+	/**
 	 * Behavior to attach a click event to elements with .e-expandit class.
 	 *
 	 * @type {{attach: Function}}
@@ -249,6 +267,24 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 				});
 			});
 		}
+	};
+
+	/**
+	 * Check if the selector is valid.
+	 *
+	 * @param selector
+	 * @returns {boolean}
+	 */
+	e107.callbacks.isValidSelector = function (selector)
+	{
+		try
+		{
+			var $element = $(selector);
+		} catch(error)
+		{
+			return false;
+		}
+		return true;
 	};
 
 	/**
@@ -495,6 +531,8 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 				// Command to provide the jQuery css() function.
 				case 'css':
 					$(command.target).css(command.arguments);
+					// Attach all registered behaviors to the new content.
+					e107.attachBehaviors();
 					break;
 
 				// Command to set the settings that will be used for other commands in this response.
@@ -508,12 +546,16 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 				// Command to attach data using jQuery's data API.
 				case 'data':
 					$(command.target).data(command.name, command.value);
+					// Attach all registered behaviors to the new content.
+					e107.attachBehaviors();
 					break;
 
 				// Command to apply a jQuery method.
 				case 'invoke':
 					var $element = $(command.target);
 					$element[command.method].apply($element, command.arguments);
+					// Attach all registered behaviors to the new content.
+					e107.attachBehaviors();
 					break;
 			}
 		});
@@ -723,7 +765,40 @@ $(document).ready(function()
 			return false;
 		}); 
 		
-		
+
+
+		$('button[type=submit]').on('click', function()
+		{
+				var caption = $(this).text();
+				var type 	= $(this).attr('data-loading-icon');
+				var formid 	=  $(this).closest('form').attr('id');
+				var but		= $(this);
+
+				if(type === undefined || (formid === undefined))
+				{
+					return true;
+				}
+
+				$('#'+formid).submit(function(){ // only animate on successful submission.
+
+					caption = "<i class='fa fa-spin " + type + " fa-fw'></i><span>" + caption + "</span>";
+
+					$(but).html(caption);
+
+					if( $(but).attr('data-disable') == 'true')
+					{
+
+						$(but).addClass('disabled');
+					}
+
+				});
+
+
+				return true;
+			}
+		);
+
+
 		
 		// Dates --------------------------------------------------
 		
@@ -873,7 +948,7 @@ $(document).ready(function()
 
 			if(pos === undefined)
 			{
-				pos = 'top';
+				pos = 'bottom';
 			}
 
 			$(this).tooltip({opacity:1.0, fade:true, placement: pos, container: 'body'});

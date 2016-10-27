@@ -704,6 +704,19 @@ class admin_shortcodes
 		return $ret;
 	}
 
+
+	function sc_admin_debug()
+	{
+		if(e_DEBUG !== false)
+		{
+			return "<div class='navbar-right navbar-text'><span class='label label-warning'>DEBUG MODE</span>&nbsp;</div>";
+		}
+
+	}
+
+
+
+
 	// FIXME - make it work
 	function sc_admin_pm($parm)
 	{
@@ -729,14 +742,14 @@ class admin_shortcodes
 
        $text = '<ul class="nav navbar-nav navbar-right">
         <li class="dropdown">
-            <a class="dropdown-toggle" title="Messages" role="button" data-toggle="dropdown" href="#" >
+            <a class="dropdown-toggle" title="'.LAN_PM.'" role="button" data-toggle="dropdown" href="#" >
                 '.$tp->toGlyph('fa-envelope').$countDisp.'<b class="caret"></b>
             </a> 
             <ul class="dropdown-menu" role="menu" >
-                <li class="nav-header navbar-header dropdown-header">Private Messages</li>
-                    <li><a class="e-modal" data-cache="false" data-modal-caption="Inbox" data-target="#uiModal" href="'.$inboxUrl.'" >Inbox</a></li>
-                    <li><a class="e-modal" data-cache="false" data-modal-caption="Outbox" data-target="#uiModal" href="'.$outboxUrl.'">Outbox</a></li>
-                    <li><a class="e-modal" data-cache="false" data-modal-caption="Compose" data-target="#uiModal" href="'.$composeUrl.'">Compose</a></li>
+                <li class="nav-header navbar-header dropdown-header">'.LAN_PM.'</li>
+                    <li><a class="e-modal" data-cache="false" data-modal-caption="'.LAN_PLUGIN_PM_INBOX.'" data-target="#uiModal" href="'.$inboxUrl.'" >'.LAN_PLUGIN_PM_INBOX.'</a></li>
+                    <li><a class="e-modal" data-cache="false" data-modal-caption="'.LAN_PLUGIN_PM_OUTBOX.'" data-target="#uiModal" href="'.$outboxUrl.'">'.LAN_PLUGIN_PM_OUTBOX.'</a></li>
+                    <li><a class="e-modal" data-cache="false" data-modal-caption="'.LAN_PM_35.'" data-target="#uiModal" href="'.$composeUrl.'">'.LAN_PM_35.'</a></li>
                 </ul>
         </li>
         </ul>
@@ -1046,6 +1059,8 @@ class admin_shortcodes
 
 			$text .= $themeinfo ? "<br />".FOOTLAN_7.": ".$themeinfo : '';
 
+			$sqlMode = str_replace(",", ", ",e107::getDB()->getMode());
+
 			$text .= "<br /><br />
 			<b>".FOOTLAN_8."</b>
 			<br />
@@ -1062,8 +1077,9 @@ class admin_shortcodes
 			<b>".FOOTLAN_12."</b>
 			<br />
 			".e107::getDB()->getServerInfo(). // mySqlServerInfo.
-			"<br />
-			".FOOTLAN_16.": ".$mySQLdefaultdb."
+
+			"<br />".FOOTLAN_16.": ".$mySQLdefaultdb."
+			<br />Mode: <small>".$sqlMode."</small>
 			<br /><br />
 			<b>".FOOTLAN_17."</b>
 			<br />utf-8
@@ -1666,7 +1682,7 @@ Inverse 	10 	<span class="badge badge-inverse">10</span>
 			$tmp[1]['image_large_src'] = '';
 			
 						
-			$tmp[2]['text'] = "Personalize"; // TODO - generic LAN in lan_admin.php 
+			$tmp[2]['text'] = LAN_PERSONALIZE;
 			$tmp[2]['description'] = "Customize administration panels";
 			$tmp[2]['link'] = e_ADMIN.'admin.php?mode=customize';
 			$tmp[2]['image'] =  "<i class='S16 e-admins-16'></i>"; //E_16_ADMIN; // "<img src='".E_16_NAV_ADMIN."' alt='".ADLAN_151."' class='icon S16' />";
@@ -1754,7 +1770,10 @@ Inverse 	10 	<span class="badge badge-inverse">10</span>
 				
 				foreach($langSubs as $v)
 				{
-					$multiDoms[] = trim($v);	
+					if(!empty($v))
+					{
+						$multiDoms[] = trim($v);
+					}
 				}
 				
 			}
@@ -1812,10 +1831,58 @@ Inverse 	10 	<span class="badge badge-inverse">10</span>
 
 
 
-	function sc_admin_menumanager()  // List all menu-configs for easy-navigation
+
+
+
+	function sc_admin_menumanager($parm=null)  // List all menu-configs for easy-navigation
 	{
-    	global $pref;
-        $action = "";
+		if(strpos(e_REQUEST_URI,e_ADMIN_ABS."menus.php")===false)
+		{
+			return false;
+		}
+
+		if($parm == 'selection')
+		{
+			return $this->menuManagerSelection();
+		}
+
+		$pref = e107::getPref();
+
+
+
+		$search = array("_","legacyDefault","legacyCustom");
+		$replace = array(" ",MENLAN_31,MENLAN_33);
+
+		$var = array();
+
+		foreach($pref['sitetheme_layouts'] as $key=>$val)
+		{
+			$layoutName = str_replace($search,$replace,$key);
+			$layoutName .=($key==$pref['sitetheme_deflayout']) ? " (".LAN_DEFAULT.")" : "";
+		//	$selected = ($this->curLayout == $key || ($key==$pref['sitetheme_deflayout'] && $this->curLayout=='')) ? "selected='selected'" : FALSE;
+
+
+			//$url = e_SELF."?configure=".$key;
+			$url = e_SELF."?configure=".$key;
+
+		//	$text .= "<option value='".$url."' {$selected}>".$layoutName."</option>";
+			$var[$key]['text'] = str_replace(":"," / ",$layoutName);
+			$var[$key]['link'] = '#'.$key;
+			$var[$key]['link_class'] = ' menuManagerSelect';
+			$var[$key]['active'] = ($key==$pref['sitetheme_deflayout']) ? true: false;
+			$var[$key]['include'] = "data-url='".$url = e_SELF."?configure=".$key."'";
+		}
+		$action = $pref['sitetheme_deflayout'];
+
+		$defLayout = $pref['sitetheme_deflayout'];
+
+		$var = array($defLayout => $var[$defLayout]) + $var;
+
+	    e107::getNav()->admin(ADLAN_6,$action, $var);
+
+
+
+/*
 
         $var['menumanager']['text'] = LAN_MENULAYOUT;
 		$var['menumanager']['link'] = e_ADMIN_ABS.'menus.php';
@@ -1848,9 +1915,78 @@ Inverse 	10 	<span class="badge badge-inverse">10</span>
 	//	$action = (in_array($this->action,$keys)) ? $this->action : "installed";
 
 		e107::getNav()->admin("Menu Manager",$action, $var);
-	 //  e_admin/_menu(ADLAN_6,$action, $var);
+
+*/
+
 
 	}
+
+
+	private function menuManagerSelection()
+	{
+
+		 if(e_DEBUG === false)
+	    {
+	        return null;
+	    }
+
+
+		// TODO: Move to another shortcode?
+		// TODO: Get drag-n-drop working.
+
+
+		$sql = e107::getDb();
+
+		$pageMenu = array();
+		$pluginMenu = array();
+
+		$sql->select("menus", "menu_name, menu_id, menu_pages, menu_path", "1 GROUP BY menu_name ORDER BY menu_name ASC");
+
+		while ($row = $sql->fetch())
+		{
+			if(is_numeric($row['menu_path']))
+			{
+				$pageMenu[] = $row;
+			}
+			else
+			{
+				$pluginMenu[] = $row;
+			}
+
+		}
+
+		$text = "<div id='menu-manager-item-list' class='menu-manager-items' style='height:400px;overflow-y:scroll'>";
+		$text .= "<h4>Your Menus</h4>";
+
+		foreach($pageMenu as $row)
+		{
+			if(!empty($row['menu_name']))
+			{
+				$text .= "<div class='item' >".$row['menu_name']."</div>";
+			}
+		}
+
+		$text .= "<h4>Plugin Menus</h4>";
+		foreach($pluginMenu as $row)
+		{
+			$text .= "<div class='item' data-menu-id='".$row['menu_id']."'>".substr($row['menu_name'],0,-5)."</div>";
+		}
+
+		$text .=  "</div>";
+
+
+
+
+
+
+
+		return e107::getRender()->tablerender("Drag-N-Drop Menus", $text, null, true);
+
+
+
+
+	}
+
 
 }
 

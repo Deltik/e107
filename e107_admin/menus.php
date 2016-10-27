@@ -16,6 +16,15 @@ if(isset($_GET['configure']))
 	define("USER_AREA", true);
 	//Switch to desired layout
 	define('THEME_LAYOUT', $_GET['configure']);
+	define('e_DEBUG', false);
+	define('E107_DEBUG_LEVEL', 0);
+	if(function_exists('xdebug_disable'))
+	{
+		xdebug_disable();
+	}
+	@ini_set('display_errors', 0);
+	error_reporting(0);
+
 }
 
 require_once("../class2.php");
@@ -25,17 +34,40 @@ if (!getperms("2"))
 	exit;
 }
 
-
+define('e_DEBUG', false);
 
 
 e107::coreLan('menus', true);
 e107::coreLan('admin', true);
 
+e107::css('inline',"
+
+.menu-manager-items          { padding-right:15px}
+.menu-manager-items div.item { padding:5px; margin:5px 0; border:1px solid rgba(255,255,255,0.3); border-radius:3px; cursor: move }
+.menu-manager-sticky {
+	position: fixed;
+padding-left: 15px;
+padding-right: 15px;
+left: 0;
+top: 60px;
+	z-index: 100;
+	border-top: 0;
+    -moz-transition: fadeIn .4s;
+    -o-transition: fadeIn .4s;
+    -webkit-transition: fadeIn .4s;
+    transition: fadeIn .4s;
+}
+
+");
+
+
+
 
 
 if(strpos(e_QUERY, 'configure') !== FALSE || vartrue($_GET['enc']))
 {
-	
+
+
 	
 	//e107::js('core', 	'core/jquery.elastic.source.js', 'jquery', 2);
 	
@@ -56,7 +88,10 @@ if(strpos(e_QUERY, 'configure') !== FALSE || vartrue($_GET['enc']))
 	
 	// e107::css('core', 	'core/admin.css', 'jquery');
 //	e107::js('core', 	'core/admin.jquery.js', 'jquery', 4);
- e107::js('core','bootstrap/js/bootstrap-tooltip.js');
+// e107::js('core','bootstrap/js/bootstrap-tooltip.js');
+
+
+
 //	e107::css('core','bootstrap/css/bootstrap.min.css');
 
 $JSMODAL = <<<TEMPL
@@ -108,8 +143,8 @@ TEMPL;
 				window.parent.$('#uiModal .modal-caption').text(caption);	
 				window.parent.$('#uiModal .modal-body').load(link, function(){
 				 					   
-				 	window.parent.$('.modal-body .e-save').on('change', function(){
-					
+				 	window.parent.$('.modal-body :input').on('change', function(){
+
 						var target 	= window.parent.$('#e-save-form').attr('action');
 						var data 	= window.parent.$('#e-save-form').serialize();
 
@@ -380,18 +415,161 @@ TEMPL;
 	.sortable li {  border-radius: 4px }
 	.sortable li:hover { background-color: silver; box-shadow:3px 3px 3px silver }
 	
-	.regularMenu { cursor:move; border-bottom:1px dotted silver; margin-bottom:6px; padding-left:3px; padding-right:3px; padding-top:10px; padding-bottom:10px }
-	
+	.regularMenu { cursor:move; border-bottom:1px dotted silver; margin-bottom:6px; padding-left:3px; padding-right:3px; padding-top:10px; padding-bottom:10px;background-color: #E0EBF1; border-radius: 5px; }
+	.regularMenu span {padding:3px; font-weight:bold; color:#2F2F2F;text-align:left; }
 	.ui-draggable	{  background-color: rgb(245, 245, 245); min-width:100px;}
-	
+
+	.regularMenu:hover { background-color: #B1D7EA; }
+
+
 	",'jquery');
 	
 	
-	
+	e107::js('footer',"http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.1/jquery-ui.min.js");
+	e107::js('url',	"http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.1/themes/base/jquery-ui.css");
+
+			e107::js('footer-inline','
+			 $(function()
+			 {
+			 		// post the form back to this script.
+			 		var saveData = function(areaid)
+			 		{
+
+			 			var formid 	= "#form-" + areaid;
+						var form 	= $(formid);
+						var data 	= form.serialize();
+
+						$.ajax({
+						  type: "POST",
+						  url: "menus.php",
+						  data: data
+						}).done(function( msg )
+						{
+							$(".menuOption").show();
+						//	 alert("POSTED: "+ msg );
+						});
+
+			 		}
+
+
+
+
+
+				 	$(".sortable").sortable({
+				 		connectWith: $("#area-1,#area-2,#area-3,#area-4,#area-5"),
+						revert: true,
+						cursor: "move",
+						distance: 20,
+					//	containment: $(".sortable"),
+						update: function(ev,ui)
+				        {
+				        	var areaid = $(this).attr("id");
+							saveData(areaid);
+				        }
+					});
+
+
+/*
+
+				$( ".draggable", window.top.document).click(function()
+					{
+						alert("hi there");
+					});*/
+
+				// http://jsfiddle.net/DT764/2/
+
+
+					$(".draggable", window.top.document).draggable({
+					//	connectToSortable: ".sortable",
+						helper: "clone",
+					//	appendTo: $(this), // ".sortable", // "#area-1", //FIXME Needs to be a specific area.
+					//	revert: "invalid",
+						containment: "document",
+					//	delay: 0,
+					//	revertDuration: 100,
+						cursor: "move",
+						iframeFix: true,
+					//	containment: false,
+						stop: function(e, ui) {  //TODO Rename layout and area in the hidden fields to that of the where the menu was dropped.
+                        	// Figure out positioning magic to determine if e.ui.position is in the iframe
+                      	//	var what = $(this).parent().attr("id");
+						//	$(".sortable").draggable( "disable" );
+                       	alert(what);
+                    	}
+
+					});
+
+				//	$( "ul, li", window.top.document ).disableSelection();
+
+
+					$( ".deleteMenu").on("click", function()
+					{
+						var deleteId = $(this).attr("data-delete");
+						var area 	= $(this).attr("data-area");
+						$("#"+deleteId).hide("slow", function(){
+							 $("#"+deleteId).remove();
+						});
+
+
+					//	$("#"+deleteId).remove();
+					//	alert(deleteId + " " + area);
+
+
+						saveData(area);
+					});
+
+
+
+
+			 });
+		 ');
+
 	
 }
 
+else
+{
 
+
+		e107::js('footer-inline', "
+
+
+		$(document).ready(function() {
+
+   	    var stickyNavTop = $('.e-scroll-fixed').offset().top - 60; // grab the initial top offset of the navigation
+
+    	var stickyNav = function(){
+
+		    var scrollTop = $(window).scrollTop(); // our current vertical position from the top
+
+		    if (scrollTop > stickyNavTop) {
+	            $('.e-scroll-fixed').addClass('menu-manager-sticky visible col-lg-2 col-md-3');
+		    } else {
+	            $('.e-scroll-fixed').removeClass('menu-manager-sticky visible col-lg-2 col-md-3');
+		    }
+		};
+
+	stickyNav();
+
+	$(window).scroll(function() { // and run it again every time you scroll
+		stickyNav();
+	});
+});
+
+
+
+
+
+
+		");
+
+
+
+
+
+
+
+}
 		
 	
 
@@ -417,10 +595,10 @@ if($_SERVER['E_DEV_MENU'] == 'true')
 //{
 	function e_help()
 	{
-		if($_SERVER['E_DEV_MENU'] != 'true')	
+		if(e_DEBUG === false)
 		{
-			return false;		
-		}	
+			return null;
+		}
 			
 	
 		
@@ -436,13 +614,13 @@ if($_SERVER['E_DEV_MENU'] == 'true')
 		
 				$text .= "
 				<div class='active tab-pane' id='plugins'>
-				<ul>";
+				<div id='menu-manager-item-list' class='menu-manager-items' style='height:400px;overflow-y:scroll'>";
 				
 				$c = 500; // start high to prevent overwriting of keys after we drag and drop. 
 				
 				foreach($p as $menu => $folder)
 				{
-					$text .= "<li id='{$menu}' class='draggable regularMenu' style='cursor:move'>";
+					$text .= "<div id='{$menu}' class='item draggable regularMenu' style='cursor:move'>";
 				//	$text .= str_replace("_menu","",$menu);
 				
 					$defaults = array(
@@ -453,22 +631,22 @@ if($_SERVER['E_DEV_MENU'] == 'true')
 					
 					$text .= e_layout::renderMenuOptions($defaults,'layout','area',$c);
 					
-					$text .= "</li>";
+					$text .= "</div>";
 					$c++;
 					
 				}
 				
-				$text .= "</ul>
+				$text .= "</div>
 				</div>
 				
 				<div class='tab-pane' id='custom'>";
 	
 				if($sql->select('page','*',"menu_name !='' ORDER BY menu_name"))
 				{
-					$text .= "<ul>";
+					$text .= "<div id='menu-manager-item-list' class='menu-manager-items' style='height:400px;overflow-y:scroll'>";
 					while($row = $sql->fetch())
 					{
-						$text .= "<li id='".$row['page_id']."' class='draggable regularMenu' style='cursor:move'>";
+						$text .= "<div id='".$row['page_id']."' class='item draggable regularMenu' style='cursor:move'>";
 					//	$text .= $row['menu_name'];
 						
 						$defaults = array(
@@ -479,17 +657,17 @@ if($_SERVER['E_DEV_MENU'] == 'true')
 						
 						$text .= e_layout::renderMenuOptions($defaults,'layout','area',$c);
 						
-						$text .= "</li>";	
+						$text .= "</div>";
 					}
 						
-					$text .= "</ul>";			
+					$text .= "</div>";
 				}
 					
 				$text .= "</div>
 				
 			</div>";
 
-		return array('caption'=>'Menu Items','text'=>$text); 
+		return array('caption'=>'DragNDrop Items','text'=>$text);
 	}
 //}
 
@@ -575,105 +753,7 @@ class e_layout
 			
 			require_once(e_CORE."templates/admin_icons_template.php");
 
-			e107::js('url',"http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.1/jquery-ui.min.js");
-			e107::js('url',	"http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.1/themes/base/jquery-ui.css");
 
-			e107::js('inline','
-			 $(function() 
-			 {
-			 		// post the form back to this script. 		
-			 		var saveData = function(areaid)
-			 		{
-			 						
-			 			var formid 	= "#form-" + areaid;
-						var form 	= $(formid);
-						var data 	= form.serialize();
-							
-						$.ajax({
-						  type: "POST",
-						  url: "menus.php",
-						  data: data
-						}).done(function( msg ) 
-						{
-							$(".menuOption").show();
-						//	 alert("POSTED: "+ msg );
-						});			
-			 			
-			 		}
-			 				
-			 				
-			 		
-			 	
-					
-				 	$(".sortable").sortable({
-				 		connectWith: $("#area-1,#area-2,#area-3,#area-4,#area-5"),
-						revert: true,
-						cursor: "move",
-						distance: 20,
-					//	containment: $(".sortable"),
-						update: function(ev,ui)
-				        {
-				        	var areaid = $(this).attr("id");
-							saveData(areaid);
-				        }
-					});
-					
-					
-					
-					
-			//		$( ".draggable", window.top.document).click(function()
-			//		{
-			//			alert("hi there");	
-			//		});
-				
-				// http://jsfiddle.net/DT764/2/	
-					
-			
-					$( ".draggable", window.top.document).draggable({
-						connectToSortable: ".sortable",
-						helper: "clone",
-						appendTo: $(this), // ".sortable", // "#area-1", //FIXME Needs to be a specific area. 
-						revert: "invalid",
-						containment: "parent",
-						delay: 0,
-						revertDuration: 100,
-						cursor: "move",
-						iframeFix: true,
-						containment: false,
-						stop: function(e, ui) {  //TODO Rename layout and area in the hidden fields to that of the where the menu was dropped. 
-                        	// Figure out positioning magic to determine if e.ui.position is in the iframe
-                      	//	var what = $(this).parent().attr("id");
-						//	$(".sortable").draggable( "disable" );
-                        //	alert(what);
-                    	}
-			       
-					});
-				
-				//	$( "ul, li", window.top.document ).disableSelection();
-				
-				
-					$( ".deleteMenu").on("click", function()
-					{
-						var deleteId = $(this).attr("data-delete");
-						var area 	= $(this).attr("data-area");
-						$("#"+deleteId).hide("slow", function(){
-							 $("#"+deleteId).remove();
-						});
-						
-						
-					//	$("#"+deleteId).remove();
-					//	alert(deleteId + " " + area);
-					
-					
-						saveData(area);
-					});
-					
-				
-					
-				
-			 });
-		 ');
-		 	
 			
 		 /*
 		
@@ -1397,11 +1477,12 @@ if($_POST)
 		{
 //			$men->menuScanMenus();   // - Runs 2x - Is already called by menuModify() in menumanager_class.php
             $text = $men->menuRenderMessage();
-            $text .= $men->menuSelectLayout();
+         //   $text .= $men->menuSelectLayout();
 			$text .= $men->menuVisibilityOptions();
 			$text .= $men->menuInstanceParameters();
             $text .= $men->menuRenderIframe();
-            $ns -> tablerender(ADLAN_6.SEP.LAN_MENULAYOUT, e107::getMessage()->render(). $text, 'menus_config');
+            echo $text;
+         //   $ns -> tablerender(ADLAN_6.SEP.LAN_MENULAYOUT, e107::getMessage()->render(). $text, 'menus_config');
 		}
 		else // Within the IFrame.
 		{

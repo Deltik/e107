@@ -43,9 +43,9 @@ class ecache {
 	/**
 	 * Set the MD5 Hash
 	 */
-	public function setMD5($text)
+	public function setMD5($text, $hash=true)
 	{
-		$this->CachePageMD5 = md5($text);
+		$this->CachePageMD5 = ($hash === true) ? md5($text) : $text;
 		return $this;
 	}
 
@@ -172,7 +172,7 @@ class ecache {
 	/**
 	 *
 	 * @param string $CacheTag - name of tag for future retrieval - should NOT contain an MD5. 
-	 * @param data $Data - data to be cached
+	 * @param string $Data - data to be cached
 	 * @param boolean $ForceCache [optional] if TRUE, writes cache even when disabled in admin prefs. 
 	 * @param boolean $bRaw [optional] if TRUE, writes data exactly as provided instead of prefacing with php leadin
 	 * @param boolean $syscache [optional]

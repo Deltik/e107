@@ -829,7 +829,7 @@ i.e-cat_users-32{ background-position: -555px 0; width: 32px; height: 32px; }
 		//	35 => array('#TODO', 'System Info', 'System Information', '', 20, '', ''),
 			36 => array(e_ADMIN_ABS.'credits.php', LAN_CREDITS, LAN_CREDITS, '', 20, E_16_E107, E_32_E107),
 		//	37 => array(e_ADMIN.'custom_field.php', ADLAN_161, ADLAN_162, 'U', 4, E_16_CUSTOMFIELD, E_32_CUSTOMFIELD),
-			38 => array(e_ADMIN_ABS.'comment.php', LAN_COMMENTMAN, LAN_COMMENTMAN, 'B', 5, E_16_COMMENT, E_32_COMMENT)
+			38 => array(e_ADMIN_ABS.'comment.php', LAN_COMMENTMAN, LAN_COMMENTMAN, 'B', 5, E_16_COMMENT, E_32_COMMENT),
 		);	
 		
 		if($mode == 'legacy')
@@ -1499,13 +1499,20 @@ i.e-cat_users-32{ background-position: -555px 0; width: 32px; height: 32px; }
 	 */
 	public function compile(&$inArray, &$outArray, $pid = 0) 
 	{
-	    if(!is_array($inArray) || !is_array($outArray)){ return; }
+	    if(!is_array($inArray) || !is_array($outArray)){ return null; }
+
+	    $frm = e107::getForm();
 		
 	    foreach($inArray as $key => $val) 
 	    {
 	        if($val['link_parent'] == $pid) 
 	        {
 	            $val['link_sub'] = $this->isDynamic($val);
+
+	            if(empty($val['link_identifier']) && !empty($val['link_function']))
+	            {
+	                $val['link_identifier'] = $frm->name2id($val['link_function']);
+	            }
 				// prevent loop of death
 	            if( $val['link_id'] != $pid) $this->compile($inArray, $val['link_sub'], $val['link_id']);
 	            $outArray[] = $val;   
@@ -1618,7 +1625,7 @@ i.e-cat_users-32{ background-position: -555px 0; width: 32px; height: 32px; }
 		
 		// XXX Temporary Fix - TBD. 
 		// Set the URL matching in the page itself. see: forum_viewforum.php and forum_viewtopic.php 
-		if(defined("NAVIGATION_ACTIVE") && !$data['link_sub']) 
+		if(defined("NAVIGATION_ACTIVE") && empty($data['link_sub']))
 		{
 			if(strpos($data['link_url'], NAVIGATION_ACTIVE)!==false)
 			{
@@ -1819,6 +1826,14 @@ class navigation_shortcodes extends e_shortcode
 	 */
 	function sc_link_description($parm='')
 	{
+		$toolTipEnabled = e107::pref('core', 'linkpage_screentip', false);
+
+		if($toolTipEnabled == false || empty($this->var['link_description']))
+		{
+			return null;
+		}
+
+
 		return e107::getParser()->toAttribute($this->var['link_description']);	
 	}
 
@@ -1829,13 +1844,23 @@ class navigation_shortcodes extends e_shortcode
 	 */	
 	function sc_link_sub($parm='')
 	{
-		if(!varset($this->var['link_sub']))
+		if(empty($this->var['link_sub']))
 		{
-			return;	
-		}	
+			return false;
+		}
+
+		if(is_string($this->var['link_sub'])) // html override option.
+		{
+
+		//	e107::getDebug()->log($this->var);
+
+			return $this->var['link_sub'];
+		}
+
+		// Assume it's an array.
 		
 		$text = e107::getParser()->parseTemplate(str_replace('{LINK_SUB}', '', $this->template['submenu_start']), true, $this);
-			
+
 		foreach($this->var['link_sub'] as $val)
 		{
 			$active	= (e107::getNav()->isActive($val, $this->activeSubFound, true)) ? "_active" : "";

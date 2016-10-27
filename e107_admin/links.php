@@ -29,7 +29,7 @@ if (!getperms("I"))
 
 e107::coreLan('links', true);
 
-
+e107::css('inline', " td .label-warning { margin-left:30px } ");
 
 
 class links_admin extends e_admin_dispatcher
@@ -55,12 +55,12 @@ class links_admin extends e_admin_dispatcher
 		'main/edit'	=> 'main/list'
 	);
 
-	protected $menuTitle = 'Links';
+	protected $menuTitle = ADLAN_138;
 }
 
 class links_admin_ui extends e_admin_ui
 {
-	protected $pluginTitle 	= "Site links";
+	protected $pluginTitle 	= ADLAN_138;
 	protected $pluginName 	= 'core';
 	protected $table 		= "links";
 	protected $listQry 		= '';
@@ -691,8 +691,13 @@ class links_admin_form_ui extends e_admin_form_ui
 		if($mode == 'read')
 		{
 			$linkUrl = $this->getController()->getListModel()->get('link_url');
-			$linkUrl = e107::getParser()->replaceConstants($linkUrl,'abs');
-			$url = $this->link_url($linkUrl,$mode);
+
+
+
+			$url = $this->link_url($linkUrl,'link_id');
+
+
+
 			return "<a href='".$url."' rel='external'>".$curVal."</a>"; //  $this->linkFunctions[$curVal];
 		}
 	}
@@ -720,12 +725,13 @@ class links_admin_form_ui extends e_admin_form_ui
 
 			foreach($config as $k=>$v)
 			{
-				if(strpos($v['regex'],')')===false) // only provide urls without dynamic elements.
+				if($k == 'index' || (strpos($v['regex'],'(') === false)) // only provide urls without dynamic elements.
 				{
 					$opts[] = $k;
 				}
 			}
 
+			sort($opts);
 
 			return $this->select('link_sefurl', $opts, $curVal, array('useValues'=>true,'defaultValue'=>'','default'=>'('.LAN_DISABLED.')'));
 		}
@@ -734,15 +740,28 @@ class links_admin_form_ui extends e_admin_form_ui
 
 	function link_url($curVal,$mode)
 	{
-		if($mode == 'read')
+		if($mode == 'read' || $mode == 'link_id') // read = display mode, link_id = actual absolute URL
 		{
 			$owner = $this->getController()->getListModel()->get('link_owner');
 			$sef =  $this->getController()->getListModel()->get('link_sefurl');
 
+			if($curVal[0] !== '{' && substr($curVal,0,4) != 'http' && $mode == 'link_id')
+			{
+				$curVal = '{e_BASE}'.$curVal;
+			}
+
 			if(!empty($owner) && !empty($sef))
 			{
-				$curVal = str_replace(e_HTTP,'',e107::url($owner,$sef));
+				$opt = ($mode == 'read') ? array('mode'=>'raw') : array();
+				$curVal = e107::url($owner,$sef, null, $opt);
 			}
+			else
+			{
+				$opt = ($mode == 'read') ? 'rel' : 'abs';
+				$curVal = e107::getParser()->replaceConstants($curVal,$opt);
+			}
+
+			e107::getDebug()->log($curVal);
 
 			return $curVal; //  $this->linkFunctions[$curVal];
 		}

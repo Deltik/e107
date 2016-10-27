@@ -32,10 +32,11 @@ class private_message
 	 *	@param array $prefs - pref settings for PM plugin
 	 *	@return none
 	 */
-	public	function __construct($prefs)
+	public	function __construct($prefs=null)
 	{
 		$this->e107 = e107::getInstance();
-		$this->pmPrefs = $prefs;	}
+		$this->pmPrefs = e107::pref('pm');
+	}
 
 
 	/**
@@ -117,6 +118,8 @@ class private_message
 		$pm_options = '';
 		$ret = '';
 		$addOutbox = TRUE;
+		$timestamp = time();
+
 		$maxSendNow = varset($this->pmPrefs['pm_max_send'],100);	// Maximum number of PMs to send without queueing them
 		if (isset($vars['pm_from']))
 		{	// Doing bulk send off cron task
@@ -161,7 +164,7 @@ class private_message
 			// Most of the pm info is fixed - just need to set the 'to' user on each send
 			$info = array(
 				'pm_from' => $vars['from_id'],
-				'pm_sent' => time(),					/* Date sent */
+				'pm_sent' => $timestamp,					/* Date sent */
 				'pm_read' => 0,							/* Date read */
 				'pm_subject' => $pm_subject,
 				'pm_text' => $pm_message,
@@ -232,9 +235,10 @@ class private_message
 					{
 						$toclass .= $u['user_name'].', ';
 					}
-					if(check_class($this->pmPrefs['notify_class'], $u['user_class']))
+					if(check_class($this->pmPrefs['notify_class'], null, $u['user_id']))
 					{
 						$vars['to_info'] = $u;
+						$vars['pm_sent'] = $timestamp;
 						$this->pm_send_notify($u['user_id'], $vars, $pmid, count($a_list));
 					}
 				}
@@ -259,13 +263,21 @@ class private_message
 		else
 		{	// Sending to a single person
 			$info['pm_to'] = intval($vars['to_info']['user_id']);		// Sending to a single user now
+
+
+
+
 			if($pmid = $sql->insert('private_msg', $info))
 			{
 				$info['pm_id'] = $pmid;
+				$info['pm_sent'] = $timestamp;
 				e107::getEvent()->trigger('user_pm_sent', $info);
-				if(check_class($this->pmPrefs['notify_class'], $vars['to_info']['user_class']))
+
+
+				if(check_class($this->pmPrefs['notify_class'], null, $vars['to_info']['user_id']))
 				{
-					set_time_limit(30);
+					set_time_limit(20);
+					$vars['pm_sent'] = $timestamp;
 					$this->pm_send_notify($vars['to_info']['user_id'], $vars, $pmid, count($a_list));
 				}
 				$ret .= LAN_PM_40.": {$vars['to_info']['user_name']}<br />";
@@ -362,26 +374,66 @@ class private_message
 	 *
 	 *	@return none
 	 */
-	function pm_send_notify($uid, $pmInfo, $pmid, $attach_count = 0) //TODO Add Template.
+	function pm_send_notify($uid, $pmInfo, $pmid, $attach_count = 0)
 	{
-		require_once(e_HANDLER.'mail.php');
-		$subject = LAN_PM_100.SITENAME;
+	//	require_once(e_HANDLER.'mail.php');
 
-	//	$pmlink = SITEURLBASE.e_PLUGIN_ABS."pm/pm.php?show.".$pmid;
+		$tpl_file = THEME.'pm_template.php';
 
-		$pmlink = e107::url('pm','index').'?show.'.$pmid;
-		$txt = LAN_PM_101.SITENAME."\n\n";
-		$txt .= LAN_PM_102.USERNAME."\n";
-		$txt .= LAN_PM_103.$pmInfo['pm_subject']."\n";
+		$PM_NOTIFY = null; // loaded in template below.
 
-		if($attach_count > 0)
+		include(is_readable($tpl_file) ? $tpl_file : e_PLUGIN.'pm/pm_template.php');
+
+		$template = $PM_NOTIFY;
+
+		if(empty($template)) // BC Fallback.
 		{
-			$txt .= LAN_PM_104.$attach_count."\n";
+
+			$template =
+			"<div>
+			<h4>".LAN_PM_101."{SITENAME}</h4>
+			<table class='table table-striped'>
+			<tr><td>".LAN_PM_102."</td><td>{USERNAME}</td></tr>
+			<tr><td>".LAN_PM_103."</td><td>{PM_SUBJECT}</td></tr>
+			<tr><td>".LAN_PM_108."</td><td>{PM_DATE}</td></tr>
+			<tr><td>".LAN_PM_104."</td><td>{PM_ATTACHMENTS}</td></tr>
+
+			</table><br />
+			<div>".LAN_PM_105.": {PM_URL}</div>
+			</div>
+			";
+
 		}
 
-		$txt .= LAN_PM_105."\n".$pmlink."\n";
+		$url = e107::url('pm','index', null, array('mode'=>'full')).'?show.'.$pmid;
 
-		sendemail($pmInfo['to_info']['user_email'], $subject, $txt, $pmInfo['to_info']['user_name']);
+		$data = array();
+		$data['PM_SUBJECT']     = $pmInfo['pm_subject'];
+		$data['PM_ATTACHMENTS'] = intval($attach_count);
+		$data['PM_DATE']        = e107::getParser()->toDate($pmInfo['pm_sent'], 'long');
+		$data['SITENAME']       = SITENAME;
+		$data['USERNAME']       = USERNAME;
+		$data['PM_URL']         = $url;// e107::url('pm','index', null, array('mode'=>'full')).'?show.'.$pmid;
+		$data['PM_BUTTON']      = "<a class='btn btn-primary' href='".$url."'>".LAN_PM_113."</a>";// e107::url('pm','index', null, array('mode'=>'full')).'?show.'.$pmid;
+
+		$text = e107::getParser()->simpleParse($template, $data);
+
+		$eml = array();
+		$eml['email_subject']		= LAN_PM_100.USERNAME;
+		$eml['send_html']			= true;
+		$eml['email_body']			= $text;
+		$eml['template']			= 'default';
+		$eml['e107_header']			= $pmInfo['to_info']['user_id'];
+
+		if(e107::getEmail()->sendEmail($pmInfo['to_info']['user_email'], $pmInfo['to_info']['user_name'], $eml))
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+
 	}
 
 
@@ -389,30 +441,34 @@ class private_message
 	 *	Send PM read receipt
 	 *
 	 *	@param array $pmInfo - PM details
-	 *
-	 * 	@return none
+	 * 	@return boolean
 	 */
-	function pm_send_receipt($pmInfo) //TODO Add Template.
+	function pm_send_receipt($pmInfo) //TODO Add Template and combine with method above..
 	{
 		require_once(e_HANDLER.'mail.php');
 		$subject = LAN_PM_106.$pmInfo['sent_name'];
-	//	$pmlink = $this->url('show', 'id='.$pmInfo['pm_id'], 'full=1&encode=0');
-		$pmlink = SITEURLBASE.e_PLUGIN_ABS."pm/pm.php?show.".$pmInfo['pm_id'];
+
+		$pmlink = e107::url('pm','index', null, array('mode'=>'full')).'?show.'.$pmInfo['pm_id'];
+
 		$txt = str_replace("{UNAME}", $pmInfo['sent_name'], LAN_PM_107).date('l F dS Y h:i:s A')."\n\n";
 		$txt .= LAN_PM_108.date('l F dS Y h:i:s A', $pmInfo['pm_sent'])."\n";
 		$txt .= LAN_PM_103.$pmInfo['pm_subject']."\n";
 		$txt .= LAN_PM_105."\n".$pmlink."\n";
 
-		sendemail($pmInfo['from_email'], $subject, $txt, $pmInfo['from_name']);
+		if(sendemail($pmInfo['from_email'], $subject, $txt, $pmInfo['from_name']))
+		{
+			return true;
+		}
+
+		return false;
 	}
 
 
 	/**
-	 *	Get list of users blocked from sending to a specific user ID.
+	 *    Get list of users blocked from sending to a specific user ID.
 	 *
-	 *	@param integer $to - user ID
-	 *
-	 *	@return array of blocked users as user IDs
+	 * @param int|mixed $to - user ID
+	 * @return array of blocked users as user IDs
 	 */
 	function block_get($to = USERID)
 	{
@@ -583,6 +639,7 @@ class private_message
 	function get_users_inclass($class)
 	{
 		$sql = e107::getDb();
+
 		if($class == e_UC_MEMBER)
 		{
 			$qry = "SELECT user_id, user_name, user_email, user_class FROM `#user` WHERE 1";
@@ -596,13 +653,55 @@ class private_message
 			$regex = "(^|,)(".e107::getParser()->toDB($class).")(,|$)";
 			$qry = "SELECT user_id, user_name, user_email, user_class FROM `#user` WHERE user_class REGEXP '{$regex}'";
 		}
-		if($sql->gen($qry))
+
+
+		if(!empty($qry) && $sql->gen($qry))
 		{
 			$ret = $sql->db_getList();
 			return $ret;
 		}
 		return FALSE;
 	}
+
+
+	/**
+	 * Check permission to send a PM to someone.
+	 * @param int $uid user_id of the person to send to
+	 * @return bool
+	 */
+	function canSendTo($uid)
+	{
+		if(empty($uid))
+		{
+			return false;
+		}
+
+		if(!empty($this->pmPrefs['vip_class']))
+		{
+			if(check_class($this->pmPrefs['vip_class'],null,$uid) && !check_class($this->pmPrefs['vip_class']))
+			{
+				return false;
+			}
+
+		}
+
+		$user = e107::user($uid);
+
+		$uclass = explode(",", $user['user_class']);
+
+		if($this->pmPrefs['send_to_class'] == 'matchclass')
+		{
+			$tmp = explode(",", USERCLASS);
+			$result = array_intersect($uclass, $tmp);
+
+			return !empty($result);
+		}
+
+		return in_array($this->pmPrefs['send_to_class'], $uclass);
+
+	}
+
+
 
 
 	/**

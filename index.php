@@ -135,12 +135,13 @@
 						parse_str($query,$_GET);
 					}
 					
-					e107::getMessage()->addDebug('e_URL in <b>'.$plug.'</b> with key: <b>'.$k.'</b> matched <b>'.$v['regex'].'</b> and included: <b>'.$file.'</b> with $_GET: '.print_a($_GET,true));
+					e107::getDebug()->log('e_URL in <b>'.$plug.'</b> with key: <b>'.$k.'</b> matched <b>'.$v['regex'].'</b> and included: <b>'.$file.'</b> with $_GET: '.print_a($_GET,true),1);
 
 					if(file_exists($file))
 					{
 						define('e_CURRENT_PLUGIN', $plug);
 						define('e_QUERY', $query); // do not add to e107_class.php
+						define('e_URL_LEGACY', $redirect);
 						include_once($file);
 						exit;
 					}

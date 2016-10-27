@@ -71,7 +71,7 @@ define("FORLAN_58", "Number of posts displayed per page");
 define("FORLAN_60", "This will delete all threads that have not received a reply in the number of days you enter. <br /><b>Please be careful using this function!</b>");
 //define("FORLAN_61", "Update Options");
 // define("FORLAN_62", "Forum Options");
-// define("FORLAN_63", "Ranks");
+define("FORLAN_63", "Display Ranks");
 // define("FORLAN_64", "Enter your levels here, if left blank generic stars will be used to denote level. Separate levels with comma. Maximum of 10 levels, lowest first.");
 define("FORLAN_65", "Forum Title");
 define("FORLAN_66", "Not installed");
@@ -218,6 +218,18 @@ define("FORLAN_200", "Topic tracking");
 define("FORLAN_201", "Enable this to allow your users to track topics.");
 define("FORLAN_202", "Topic tracking email notifications");
 define("FORLAN_203", "Enable this option to allow your users to receive email notifications when others reply to a tracked topic.");
-
+define("FORLAN_204", "User-Anon");
+define("FORLAN_205", "Post Permission");
+define("FORLAN_206", "Thread Creation Class");
+define("FORLAN_207", "Forums and Threads");
+define("FORLAN_208", "Forums Only");
+define("FORLAN_209", "Topic");
+define("FORLAN_210", "Issue");
+define("FORLAN_211", "Submitted by");
+define("FORLAN_212", "Attachments");
+define("FORLAN_213", "Post");
+define("FORLAN_214", "Leave blank to auto-generate it from the title above.");
+define("FORLAN_215", "Not installed!");
+define("FORLAN_216", "(New Parent)");
 
 ?>

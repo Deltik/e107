@@ -78,7 +78,7 @@ $PM_SEND_PM = "<div id='pm-send-pm'>
 <table class='table fborder'>
 <thead>
 <tr>
-	<th colspan='2' class='fcaption'>".LAN_PM_1.": </th>
+	<th colspan='2' class='fcaption'>".LAN_PLUGIN_PM_NEW.": </th>
 </tr>
 </thead>
 <tr>
@@ -267,4 +267,18 @@ $PM_SHOW =
 <hr />
 ";
 
-?>
+
+$PM_NOTIFY =
+"<div>
+<h4>".LAN_PM_101."{SITENAME}</h4>
+<table class='table table-striped'>
+<tr><td>".LAN_PM_102."</td><td>{USERNAME}</td></tr>
+<tr><td>".LAN_PM_103."</td><td>{PM_SUBJECT}</td></tr>
+<tr><td>".LAN_PM_108."</td><td>{PM_DATE}</td></tr>
+<tr><td>".LAN_PM_104."</td><td>{PM_ATTACHMENTS}</td></tr>
+</table>
+<table class='table'><tr><td class='text-center'><br />
+<a class='btn btn-primary btn-lg' href='{PM_URL}'>".LAN_PM_113."</a></td></tr>
+</table>
+";
+

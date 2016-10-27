@@ -211,7 +211,11 @@ if((isset($_POST['chat_submit']) || e_AJAX_REQUEST) && $_POST['cmessage'] != '')
 if(!USER && !$pref['anon_post']){
 	if($pref['user_reg'])
 	{
-		$texta = "<div style='text-align:center'>".CHATBOX_L3."</div><br /><br />";
+		$text1 = str_replace(array('[',']'), array("<a href='".e_LOGIN."'>", "</a>"), CHATBOX_L3);
+		if($pref['user_reg'] == 1 ){
+		  $text1 .= str_replace(array('[',']'), array("<a href='".e_SIGNUP."'>", "</a>"), CHATBOX_L3b);		
+		}
+		$texta = "<div style='text-align:center'>".$text1."</div><br /><br />";
 	}
 }
 else
@@ -275,7 +279,11 @@ if(!$text = $e107cache->retrieve("nq_chatbox"))
 	{
 		$pref['cb_mod'] = e_UC_ADMIN;
 	}
-	define("CB_MOD", check_class($pref['cb_mod']));
+
+	if(!defined('CB_MOD'))
+	{
+		define("CB_MOD", check_class($pref['cb_mod']));
+	}
 
 	$qry = "
 	SELECT c.*, u.user_name, u.user_image FROM #chatbox AS c

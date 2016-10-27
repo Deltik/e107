@@ -251,6 +251,7 @@ $ADMIN_MODAL =  '<div id="uiModal" class="modal hide fade" tabindex="-1" role="d
 				{ADMIN_NAVIGATION=language}
 				 {ADMIN_NAVIGATION=home}
 	            {ADMIN_PM}
+	            {ADMIN_DEBUG}
 			</div>
 
 		  
@@ -273,14 +274,22 @@ $ADMIN_HEADER .= '<div class="container-fluid">
         	{SETSTYLE=admin_menu}
 		
 			{ADMIN_MENU}
-			{ADMIN_MENUMANAGER} 
+
 			
 		
 			{ADMIN_PWORD}
+			{ADMIN_MENUMANAGER}
+
+			<div class="e-scroll-fixed">
+
+			
 			{SETSTYLE=site_info}
 			
 			{ADMINUI_HELP}
 			{ADMIN_HELP}
+
+			</div>
+
 			{ADMIN_SITEINFO=creditsonly}
 			{SETSTYLE=admin_menu}
 			
@@ -418,7 +427,7 @@ $E_ADMIN_MENU['button'] = '
 ';
 $E_ADMIN_MENU['button_active'] = '
 	<li class="active">
-		<a class="link-active{LINK_CLASS}" href="{LINK_URL}"{ID}{ONCLICK}><i class="fa fa-chevron-right"></i>&nbsp;{LINK_TEXT}</a>
+		<a class="link-active{LINK_CLASS}" href="{LINK_URL}"{ID}{ONCLICK}>&nbsp;{LINK_TEXT}</a>
 		{SUB_MENU}
 	</li>
 ';

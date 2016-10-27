@@ -116,6 +116,8 @@ define("LAN_EMAIL","Email address");
 define("LAN_WROTE", "wrote"); // as in John wrote.."  ";
 define("LAN_RE_ORDER", "Re-order");
 define("LAN_RELATED", "Related");
+define("LAN_CLOSE", "Close");
+define("LAN_EXPAND", "Expand");
 
 define("LAN_ENTER_USRNAME_EMAIL", "Please enter your username or email"); // admin php hover field admin name
 define("LAN_PWD_REQUIRED", "Password is required"); // admin php hover field admin password
@@ -123,6 +125,6 @@ define("LAN_SHOW", "Show");
 define("LAN_GENERATE", "Generate");
 define("LAN_SUMMARY", "Summary");  // TODO   more files use summary replace
 define("LAN_REQUIRED_BLANK", "Required field(s) were left blank.");
-
+define("LAN_PLEASEWAIT", "Please Wait");
 
 ?>

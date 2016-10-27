@@ -35,6 +35,7 @@ class pm_admin extends e_admin_dispatcher
 			'ui' 			=> 'private_msg_form_ui',
 			'uipath' 		=> null
 		),
+
     /*
 		'block'	=> array(
 			'controller' 	=> 'private_msg_block_ui',
@@ -52,10 +53,11 @@ class pm_admin extends e_admin_dispatcher
 		'main/limits'		=> array('caption'=> ADLAN_PM_55, 'perm' => 'P'),
 		'main/maint'		=> array('caption'=> ADLAN_PM_59, 'perm' => 'P'),
 
+
 		'main/null'		    => array('divider'=> true),
-		'inbox/list'		=> array('caption'=> "Inbox", 'perm' => 'P'),
-		'outbox/list'		=> array('caption'=> "Outbox", 'perm' => 'P'),
-		'outbox/create'		=> array('caption'=> "Compose", 'perm' => 'P'),
+		'inbox/list'		=> array('caption'=> LAN_PLUGIN_PM_INBOX, 'perm' => 'P'),
+		'outbox/list'		=> array('caption'=> LAN_PLUGIN_PM_OUTBOX, 'perm' => 'P'),
+		'outbox/create'		=> array('caption'=> LAN_PLUGIN_PM_NEW, 'perm' => 'P'),
 
 	//	'block/list'			=> array('caption'=> LAN_MANAGE, 'perm' => 'P'),
 	//	'block/create'		=> array('caption'=> LAN_CREATE, 'perm' => 'P'),
@@ -71,6 +73,17 @@ class pm_admin extends e_admin_dispatcher
 	);	
 	
 	protected $menuTitle = LAN_PLUGIN_PM_NAME;
+
+	function init()
+	{
+
+		if(e_DEBUG == true)
+		{
+			$this->adminMenu['main/null2']	= array('divider'=> true);
+			$this->adminMenu['main/list']   = array('caption'=> "Log", 'perm' => 'P');
+		}
+
+	}
 }
 
 
@@ -90,18 +103,18 @@ class private_msg_ui extends e_admin_ui
 			
 		protected $fields 		= array (  'checkboxes' =>   array ( 'title' => '', 'type' => null, 'data' => null, 'width' => '5%', 'thclass' => 'center', 'forced' => '1', 'class' => 'center', 'toggle' => 'e-multiselect',  ),
 		  'pm_id'             => array ( 'title' => LAN_ID,       'data' => 'int', 'width' => '5%', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
-		  'pm_from'           => array ( 'title' => 'From',       'type' => 'method', 'noedit'=>true, 'data' => 'int', 'filter'=>true, 'width' => '5%%', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
-		  'pm_to'             => array ( 'title' => 'To',         'type' => 'user', 'data' => 'int', 'width' => '5%', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
+		  'pm_from'           => array ( 'title' => LAN_PLUGIN_PM_FROM,       'type' => 'method', 'noedit'=>true, 'data' => 'int', 'filter'=>true, 'width' => '5%%', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
+		  'pm_to'             => array ( 'title' => LAN_PLUGIN_PM_TO,         'type' => 'user', 'data' => 'int', 'width' => '5%', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
 		  'pm_sent'           => array ( 'title' => LAN_DATE,     'type' => 'datestamp', 'data' => 'int', 'width' => '15%', 'help' => '', 'readParms' => '', 'writeParms' => 'auto=1&readonly=1', 'class' => 'center', 'thclass' => 'center',  ),
-		  'pm_subject'        => array ( 'title' => "Subject",    'type' => 'text', 'data' => 'str', 'width' => '15%', 'help' => '', 'readParms' => '', 'writeParms' => array('size'=>'xlarge'), 'class' => 'left', 'thclass' => 'left',  ),
-		  'pm_text'           => array ( 'title' => 'Message',    'type' => 'bbarea', 'data' => 'str', 'width' => '40%', 'help' => '', 'readParms' => 'expand=1&truncate=50', 'writeParms' => 'rows=5&size=block&cols=80', 'class' => 'left', 'thclass' => 'left',  ),
-		  'pm_read'           => array ( 'title' => 'Read',       'type' => 'boolean', 'noedit'=>1, 'data' => 'int', 'batch'=>true, 'filter'=>true, 'width' => '5%', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'center', 'thclass' => 'center',  ),
+		  'pm_subject'        => array ( 'title' => LAN_PLUGIN_PM_SUB,    'type' => 'text', 'data' => 'str', 'width' => '15%', 'help' => '', 'readParms' => '', 'writeParms' => array('size'=>'xlarge'), 'class' => 'left', 'thclass' => 'left',  ),
+		  'pm_text'           => array ( 'title' => LAN_PLUGIN_PM_MESS,    'type' => 'bbarea', 'data' => 'str', 'width' => '40%', 'help' => '', 'readParms' => 'expand=1&truncate=50', 'writeParms' => 'rows=5&size=block&cols=80', 'class' => 'left', 'thclass' => 'left',  ),
+		  'pm_read'           => array ( 'title' => LAN_PLUGIN_PM_READ,       'type' => 'boolean', 'noedit'=>1, 'data' => 'int', 'batch'=>true, 'filter'=>true, 'width' => '5%', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'center', 'thclass' => 'center',  ),
         
-          'pm_sent_del'       => array ( 'title' => 'Del',        'type' => 'boolean', 'noedit'=>true, 'data' => 'int', 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'center', 'thclass' => 'center',  ),
-		  'pm_read_del'       => array ( 'title' => 'Del',        'type' => 'boolean', 'noedit'=>true, 'data' => 'int', 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'center', 'thclass' => 'center',  ),
-		  'pm_attachments'    => array ( 'title' => 'Attachments', 'type' => 'text', 'noedit'=>true, 'data' => 'str', 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'center', 'thclass' => 'center',  ),
+          'pm_sent_del'       => array ( 'title' => LAN_PLUGIN_PM_DEL,        'type' => 'boolean', 'noedit'=>true, 'data' => 'int', 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'center', 'thclass' => 'center',  ),
+		  'pm_read_del'       => array ( 'title' => LAN_PLUGIN_PM_DEL,        'type' => 'boolean', 'noedit'=>true, 'data' => 'int', 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'center', 'thclass' => 'center',  ),
+		  'pm_attachments'    => array ( 'title' => LAN_PLUGIN_PM_ATTACHMENT, 'type' => 'text', 'noedit'=>true, 'data' => 'str', 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'center', 'thclass' => 'center',  ),
 		  'pm_option'         => array ( 'title' => 'Option',     'type' => 'text', 'noedit'=>true, 'data' => 'str', 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'center', 'thclass' => 'center',  ),
-		  'pm_size'           => array ( 'title' => 'Size',       'type' => 'boolean', 'noedit'=>true, 'data' => 'int', 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'center', 'thclass' => 'center',  ),
+		  'pm_size'           => array ( 'title' => LAN_PLUGIN_PM_SIZE,       'type' => 'boolean', 'noedit'=>true, 'data' => 'int', 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'center', 'thclass' => 'center',  ),
 		  'options'           => array ( 'title' => LAN_OPTIONS,    'type' => 'method', 'data' => null, 'width' => '10%', 'thclass' => 'center last', 'class' => 'center last', 'forced' => '1',  ),
 		);		
 		
@@ -114,6 +127,7 @@ class private_msg_ui extends e_admin_ui
 			'pm_class'	    => array('title'=> ADLAN_PM_23,      'tab'=>0, 'type' => 'userclass', 'data' => 'int', 'help'=>'', 'writeParms'=>array('size'=>'xlarge', 'classlist'=>'nobody,main,member,admin,classes')),
 			'sendall_class'	=> array('title'=> ADLAN_PM_29,  'tab'=>1, 'type' => 'userclass', 'data' => 'int', 'help'=>'', 'writeParms'=>array('size'=>'xlarge', 'classlist'=>'nobody,main,member,admin,classes')),
 			'send_to_class'	=> array('title'=> ADLAN_PM_83,  'tab'=>0, 'type' => 'method', 'data' => 'str', 'help'=>''),
+			'vip_class'     =>  array('title'=> ADLAN_PM_86,  'tab'=>0, 'type' => 'userclass', 'data' => 'int', 'help'=>ADLAN_PM_87, 'writeParms'=>array('size'=>'xlarge', 'classlist'=>'nobody,main,admin,classes')),
 			'multi_class'   => array('title'=> ADLAN_PM_30,  'tab'=>0, 'type' => 'userclass', 'data' => 'int', 'help'=>'', 'writeParms'=>array('size'=>'xlarge', 'classlist'=>'nobody,main,member,admin,classes')),
 			'opt_userclass' => array('title'=> ADLAN_PM_31,  'tab'=>0, 'type' => 'userclass', 'data' => 'int', 'help'=>'', 'writeParms'=>array('size'=>'xlarge', 'classlist'=>'nobody,main,member,admin,classes')),
 
@@ -129,8 +143,14 @@ class private_msg_ui extends e_admin_ui
 			'attach_size'   => array('title'=> ADLAN_PM_28,  'tab'=>1, 'type' => 'number', 'data' => 'int', 'help'=>'', 'writeParms'=>'tdClassRight=form-inline&post=Kb'),
 			'pm_max_send'   => array('title'=> ADLAN_PM_81,  'tab'=>1, 'type' => 'number', 'data' => 'int', 'help'=>''),
 			'perpage'	    => array('title'=> ADLAN_PM_24,  'tab'=>0, 'type' => 'number', 'data' => 'int', 'help'=>''),
+			'maxlength'     => array('title'=> ADLAN_PM_84,  'tab'=>1, 'type' => 'number', 'data' => 'int', 'help'=>ADLAN_PM_85, 'writeParms'=>array('post'=>'chars.')),
+
 
 		);
+
+
+
+
 
 
 
@@ -768,12 +788,48 @@ class private_msg_ui extends e_admin_ui
 		}
 
 
+		function sendTestNotify()
+		{
+			e107::includeLan(e_PLUGIN.'pm/languages/'.e_LANGUAGE.'.php');
+			require_once(e_PLUGIN."pm/pm_class.php");
 
+			$pmInfo = array ( 'numsent' => '1', 'pm_to' => USERID, 'pm_sent'=>time(), 'pm_userclass' => false, 'pm_subject' => 'Test Subject Random:'.md5(time()), 'pm_message' => 'Test Message '.md5(time()), 'postpm' => 'Send Private Message', 'keyword' => NULL,
+			'to_info' => array (
+				'user_id'       => USERID,
+				'user_name'     => USERNAME,
+				'user_class'    => USERCLASS,
+				'user_email'    => USEREMAIL,
+			),
+			'uploaded' => array ( ), 'from_id' => 1, 'options' => '', );
+
+			$pm = new private_message;
+
+			if($pm->pm_send_notify(null,$pmInfo, 1) === true)
+			{
+				e107::getMessage()->addSuccess(ADLAN_PM_92);
+			}
+			else
+			{
+				e107::getMessage()->addError(ADLAN_PM_93);
+			}
+
+
+		}
 
 
         public function init()
         {
           //  $this->listQry = "SELECT p.*,u.user_name FROM #private_msg AS p LEFT JOIN #user AS u ON p.pm_from = u.user_id  ";
+
+			if(deftrue('e_DEVELOPER') || deftrue('e_DEBUG'))
+			{
+	            $this->prefs['notify_class']['writeParms']['post']= e107::getForm()->button('testNotify', 1, 'primary', ADLAN_PM_91);
+
+				if(!empty($_POST['testNotify']))
+				{
+					$this->sendTestNotify();
+				}
+			}
 
 			if($this->getMode() == 'inbox')
 			{
@@ -789,6 +845,15 @@ class private_msg_ui extends e_admin_ui
 					LEFT JOIN #user as f on f.user_id = p.pm_from WHERE p.pm_from = '.USERID;
 				$this->fields['pm_from']['nolist'] = true;
 				$this->fields['options']['readParms'] = 'editClass='.e_UC_NOBODY;
+			}
+
+	        if($this->getMode() == 'main')
+			{
+				$this->listQry = 'SELECT  p.*, u.user_name, f.user_name AS fromuser FROM #private_msg AS p LEFT JOIN  #user AS u ON u.user_id = p.pm_to
+					LEFT JOIN #user as f on f.user_id = p.pm_from WHERE 1 ';
+			//	$this->fields['pm_from']['nolist'] = true;
+				$this->fields['options']['readParms'] = 'editClass='.e_UC_NOBODY;
+				$this->perPage = 20;
 			}
 
 			if($this->getAction() == 'create')
@@ -821,7 +886,7 @@ class private_msg_ui extends e_admin_ui
 
 			if(empty($new_data['pm_to']))
 			{
-				e107::getMessage()->addError('Please enter a recipient in the "To" field.');
+				e107::getMessage()->addError(ADLAN_PM_90);
 				return false;
 			}
 
@@ -861,7 +926,7 @@ class private_msg_form_ui extends e_admin_form_ui
 	function send_to_class($value, $mode, $id)
 	{
 		$list = e107::getUserClass()->getClassList('main,admin,member,classes');
-		$list['matchclass'] = "(Any user with the same class)"; //TODO LAN
+		$list['matchclass'] = ADLAN_PM_89; 
 
 		return $this->select('send_to_class', $list, vartrue($value, e_UC_MEMBER), array('size'=>'xlarge'));
 

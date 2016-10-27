@@ -2101,7 +2101,10 @@ class e_admin_controller
 		{
 			$this->addTitle(); 	
 		}
-		
+
+
+	//	e107::getDebug()->log("Admin-ui Action: <b>".$action."</b>");
+
 		if($action == 'Edit')
 		{
 			$this->addTitle('#'.$this->getId()); // Inform user of which record is being edited. 	
@@ -2238,7 +2241,7 @@ class e_admin_controller
 		if(!$path && $this->getParam('modes'))
 		{
 			$modes = $this->getParam('modes');
-			if(vartue($modes[$mode]) && vartrue($modes[$mode]['url']))
+			if(vartrue($modes[$mode]) && vartrue($modes[$mode]['url']))
 			{
 				$path = e107::getParser()->replaceConstants($modes[$mode]['url'], 'abs');
 			}
@@ -2510,6 +2513,16 @@ class e_admin_controller_ui extends e_admin_controller
 	 */
 	protected $_alias_parsed = false;
 
+	/**
+	 * @var bool
+	 */
+	protected $afterSubmitOptions = true;
+
+	public function getAfterSubmitOptions()
+	{
+		return $this->afterSubmitOptions;
+	}
+
 	public function getBatchDelete()
 	{
 		return $this->batchDelete;
@@ -2580,7 +2593,8 @@ class e_admin_controller_ui extends e_admin_controller
 	{
 		return $this->tabs;
 	}
-	
+
+
 	/**
 	 * Get Tab data
 	 * @return array
@@ -2769,6 +2783,31 @@ class e_admin_controller_ui extends e_admin_controller
 
 		return $this->_model;
 	}
+
+
+	/**
+	 * Alias for getModel()->get and getListModel()->get().
+	 * May be used inside field-method in read/write mode.
+	 *
+	 * @param string $key
+	 * @return mixed|null - current value of the chosen db field.
+	 */
+	public function getFieldVar($key = null)
+	{
+		if(empty($key))
+		{
+			return null;
+		}
+
+		if($this->getAction() == 'list')
+		{
+			return $this->getListModel()->get($key);
+		}
+
+		return $this->getModel()->get($key);
+
+	}
+
 
 	/**
 	 * Set controller model
@@ -3693,6 +3732,7 @@ class e_admin_controller_ui extends e_admin_controller
 		$tableSJoinArr = array(); // FROM for join tables
 		$filter = array();
 
+
 		$searchQuery = $tp->toDB($request->getQuery('searchquery', ''));
 		$searchFilter = $this->_parseFilterRequest($request->getQuery('filter_options', ''));
 		
@@ -3703,7 +3743,7 @@ class e_admin_controller_ui extends e_admin_controller
 
 		if($searchFilter && is_array($searchFilter))
 		{
-			
+
 			list($filterField, $filterValue) = $searchFilter;
 			
 			if($filterField && $filterValue !== '' && isset($this->fields[$filterField]))
@@ -3711,7 +3751,7 @@ class e_admin_controller_ui extends e_admin_controller
 				$_dataType = $this->fields[$filterField]['data'];
 				$_fieldType = $this->fields[$filterField]['type'];
 
-				if($_fieldType === 'comma' || $_fieldType === 'checkboxes' || $_fieldType == 'userclasses')
+				if($_fieldType === 'comma' || $_fieldType === 'checkboxes' || $_fieldType == 'userclasses' || ($_fieldType == 'dropdown' && !empty($this->fields[$filterField]['writeParms']['multiple'])))
 				{
 					 $_dataType = 'set';
 				}
@@ -3917,6 +3957,9 @@ class e_admin_controller_ui extends e_admin_controller
 				'search' => $searchQry,
 				'tableFromName' => $tableFrom,
 			);
+
+			$orderField = $request->getQuery('field', $this->getDefaultOrderField());
+
 			$rawData['tableFrom'] = $tableSFieldsArr;
 			$rawData['joinsFrom'] = $tableSJoinArr;
 			$rawData['joins'] = $joins;
@@ -4056,7 +4099,7 @@ class e_admin_controller_ui extends e_admin_controller
 
 		// - Autoincrement sortField on 'Create'.
 
-		if(($_posted['etrigger_submit'] == 'Create') && !empty($this->sortField) && empty($this->sortParent) && empty($_posted[$this->sortField])  )
+		if(($_posted['etrigger_submit'] == 'create') && !empty($this->sortField) && empty($this->sortParent) && empty($_posted[$this->sortField])  )
 		{
 
 			$incVal = e107::getDb()->max($this->table, $this->sortField) + 1;
@@ -4068,7 +4111,7 @@ class e_admin_controller_ui extends e_admin_controller
 		// Trigger Admin-ui event.  'pre'
 		if($triggerName = $this->getEventTriggerName($_posted['etrigger_submit'])) // 'create' or 'update'; 
 		{
-
+			$id = $model->getId();
 			$eventData = array('newData'=>$_posted,'oldData'=>$old_data,'id'=> $id);
 			$model->addMessageDebug('Admin-ui Trigger fired: <b>'.$triggerName.'</b>');
 			if(E107_DBG_ALLERRORS >0 )
@@ -4289,11 +4332,38 @@ class e_admin_ui extends e_admin_controller_ui
 
 		foreach($tmp as $plug=>$config)
 		{
+
+			$form = e107::getAddon($plug, 'e_admin', $plug."_admin_form"); // class | false.
+
 			foreach($config['fields'] as $k=>$v)
 			{
 				$v['data'] = false; // disable data-saving to db table. .
-				$this->fields['x_'.$plug.'_'.$k] = $v; // ie. x_plugin_key
+
+				$fieldName = 'x_'.$plug.'_'.$k;
+
+				if($v['type'] == 'method' && method_exists($form,$fieldName))
+				{
+					$v['method'] = $plug."_admin_form::".$fieldName;
+					//echo "Found method ".$fieldName." in ".$plug."_menu_form";
+					//echo $form->$fieldName();
+				}
+
+
+				$this->fields[$fieldName] = $v; // ie. x_plugin_key
+
+
+
 			}
+
+			if(!empty($config['tabs']))
+			{
+				foreach($config['tabs'] as $t=>$tb)
+				{
+					$this->tabs[$t] = $tb;
+				}
+			}
+
+
 		}
 
 
@@ -5343,8 +5413,17 @@ class e_admin_ui extends e_admin_controller_ui
 	{
 		$data = $this->getPosted();
 
+		foreach($this->prefs as $k=>$v) // fix for empty checkboxes - need to save a value.
+		{
+			if(!isset($data[$k]) && $v['data'] !== false && ($v['type'] == 'checkboxes' || $v['type'] == 'checkbox'))
+			{
+				$data[$k] = null;
+			}
+		}
+
 		foreach($data as $key=>$val)
 		{
+
 			if(!empty($this->prefs[$key]['multilan']))
 			{
 
@@ -5354,7 +5433,7 @@ class e_admin_ui extends e_admin_controller_ui
 				}
 				else
 				{
-					$this->getConfig()->setPref($key.'/'.e_LANGUAGE, $val);
+					$this->getConfig()->setData($key.'/'.e_LANGUAGE, str_replace("'", '&#39;', $val));
 				}
 
 			}
@@ -5720,7 +5799,7 @@ class e_admin_form_ui extends e_form
 						'fields' => $controller->getFields(), //see e_admin_ui::$fields
 						'header' => $form_start, //XXX Unused?
 						'footer' => $form_end,  //XXX Unused?
-						'after_submit_options' => true, // or true for default redirect options
+						'after_submit_options' => $controller->getAfterSubmitOptions(), // or true for default redirect options
 						'after_submit_default' => $request->getPosted('__after_submit_action', $controller->getDefaultAction()), // or true for default redirect options
 						'triggers' => 'auto', // standard create/update-cancel triggers
 					)
@@ -5739,7 +5818,7 @@ class e_admin_form_ui extends e_form
 	function getSettings()
 	{
 		$controller = $this->getController();
-		$request = $controller->getRequest();
+	//	$request = $controller->getRequest();
 		$legend = LAN_UI_PREF_LABEL;
 		$forms = $models = array();
 		$forms[] = array(
@@ -5938,7 +6017,17 @@ class e_admin_form_ui extends e_form
 			$get = $this->getController()->getQuery();
 			foreach ($get as $key => $value) 
 			{
-				if($key == 'searchquery' || $key == 'filter_options' || $key == 'etrigger_filter') continue;
+				if($key == 'searchquery' || $key == 'filter_options' || $key == 'etrigger_filter')
+				{
+					continue;
+				}
+
+				// Reset pager after filtering.
+				if ($key == 'from')
+				{
+					continue;
+				}
+				
 				$key = preg_replace('/[^\w]/', '', $key);
 				$filter_preserve_var[] = $this->hidden($key, rawurlencode($value));
 			}
@@ -6328,6 +6417,9 @@ class e_admin_form_ui extends e_form
 
 					case 'dropdown': // use the array $parm;
 
+
+
+
 						if(!empty($parms['optArray']))
 						{
 							$fopts = $parms;
@@ -6339,12 +6431,16 @@ class e_admin_form_ui extends e_form
 
 						if(!is_array(varset($parms['__options']))) parse_str($parms['__options'], $parms['__options']);
 						$opts = $parms['__options'];
-						if(vartrue($opts['multiple']))
+						if(vartrue($opts['multiple']) && $type == 'batch')
 						{
 							// no batch support for multiple, should have some for filters soon
 							continue;
 						}
+
 						unset($parms['__options']); //remove element options if any
+
+
+
 						foreach($parms as $k => $name)
 						{
 							$option[$key.'__'.$k] = $name;

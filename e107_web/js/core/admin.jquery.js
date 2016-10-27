@@ -74,7 +74,7 @@ $(document).ready(function()
 			var pos = $(this).attr('data-placement'); 
 			if(!pos)
 			{
-				pos = 'top';	
+				pos = 'top';
 			}
 			
 			$(this).tooltip({opacity:1.0,fade:true, placement: pos});
@@ -365,12 +365,12 @@ $(document).ready(function()
 						
 			var t = $(this).nextAll(".field-help");
 
-			var placement = 'top';
+			var placement = 'bottom';
 			
-		/*	if($(this).is("textarea"))
+			if($(this).is("textarea"))
 			{
 				var placement = 'top';	
-			}*/
+			}
 
             var custplace = $(t).attr('data-placement'); // ie top|left|bottom|right
 
@@ -623,7 +623,22 @@ $(document).ready(function()
 
 
 
+		$("a.menuManagerSelect").click(function(e){
 
+
+			var link = $(this).attr('data-url');
+			var text = $(this).text();
+			$(this).html(text + ' <i class="e-mm-select-loading fa fa-spin fa-spinner"></i>');
+
+			$("#menu_iframe").attr("src",link);
+
+			$("#menu_iframe").on("load", function () {
+				$('.e-mm-select-loading').hide();
+			});
+
+			$(this).preventDefault();
+			return false;
+		});
 
 
     // Menu Manager Layout drop-down options

@@ -15,7 +15,9 @@ if (!defined('e107_INIT')) { exit; }
  *
  *	Shortcodes for custom page display
  */
- 
+
+
+
  
 class cpage_shortcodes extends e_shortcode
 {
@@ -246,12 +248,14 @@ class cpage_shortcodes extends e_shortcode
 	function sc_cpagebutton($parm)
 	{
 		$tp = e107::getParser();
-		
-		if(empty($this->var['menu_button_url']) && !check_class($this->var['page_class'])) // ignore when custom url used. 
+
+		$pgClass = intval($this->var['page_class']);
+
+		if(empty($this->var['menu_button_url']) && !check_class($pgClass)) // ignore when custom url used.
 		{
 			return "<!-- Button Removed: Page check_class() returned false. -->";	
 		}
-		
+
 		$url = $this->sc_cpageurl();
 		
 		if($parm == 'href' || !$url)
@@ -263,7 +267,7 @@ class cpage_shortcodes extends e_shortcode
 		{
 			return "<!-- Button Removed: No page text exists! -->";	
 		}
-		
+
 		parse_str($parm,$options);
 		
 		$buttonText = (empty($this->var['menu_button_text'])) ? LAN_READ_MORE : $this->var['menu_button_text'];
@@ -297,6 +301,21 @@ class cpage_shortcodes extends e_shortcode
 		// print_a($this);
 		return e107::getParser()->toHTML($this->var['menu_text'], true, 'BODY');
 	}
+
+	/**
+	 * @param null $parm
+	 * @example {CMENUURL}
+	 * @return string
+	 */
+	function sc_cmenuurl($parm=null)
+	{
+		if(empty($this->var['menu_button_url']))
+		{
+			return $this->sc_cpageurl();
+		}
+
+		return e107::getParser()->replaceConstants($this->var['menu_button_url']);
+	}
 	
 	
 	function sc_cmenuimage($parm='')
@@ -308,15 +327,16 @@ class cpage_shortcodes extends e_shortcode
 			return $video;	
 		}
 		
-		$img = $tp->thumbUrl($this->var['menu_image']);
+
 		if($parm == 'url')
 		{
+			$img = $tp->thumbUrl($this->var['menu_image']);
 			return $img;	
 		}
 
-		$dimensions = $tp->thumbDimensions();
+		return $tp->toImage($this->var['menu_image'], $parm);
 
-		return "<img class='img-responsive img-rounded' src='".$img."' alt='' ".$dimensions." />";
+		//return "<img class='".$class."' src='".$img."' alt='' ".$dimensions." />";
 	}
 	
 	function sc_cmenuicon($parm='')
@@ -528,8 +548,13 @@ class cpage_shortcodes extends e_shortcode
 		{
 			$array['types'] = 'page,news';
 		}
-			
-		return e107::getForm()->renderRelated($array, $this->var['page_metakeys'], array('page'=>$this->var['page_id']));	
+
+		$templateID = vartrue($this->var['page_template'],'default');
+
+		$template = e107::getCoreTemplate('page', $templateID);
+
+
+		return e107::getForm()->renderRelated($array, $this->var['page_metakeys'], array('page'=>$this->var['page_id']), $template['related']);
 	}
 	
 	

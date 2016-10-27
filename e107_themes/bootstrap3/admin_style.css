@@ -115,6 +115,9 @@ table input.form-control, table textarea.form-control,  table select.form-contro
     width:530px
 }
 
+.plugin-navigation li a { outline: 0; }
+.plugin-navigation li a.link-active:before { content: "\f054"; font-family:FontAwesome; margin-left:-10px }
+
 table textarea.input-block-level,
 input.input-block-level,
 input.form-control.input-block-level,
@@ -249,23 +252,32 @@ a.brand:hover img 			{
 
 } 
 
-img.image-selector							{ margin-bottom:0px; }
+img.image-selector							{ margin-bottom:0; }
       
 .nav-collapse 								{ margin-top:8px; }
-.dropdown-menu 								{ box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3); }
+.dropdown-menu 								{ box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3); }
 .dropdown-menu i,
-.dropdown-menu img 							{ padding: 0px 0px; margin-right: 10px; }
+.dropdown-menu img 							{ padding: 0 0; margin-right: 10px; }
 
-.nav ul li ul.dropdown-menu > li a img,
-.nav ul li ul.dropdown-menu > li a i		{
-						       					filter: url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'grayscale\'><feColorMatrix type=\'matrix\' values=\'0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0\'/></filter></svg>#grayscale"); /* Firefox 10+, Firefox on Android */
-						       					filter: gray; /* IE6-9 */
-						       					-webkit-filter: grayscale(100%); /* Chrome 19+, Safari 6+, Safari 6+ iOS */
+ul.navbar-nav li ul.dropdown-menu > li a img,
+ul.navbar-nav li ul.dropdown-menu > li a i		{
+            			       				-webkit-filter: grayscale(100%);
+                                            -moz-filter: grayscale(100%);
+                                            -ms-filter: grayscale(100%);
+                                            -o-filter: grayscale(100%);
+                                            filter: grayscale(100%);
+                                            filter: gray; /* IE 6-9 */
 											}
 
-.nav ul li ul.dropdown-menu a:hover i,
-.nav ul li ul.dropdown-menu a:hover img
-											{ filter: none;   -webkit-filter: grayscale(0%); }
+ul.navbar-nav li ul.dropdown-menu a:hover i,
+ul.navbar-nav li ul.dropdown-menu a:hover img
+											{
+											filter: none;
+											 -webkit-filter: none;
+                                            -moz-filter: none;
+                                            -ms-filter: none;
+                                            -o-filter: none;
+										     }
 
 td.options 									{ 	}
 
@@ -402,7 +414,7 @@ i.s-message-debug	{ background-position: -1480px 0; width: 32px; height: 32px;  
   line-height: 20px;
   text-align: left;
   vertical-align: top;
-  border-top: 1px solid #dddddd;
+  border-top: 1px solid #0a0a0a;
 }
 .fborder th , .fcaption {
   font-weight: bold;
@@ -999,6 +1011,10 @@ span.tag button.close {
 .selectize-control.multi .selectize-input > div { cursor: pointer; margin: 1px 5px 0 0; padding: 1px 3px; background: #3a87ad; color: #ffffff; border: 0 solid rgba(0, 0, 0, 0); text-shadow: 1px 1px 0 black; box-shadow: 1px 1px 0 black; font-size: 12px; font-weight: bold; }
 .selectize-control.single .selectize-input, .selectize-control.single .selectize-input.input-active, .selectize-control.single .selectize-input.input-active:hover, .selectize-control.single .selectize-input.focus, .selectize-control.multi .selectize-input, .selectize-control.multi .selectize-input.input-active, .selectize-control.multi .selectize-input.input-active:hover, .selectize-control.multi .selectize-input.focus { padding: 5px 5px 5px 5px !important; }
 
+div.selectize-control .form-control { background-color: #212121; border: none; box-shadow: 2px 2px 2px rgba(0, 0, 0,0.5);   }
+div.selectize-dropdown .option.active { color: #fff; background-color: #337ab7;  }
+
+
 /* Theme Manager - Find online */
 .form-search > div > div > div > i.icon-search
 {
@@ -1237,6 +1253,15 @@ li.rssRow > div {
 .alert-warning pre          { color: white }
 
 .xdebug-error { color: black; font-size:1.5em }
+
+li.after-submit { padding:5px; }
+li.after-submit:hover { background-color: #337AB7; color:white }
+
+/* Legacy Styling  */
+.fborder .forumheader3    { padding: 8px; line-height: 1.42857143; vertical-align: top; border-top: 1px solid #0a0a0a; }
+
+
+.plugin-manager .fa-refresh { padding-top: 4px }
 
 /*
 

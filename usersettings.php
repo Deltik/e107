@@ -178,12 +178,12 @@ if (isset($_POST['updatesettings']))
 	}
 
 	// Uploaded avatar and/or photo
-	if ($file_userfile['error'] != 4)
+	if (varset($file_userfile['error']) != 4)
 	{
 		require_once (e_HANDLER.'upload_handler.php');
 		require_once (e_HANDLER.'resize_handler.php');
 
-		if ($uploaded = process_uploaded_files(e_AVATAR_UPLOAD, 'prefix+ap_'.$tp->leadingZeros($udata['user_id'],7).'_', array('overwrite' => TRUE, 'file_mask'=>'jpg,png,gif', 'max_file_count' => 2)))
+		if ($uploaded = process_uploaded_files(e_AVATAR_UPLOAD, 'prefix+ap_'.$tp->leadingZeros($udata['user_id'],7).'_', array('overwrite' => TRUE, 'file_mask'=>'jpg,png,gif,jpeg', 'max_file_count' => 2)))
 		{
 			foreach ($uploaded as $upload)
 			{
@@ -342,17 +342,20 @@ e107::getMessage()->addDebug("<h5>Posted Changes</h5>".print_a($changedUserData,
 		{	// Invalid data - from hooked in trigger event
 			$message = "<div style='text-align:center'>".$ret."</div>";
 			$caption = LAN_OK;
-			$error = TRUE;
+			$error = true;
 		}
 	}
 }  // End - update setttings
-elseif (isset($_POST['SaveValidatedInfo']))
-{	// Next bit only valid if user editing their own data
+elseif (isset($_POST['SaveValidatedInfo'])) // Next bit only valid if user editing their own data
+{
 	if (!$adminEdit && !empty($_POST['updated_data']) && !empty($_POST['currentpassword']) && !empty($_POST['updated_key']))
 	{	// Got some data confirmed with password entry
 		$new_data = base64_decode($_POST['updated_data']);
-		if (md5($new_data) != $_POST['updated_key'])
-		{  // Should only happen if someone's fooling around
+
+
+		 // Should only happen if someone's fooling around
+		if (md5($new_data) != $_POST['updated_key'] || ($userMethods->hasReadonlyField($new_data) !==false))
+		{
 			echo LAN_USET_42.'<br />';
 			exit();
 		}
@@ -428,7 +431,7 @@ if ($dataToSave)
 		{
 			if ($_uid && ADMIN)
 			{	// Admin is changing it
-				$error = LAN_USET_20;
+				$extraErrors[] = LAN_USET_20;
 			}
 			else
 			{	// User is changing their own info
@@ -441,7 +444,7 @@ if ($dataToSave)
 if ($dataToSave && !$promptPassword)
 {
 	$inp = intval($inp);
-	$message = LAN_USET_41;
+
 
 	// We can update the basic user record now - can just update fields from $changedUserData
 	if (US_DEBUG) { $admin_log->e_log_event(10, debug_backtrace(), "DEBUG", "Usersettings test", "Changed data:<br /> ".var_export($changedUserData, true), false, LOG_TO_ROLLING); }
@@ -454,10 +457,11 @@ if ($dataToSave && !$promptPassword)
 		// print_a($changedData);
 		if (FALSE === $sql->update('user', $changedData))
 		{
-			$message .= '<br />'.LAN_USET_43;
+			$extraErrors[] = LAN_USET_43;
 		}
 		else
 		{
+			$message = LAN_USET_41;
 			if (isset($changedUserData['user_password']) && !$adminEdit)
 			{
 				//	echo "Make new cookie<br />";
@@ -808,7 +812,6 @@ function req($field)
 	}
 	return $ret;
 }
-
 
 
 // Delete a file from the public directories. Return TRUE on success, FALSE on failure.

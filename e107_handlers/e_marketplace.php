@@ -223,6 +223,53 @@ class e_marketplace
 		$this->adapter = null;
 		//echo "Adapter destroyed", PHP_EOL;
 	}
+
+
+	public function getVersionList($type='plugin')
+	{
+		$cache = e107::getCache();
+		$cache->setMD5('_', false);
+
+		$tag = 'Versions_'.$type;
+
+		if($data = $cache->retrieve($tag,(60 * 12), true, true))
+		{
+			return e107::unserialize($data);
+		}
+
+	//	$mp = $this->getMarketplace();
+	//	$mp->generateAuthKey($e107SiteUsername, $e107SiteUserpass);
+		e107::getDebug()->log("Retrieving ".$type." version list from e107.org");
+
+		$xdata = $this->call('getList', array(
+			'type' => $type,
+			'params' => array('limit' => 200, 'search' => null, 'from' => 0)
+		));
+
+		$arr = array();
+
+		if(!empty($xdata['data']))
+		{
+
+			foreach($xdata['data'] as $row)
+			{
+				$k = $row['folder'];
+				$arr[$k] = $row;
+			}
+
+		}
+
+// print_a($xdata['data']);
+
+		$data = e107::serialize($arr);
+		$cache->set($tag, $data, true, null, true);
+
+		return $arr;
+
+	}
+
+
+
 }
 
 abstract class e_marketplace_adapter_abstract
@@ -392,9 +439,12 @@ abstract class e_marketplace_adapter_abstract
 		
         $fp = fopen($path.$local_file, 'w'); // media-directory is the root. 
         //$fp1 = fopen(e_TEMP.'/curllog.txt', 'w'); 
-       
-        $cp = curl_init($remote_url);
-		curl_setopt($cp, CURLOPT_FILE, $fp);
+
+
+        $cp = e107::getFile()->initCurl($remote_url);
+        curl_setopt($cp, CURLOPT_FILE, $fp);
+     /*   $cp = curl_init($remote_url);
+
 		
 		//curl_setopt($ch, CURLOPT_VERBOSE, 1);
 		//curl_setopt($ch, CURLOPT_STDERR, $fp1);
@@ -402,7 +452,7 @@ abstract class e_marketplace_adapter_abstract
 		curl_setopt($cp, CURLOPT_REFERER, e_REQUEST_HTTP);
 		curl_setopt($cp, CURLOPT_HEADER, 0);
 		curl_setopt($cp, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)"); 
-		curl_setopt($cp, CURLOPT_COOKIEFILE, e_SYSTEM.'cookies.txt');
+		curl_setopt($cp, CURLOPT_COOKIEFILE, e_SYSTEM.'cookies.txt');*/
 
         $buffer = curl_exec($cp);
        	

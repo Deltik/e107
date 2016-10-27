@@ -158,6 +158,12 @@ class themeHandler
 			e107::getConfig()->save(true);
 		
 		}
+
+		if(!empty($_POST['git_pull']))
+		{
+			$return = e107::getFile()->gitPull($_POST['curTheme'], 'theme');
+			$mes->addSuccess($return);
+		}
 		
 		if(isset($_POST['installplugin']))
 		{
@@ -852,7 +858,8 @@ class themeHandler
 		
 		
 	
-		
+		$itext = '';
+
 		
 		// New in 0.8    WORK IN PROGRESS ----
 		if($theme['layouts'])
@@ -1216,7 +1223,7 @@ class themeHandler
 				<tr>
 					<td><b>".TPVLAN_11."</b></td>
 					<td>".$theme['version']."</td>
-					<td class='well center middle' rowspan='6' style='text-align:center; vertical-align:middle;width:25%'>".$thumbnail."</td>
+					<td class='well center middle' rowspan='9' style='text-align:center; vertical-align:middle;width:25%'>".$thumbnail."</td>
 					</tr>";
 		
 					$text .= "<tr><td style='vertical-align:top; width:25%'><b>".LAN_AUTHOR."</b>:</td><td style='vertical-align:top'>".$author."</td></tr>";
@@ -1225,12 +1232,22 @@ class themeHandler
 					
 					$text .= "<tr><td style='vertical-align:top; width:25%'><b>".TPVLAN_7."</b>:</td><td style='vertical-align:top'>".strip_tags($theme['info'],'b')."</td></tr>";
 					$text .= "<tr><td style='vertical-align:top; width:25%'><b>".LAN_CATEGORY."</b>:</td><td style='vertical-align:top'>".$theme['category']."</td></tr>";
-			//		$text .= "<tr><td style='vertical-align:top; width:25%'><b>Price</b>:</td><td style='vertical-align:top'>".$price."</td></tr>";
+					$text .= "<tr><td style='vertical-align:top; width:25%'><b>".LAN_FOLDER."</b>:</td><td style='vertical-align:top'>".$theme['path']."</td></tr>";
+
+				//		$text .= "<tr><td style='vertical-align:top; width:25%'><b>Price</b>:</td><td style='vertical-align:top'>".$price."</td></tr>";
 					$text .= "<tr><td style='vertical-align:top; width:25%'><b>".TPVLAN_49."</b>:</td>
 						<td style='vertical-align:top' colspan='2'>";
 					$text .= ($theme['xhtmlcompliant']) ? "W3C XHTML ".$theme['xhtmlcompliant'] : TPVLAN_71;
 					$text .= ($theme['csscompliant']) ? " &amp; CSS ".$theme['csscompliant'] : "";
 					$text .= "</td></tr>";
+
+
+						if(is_dir(e_THEME.$this->id."/.git"))
+						{
+							$text .= "<tr><td><b>Developer</b></td>
+								<td >".$this->frm->admin_button('git_pull', 1, 'primary', $tp->toGlyph('fa-refresh'). "Git Sync")."</td></tr>";
+						}
+
 		
 					// site theme..
 					if($mode == 1)
@@ -1333,9 +1350,33 @@ class themeHandler
 							$itext .= "</td>
 											<td style='vertical-align:top'>";
 							// Default
-							$itext .= ($pref['sitetheme_deflayout'] != $key) ? $custompage_diz."<div class='e-hideme' id='element-to-be-shown-{$key}'><textarea style='width:97%' rows='6' placeholder='usersettings.php' cols='20' name='custompages[".$key."]' >".(isset($pref['sitetheme_custompages'][$key]) ? implode("\n", $pref['sitetheme_custompages'][$key]) : "")."</textarea></div>\n" : TPVLAN_55;
+
+							if($pref['sitetheme_deflayout'] != $key)
+							{
+								$itext .= $custompage_diz."<div class='e-hideme' id='element-to-be-shown-{$key}'>
+										<textarea style='width:97%' rows='6' placeholder='usersettings.php' cols='20' name='custompages[".$key."]' >".(isset($pref['sitetheme_custompages'][$key]) ? implode("\n", $pref['sitetheme_custompages'][$key]) : "")."</textarea>";
+
+
+								//TODO Later.
+								if(e_DEBUG === true)
+								{
+									$itext .= "<small>(Not functional yet)</small>";
+									$itext .= e107::getForm()->userclass('layoutUserclass['.$key.']',null, null, array('options'=>'public,member,admin,classes,no-excludes','size'=>'xxlarge'));
+								}
+
+								$itext .= "
+								</div>\n";
+							}
+							else
+							{
+								$itext .= TPVLAN_55;
+							}
+
+
 							
 							$itext .= "</td>";
+
+
 							
 							$itext .= "<td>";
 							
@@ -1349,6 +1390,9 @@ class themeHandler
 			
 										</tr>";
 						}
+
+
+
 						
 						$itext .= "</table></td></tr>";
 					}

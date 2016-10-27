@@ -647,7 +647,7 @@ class e_model extends e_object
 	 * @param boolean $extended [optional] if true, method will return an array containing url, title and description of the url
      * @return mixed URL string or extended array data
      */
-    public function url($options = array(), $extended = false)
+    public function url($ids, $options = array(), $extended = false)
     {
         $urldata = $this->getUrl();
 		if(empty($urldata) || !vartrue($urldata['route'])) return ($extended ? array() : null);
@@ -2299,7 +2299,7 @@ class e_front_model extends e_model
 			}
 			else //no db field types, use toDB()
 			{
-				$src_data = $tp->toDB($src_data);
+				$src_data = e107::getParser()->toDB($src_data);
 			}
 		}
 
@@ -2647,6 +2647,10 @@ class e_front_model extends e_model
 				return intval($this->toNumber($value));
 			break;
 
+			case 'safestr':
+				return $tp->filter($value);
+			break;
+
 			case 'str':
 			case 'string':
 			case 'array':
@@ -2855,7 +2859,7 @@ class e_admin_model extends e_front_model
 			$this->mergePostedData(false, true, true);
 		}
 
-		if($this->getId() && $this->getPostedData('etrigger_submit') !='Create') // Additional Check to allow primary ID to be manually set when auto-increment PID is not used. @see userclass2.php
+		if($this->getId() && $this->getPostedData('etrigger_submit') !='create') // Additional Check to allow primary ID to be manually set when auto-increment PID is not used. @see userclass2.php
 		{
 			return $this->dbUpdate($force, $session_messages);
 		}
@@ -2881,7 +2885,7 @@ class e_admin_model extends e_front_model
 		return $this->dbInsert($session_messages);
     }
 
-	public function delete($destroy = true, $session_messages = false)
+	public function delete($ids, $destroy = true, $session_messages = false)
 	{
 		$ret = $this->dbDelete();
 		if($ret)
@@ -2920,7 +2924,8 @@ class e_admin_model extends e_front_model
 			$this->_db_errmsg = $sql->getLastErrorText();
 
 			$this->addMessageError('SQL Insert Error', $session_messages); //TODO - Lan
-			$this->addMessageDebug('SQL Error #'.$this->_db_errno.': '.$sql->getLastErrorText());
+			$this->addMessageDebug('SQL Error #'.$this->_db_errno.': '.$this->_db_errmsg);
+			$this->addMessageDebug('SQL QRY Error '.print_a($sqlQry,true));
 
 			return false;
 		}
@@ -3683,7 +3688,7 @@ class e_admin_tree_model extends e_front_tree_model
 
 			$model = $this->getNode($id);
 			if($this->getUrl()) $model->setUrl($this->getUrl()); // copy url config data if available
-			$ret[$id] = $model->url($options, $extended);
+			$ret[$id] = $model->url(null, $options, $extended);
 		}
 		return $ret;
     }

@@ -47,10 +47,11 @@ if(e_AJAX_REQUEST)
 {
 	if(vartrue($_POST['q']))
 	{
-		$q = filter_var($_POST['q'], FILTER_SANITIZE_STRING);
-		$l = vartrue($_POST['l']) ? intval($_POST['l']) : 10;
-
 		$db = e107::getDb();
+		$tp = e107::getParser();
+
+		$q = $tp->filter($_POST['q']);
+		$l = vartrue($_POST['l']) ? intval($_POST['l']) : 10;
 
 		$where = "user_name LIKE '". $q."%' ";
 
@@ -70,8 +71,8 @@ if(e_AJAX_REQUEST)
 
 			if(count($data))
 			{
-				header('Content-type: application/json');
-				echo json_encode($data);
+				$ajax = e107::getAjax();
+				$ajax->response($data);
 			}
 		}
 	}
@@ -120,11 +121,10 @@ else
 	$USER_SHORT_TEMPLATE_END    = $USER_TEMPLATE['list']['end'];
 }
 
-$TEMPLATE = str_replace('{USER_EMBED_USERPROFILE}','{USER_ADDONS}', $TEMPLATE); // BC Fix
+$USER_FULL_TEMPLATE = str_replace('{USER_EMBED_USERPROFILE}','{USER_ADDONS}', $USER_FULL_TEMPLATE); // BC Fix
 
 $user_shortcodes = e107::getScBatch('user');
 $user_shortcodes->wrapper('user/view');
-
 
 
 
@@ -258,18 +258,21 @@ if (isset($id))
 	else
 	{
 		// $userList = $sql->db_getList();
+		$sc = e107::getScBatch('user');
+		$text = $tp->parseTemplate($USER_SHORT_TEMPLATE_START, TRUE, $sc);
 
-		$text = $tp->parseTemplate($USER_SHORT_TEMPLATE_START, TRUE, $user_shortcodes);
 		foreach ($data as $row)
 		{
 			$loop_uid = $row['user_id'];
 
 		//	$text .= renderuser($row, "short");
-			e107::getScBatch('user')->setVars($row);
+			$sc->setVars($row);
+			$sc->wrapper('user/list');
 
-			$text .= $tp->parseTemplate($USER_SHORT_TEMPLATE, TRUE, $user_shortcodes);
+			$text .= $tp->parseTemplate($USER_SHORT_TEMPLATE, TRUE, $sc);
 		}
-		$text .= $tp->parseTemplate($USER_SHORT_TEMPLATE_END, TRUE, $user_shortcodes);
+
+		$text .= $tp->parseTemplate($USER_SHORT_TEMPLATE_END, TRUE, $sc);
 	}
 
 	$ns->tablerender(LAN_USER_52, $text);

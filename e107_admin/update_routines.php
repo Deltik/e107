@@ -575,7 +575,7 @@ function update_706_to_800($type='')
 				);
 
 	// List of DB tables not required (includes a few from 0.6xx)
-	$obs_tables = array('flood', 'headlines', 'stat_info', 'stat_counter', 'stat_last', 'session', 'preset', 'tinymce');
+	$obs_tables = array('flood',  'stat_info', 'stat_counter', 'stat_last', 'session', 'preset', 'tinymce');
 
 
 	// List of DB tables newly required  (defined in core_sql.php) (The existing dblog table gets renamed)
@@ -951,9 +951,9 @@ function update_706_to_800($type='')
 	}
 
 	// Check need for user timezone before we delete the field
-	if (vartrue($pref['signup_option_timezone']))
+//	if (vartrue($pref['signup_option_timezone']))
 	{
-		if ($sql->db_Field('user', 'user_timezone', '', TRUE) && !$sql->db_Field('user_extended','user_timezone','',TRUE))
+		if ($sql->field('user', 'user_timezone')===true && $sql->field('user_extended','user_timezone')===false)
 		{
 			if ($just_check) return update_needed('Move user timezone info');
 			if (!copy_user_timezone())
@@ -1797,15 +1797,25 @@ function copy_user_timezone()
 	$sql2 = e107::getDb('sql2');
 	$tp = e107::getParser();
 
-	require_once(e_HANDLER.'user_extended_class.php');
-	$ue = new e107_user_extended;
+	// require_once(e_HANDLER.'user_extended_class.php');
+	$ue = e107::getUserExt();
 	$tmp = $ue->parse_extended_xml('getfile');
+
 	$tmp['timezone']['parms'] = $tp->toDB($tmp['timezone']['parms']);
+
 	if(!$ue->user_extended_add($tmp['timezone']))
 	{
-		return FALSE;
+		e107::getMessage()->addError("Unable to add user_timezone field to user_extended table.");
+		return false;
 	}
 
+	if($sql->field('user_extended', 'user_timezone')===false)
+	{
+		e107::getMessage()->addError("user_timezone field missing from user_extended table.");
+		return false;
+	}
+
+	e107::getMessage()->addDebug("Line:".__LINE__);
 	// Created the field - now copy existing data
 	if ($sql->db_Select('user','user_id, user_timezone'))
 	{
@@ -1814,7 +1824,7 @@ function copy_user_timezone()
 			$sql2->update('user_extended',"`user_timezone`='{$row['user_timezone']}' WHERE `user_extended_id`={$row['user_id']}");
 		}
 	}
-	return TRUE;		// All done!
+	return true;		// All done!
 }
 
 

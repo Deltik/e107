@@ -297,7 +297,7 @@ class e107forum
 			}
 
 			$ret['status'] = 'ok';
-			$ret['msg'] = "Your post has been added"; // TODO lan.
+			$ret['msg'] = LAN_FORUM_3047; 
 		}
 
 		e107::getSession()->reset();
@@ -341,7 +341,7 @@ class e107forum
 			}
 			else
 			{
-				$ret['msg'] = 'There was a problem disabling the tracking.';  //TODO LAN
+				$ret['msg'] = LAN_FORUM_8017;  
 				$ret['status'] = 'error';
 			}
 
@@ -357,7 +357,7 @@ class e107forum
 			else
 			{
 				$ret['html'] = IMAGE_untrack;
-				$ret['msg'] = "There was a problem.";  //TODO LAN
+				$ret['msg'] = LAN_FORUM_8018;  
 				$ret['status'] = 'error';
 			}
 
@@ -395,13 +395,13 @@ class e107forum
 				case 'delete':
 					if($this->threadDelete($id))
 					{
-						$ret['msg'] 	= 'Deleted topic #'.$id;
+						$ret['msg'] 	= ''.LAN_FORUM_8020.' #'.$id;
 						$ret['hide'] 	= true; 
 						$ret['status'] 	= 'ok';	
 					}
 					else
 					{
-						$ret['msg'] 	= "Couldn't delete the topic";
+						$ret['msg'] 	= LAN_FORUM_8019;
 						$ret['status'] 	= 'error';	
 					}
 				break;
@@ -411,19 +411,19 @@ class e107forum
 					{
 						// echo "No Post";
 						// exit;
-						$ret['msg'] 	= 'Post not found';
+						$ret['msg'] 	= LAN_FORUM_7008;
 						$ret['status'] 	= 'error';		
 					}
 					
 					if($this->postDelete($postId))
 					{
-						$ret['msg'] 	= 'Deleted post #'.$postId;
+						$ret['msg'] 	= ''.LAN_FORUM_8021.' #'.$postId;
 						$ret['hide'] 	= true; 
 						$ret['status'] 	= 'ok';	
 					}
 					else
 					{
-						$ret['msg'] 	= "Couldn't delete post #".$postId;
+						$ret['msg'] 	= "".LAN_FORUM_8021." #".$postId;
 						$ret['status'] 	= 'error';	
 					}
 				break;
@@ -436,7 +436,7 @@ class e107forum
 					}
 					else
 					{
-						$ret['msg'] 	= "Failed to close thread";
+						$ret['msg'] 	= LAN_FORUM_8023;
 						$ret['status'] 	= 'error';	
 					}
 				break;
@@ -449,7 +449,7 @@ class e107forum
 					}
 					else
 					{
-						$ret['msg'] = "failed to open thread";
+						$ret['msg'] = LAN_FORUM_8024;
 						$ret['status'] 	= 'error';	
 					}
 				break;
@@ -462,7 +462,7 @@ class e107forum
 					}
 					else
 					{
-						$ret['msg'] = "failed to stick thread";
+						$ret['msg'] = LAN_FORUM_8025;
 						$ret['status'] 	= 'error';	
 					}
 				break;
@@ -475,7 +475,7 @@ class e107forum
 					}
 					else
 					{
-						$ret['msg'] = "failed to unstick thread";
+						$ret['msg'] = LAN_FORUM_8026;
 						$ret['status'] 	= 'error';	
 					}
 				break;	
@@ -486,7 +486,7 @@ class e107forum
 				
 				default:
 					$ret['status'] 	= 'error';	
-					$ret['msg'] 	= 'No action selected';
+					$ret['msg'] 	= LAN_FORUM_8027;
 				break;
 			}
 						
@@ -507,7 +507,7 @@ class e107forum
 	{
 		if($tmp = e107::getCache()->setMD5(e_LANGUAGE.USERCLASS_LIST)->retrieve('forum_perms'))
 		{
-			e107::getMessage()->addDebug("Using Permlist cache: True");
+			e107::getDebug()->log("Using Permlist cache: True");
 
 			$this->permList = e107::unserialize($tmp);
 
@@ -516,7 +516,7 @@ class e107forum
 		}
 		else
 		{
-			e107::getMessage()->addDebug("Using Permlist cache: False");
+			e107::getDebug()->log("Using Permlist cache: False");
 			$this->_getForumPermList();
 			$tmp = e107::serialize($this->permList, false);
 			e107::getCache()->setMD5(e_LANGUAGE.USERCLASS_LIST)->set('forum_perms', $tmp);
@@ -710,8 +710,8 @@ class e107forum
 		$info['data']['post_id'] = $postId; // Append last inserted ID to data array for passing it to event callbacks.
 
 
-
-	  	e107::getEvent()->trigger('user_forum_post_created', $info);
+		$triggerData = $info['data'];
+	  	e107::getEvent()->trigger('user_forum_post_created', $triggerData);
 
 	  	ob_start(); // precaution so json doesn't break.
 		$this->trackEmail($info['data']);
@@ -757,8 +757,9 @@ class e107forum
 
 			e107::getMessage()->addDebug("Updating Thread with: ".print_a($info,true));
 
-
-		  	e107::getEvent()->trigger('user_forum_topic_updated', $info);
+			$triggerData = $info['data'];
+			$triggerData['thread_id'] = $postInfo['post_thread'];
+		  	e107::getEvent()->trigger('user_forum_topic_updated', $triggerData);
 		}
 
 		if(($result || !$updateThread) && $updateForum)
@@ -813,7 +814,7 @@ class e107forum
 
 	function threadAdd($threadInfo, $postInfo)
 	{
-		$e107 = e107::getInstance();
+
 		$info = array();
 //		$info['_FIELD_TYPES'] = $this->fieldTypes['forum_thread'];
 
@@ -824,16 +825,29 @@ class e107forum
 
 		if($newThreadId = e107::getDb()->insert('forum_thread', $info))
 		{
-		  	e107::getEvent()->trigger('user_forum_topic_created', $info);
-			$postInfo['post_thread'] = $newThreadId;
-
-			if(!$newPostId = $this->postAdd($postInfo, false))
+			if($postInfo !== false)
 			{
-				e107::getMessage()->addDebug("There was a problem: ".print_a($postInfo,true));
+				$postInfo['post_thread'] = $newThreadId;
+
+				if(!$newPostId = $this->postAdd($postInfo, false))
+				{
+					e107::getMessage()->addDebug("There was a problem: ".print_a($postInfo,true));
+				}
+			}
+			else
+			{
+				$newPostId = 0;
 			}
 
 			$this->threadMarkAsRead($newThreadId);
 			$threadInfo['thread_sef'] = $this->getThreadsef($threadInfo);
+
+			$triggerData                = $info['data'];
+			$triggerData['thread_id']   = $newThreadId;
+			$triggerData['thread_sef']  = $threadInfo['thread_sef'];
+			$triggerData['post_id']     = $newPostId;
+
+			e107::getEvent()->trigger('user_forum_topic_created', $triggerData);
 
 			return array('postid' => $newPostId, 'threadid' => $newThreadId, 'threadsef'=>$threadInfo['thread_sef']);
 		}
@@ -902,7 +916,9 @@ class e107forum
 			e107::getMessage()->addDebug("Thread Update Failed: ".print_a($info,true));
 		}
 
-	  	e107::getEvent()->trigger('user_forum_topic_updated', $info);
+		$triggerData = $threadInfo;
+		$triggerData['thread_id'] = intval($threadId);
+	  	e107::getEvent()->trigger('user_forum_topic_updated', $triggerData);
 	}
 
 	
@@ -919,6 +935,8 @@ class e107forum
 			e107::getMessage()->addDebug("Post Update Failed: ".print_a($info,true));
 		}
 
+		$triggerData = $postInfo;
+		$triggerData['post_id'] = intval($postId);
 	  	e107::getEvent()->trigger('user_forum_post_updated', $info);
 	}
 
@@ -1008,7 +1026,8 @@ class e107forum
 				LIMIT {$start}, {$num}
 			";
 		}
-		if($sql->gen($qry))
+
+		if($sql->gen($qry)!==false)
 		{
 			$ret = array();
 			while($row = $sql->fetch())
@@ -1040,14 +1059,15 @@ class e107forum
 	}
 
 	/**
-	* Checks if post is the initial post which started the topic. 
-	* Retrieves list of post_id's belonging to one post_thread. When lowest value is equal to input param, return true. 
-	* Used to prevent deleting of the initial post (so topic shows empty does not get hidden accidently while posts remain in database)
-    *
-	* @param int id of the post
-	* @return boolean true if post is the initial post of the topic (false, if not) 
-    *
-	*/
+	 * Checks if post is the initial post which started the topic.
+	 * Retrieves list of post_id's belonging to one post_thread. When lowest value is equal to input param, return true.
+	 * Used to prevent deleting of the initial post (so topic shows empty does not get hidden accidently while posts remain in database)
+	 *
+	 * @param $postId
+	 * @return bool true if post is the initial post of the topic (false, if not)
+	 *
+	 * @internal param int $postid
+	 */
 	function threadDetermineInitialPost($postId)
 	{
 		$sql = e107::getDb();
@@ -1070,6 +1090,8 @@ class e107forum
 		}
 		return false;
 	}
+
+
 
 	function threadGetUserPostcount($threadId)
 	{
@@ -1257,7 +1279,9 @@ class e107forum
 		$sql = e107::getDb();
 		$tp = e107::getParser();
 
-		$sql2 = new db;
+		$sql2 = e107::getDb('sql2');
+
+
 		if ($type == 'thread')
 		{
 			$id = (int)$id;
@@ -1273,15 +1297,20 @@ class e107forum
 				$tmp['thread_lastuser'] = 0;
 				$tmp['thread_lastuser_anon'] = ($lpInfo['post_user_anon'] ? $lpInfo['post_user_anon'] : 'Anonymous');
 			}
+
 			$tmp['thread_lastpost'] = $lpInfo['post_datestamp'];
 			$info = array();
 			$info['data'] = $tmp;
 //			$info['_FIELD_TYPES'] = $this->fieldTypes['forum_thread'];
 			$info['WHERE'] = 'thread_id = '.$id;
+
 			$sql->update('forum_thread', $info);
 
 			return $lpInfo;
 		}
+
+
+
 		if ($type == 'forum')
 		{
 			if ($id == 'all')
@@ -1789,7 +1818,7 @@ class e107forum
 	 * @param $view
 	 * @return array
 	 */
-	function forumGetThreads($forumId, $from, $view)
+	function forumGetThreads($forumId, $from, $view, $filter = null)
 	{
 		$e107 = e107::getInstance();
 		$sql = e107::getDb();
@@ -1801,6 +1830,14 @@ class e107forum
 		LEFT JOIN `#user` AS u ON t.thread_user = u.user_id
 		LEFT JOIN `#user` AS lpu ON t.thread_lastuser = lpu.user_id
 		WHERE t.thread_forum_id = {$forumId}
+		";
+
+		if(!empty($filter))
+		{
+			$qry .= " AND ".$filter;
+		}
+
+		$qry .= "
 		GROUP BY thread_id
 		ORDER BY
 		t.thread_sticky DESC,
@@ -2020,6 +2057,22 @@ class e107forum
 	}
 
 
+	/**
+	 * @param $threadID
+	 * @return int
+	 */
+	function threadUpdateCounts($threadID)
+	{
+		$sql = e107::getDb();
+
+		$replies = $sql->count('forum_post', '(*)', 'WHERE post_thread='.$threadID);
+
+		return $sql->update('forum_thread', "thread_total_replies={$replies} WHERE thread_id=".$threadID);
+
+	}
+
+
+
 
 	function getUserCounts()
 	{
@@ -2044,6 +2097,7 @@ class e107forum
 
 
 
+// Function eventually to be reworked (move full function to shortcode file, or make a new breadcrumb function, like in downloads, maybe?)
 	/*
 	 * set bread crumb
 	 * $forum_href override ONLY applies when template is missing FORUM_CRUMB
@@ -2057,8 +2111,9 @@ class e107forum
 
 		$forumTitle = e107::pref('forum','title', LAN_PLUGIN_FORUM_NAME);
 		
-		global $FORUM_CRUMB, $forumInfo, $threadInfo, $thread;
-		global $BREADCRUMB,$BACKLINK;  // Eventually we should deprecate BACKLINK
+//--		global $FORUM_CRUMB, $forumInfo, $threadInfo, $thread;
+//--		global $BREADCRUMB,$BACKLINK;  // Eventually we should deprecate BACKLINK
+		global $FORUM_CRUMB, $forumInfo, $threadInfo, $thread, $BREADCRUMB;
 
 		if(!$forumInfo && $thread) { $forumInfo = $thread->threadInfo; }
 
@@ -2176,12 +2231,20 @@ class e107forum
 		
 		
 		
+/*
 		$BACKLINK = $BREADCRUMB;
+
 		$templateVar->BREADCRUMB = $BREADCRUMB;
 	
 	
 		$templateVar->BACKLINK = $BACKLINK;
 		$templateVar->FORUM_CRUMB = $FORUM_CRUMB;
+*/
+    // Backlink shortcode is defined inside shortcode file....
+//---- var_dump ($templateVar);
+//---- echo "<hr>";
+		$templateVar['breadcrumb'] = $BREADCRUMB;
+		$templateVar['forum_crumb'] = $FORUM_CRUMB;
 	}
 
 

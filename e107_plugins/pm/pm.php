@@ -148,8 +148,16 @@ class pm_extended extends private_message
 			$to_uid = $pm_info['pm_from'];
 		}
 
+
+
 		if(!empty($to_uid))
 		{
+
+			if($this->canSendTo($to_uid) == false)
+			{
+				return "<div class='alert alert-danger'>".LAN_PM_114."</div>";// sending to this user is not permitted.
+			}
+
 			$sql2 = e107::getDb('sql2');
 			if($sql2->select('user', 'user_name', 'user_id = '.intval($to_uid))) //TODO add a check for userclass.
 			{
@@ -159,7 +167,7 @@ class pm_extended extends private_message
 			}
 			else
 			{
-				return "<div class='alert alert-danger'>User Not Found</div>";
+				return "<div class='alert alert-danger'>".LAN_PM_115."</div>";
 			}
 		}
 		//echo "Show_send: {$to_uid} from {$pm_info['from_name']} is happening<br />";
@@ -767,7 +775,7 @@ if($message != '')
 switch ($action)
 {
 	case 'send' :
-		$ns->tablerender(LAN_PM, $pm->breadcrumb(LAN_PM_35). $mes->render() . $pm->show_send($pm_proc_id));
+		$ns->tablerender(LAN_PM, $pm->breadcrumb(LAN_PLUGIN_PM_NEW). $mes->render() . $pm->show_send($pm_proc_id));
 		break;
 
 	case 'reply' :

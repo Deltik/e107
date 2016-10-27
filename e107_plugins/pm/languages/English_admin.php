@@ -76,6 +76,14 @@ define("ADLAN_PM_80", "Preference formats updated");
 define("ADLAN_PM_81", "Maximum number of PMs to send immediately");
 define("ADLAN_PM_82", "If sending more than this, they are added to a queue and sent out using the cron task");
 define("ADLAN_PM_83", "Users may only send messages to users in this class");
+define("ADLAN_PM_84", "Maximum message length");
+define("ADLAN_PM_85", "0 = unlimited");
 
-
-?>
+define("ADLAN_PM_86", "VIP Class");
+define("ADLAN_PM_87", "Users in this class can only receive messages from others in this class. Overrides the above preference.");
+define("ADLAN_PM_88", "User may send PMs to");
+define("ADLAN_PM_89", "(Any user with the same class)");
+define("ADLAN_PM_90", "Please enter a recipient in the 'To' field.");
+define("ADLAN_PM_91", "Test");
+define("ADLAN_PM_92", "Test Email Sent!");
+define("ADLAN_PM_93", "Test Email Failed!");

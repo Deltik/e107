@@ -99,7 +99,12 @@ class e_file
 	
 	
 	
-	private $authKey = false; // Used when retrieving files from e107.org. 
+	private $authKey = false; // Used when retrieving files from e107.org.
+
+
+	private $error = null;
+
+	private $errornum = null;
 
 	/**
 	 * Constructor
@@ -169,8 +174,19 @@ class e_file
 		$this->mode= $mode; 
 	}
 			
-		
-	
+
+	public function getErrorMessage()
+	{
+		return $this->error;
+	}
+
+
+	public function getErrorCode()
+	{
+		return $this->errornum;
+	}
+
+
 	/**
 	 * Read files from given path
 	 *
@@ -421,14 +437,19 @@ class e_file
 		}
 		
         $fp = fopen($path.$local_file, 'w'); // media-directory is the root. 
-       
-        $cp = curl_init($remote_url);
+
+        $cp = $this->initCurl($remote_url);
 		curl_setopt($cp, CURLOPT_FILE, $fp);
+
+       	/*
+       	$cp = curl_init($remote_url);
+
 		curl_setopt($cp, CURLOPT_REFERER, e_REQUEST_HTTP);
 		curl_setopt($cp, CURLOPT_HEADER, 0);
 		curl_setopt($cp, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)"); 
 		curl_setopt($cp, CURLOPT_COOKIEFILE, e_SYSTEM.'cookies.txt');
 		curl_setopt($cp, CURLOPT_SSL_VERIFYPEER, FALSE);
+       	*/
 
         $buffer = curl_exec($cp);
        
@@ -437,7 +458,76 @@ class e_file
        
         return ($buffer) ? true : false;
     }
-	
+
+	/**
+	 * @param string $address
+	 * @param array|null $options
+	 */
+	function initCurl($address, $options =null)
+	{
+		$cu = curl_init();
+
+		$timeout = (integer) vartrue($options['timeout'], 10);
+		$timeout = min($timeout, 120);
+		$timeout = max($timeout, 3);
+
+		$urlData = parse_url($address);
+		$referer = $urlData['scheme']."://".$urlData['host'];
+
+		if(empty($referer))
+		{
+			$referer = e_REQUEST_HTTP;
+		}
+
+		curl_setopt($cu, CURLOPT_URL, $address);
+		curl_setopt($cu, CURLOPT_TIMEOUT, $timeout);
+		curl_setopt($cu, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($cu, CURLOPT_HEADER, 0);
+		curl_setopt($cu, CURLOPT_REFERER, $referer);
+		curl_setopt($cu, CURLOPT_SSL_VERIFYPEER, FALSE);
+		curl_setopt($cu, CURLOPT_FOLLOWLOCATION, 0);
+		curl_setopt($cu, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)");
+		curl_setopt($cu, CURLOPT_COOKIEFILE, e_SYSTEM.'cookies.txt');
+		curl_setopt($cu, CURLOPT_COOKIEJAR, e_SYSTEM.'cookies.txt');
+
+		if(defined('e_CURL_PROXY'))
+		{
+			curl_setopt($cu, CURLOPT_PROXY, e_CURL_PROXY);     // PROXY details with port
+		}
+
+		if(defined('e_CURL_PROXYUSERPWD'))
+		{
+			curl_setopt($cu, CURLOPT_PROXYUSERPWD, e_CURL_PROXYUSERPWD);   // Use if proxy have username and password
+		}
+
+		if(defined('e_CURL_PROXYTYPE'))
+		{
+			curl_setopt($cu, CURLOPT_PROXYTYPE, e_CURL_PROXYTYPE); // If expected to cal
+		}
+
+		if(!empty($options['post']))
+		{
+			curl_setopt($cu, CURLOPT_POST, true);
+				// if array -> will encode the data as multipart/form-data, if URL-encoded string - application/x-www-form-urlencoded
+			curl_setopt($cu, CURLOPT_POSTFIELDS, $options['post']);
+		}
+
+		if(isset($options['header']) && is_array($options['header']))
+		{
+			curl_setopt($cu, CURLOPT_HTTPHEADER, $options['header']);
+		}
+
+		if(!file_exists(e_SYSTEM.'cookies.txt'))
+		{
+			file_put_contents(e_SYSTEM.'cookies.txt','');
+		}
+
+		return $cu;
+
+	}
+
+
+
 	/**
 	 * FIXME add POST support
 	 * Get Remote contents
@@ -452,10 +542,7 @@ class e_file
 	function getRemoteContent($address, $options = array())
 	{
 		// Could do something like: if ($timeout <= 0) $timeout = $pref['get_remote_timeout'];  here
-		$postData = varset($options['post'], null);
-		$timeout = (integer) vartrue($options['timeout'], 10);
-		$timeout = min($timeout, 120);
-		$timeout = max($timeout, 3);
+
 		$fileContents = '';
 		$this->error = '';
 		$this->errornum = null;
@@ -468,38 +555,12 @@ class e_file
 		
 		if(vartrue($options['decode'], false)) $address = urldecode($address);
 
-		// Keep this in first position. 
+		// Keep this in first position.
 		if (function_exists("curl_init")) // Preferred. 
 		{
-			$cu = curl_init();
-			curl_setopt($cu, CURLOPT_URL, $address);
-			curl_setopt($cu, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($cu, CURLOPT_HEADER, 0);
-			curl_setopt($cu, CURLOPT_TIMEOUT, $timeout);
-			curl_setopt($cu, CURLOPT_SSL_VERIFYPEER, FALSE); 
-			curl_setopt($cu, CURLOPT_REFERER, e_REQUEST_HTTP);
-			curl_setopt($cu, CURLOPT_FOLLOWLOCATION, 0); 
-			curl_setopt($cu, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)"); 
-			curl_setopt($cu, CURLOPT_COOKIEFILE, e_SYSTEM.'cookies.txt');
-			curl_setopt($cu, CURLOPT_COOKIEJAR, e_SYSTEM.'cookies.txt');
-			if($postData !== null)
-			{
-				curl_setopt($cu, CURLOPT_POST, true);
-				// if array -> will encode the data as multipart/form-data, if URL-encoded string - application/x-www-form-urlencoded
-				curl_setopt($cu, CURLOPT_POSTFIELDS, $postData);
-				$requireCurl = true;
-			}
-			if(isset($options['header']) && is_array($options['header']))
-			{
-				curl_setopt($cu, CURLOPT_HTTPHEADER, $options['header']);
-				$requireCurl = true;
-			}
-	
-			if(!file_exists(e_SYSTEM.'cookies.txt'))
-			{
-				file_put_contents(e_SYSTEM.'cookies.txt','');	
-			}
-			
+
+			$cu = $this->initCurl($address, $options);
+
 			$fileContents = curl_exec($cu);
 			if (curl_error($cu))
 			{
@@ -513,6 +574,8 @@ class e_file
 		
 		// CURL is required, abort...
 		if($requireCurl == true) return false;
+
+		$timeout = 5;
 
 		if (function_exists('file_get_contents') && ini_get('allow_url_fopen'))
 		{
@@ -725,7 +788,7 @@ class e_file
 	 *
 	 * @return string formatted size
 	 */
-	function file_size_encode($size, $retrieve = false)
+	function file_size_encode($size, $retrieve = false, $decimal =2)
 	{
 		if($retrieve)
 		{
@@ -745,15 +808,15 @@ class e_file
 		}
 		else if($size < $mb)
 		{
-			return round($size/$kb, 2)."&nbsp;".CORE_LAN_KB;
+			return round($size/$kb, $decimal)."&nbsp;".CORE_LAN_KB;
 		}
 		else if($size < $gb)
 		{
-			return round($size/$mb, 2)."&nbsp;".CORE_LAN_MB;
+			return round($size/$mb, $decimal)."&nbsp;".CORE_LAN_MB;
 		}
 		else if($size < $tb)
 		{
-			return round($size/$gb, 2)."&nbsp;".CORE_LAN_GB;
+			return round($size/$gb, $decimal)."&nbsp;".CORE_LAN_GB;
 		}
 		else
 		{
@@ -1182,6 +1245,57 @@ class e_file
 	}
 
 
+
+	public function gitPull($folder='', $type=null)
+	{
+		$gitPath = defset('e_GIT','git'); // addo to e107_config.php to
+		$mes = e107::getMessage();
+
+
+	//	$text = 'umask 0022'; //Could correct permissions issue with 0664 files.
+		// Change Dir.
+
+		switch($type)
+		{
+			case "plugin":
+				$dir = realpath(e_PLUGIN.basename($folder));
+				break;
+
+			case "theme":
+				$dir = realpath(e_THEME.basename($folder));
+				break;
+
+			default:
+				$dir = e_ROOT;
+		}
+
+
+
+	//	$cmd1 = 'cd '.$dir;
+		$cmd2 = 'cd '.$dir.'; '.$gitPath.' reset --hard'; // Remove any local changes.
+		$cmd3 = 'cd '.$dir.'; '.$gitPath.' pull'; 	// Run Pull request
+
+
+	//	$mes->addDebug($cmd1);
+		$mes->addDebug($cmd2);
+		$mes->addDebug($cmd3);
+
+	//	return false;
+
+	//	$text = `$cmd1 2>&1`;
+		$text = `$cmd2 2>&1`;
+		$text .= `$cmd3 2>&1`;
+
+	//	$text .= `$cmd4 2>&1`;
+
+	//	$text .= `$cmd5 2>&1`;
+
+		return print_a($text,true);
+
+	}
+
+
+
 	/**
 	 * Returns true is the URL is valid and false if it is not.
 	 * @param $url
@@ -1189,8 +1303,10 @@ class e_file
 	 */
 	public function isValidURL($url)
 	{
+		ini_set('default_socket_timeout', 1);
 	   $headers = get_headers($url);
 	//   print_a($headers);
+
 	   return (stripos($headers[0],"200 OK") || stripos($headers[0],"302")) ? true : false;
 	}
 
@@ -1206,11 +1322,50 @@ class e_file
 		$mes = e107::getMessage();
 		
 		chmod(e_TEMP.$localfile, 0755);
-		require_once(e_HANDLER."pclzip.lib.php");
+
+		$dir = false;
+
+		if(class_exists('ZipArchive') && e_DEBUG === true) // PHP7 compat. method.
+		{
+			$zip = new ZipArchive;
+
+			if($zip->open(e_TEMP.$localfile) === true)
+			{
+				for($i = 0; $i < $zip->numFiles; $i++ )
+				{
+					$filename = $zip->getNameIndex($i);
+                    $fileinfo = pathinfo($filename);
+
+                    if($fileinfo['dirname'] === '.')
+                    {
+                        $dir = $fileinfo['basename'];
+                        break;
+                    }
+
+			     //   $stat = $zip->statIndex( $i );
+			    //    print_a( $stat['name']  );
+				}
+
+
+				$zip->extractTo(e_TEMP);
+				chmod(e_TEMP.$dir, 0755);
+
+				$zip->close();
+			}
+
+
+		}
+		else // Legacy Method.
+		{
+			require_once(e_HANDLER."pclzip.lib.php");
 		
-		$archive 	= new PclZip(e_TEMP.$localfile);
-		$unarc 		= ($fileList = $archive -> extract(PCLZIP_OPT_PATH, e_TEMP, PCLZIP_OPT_SET_CHMOD, 0755)); // Store in TEMP first. 
-		$dir 		= $this->getRootFolder($unarc);	
+			$archive 	= new PclZip(e_TEMP.$localfile);
+			$unarc 		= ($fileList = $archive -> extract(PCLZIP_OPT_PATH, e_TEMP, PCLZIP_OPT_SET_CHMOD, 0755)); // Store in TEMP first.
+			$dir 		= $this->getRootFolder($unarc);
+		}
+
+
+
 		$destpath 	= ($type == 'theme') ? e_THEME : e_PLUGIN;
 		$typeDiz 	= ucfirst($type);
 		
@@ -1229,7 +1384,7 @@ class e_file
 			return false;
 		}
 	
-		if($dir == '')
+		if(empty($dir))
 		{
 			$mes->addError("Couldn't detect the root folder in the zip."); //  flush();
 			@unlink(e_TEMP.$localfile);
@@ -1238,13 +1393,14 @@ class e_file
 	
 		if(is_dir(e_TEMP.$dir)) 
 		{
-			if(!rename(e_TEMP.$dir,$destpath.$dir))
+			$res = rename(e_TEMP.$dir,$destpath.$dir);
+			if($res === false)
 			{
 				$mes->addError("Couldn't Move ".e_TEMP.$dir." to ".$destpath.$dir." Folder"); //  flush(); usleep(50000);
 				@unlink(e_TEMP.$localfile);
 				return false;
 			}	
-			
+
 
 			
 		//	$dir 		= basename($unarc[0]['filename']);

@@ -209,6 +209,8 @@ class xmlClass
 
 	public $convertFilePaths = FALSE;
 
+	public $modifiedPrefsOnly = false;
+
 	public $filePathDestination = FALSE;
 
 	public $convertFileTypes = array("jpg", "gif", "png", "jpeg");
@@ -433,128 +435,10 @@ class xmlClass
 	{		
 		$_file = e107::getFile();
 		$this->xmlFileContents = $_file->getRemoteContent($address, array('timeout' => $timeout, 'post' => $postData));
-		$this->error = $_file->error;
+		$this->error = $_file->getErrorMessage();
 		
 		return $this->xmlFileContents;
-		
-		// ------ MOVED TO FILE HANDLER ------ //
-		// Could do something like: if ($timeout <= 0) $timeout = $pref['get_remote_timeout'];  here
-		$timeout = min($timeout, 120);
-		$timeout = max($timeout, 3);
-		$this->xmlFileContents = '';
-		
-		$mes = e107::getMessage();
-			
-		if($this->_feedUrl) // override option for use when part of the address needs to be encoded. 
-		{
-			$mes->addDebug("getting Remote File: ".$this->_feedUrl);
-		}
-		else
-		{
-			$address = str_replace(array("\r", "\n", "\t"), '', $address); // May be paranoia, but streaky thought it might be a good idea	
-			// ... and there shouldn't be unprintable characters in the URL anyway
-		}		
-		
-		if($this->urlPrefix !== false)
-		{
-			$address = 	$this->urlPrefix.$address;
-		}
-		
-		
-		// ... and there shouldn't be unprintable characters in the URL anyway
-		
-		
-		// Keep this in first position. 
-		if (function_exists("curl_init")) // Preferred. 
-		{
-			$cu = curl_init();
-			curl_setopt($cu, CURLOPT_URL, $address);
-			curl_setopt($cu, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($cu, CURLOPT_HEADER, 0);
-			curl_setopt($cu, CURLOPT_TIMEOUT, $timeout);
-			curl_setopt($cu, CURLOPT_SSL_VERIFYPEER, FALSE); 
-			curl_setopt($cu, CURLOPT_REFERER, e_REQUEST_HTTP);
-			curl_setopt($cu, CURLOPT_FOLLOWLOCATION, 0); 
-			curl_setopt($cu, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)"); 
-			curl_setopt($cu, CURLOPT_COOKIEFILE, e_SYSTEM.'cookies.txt');
-			curl_setopt($cu, CURLOPT_COOKIEJAR, e_SYSTEM.'cookies.txt');
-	
-			if(!file_exists(e_SYSTEM.'cookies.txt'))
-			{
-				file_put_contents(e_SYSTEM.'cookies.txt','');	
-			}
-			
-			$this->xmlFileContents = curl_exec($cu);
-			if (curl_error($cu))
-			{
-				$this->error = "Curl error: ".curl_errno($cu).", ".curl_error($cu);
-				return FALSE;
-			}
-			curl_close($cu);
-			return $this->xmlFileContents;
-		}
-		
 
-		if (function_exists('file_get_contents') && ini_get('allow_url_fopen'))
-		{
-			$old_timeout = e107_ini_set('default_socket_timeout', $timeout);
-			$address = ($this->_feedUrl) ? $this->_feedUrl : urldecode($address);
-
-			$data = file_get_contents($address);
-
-			//		  $data = file_get_contents(htmlspecialchars($address));	// buggy - sometimes fails.
-			if ($old_timeout !== FALSE)
-			{
-				e107_ini_set('default_socket_timeout', $old_timeout);
-			}
-			if ($data !== FALSE)
-			{
-				$this->xmlFileContents = $data;
-				return $data;
-			}
-			$this->error = "File_get_contents(XML) error";		// Fill in more info later
-			return FALSE;
-		}
-
-		if (ini_get("allow_url_fopen"))
-		{
-			$old_timeout = e107_ini_set('default_socket_timeout', $timeout);
-			$remote = @fopen($address, "r");
-			if (!$remote)
-			{
-				$this->error = "fopen: Unable to open remote XML file: ".$address;
-				return FALSE;
-			}
-		}
-		else
-		{
-			$old_timeout = $timeout;
-			$tmp = parse_url($address);
-			if (!$remote = fsockopen($tmp['host'], 80, $errno, $errstr, $timeout))
-			{
-				$this->error = "Sockets: Unable to open remote XML file: ".$address;
-				return FALSE;
-			}
-			else
-			{
-				socket_set_timeout($remote, $timeout);
-				fputs($remote, "GET ".urlencode($address)." HTTP/1.0\r\n\r\n");
-			}
-		}
-		$this->xmlFileContents = "";
-		while (!feof($remote))
-		{
-			$this->xmlFileContents .= fgets($remote, 4096);
-		}
-		fclose($remote);
-		if ($old_timeout != $timeout)
-		{
-			if ($old_timeout !== FALSE)
-			{
-				e107_ini_set('default_socket_timeout', $old_timeout);
-			}
-		}
-		return $this->xmlFileContents;
 	}
 
 	/**
@@ -951,16 +835,19 @@ class xmlClass
 			$val = $this->filePathPrepend[$key].$val;
 		}
 
+		if(is_array($val))
+		{
+		//	$val = "<![CDATA[".e107::serialize($val,false)."]]>";
+			$val = e107::serialize($val,false);
+		}
+
 		if($this->convertFilePaths)
 		{
 			$types = implode("|",$this->convertFileTypes);
 			$val = preg_replace_callback("#({e_.*?\.(".$types."))#i", array($this,'replaceFilePaths'), $val);
 		}
 
-		if(is_array($val))
-		{
-			return "<![CDATA[".e107::getArrayStorage()->WriteArray($val,FALSE)."]]>";
-		}
+
 
 		if((strpos($val,"<")!==FALSE) || (strpos($val,">")!==FALSE) || (strpos($val,"&")!==FALSE))
 		{
@@ -982,10 +869,21 @@ class xmlClass
 	public function e107Export($xmlprefs, $tables, $debug = FALSE)
 	{
 		error_reporting(0);
+		$e107info = array();
 		require_once(e_ADMIN."ver.php");
 
 		$text = "<?xml version='1.0' encoding='utf-8' ?".">\n";
 		$text .= "<e107Export version=\"".$e107info['e107_version']."\" timestamp=\"".time()."\" >\n";
+
+		$default = array();
+		$excludes = array();
+
+		if($this->modifiedPrefsOnly == true)
+		{
+			$xmlArray = e107::getSingleton('xmlClass')->loadXMLfile(e_CORE."xml/default_install.xml",'advanced');
+			$default = e107::getSingleton('xmlClass')->e107ImportPrefs($xmlArray,'core');
+			$excludes = array('social_login','replyto_email','replyto_name','siteadminemail','lan_global_list','menuconfig_list','plug_installed','shortcode_legacy_list','siteurl','cookie_name','install_date');
+		}
 
 		if(varset($xmlprefs)) // Export Core Preferences.
 		{
@@ -993,9 +891,21 @@ class xmlClass
 			foreach($xmlprefs as $type)
 			{
 				$theprefs = e107::getConfig($type)->getPref();
-				$prefsorted = ksort($theprefs);
+				ksort($theprefs);
 				foreach($theprefs as $key=>$val)
 				{
+					if($type == 'core' && $this->modifiedPrefsOnly == true && (($val == $default[$key]) || in_array($key,$excludes) || substr($key,0,2) == 'e_'))
+					{
+						continue;
+					}
+					elseif($debug == true)
+					{
+						echo "<div>Original/Modiied <b>".$key."</b>";
+						var_dump($default[$key],$val);
+						echo "</div>";
+
+					}
+
 					if(isset($val))
 					{
 						$text .= "\t\t<".$type." name=\"".$key."\">".$this->e107ExportValue($val)."</".$type.">\n";
@@ -1013,8 +923,16 @@ class xmlClass
 				$eTable= str_replace(MPREFIX,"",$tbl);
 				e107::getDB()->select($eTable, "*");
 				$text .= "\t<dbTable name=\"".$eTable."\">\n";
-				while($row = e107::getDB()-> db_Fetch())
+				$count = 1;
+				while($row = e107::getDB()->fetch())
 				{
+
+					if($this->convertFilePaths == true && $eTable == 'core_media' && substr($row['media_url'],0,8) != '{e_MEDIA')
+					{
+						continue;
+					}
+
+
 					$text .= "\t\t<item>\n";
 					foreach($row as $key=>$val)
 					{
@@ -1022,6 +940,7 @@ class xmlClass
 					}
 
 					$text .= "\t\t</item>\n";
+					$count++;
 				}
 				$text .= "\t</dbTable>\n";
 
