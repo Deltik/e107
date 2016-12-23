@@ -137,6 +137,7 @@ $override = array();
 if(isset($_POST['previous_steps']))
 {
 	$tmp = unserialize(base64_decode($_POST['previous_steps']));
+	$tmp = filter_var_array($tmp, FILTER_SANITIZE_STRING);
 	$override = (isset($tmp['paths']['hash'])) ? array('site_path'=>$tmp['paths']['hash']) : array();
 	unset($tmp);
 }
@@ -219,7 +220,7 @@ class e_install
 	var $previous_steps;
 	var $stage;
 	var $post_data;
-	var $required = ""; 		//TODO - use for highlighting required fields with css/js.
+	var $required = array(); 		//TODO - use for highlighting required fields with css/js.
 	var $logFile;			// Name of log file, empty string if logging disabled
 	var	$dbLink = NULL;		// DB link - needed for PHP5.3 bug
 	var $session = null;
@@ -397,12 +398,12 @@ class e_install
 
 	function display_required()
 	{
-		if(!$this->required)
+		if(empty($this->required))
 		{
 			return;
 		}
 		$this->required = array_filter($this->required);
-		if(vartrue($this->required))
+		if(!empty($this->required))
 		{
 			$this->template->SetTag("required","<div class='message'>". implode("<br />",$this->required)."</div>");
 			$this->required = array();
@@ -856,13 +857,21 @@ class e_install
 			$php_help = "<span class='glyphicon glyphicon-remove'></span> ".LANINS_019;
 		}
 
+
+
 		$e_forms->start_form("versions", $_SERVER['PHP_SELF'].($_SERVER['QUERY_STRING'] == "debug" ? "?debug" : ""));
 
 
 		
-		$permColor	= ($perms_pass == true) ? "text-success" : "text-error";
-		$PHPColor 	= ($version_fail == false) ? "text-success" : "text-error";
-		$mysqlColor	= ($mysql_pass == true) ? "text-success" : "text-error";
+		$permColor	= ($perms_pass == true) ? "text-success" : "text-danger";
+		$PHPColor 	= ($version_fail == false) ? "text-success" : "text-danger";
+		$mysqlColor	= ($mysql_pass == true) ? "text-success" : "text-danger";
+
+		if(version_compare($php_version, 7.1, ">=")) // XXX Remove once tested thoroughly
+		{
+			$php_help = "<span class='glyphicon glyphicon-warning-sign'></span> PHP 7.1 may have issues with e107. We recommend using 7.0.x versions instead until further testing has been performed.";
+			$PHPColor = 'text-warning';
+		}
 
 
 		$extensionCheck = array(
@@ -1063,7 +1072,7 @@ class e_install
 			$this->required['u_name'] = LANINS_086; //
 		}
 
-		if(vartrue($this->required['u_name']) || vartrue($this->required['pass1']))
+		if(!empty($this->required['u_name']) || !empty($this->required['pass1']))
 		{
 			return $this->stage_5();
 		}
@@ -1219,7 +1228,7 @@ class e_install
 			 $this->required['sitetheme'] = LANINS_114; // 'Please select a theme.';
 		}
 
-		if(vartrue($this->required['sitetheme']) || vartrue($this->required['sitename']))
+		if(!empty($this->required['sitetheme']) || !empty($this->required['sitename']))
 		{
 			return $this->stage_6();
 		}
@@ -2018,7 +2027,7 @@ class SimpleTemplate
 	var $open_tag = "{";
 	var $close_tag = "}";
 
-	function SimpleTemplate()
+	function __construct()
 	{
 		define("TEMPLATE_TYPE_FILE", 0);
 		define("TEMPLATE_TYPE_DATA", 1);
@@ -2071,6 +2080,7 @@ function template_data()
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<link href="'.e_THEME.'bootstrap3/css/bootstrap-dark.min.css" rel="stylesheet">
 		<link href="'.e_THEME.'bootstrap3/admin_style.css" rel="stylesheet">
+		<link rel="icon" href="favicon.ico" type="image/x-icon" />
 		<style type="text/css">
 		
 		body 					{  padding-top: 40px; padding-bottom: 40px; background-color: #181818; }

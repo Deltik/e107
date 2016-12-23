@@ -412,11 +412,30 @@ class e107_db_debug {
 		$aSum['%Time']=$totTime ? number_format(100.0 * ($aSum['Time'] / $totTime), 0) : 0;
 		$aSum['%DB Time']=$db_time ? number_format(100.0 * ($aSum['DB Time'] / $db_time), 0) : 0;
 		$aSum['%DB Count']=($sql->db_QueryCount()) ? number_format(100.0 * ($aSum['DB Count'] / ($sql->db_QueryCount())), 0) : 0;
-		$aSum['Time']=number_format($aSum['Time']*1000.0, 1);
+		$aSum['Time']=number_format($aSum['Time'] * 1000.0, 1);
 		$aSum['DB Time']=number_format($aSum['DB Time']*1000.0, 1);
 
-		$text .= "<tr><td class='fcaption'><b>".implode("</b>&nbsp;</td><td class='fcaption' style='text-align:right'><b>", $aSum)."</b>&nbsp;</td><td class='fcaption'>&nbsp;</td></tr>\n";
-		$text .= "\n</table><br />\n";
+
+		$text .= "<tr>
+		<td class='fcaption'>&nbsp;</td>
+		<td class='fcaption' style='text-align:right'><b>Total</b></td>
+		<td class='fcaption' style='text-align:right'><b>".$aSum['%Time']."</b></td>
+		<td class='fcaption' style='text-align:right'><b>".$aSum['%DB Time']."</b></td>
+		<td class='fcaption' style='text-align:right'><b>".$aSum['%DB Count']."</b></td>
+		<td class='fcaption' style='text-align:right'><b>".$aSum['Time']."</b></td>
+		<td class='fcaption' style='text-align:right'><b>".$aSum['DB Time']."</b></td>
+		<td class='fcaption' style='text-align:right'><b>".$aSum['DB Count']."</b></td>
+		<td class='fcaption' style='text-align:right'><b>".$tMarker['Memory']."</b></td>
+		<td class='fcaption' style='text-align:right'><b>".$tMarker['OB Lev']."</b></td>
+
+		</tr>
+		";
+
+
+	//	$text .= "<tr><td class='fcaption'><b>".implode("</b>&nbsp;</td><td class='fcaption' style='text-align:right'><b>", $aSum)."</b>&nbsp;</td><td class='fcaption'>&nbsp;</td></tr>\n";
+
+			$text .= "\n</table><br />\n";
+
 
 		//
 		// Stats by Table
@@ -461,7 +480,7 @@ class e107_db_debug {
 		$aSum['%DB Time']=$db_time ? number_format(100.0 * ($aSum['DB Time'] / $db_time), 0) : 0;
 		$aSum['%DB Count']=($sql->db_QueryCount()) ? number_format(100.0 * ($aSum['DB Count'] / ($sql->db_QueryCount())), 0) : 0;
 		$aSum['DB Time']=number_format($aSum['DB Time']*1000.0, 1);
-		$text .= "<tr><td class='fcaption'>".implode("&nbsp;</td><td class='fcaption' style='text-align:right'>", array_values($aSum))."&nbsp;</td></tr>\n";
+		$text .= "<tr><td class='fcaption'><b>".implode("&nbsp;</td><td class='fcaption' style='text-align:right'><b>", array_values($aSum))."&nbsp;</b></td></tr>\n";
 		$text .= "\n</table><br />\n";
 
 		return $text;
@@ -659,22 +678,24 @@ class e107_db_debug {
 	function log($message,$TraceLev=1)
 	{
 
-		if(is_array($message))
+		if(is_array($message) || is_object($message))
 		{
 			$message = "<pre>".print_r($message,true)."</pre>";
 		}
 
-		if (!E107_DBG_BASIC){
-			return FALSE;
+		if (!E107_DBG_BASIC && !E107_DBG_ALLERRORS && !E107_DBG_SQLDETAILS && !E107_DBG_NOTICES)
+		{
+			return false;
 		}
+
 		if ($TraceLev)
 		{
 			$bt = debug_backtrace();
 			$this->aLog[] =	array (
 				'Message'   => $message,
 				'Function'	=> (isset($bt[$TraceLev]['type']) && ($bt[$TraceLev]['type'] == '::' || $bt[$TraceLev]['type'] == '->') ? $bt[$TraceLev]['class'].$bt[$TraceLev]['type'].$bt[$TraceLev]['function'].'()' : $bt[$TraceLev]['function']).'()',
-				'File'	=> $bt[$TraceLev]['file'],
-				'Line'	=> $bt[$TraceLev]['line']
+				'File'	=> varset($bt[$TraceLev]['file']),
+				'Line'	=> varset($bt[$TraceLev]['line'])
 			);
 		} else {
 			$this->aLog[] =	array (

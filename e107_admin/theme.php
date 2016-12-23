@@ -76,7 +76,8 @@ if(!empty($_GET['action']))
 		case 'info':
 			$string =  base64_decode($_GET['src']);
 			parse_str($string,$p);
-			echo $themec->renderThemeInfo($p);
+			$themeInfo = e107::getSession()->get('thememanager/online/'.intval($p['id']));
+			echo $themec->renderThemeInfo($themeInfo);
 
 		break;
 		
@@ -162,6 +163,17 @@ if($mode == 'download' && !empty($_GET['src']))
 		{
 			e107::getRedirect()->go($data['url']);
 			return true;
+		}
+
+		if(e_DEBUG === true)
+		{
+			echo "<b>DEBUG MODE ACTIVE (no downloading)</b><br />";
+			echo '$_GET: ';
+			print_a($_GET);
+
+			echo 'base64 decoded and parsed as $data:';
+			print_a($data);
+			return false;
 		}
 
 		

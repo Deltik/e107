@@ -95,6 +95,12 @@ class parseXml extends xmlClass // BC with v1.x
             {
 				$error = sprintf('XML error: %s at line %d, column %d', xml_error_string(xml_get_error_code($this->parser)), xml_get_current_line_number($this->parser),xml_get_current_column_number($this->parser));
 				$log->addDebug($error)->save('XML');
+				if(e_DEBUG === true)
+				{
+					$error .= "\n".$data;
+					$error .= "\n--------------------------------------------\n\n";
+					$log->addDebug($error)->toFile('xmlErrors',"XML Error Log",true);
+				}
 				return FALSE;
             }
         }
@@ -1021,7 +1027,7 @@ class xmlClass
 	/**
 	 * Import an e107 XML file into site preferences and DB tables
 	 *
-	 * @param path $file - e107 XML file path
+	 * @param string $file - e107 XML file path
 	 * @param string $mode[optional] - add|replace
 	 * @param boolean $noLogs [optional] tells pref handler to disable admin logs when true (install issues)
 	 * @param boolean $debug [optional]
@@ -1108,6 +1114,12 @@ class xmlClass
 					{
 						$error = $sql->getLastErrorText();
 						$lastQry = $sql->getLastQuery();
+
+						if(is_array($lastQry))
+						{
+							$lastQry = $lastQry['PREPARE'];
+						}
+
 						$ret['failed'][] = $table. "\n[".$error."]\n".$lastQry."\n\n";
 					}
 				}

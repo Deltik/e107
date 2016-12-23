@@ -179,7 +179,7 @@ else // XHTML
  * 
 */
 
-echo "<meta name=\"viewport\" content=\"width=device-width; initial-scale=0.8; maximum-scale=1\" />\n"; // Works better for iOS but still has some issues.
+echo "<meta name=\"viewport\" content=\"width=device-width, initial-scale=0.8, maximum-scale=1\" />\n"; // Works better for iOS but still has some issues.
 // echo (defined("VIEWPORT")) ? "<meta name=\"viewport\" content=\"".VIEWPORT."\" />\n" : "";
 
 echo "<title>".(defined("e_PAGETITLE") ? e_PAGETITLE." - " : (defined("PAGE_NAME") ? PAGE_NAME." - " : "")).LAN_HEADER_04." :: ".SITENAME."</title>\n";
@@ -295,14 +295,16 @@ echo "\n<!-- footer_other_css -->\n";
 $e_js->renderJs('core_css', false, 'css', false);
 echo "\n<!-- footer_core_css -->\n";
 
-// Plugin CSS
-$e_js->renderJs('plugin_css', false, 'css', false);
-echo "\n<!-- footer_plugin_css -->\n";
+
 
 // Theme CSS
 //echo "<!-- Theme css -->\n";
 $e_js->renderJs('theme_css', false, 'css', false);
 echo "\n<!-- footer_theme_css -->\n";
+
+// Plugin CSS
+$e_js->renderJs('plugin_css', false, 'css', false);
+echo "\n<!-- footer_plugin_css -->\n";
 
 // Inline CSS - not sure if this should stay at all!
 $e_js->renderJs('inline_css', false, 'css', false);
@@ -334,12 +336,22 @@ $jslib->renderHeader('admin', false);
 e107::getJs()->renderJs('header', 2);
 e107::getJs()->renderJs('header_inline', 2);
 
-//DEPRECATED - use e107::getJs()->headerFile('{e_PLUGIN}myplug/js/my.js', $zone = 2)
-if (isset($eplug_js) && $eplug_js)
+/* @deprecated -use e107::js('myplug','js/my.js') instead; */
+if (!empty($eplug_js))
 {
-	e107::getMessage()->addDebug('Deprecated $eplug_js method detected. Use e107::js() function inside an e_header.php file instead.'.print_a($eplug_js,true)); 
+	e107::getMessage()->addDebug('Deprecated $eplug_js method detected. Use e107::js() function inside an e_header.php file instead.'.print_a($eplug_js,true));
 	echo "\n<!-- eplug_js -->\n";
-	echo "<script type='text/javascript' src='{$eplug_js}'></script>\n";
+
+	if(!is_array($eplug_js))
+	{
+		$eplug_js = array($eplug_js);
+	}
+
+	foreach($eplug_js as $vjss)
+	{
+		echo "<script type='text/javascript' src='{$vjss}'></script>\n";
+	}
+
 }
 
 //FIXME - theme.js/user.js should be registered/rendered through e_jsmanager

@@ -413,7 +413,7 @@ class e_file
 	/**
 	 *	 Grab a remote file and save it in the /temp directory. requires CURL
 	 *	@param $remote_url
-	 *	@param $local_file
+	 *	@param $local_file string filename to save as
 	 *	@param $type  media, temp, or import
 	 *	@return boolean TRUE on success, FALSE on failure (which includes absence of CURL functions)
 	 */
@@ -440,7 +440,7 @@ class e_file
 
         $cp = $this->initCurl($remote_url);
 		curl_setopt($cp, CURLOPT_FILE, $fp);
-
+		curl_setopt($cp, CURLOPT_TIMEOUT, 20);//FIXME Make Pref - avoids get file timeout on slow connections
        	/*
        	$cp = curl_init($remote_url);
 
@@ -452,6 +452,7 @@ class e_file
        	*/
 
         $buffer = curl_exec($cp);
+		//FIXME addDebug curl_error output - here see #1936
        
         curl_close($cp);
         fclose($fp);
@@ -484,8 +485,8 @@ class e_file
 		curl_setopt($cu, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($cu, CURLOPT_HEADER, 0);
 		curl_setopt($cu, CURLOPT_REFERER, $referer);
-		curl_setopt($cu, CURLOPT_SSL_VERIFYPEER, FALSE);
-		curl_setopt($cu, CURLOPT_FOLLOWLOCATION, 0);
+		curl_setopt($cu, CURLOPT_SSL_VERIFYPEER, false);
+		curl_setopt($cu, CURLOPT_FOLLOWLOCATION, true);
 		curl_setopt($cu, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)");
 		curl_setopt($cu, CURLOPT_COOKIEFILE, e_SYSTEM.'cookies.txt');
 		curl_setopt($cu, CURLOPT_COOKIEJAR, e_SYSTEM.'cookies.txt');
@@ -1190,11 +1191,11 @@ class e_file
 	 *		['error']	- error code. 0 = 'good'. 1..4 main others, although up to 8 defined for later PHP versions
 	 *	Files stored in server's temporary directory, unless another set
 	 */
-	public function getUploaded($uploaddir, $fileinfo = false, $options = null)
+	public function getUploaded($uploaddir, $fileinfo = false, $options = array())
 	{
 		require_once(e_HANDLER."upload_handler.php");
 
-		if($uploaddir == e_UPLOAD || $uploaddir == e_TEMP)
+		if($uploaddir == e_UPLOAD || $uploaddir == e_TEMP || $uploaddir = e_AVATAR_UPLOAD)
 		{
 			$path = $uploaddir;
 		}
@@ -1206,7 +1207,6 @@ class e_file
 		{
 			return false;
 		}
-
 
 		return process_uploaded_files($path, $fileinfo, $options);
 
@@ -1254,6 +1254,7 @@ class e_file
 
 	//	$text = 'umask 0022'; //Could correct permissions issue with 0664 files.
 		// Change Dir.
+		$folder = e107::getParser()->filter($folder,'file'); // extra filter to keep RIPS happy.
 
 		switch($type)
 		{

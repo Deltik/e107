@@ -789,9 +789,10 @@ class e_parse extends e_parser
 		$search = array('&#036;', '&quot;', '<', '>');
 		$replace = array('$', '"', '&lt;', '&gt;');
 		$text = str_replace($search, $replace, $text);
-		if (e107::wysiwyg() !== true)
+		if (e107::wysiwyg() !== true && is_string($text))
 		{
 			// fix for utf-8 issue with html_entity_decode(); ???
+			$text = urldecode($text);
 		//	$text = str_replace("&nbsp;", " ", $text);
 		}
 		return $text;
@@ -1742,7 +1743,7 @@ class e_parse extends e_parser
 						// Convert URL's to clickable links, unless modifiers or prefs override
 						if ($opts['link_click'])
 						{
-							if ($opts['link_replace'] && ADMIN_AREA !== true)
+							if ($opts['link_replace'] && defset('ADMIN_AREA') !== true)
 							{
 
 								$link_text = $pref['link_text'];
@@ -1992,7 +1993,71 @@ class e_parse extends e_parser
 	}
 
 
+	function toASCII($text)
+	{
 
+		$char_map = array(
+			// Latin
+			'À' => 'A', 'Á' => 'A', 'Â' => 'A', 'Ã' => 'A', 'Ä' => 'A', 'Å' => 'A', 'Æ' => 'AE', 'Ç' => 'C',
+			'È' => 'E', 'É' => 'E', 'Ê' => 'E', 'Ë' => 'E', 'Ì' => 'I', 'Í' => 'I', 'Î' => 'I', 'Ï' => 'I',
+			'Ð' => 'D', 'Ñ' => 'N', 'Ò' => 'O', 'Ó' => 'O', 'Ô' => 'O', 'Õ' => 'O', 'Ö' => 'O', 'Ő' => 'O',
+			'Ø' => 'O', 'Ù' => 'U', 'Ú' => 'U', 'Û' => 'U', 'Ü' => 'U', 'Ű' => 'U', 'Ý' => 'Y', 'Þ' => 'TH',
+			'ß' => 'ss',
+			'à' => 'a', 'á' => 'a', 'â' => 'a', 'ã' => 'a', 'ä' => 'a', 'å' => 'a', 'æ' => 'ae', 'ç' => 'c',
+			'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e', 'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
+			'ð' => 'd', 'ñ' => 'n', 'ò' => 'o', 'ó' => 'o', 'ô' => 'o', 'õ' => 'o', 'ö' => 'o', 'ő' => 'o',
+			'ø' => 'o', 'ù' => 'u', 'ú' => 'u', 'û' => 'u', 'ü' => 'u', 'ű' => 'u', 'ý' => 'y', 'þ' => 'th',
+			'ÿ' => 'y',
+			// Latin symbols
+			'©' => '(c)',
+			// Greek
+			'Α' => 'A', 'Β' => 'B', 'Γ' => 'G', 'Δ' => 'D', 'Ε' => 'E', 'Ζ' => 'Z', 'Η' => 'H', 'Θ' => '8',
+			'Ι' => 'I', 'Κ' => 'K', 'Λ' => 'L', 'Μ' => 'M', 'Ν' => 'N', 'Ξ' => '3', 'Ο' => 'O', 'Π' => 'P',
+			'Ρ' => 'R', 'Σ' => 'S', 'Τ' => 'T', 'Υ' => 'Y', 'Φ' => 'F', 'Χ' => 'X', 'Ψ' => 'PS', 'Ω' => 'W',
+			'Ά' => 'A', 'Έ' => 'E', 'Ί' => 'I', 'Ό' => 'O', 'Ύ' => 'Y', 'Ή' => 'H', 'Ώ' => 'W', 'Ϊ' => 'I',
+			'Ϋ' => 'Y',
+			'α' => 'a', 'β' => 'b', 'γ' => 'g', 'δ' => 'd', 'ε' => 'e', 'ζ' => 'z', 'η' => 'h', 'θ' => '8',
+			'ι' => 'i', 'κ' => 'k', 'λ' => 'l', 'μ' => 'm', 'ν' => 'n', 'ξ' => '3', 'ο' => 'o', 'π' => 'p',
+			'ρ' => 'r', 'σ' => 's', 'τ' => 't', 'υ' => 'y', 'φ' => 'f', 'χ' => 'x', 'ψ' => 'ps', 'ω' => 'w',
+			'ά' => 'a', 'έ' => 'e', 'ί' => 'i', 'ό' => 'o', 'ύ' => 'y', 'ή' => 'h', 'ώ' => 'w', 'ς' => 's',
+			'ϊ' => 'i', 'ΰ' => 'y', 'ϋ' => 'y', 'ΐ' => 'i',
+			// Turkish
+			'Ş' => 'S', 'İ' => 'I', 'Ç' => 'C', 'Ü' => 'U', 'Ö' => 'O', 'Ğ' => 'G',
+			'ş' => 's', 'ı' => 'i', 'ç' => 'c', 'ü' => 'u', 'ö' => 'o', 'ğ' => 'g',
+			// Russian
+			'А' => 'A', 'Б' => 'B', 'В' => 'V', 'Г' => 'G', 'Д' => 'D', 'Е' => 'E', 'Ё' => 'Yo', 'Ж' => 'Zh',
+			'З' => 'Z', 'И' => 'I', 'Й' => 'J', 'К' => 'K', 'Л' => 'L', 'М' => 'M', 'Н' => 'N', 'О' => 'O',
+			'П' => 'P', 'Р' => 'R', 'С' => 'S', 'Т' => 'T', 'У' => 'U', 'Ф' => 'F', 'Х' => 'H', 'Ц' => 'C',
+			'Ч' => 'Ch', 'Ш' => 'Sh', 'Щ' => 'Sh', 'Ъ' => '', 'Ы' => 'Y', 'Ь' => '', 'Э' => 'E', 'Ю' => 'Yu',
+			'Я' => 'Ya',
+			'а' => 'a', 'б' => 'b', 'в' => 'v', 'г' => 'g', 'д' => 'd', 'е' => 'e', 'ё' => 'yo', 'ж' => 'zh',
+			'з' => 'z', 'и' => 'i', 'й' => 'j', 'к' => 'k', 'л' => 'l', 'м' => 'm', 'н' => 'n', 'о' => 'o',
+			'п' => 'p', 'р' => 'r', 'с' => 's', 'т' => 't', 'у' => 'u', 'ф' => 'f', 'х' => 'h', 'ц' => 'c',
+			'ч' => 'ch', 'ш' => 'sh', 'щ' => 'sh', 'ъ' => '', 'ы' => 'y', 'ь' => '', 'э' => 'e', 'ю' => 'yu',
+			'я' => 'ya',
+			// Ukrainian
+			'Є' => 'Ye', 'І' => 'I', 'Ї' => 'Yi', 'Ґ' => 'G',
+			'є' => 'ye', 'і' => 'i', 'ї' => 'yi', 'ґ' => 'g',
+			// Czech
+			'Č' => 'C', 'Ď' => 'D', 'Ě' => 'E', 'Ň' => 'N', 'Ř' => 'R', 'Š' => 'S', 'Ť' => 'T', 'Ů' => 'U',
+			'Ž' => 'Z',
+			'č' => 'c', 'ď' => 'd', 'ě' => 'e', 'ň' => 'n', 'ř' => 'r', 'š' => 's', 'ť' => 't', 'ů' => 'u',
+			'ž' => 'z',
+			// Polish
+			'Ą' => 'A', 'Ć' => 'C', 'Ę' => 'e', 'Ł' => 'L', 'Ń' => 'N', 'Ó' => 'o', 'Ś' => 'S', 'Ź' => 'Z',
+			'Ż' => 'Z',
+			'ą' => 'a', 'ć' => 'c', 'ę' => 'e', 'ł' => 'l', 'ń' => 'n', 'ó' => 'o', 'ś' => 's', 'ź' => 'z',
+			'ż' => 'z',
+			// Latvian
+			'Ā' => 'A', 'Č' => 'C', 'Ē' => 'E', 'Ģ' => 'G', 'Ī' => 'i', 'Ķ' => 'k', 'Ļ' => 'L', 'Ņ' => 'N',
+			'Š' => 'S', 'Ū' => 'u', 'Ž' => 'Z',
+			'ā' => 'a', 'č' => 'c', 'ē' => 'e', 'ģ' => 'g', 'ī' => 'i', 'ķ' => 'k', 'ļ' => 'l', 'ņ' => 'n',
+			'š' => 's', 'ū' => 'u', 'ž' => 'z'
+		);
+
+		return str_replace(array_keys($char_map), $char_map, $text);
+
+	}
 
 
 
@@ -2499,13 +2564,17 @@ class e_parse extends e_parser
 				return $this->thumbUrl($src, $parm)." h".$parm['h']." ".$multiply;
 			}
 
-			$width = (!empty($parm['w'])) ? ($parm['w'] * $multiply) : ($this->thumbWidth * $multiply);
-			$height = (!empty($parm['h'])) ? ($parm['h'] * $multiply) : ($this->thumbHeight * $multiply);
+			$width = (!empty($parm['w']) || !empty($parm['h'])) ? (intval($parm['w']) * $multiply) : ($this->thumbWidth * $multiply);
+			$height = (!empty($parm['h']) || !empty($parm['w'])) ? (intval($parm['h']) * $multiply) : ($this->thumbHeight * $multiply);
+
 		}
 		else
 		{
 			$height = (($this->thumbHeight * $width) / $this->thumbWidth);
+
 		}
+
+
 
 		if(!isset($parm['aw']))
 		{
@@ -2532,6 +2601,8 @@ class e_parse extends e_parser
 	//	$parms = !empty($this->thumbCrop) ? array('aw' => $width, 'ah' => $height, 'x'=>$encode) : array('w'  => $width,	'h'  => $height, 'x'=>$encode	);
 
 		// $parms['x'] = $encode;
+
+
 
 		if(!empty($parm['return']) && $parm['return'] == 'src')
 		{
@@ -3497,8 +3568,14 @@ class e_parser
 
 		if(substr($text,0,2) == 'e-') 	// e107 admin icon. 
 		{
-			$size = (substr($text,-3) == '-32') ? 'S32' : 'S16';	
-			return "<i class='".$size." ".$text."'></i>";		
+			$size = (substr($text,-3) == '-32') ? 'S32' : 'S16';
+
+			if(substr($text,-3) == '-24')
+			{
+				$size = 'S24';
+			}
+
+			return "<i class='".$size." ".$text."'></i>";
 		}
 
 		// Get Glyph names. 
@@ -3562,8 +3639,16 @@ class e_parser
 		//$text = preg_replace('/\[(i_[\w]*)\]/',"<i class='$1'></i>", $text); 		
 		// return $text;	
 	}
-	
 
+
+	/**
+	 * @param $text
+	 * @return string
+	 */
+	public function toBadge($text)
+	{
+		return "<span class='badge'>".$text."</span>";
+	}
 
 
 
@@ -3732,6 +3817,7 @@ class e_parser
 	 * Render an <img> tag.
 	 * @param string $file
 	 * @param array $parm  legacy|w|h|alt|class|id|crop
+	 * @param array $parm['legacy'] Usually a legacy path like {e_FILE}
 	 * @return string
 	 * @example $tp->toImage('welcome.png', array('legacy'=>{e_IMAGE}newspost_images/','w'=>200));
 	 */
@@ -3761,8 +3847,11 @@ class e_parser
 			return null;
 		}
 
+	//		e107::getDebug()->log($file);
+	//	e107::getDebug()->log($parm);
 
-		if(strpos($file,'e_MEDIA')!==false || strpos($file,'e_THEME')!==false || strpos($file,'e_PLUGIN')!==false) //v2.x path.
+
+		if(strpos($file,'e_MEDIA')!==false || strpos($file,'e_THEME')!==false || strpos($file,'e_PLUGIN')!==false || strpos($file,'{e_IMAGE}')!==false) //v2.x path.
 		{
 
 			if(!isset($parm['w']) && !isset($parm['h']))
@@ -3781,6 +3870,10 @@ class e_parser
 			$parm['srcset'] = $tp->thumbSrcSet($file, $srcSetParm);
 
 		}
+		elseif(strpos($file,'http')===0)
+		{
+			$path = $file;
+		}
 		elseif($file[0] == '{') // Legacy v1.x path. Example: {e_PLUGIN}myplugin/images/fixedimage.png
 		{
 			$path = $tp->replaceConstants($file,'abs');
@@ -3788,8 +3881,8 @@ class e_parser
 		elseif(!empty($parm['legacy'])) // Search legacy path for image in a specific folder. No path, only file name provided.
 		{
 
-			$legacyPath = $parm['legacy'].$file;
-			$filePath = $tp->replaceConstants($legacyPath,'rel');
+			$legacyPath = rtrim($parm['legacy'],'/').'/'.$file;
+			$filePath = $tp->replaceConstants($legacyPath);
 
 			if(is_readable($filePath))
 			{
@@ -3799,6 +3892,7 @@ class e_parser
 			{
 				$log = e107::getAdminLog();
 				$log->addDebug('Broken Image Path: '.$legacyPath."\n".print_r(debug_backtrace(null,2), true), false)->save('IMALAN_00');
+				e107::getDebug()->log("Broken Image Path: ".$legacyPath);
 			}
 
 		}
@@ -3806,6 +3900,8 @@ class e_parser
 		{
 			$path = $file;
 		}
+
+
 
 		$id     = (!empty($parm['id']))     ? "id=\"".$parm['id']."\" " :  ""  ;
 		$class  = (!empty($parm['class']))  ? $parm['class'] : "img-responsive";
@@ -3979,7 +4075,7 @@ class e_parser
 		if($type == 'youtube')
 		{
 		//	$thumbSrc = "https://i1.ytimg.com/vi/".$id."/0.jpg";
-			$thumbSrc = "http://i1.ytimg.com/vi/".$id."/mqdefault.jpg";
+			$thumbSrc = "https://i1.ytimg.com/vi/".$id."/mqdefault.jpg";
 			$video =  '<iframe class="embed-responsive-item" width="560" height="315" src="//www.youtube.com/embed/'.$id.'?'.$ytqry.'" style="background-size: 100%;background-image: url('.$thumbSrc.');border:0px" allowfullscreen></iframe>';
 
 		
@@ -4175,6 +4271,11 @@ TMPL;
 		    echo "<h3>User-input &gg; toDb(\$text, true, false, 'no_html')</h3>";
 		    print_a($dbText2);
 
+		    echo "<div class='alert alert-warning'>";
+		    $dbText3 = $tp->toDB($text, false, false, 'pReFs');
+		    echo "<h3>User-input &gg; toDb(\$text, false, false, 'pReFs')</h3>";
+		    print_a($dbText3);
+
 		   // toClean
 		    $filter3 = $tp->filter($text, 'wds');
 		    echo "<h3>User-input &gg; filter(\$text, 'wds')</h3>";
@@ -4336,7 +4437,7 @@ return;
 	 * Filters/Validates using the PHP5 filter_var() method.
 	 * @param $text
 	 * @param $type string str|int|email|url|w|wds
-	 * @return string | boolean
+	 * @return string | boolean | array
 	 */
 	function filter($text, $type='str',$validate=false)
 	{
@@ -4353,6 +4454,11 @@ return;
 		if($type == 'wds') // words, digits and spaces only.
 		{
 			return preg_replace('/[^\w\d ]/',"",$text);
+		}
+
+		if($type == 'file')
+		{
+			return preg_replace('/[^\w\d_\.-]/',"",$text);
 		}
 
 

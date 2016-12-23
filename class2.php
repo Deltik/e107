@@ -56,6 +56,12 @@ if(isset($_E107['cli']) && !isset($_E107['debug']) && isset($_SERVER["HTTP_USER_
 	exit();
 }
 
+if(function_exists('utf8_encode') === false)
+{
+	echo "e107 requires the PHP <a href='http://php.net/manual/en/dom.setup.php'>XML</a> package. Please install it to use e107.  ";
+	exit();
+}
+
 if(!isset($_E107['cli']))
 {
 	while (@ob_end_clean());  // destroy all ouput buffering
@@ -512,7 +518,7 @@ $pref = e107::getPref();
 $menu_pref = e107::getConfig('menu')->getPref(); //extract menu prefs
 
 // NEW - force ssl
-if(e107::getPref('ssl_enabled') && !deftrue('e_SSL_DISABLE'))
+if(e107::getPref('ssl_enabled') && !deftrue('e_SSL_DISABLE') && empty($_E107['cli']))
 {
 	// NOTE: e_SSL_DISABLE check is here to help webmasters fix 'ssl_enabled'
 	// if set by accident on site with no SSL support - just define it in e107_config.php
@@ -520,7 +526,7 @@ if(e107::getPref('ssl_enabled') && !deftrue('e_SSL_DISABLE'))
 	{
 		// e_REQUEST_URL and e_REQUEST_URI introduced
 		$url = 'https://'.substr(e_REQUEST_URL, 7);
-		header('Location: '.$url);
+		e107::redirect($url);
 		exit;
 	}
 }
@@ -593,7 +599,7 @@ if(!empty($pref['redirectsiteurl']) && !empty($pref['siteurl'])) {
 				$aeSELF[1] = '';						// Defensive code: ensure http:// not http:/<garbage>/
 				$aeSELF[2] = $aPrefURL[2];  // Swap in correct domain and possibly port
 				$location = implode('/',$aeSELF).($_SERVER['QUERY_STRING'] ? '?'.$_SERVER['QUERY_STRING'] : '');
-
+				$location = filter_var($location, FILTER_SANITIZE_URL);
 			//
 		//	header("Location: {$location}", true, 301); // send 301 header, not 302
 			if(defined('e_DEBUG') && e_DEBUG === true)
@@ -829,9 +835,10 @@ if (!function_exists('checkvalidtheme'))
 	   		require_once(e_HANDLER.'theme_handler.php');
 			$themeobj = new themeHandler;
             $themeArray = $themeobj->getThemes('id');
+
+            $id = intval($id);
+
  			$themeDef = $themeobj->findDefault($themeArray[$id]);
-		
-			$id = intval($id);
 			
             define('THEME_LAYOUT',$themeDef);
 
@@ -908,7 +915,8 @@ if (!class_exists('e107table', false))
 		private $themeClass = '';
 		private $adminThemeClass = '';
 		public  $frontend = null;
-		
+		private $uniqueId = null;
+
 		
 		function __construct()
 		{
@@ -918,11 +926,21 @@ if (!class_exists('e107table', false))
 
 
 		/**
-		 * @param $style
+		 * Set the style mode for use in tablestyle() method/function
+		 * @param string $style
 		 */
-		function setStyle($style)
+		public function setStyle($style)
 		{
 			$this->eSetStyle = $style;
+		}
+
+		/**
+		 * Set a unique id for use in tablestyle() method/function
+		 * @param string $id
+		 */
+		public function setUniqueId($id)
+		{
+			$this->uniqueId = $id;
 		}
 
 
@@ -947,6 +965,10 @@ if (!class_exists('e107table', false))
 				}
 				extract($result);
 			}
+
+
+
+
 
 			if ($return)
 			{
@@ -998,13 +1020,14 @@ if (!class_exists('e107table', false))
 			
 			if(is_object(vartrue($thm)))
 			{
-				$thm->tablestyle($caption, $text, $mode, array('menuArea'=>$this->eMenuArea, 'menuCount'=>$this->eMenuCount,	'menuTotal'=>varset($this->eMenuTotal[$this->eMenuArea]), 'setStyle'=>$this->eSetStyle));
+				$thm->tablestyle($caption, $text, $mode, array('uniqueId'=>$this->uniqueId, 'menuArea'=>$this->eMenuArea, 'menuCount'=>$this->eMenuCount,	'menuTotal'=>varset($this->eMenuTotal[$this->eMenuArea]), 'setStyle'=>$this->eSetStyle));
 			}
 			else 
 			{
-				tablestyle($caption, $text, $mode, array('menuArea'=>$this->eMenuArea,'menuCount'=>$this->eMenuCount,'menuTotal'=>varset($this->eMenuTotal[$this->eMenuArea]),'setStyle'=>$this->eSetStyle));	
+				tablestyle($caption, $text, $mode, array('uniqueId'=>$this->uniqueId, 'menuArea'=>$this->eMenuArea,'menuCount'=>$this->eMenuCount,'menuTotal'=>varset($this->eMenuTotal[$this->eMenuArea]),'setStyle'=>$this->eSetStyle));
 			}
 
+			$this->uniqueId = null;
 		}
 
 
@@ -1104,27 +1127,77 @@ if (($_SERVER['QUERY_STRING'] == 'logout')/* || (($pref['user_tracking'] == 'ses
 	exit();
 }
 
-/*
-* Calculate time zone offset, based on session cookie set in e107.js.
-* (Buyer beware: this may be wrong for the first pageview in a session,
-* which is while the user is logged out, so not a problem...)
-*
-* Time offset is SECONDS. Seconds is much better than hours as a base,
-* as some places have 30 and 45 minute time zones.
-* It matches user clock time, instead of only time zones.
-* Add the offset to MySQL/server time to get user time.
-* Subtract the offset from user time to get server time.
-*
-*/
-
-$tz = vartrue($pref['timezone'],'GMT'); //TODO Adjust on the front-end based on user timezone value. 
-
-date_default_timezone_set($tz); // Must be set or PHP Warning thrown. 
-
-unset($tz);
 
 
-$e_deltaTime=0;
+/**
+ * @addtogroup timezone
+ * @{
+ */
+
+/**
+ * Generate an array of time zones.
+ *
+ * @return array
+ *  Array of time zones.
+ */
+function systemTimeZones()
+{
+	// Never do something time consuming twice if you can hold onto the results
+	// and re-use them. So we re-use the statically cached value to save time
+	// and memory.
+	static $zones = array();
+
+	// If Timezone list is not populated yet.
+	if(empty($zones))
+	{
+		$zonelist = timezone_identifiers_list();
+		$timeNow = date('m/d/Y H:i', $_SERVER['REQUEST_TIME']);
+
+		foreach($zonelist as $zone)
+		{
+			// Because many time zones exist in PHP only for backward compatibility
+			// reasons and should not be used, the list is filtered by a regular
+			// expression.
+			if(preg_match('!^((Africa|America|Antarctica|Arctic|Asia|Atlantic|Australia|Europe|Indian|Pacific)/|UTC$)!', $zone))
+			{
+				$dateTimeZone = new DateTimeZone($zone);
+				$dateTime = new DateTime($timeNow, $dateTimeZone);
+				$offset = $dateTime->format('O');
+				$offset = chunk_split($offset, 3, ':');
+
+				$zones[$zone] = str_replace('_', ' ', $zone) . ' (' . rtrim($offset, ':') . ')';
+			}
+		}
+
+		// Sort time zones alphabetically.
+		asort($zones);
+	}
+
+	return $zones;
+}
+
+/**
+ * Validate a timezone.
+ *
+ * @param string $zone
+ *  Timezone.
+ *
+ * @return bool
+ */
+function systemTimeZoneIsValid($zone = '')
+{
+	$zones = systemTimeZones();
+	$zoneKeys = array_keys($zones);
+
+	if(in_array($zone, $zoneKeys))
+	{
+		return true;
+	}
+
+	return false;
+}
+
+$e_deltaTime = 0;
 
 if (isset($_COOKIE['e107_tdOffset']))
 {
@@ -1139,6 +1212,10 @@ if (isset($_COOKIE['e107_tzOffset']))
 }
 
 define('TIMEOFFSET', $e_deltaTime);
+
+/**
+ * @} End of "addtogroup timezone".
+ */
 
 
 
@@ -1700,6 +1777,33 @@ function init_session()
 	// New user model
 	$user = e107::getUser();
 
+	// Get user timezone.
+	$tzUser = $user->getTimezone();
+
+	// If user timezone is valid.
+	if (varset($tzUser, false) && systemTimeZoneIsValid($tzUser))
+	{
+		// Sets the default timezone used by all date/time functions.
+		date_default_timezone_set($tzUser);
+		// Save timezone for later use.
+		define('USERTIMEZONE', $tzUser);
+
+		unset($tzUser);
+	}
+	else
+	{
+		// Use system default timezone.
+		$pref = e107::getPref();
+		$tz = vartrue($pref['timezone'], 'UTC');
+
+		// Sets the default timezone used by all date/time functions.
+		date_default_timezone_set($tz);
+		// Save timezone for later use.
+		define('USERTIMEZONE', $tz);
+
+		unset($tz);
+	}
+
 	define('USERIP', e107::getIPHandler()->getIP(FALSE));
 	define('POST_REFERER', md5($user->getToken()));
 
@@ -2116,19 +2220,21 @@ class error_handler
 
 		//
 		global $_E107;
-		if(isset($_E107['debug']))
+
+		if(!empty($_E107['debug']))
 		{
 			$this->debug = true;
 			error_reporting(E_ALL);
 			return;
 		}
-		if(isset($_E107['cli']))
+
+		if(!empty($_E107['cli']))
 		{
-			error_reporting(E_ALL ^ E_NOTICE);
+			error_reporting(E_ALL & ~E_STRICT & ~E_NOTICE);
 			return;
 		}
 
-		if ((isset($_SERVER['QUERY_STRING']) && strpos($_SERVER['QUERY_STRING'], 'debug=') !== FALSE) || isset($_COOKIE['e107_debug_level']) && strpos($_SERVER['QUERY_STRING'], 'debug=-') !== TRUE )
+		if ((isset($_SERVER['QUERY_STRING']) && strpos($_SERVER['QUERY_STRING'], 'debug=') !== false) || isset($_COOKIE['e107_debug_level']) && strpos($_SERVER['QUERY_STRING'], 'debug=-') === false )
 		{
 		   	$this->debug = true;
 		  	error_reporting(E_ALL);

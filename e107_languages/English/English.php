@@ -84,7 +84,8 @@ define("LAN_CANCEL","Cancel");
 define("LAN_DATE","Date");
 define("LAN_DATE_POSTED", "Date posted");
 define("LAN_JSCONFIRM","Are you sure?");
-define("LAN_IP", "IP Address");
+define("LAN_IP","IP");
+define("LAN_IP_ADDRESS","IP Address");
 define("LAN_AUTHOR","Author");
 define("LAN_CATEGORY", "Category");
 define("LAN_GUEST", "Guest");
@@ -126,5 +127,6 @@ define("LAN_GENERATE", "Generate");
 define("LAN_SUMMARY", "Summary");  // TODO   more files use summary replace
 define("LAN_REQUIRED_BLANK", "Required field(s) were left blank.");
 define("LAN_PLEASEWAIT", "Please Wait");
+define("LAN_CHOOSE_FILE", "Choose a file");
 
 ?>

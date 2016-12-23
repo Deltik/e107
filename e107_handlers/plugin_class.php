@@ -541,8 +541,13 @@ class e107plugin
 		{
 			e107::getConfig('core')->setPref('plug_installed', $p_installed);
 			$this->rebuildUrlConfig();
-			e107::getConfig('core')->save();
+			e107::getConfig('core')->save(true,false,false);
 		}
+
+		// Triggering system (post) event.
+		e107::getEvent()->trigger('system_plugins_table_updated', array(
+			'mode' => $mode,
+		));
 	}
 
 	function manage_category($cat)
@@ -903,7 +908,7 @@ class e107plugin
 		}
 	}
 
-	function manage_userclass($action, $class_name, $class_description)
+	function manage_userclass($action, $class_name, $class_description='')
 	{
 		global $e107;
 		$tp = e107::getParser();
@@ -1113,7 +1118,7 @@ class e107plugin
 			}
 		}
 
-		e107::getConfig('core')->setPref($pref)->save();
+		e107::getConfig('core')->setPref($pref)->save(true,false,false);
 
 		//	 e107::getConfig()->loadData($pref, false)->save(false, true);
 	}
@@ -1246,7 +1251,7 @@ class e107plugin
 		}
 
 		e107::getConfig('core')->setPref($pref);
-		e107::getConfig('core')->save();
+		e107::getConfig('core')->save(true,false,false);
 
 	}
 
@@ -1311,7 +1316,7 @@ class e107plugin
 				unset($search_prefs['comments_handlers'][$eplug_folder]);
 			}
 
-		e107::getConfig('search')->setPref($search_prefs)->save();
+	//	e107::getConfig('search')->setPref($search_prefs)->save(true,false,false);
 
 	}
 
@@ -1370,7 +1375,7 @@ class e107plugin
 		//$s_prefs = $tp -> toDB($notify_prefs);
 		//$s_prefs = e107::getArrayStorage()->WriteArray($s_prefs);
 		//e107::getDb() -> db_Update("core", "e107_value='".$s_prefs."' WHERE e107_name='notify_prefs'");
-		$notify_prefs->save(false);
+		$notify_prefs->save(false,false,false);
 	}
 
 	/**
@@ -1388,12 +1393,12 @@ class e107plugin
 		$aliases = eRouter::adminSyncAliases(e107::getPref('url_aliases'), $config); // rebuild aliases
 			
 		// set new values, changes should be saved outside this methods
-		e107::getConfig()
+	/*	e107::getConfig()
 			->set('url_aliases', $aliases)
 			->set('url_config', $config)
 			->set('url_modules', $modules)
 			->set('url_locations', $locations);
-				
+			*/
 		eRouter::clearCache();
 	}
 
@@ -2133,7 +2138,7 @@ class e107plugin
 	
 		if($updated === true)
 		{
-			$core->save();	//FIXME do this quietly without an s-message
+			$core->save(true,false,false);	//FIXME do this quietly without an s-message
 		}
 	
 	}
@@ -2198,14 +2203,14 @@ class e107plugin
 						if($result !== NULL)
 						{
 							$status = ($result) ? E_MESSAGE_SUCCESS : E_MESSAGE_ERROR;
-							$mes->add("Adding Link: {$linkName} with url [{$url}] and perm {$perm} ", $status); 
+							$mes->add(EPL_ADLAN_233." {$linkName} URL: [{$url}] ".EPL_ADLAN_252." {$perm} ", $status);
 						}					
 					}
 
 					if ($function == 'upgrade' && $remove) //remove inactive links on upgrade
 					{
 						$status = ($this->manage_link('remove', $url, $linkName,false, $options)) ? E_MESSAGE_SUCCESS : E_MESSAGE_ERROR;
-						$mes->add("Removing Link: {$linkName} with url [{$url}]", $status);
+						$mes->add(EPL_ADLAN_234." {$linkName} URL: [{$url}]", $status);
 					}
 					break;
 
@@ -2213,7 +2218,7 @@ class e107plugin
 				case 'uninstall': //remove all links
 
 					$status = ($this->manage_link('remove', $url, $linkName, $perm, $options)) ? E_MESSAGE_SUCCESS : E_MESSAGE_ERROR;
-					$mes->add("Removing Link: {$linkName} with url [{$url}]", $status);
+					$mes->add(EPL_ADLAN_234." {$linkName} URL: [{$url}]", $status);
 					break;
 			}
 		}
@@ -2281,6 +2286,8 @@ class e107plugin
 			case 'install':
 			case 'refresh':
 				$c = 1;
+				$i = array('file'=>1, 'image'=>1, 'video'=>1);
+
 				foreach($tag['mediaCategories']['category'] as $v)
 				{
 					$type = $v['@attributes']['type'];
@@ -2290,33 +2297,42 @@ class e107plugin
 						continue; 	
 					}
 					
-					if($c == 4 || ($prevType == $type))
+					if($c == 4)
 					{
 						$mes->addDebug(EPL_ADLAN_244);
 						break;
 					}
 					
-					$prevType = $type;
+				//	$prevType = $type;
 									
 					$data['owner'] 		= $folder;
 					$data['image']		= vartrue($v['@attributes']['image']);
-					$data['category'] 	= $folder."_".$type;	
+					$data['category'] 	= $folder."_".$type;
+
+					if($i[$type] > 1)
+					{
+						$data['category'] 	.= "_".$i[$type];
+					}
+
 					$data['title'] 		= $v['@value'];
 					$data['sef'] 		= vartrue($v['@attributes']['sef']);
 				//	$data['type'] = $v['@attributes']['type']; //TODO
 					$data['class'] 		= $this->getPerm(varset($v['@attributes']['perm']), 'member');
 					
 					$status = e107::getMedia()->createCategory($data) ? E_MESSAGE_SUCCESS : E_MESSAGE_ERROR;
-					$mes->add("Adding Media Category: {$data['category']}", $status);				
+					$message = str_replace('[x]', $data['category'], EPL_ADLAN_245);
+					$mes->add($message, $status); 				
 					e107::getMedia()->import($data['category'],e_PLUGIN.$folder, false,'min-size=20000'); 
-					$c++;					
+					$c++;
+					$i[$type]++;
 				}	
 			
 			break;
 			
 			case 'uninstall': // Probably best to leave well alone
 				$status = e107::getMedia()->deleteAllCategories($folder)? E_MESSAGE_SUCCESS : E_MESSAGE_ERROR;
-				$mes->add("Deleting All Media Categories owned by : {$folder}", $status);	
+				$message = str_replace('[x]', $folder, EPL_ADLAN_246);		
+				$mes->add($message, $status);	
 			break;
 		
 		
@@ -2458,14 +2474,14 @@ class e107plugin
 						//$status = $this->manage_extended_field('add', $name, $type, $attrib['default'], $source) ? E_MESSAGE_SUCCESS : E_MESSAGE_ERROR;
 
 						$status = $this->manage_extended_field('add', $name, $attrib, $source) ? E_MESSAGE_SUCCESS : E_MESSAGE_ERROR;
-						$mes->add('Adding Extended Field: '.$name.' ... ', $status);
+						$mes->add(EPL_ADLAN_249 .$name.' ... ', $status);
 					}
 
 					if ($function == 'upgrade' && $remove) //If upgrading, removing any inactive extended fields
 
 					{
 						$status = $this->manage_extended_field('remove', $name, $attrib, $source) ? E_MESSAGE_SUCCESS : E_MESSAGE_ERROR;
-						$mes->add('Removing Extended Field: '.$name.' ... ', $status);
+						$mes->add(EPL_ADLAN_250 .$name.' ... ', $status);
 					}
 					break;
 
@@ -2474,11 +2490,11 @@ class e107plugin
 					if (vartrue($this->unInstallOpts['delete_xfields'], FALSE))
 					{
 						$status = ($this->manage_extended_field('remove', $name, $attrib, $source)) ? E_MESSAGE_SUCCESS : E_MESSAGE_ERROR;
-						$mes->add('Removing Extended Field: '.$name.' ... ', $status);
+						$mes->add(EPL_ADLAN_250 .$name.' ... ', $status);
 					}
 					else
 					{
-						$mes->add('Extended Field: '.$name.' left in place', E_MESSAGE_SUCCESS);
+						$mes->add(EPL_ADLAN_251 .$name, E_MESSAGE_SUCCESS);
 					}
 					break;
 			}
@@ -3255,22 +3271,23 @@ class e107plugin
 	}
 	
 	// return the Icon of the 
-	function getIcon($plugName='',$size=32)
+	function getIcon($plugName='',$size=32, $defaultOverride=false)
 	{
-		if(!$plugName) return;
+		if(!$plugName) return false;
 		
 		$tp = e107::getParser();
 		
 		if(!isset($this->parsed_plugin[$plugName]))
 		{
-			$plug_vars = $this->parse_plugin($plugName);	
+			 $this->parse_plugin($plugName,true);
+
 		}
-		else
-		{
-			$plug_vars = $this->parsed_plugin[$plugName];	
-		}
+
+		$plug_vars = $this->parsed_plugin[$plugName];
+
 			
-		//return print_r($plug_vars,TRUE);	
+		//return print_r($plug_vars,TRUE);
+
 			
 		$sizeArray = array(32=>'icon', 16=>'iconSmall');
 		$default = ($size == 32) ? $tp->toGlyph('e-cat_plugins-32') : "<img class='icon S16' src='".E_16_CAT_PLUG."' alt='' />"; 
@@ -3278,7 +3295,13 @@ class e107plugin
 		
 		$icon_src = e_PLUGIN.$plugName."/".$plug_vars['administration'][$sz];
 		$plugin_icon = $plug_vars['administration'][$sz] ? "<img src='{$icon_src}' alt='' class='icon S".intval($size)."' />" : $default;
-     	
+
+     	if($defaultOverride !== false && $default === $plugin_icon)
+        {
+            return $defaultOverride;
+        }
+
+
 		if(!$plugin_icon)
 		{
 		//	
@@ -3293,6 +3316,7 @@ class e107plugin
 	function parse_plugin_php($plugName)
 	{
 		$tp = e107::getParser();
+		$sql = e107::getDb(); // in case it is used inside plugin.php
 
 		$PLUGINS_FOLDER = '{e_PLUGIN}'; // Could be used in plugin.php file.
 
@@ -3307,11 +3331,12 @@ class e107plugin
 		$eplug_icon_small   = null;
 
 
+		ob_start();
 		if (include(e_PLUGIN.$plugName.'/plugin.php'))
 		{
 			//$mes->add("Loading ".e_PLUGIN.$plugName.'/plugin.php', E_MESSAGE_DEBUG);
-			}
-
+		}
+		ob_end_clean();
 		$ret = array();
 
 		//		$ret['installRequired'] = ($eplug_conffile || is_array($eplug_table_names) || is_array($eplug_prefs) || is_array($eplug_sc) || is_array($eplug_bb) || $eplug_module || $eplug_userclass || $eplug_status || $eplug_latest);

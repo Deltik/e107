@@ -20,6 +20,17 @@
  */
 
 require_once("class2.php");
+
+if(!deftrue('e_LEGACY_NEWS')) // subject to removal at any time.
+{
+	require_once(e_PLUGIN."news/news.php");
+	exit;
+}
+
+
+// --------------------- everything below this point will be removed in future --------------------------
+
+
 include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/lan_'.e_PAGE);
 
 require_once(e_HANDLER."news_class.php");
@@ -185,7 +196,7 @@ if(!empty($_GET['author']) || substr($action,0,4) == 'author=')
 }
 
 
-if(E107_DBG_PATH)
+if(e_DEBUG === 'news')
 {
 	echo "<div class='alert alert-info'>";
 	echo "<h4>SEF Debug Info</h4>";
@@ -509,6 +520,8 @@ if ($action == 'extend')
 	{
 		$news = $sql->fetch();
 		$id = $news['news_category'];		// Use category of this news item to generate next/prev links
+
+		e107::getEvent()->trigger('user_news_item_viewed', $news);
 
 		//***NEW [SecretR] - comments handled inside now
 		e107::setRegistry('news/page_allow_comments', !$news['news_allow_comments']);
@@ -1006,12 +1019,13 @@ else
 		if ($action == "item")
 		{
 			unset($news['news_render_type']);
+			e107::getEvent()->trigger('user_news_item_viewed', $news);
+			//e107::getDebug()->log($news);
 		}
 		// $template = false;
 		$ix->render_newsitem($news, 'default', '', $template, $param);
-		
-		
-		
+
+
 		$i++;
 	}
 
@@ -1124,7 +1138,8 @@ if(is_dir("remotefile")) {
 	}
 }
 
-if (isset($pref['nfp_display']) && $pref['nfp_display'] == 2) {
+if (isset($pref['nfp_display']) && $pref['nfp_display'] == 2 && is_readable(e_PLUGIN."newforumposts_main/newforumposts_main.php"))
+{
 	require_once(e_PLUGIN."newforumposts_main/newforumposts_main.php");
 }
 

@@ -322,7 +322,7 @@ $text = "
 					<tr>
 						<td><label for='siteurl'>".PRFLAN_3."</label></td>
 						<td>
-							".$frm->text('siteurl', $pref['siteurl'], 150, 'required=1&size=xxlarge')."
+							".$frm->text('siteurl', $pref['siteurl'], 150, 'size=xxlarge')."
 							".($pref['siteurl'] == SITEURL ? "" : "<div class='field-help'>".PRFLAN_159.": <strong>".SITEURL."</strong></div>")."
 						</td>
 					</tr>
@@ -370,7 +370,7 @@ if(!empty($pref['sitebutton']) && strpos($pref['sitebutton'],'{')===false && fil
 
 
 
-$text .= $frm->imagepicker('sitebutton',$pref['sitebutton'],'','help='.PRFLAN_225);
+$text .= $frm->imagepicker('sitebutton',$pref['sitebutton'],'','help='.PRFLAN_225); //todo  use 'LegacyPath' option instead of code above.
 
 $text .= "
 						</td>
@@ -727,43 +727,15 @@ $text .= "
 					
 					$text .= "
 						</td>
-					</tr>
-					<tr>
-						<td><label for='time-offset'>".PRFLAN_26."</label></td>
-						<td>
-							".$frm->select_open('time_offset', 'class=tbox select time-offset');//use form handler because of the tabindex
-$toffset = array("-12", "-11", "-10", "-9", "-8", "-7", "-6", "-5", "-4", "-3", "-2", "-1", "0", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "+11", "+12", "+13", "+14", "+15", "+16");
-if(! isset($pref['time_offset']))
-{
-	$pref['time_offset'] = "0";
-}
+					</tr>";
 
-
-//XXX TODO FIXME - Do we still need this?
-
-foreach($toffset as $o)
-{
-	$text .= "
-								".$frm->option($o, $o, ($o == $pref['time_offset']))."
-	";
-}
-
-
-
-					$timeZones = timezone_identifiers_list();
-
-
-
+$timeZones = systemTimeZones();
 
 $text .= "
-							</select>
-							<div class='smalltext field-help'>".PRFLAN_27."</div>
-						</td>
-					</tr>
 					<tr>
 						<td><label for='timezone'>".PRFLAN_56."</label></td>
 						<td>
-							".$frm->select('timezone', $timeZones, vartrue($pref['timezone'],'GMT'), 'useValues=1')."
+							".$frm->select('timezone', $timeZones, vartrue($pref['timezone'], 'UTC'))."
 						</td>
 					</tr>
 				</tbody>
@@ -771,6 +743,7 @@ $text .= "
 			".pref_submit('date')."
 		</fieldset>
 ";
+
 
 // =========== Registration Preferences. ==================
 
@@ -1836,9 +1809,9 @@ foreach($libraries as $machineName => $library)
 	$text .= '<tr>';
 	$text .= '<td>' . $name . '</td>';
 	$text .= '<td class="text-center">' . $provider . '</td>';
-	$text .= '<td class="text-center">' . $details['version'] . '</td>';
+	$text .= '<td class="text-center">' . varset($details['version']) . '</td>';
 	$text .= '<td class="text-center">' . $status . '</td>';
-	$text .= '<td>' . $details['error_message'] . '</td>';
+	$text .= '<td>' . varset($details['error_message']) . '</td>';
 	$text .= '<td>' . $links . '</td>';
 	$text .= '</tr>';
 }

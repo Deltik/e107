@@ -854,6 +854,7 @@ class e_form
 
 
 		$options['media'] = '_icon';
+		$options['legacyPath'] = "{e_IMAGE}icons";
 		
 		return $this->imagepicker($name, $default, $label, $options);
 		
@@ -890,15 +891,20 @@ class e_form
 			$url .= "&amp;w=".$extras['w'];	
 		}
 
-		if(vartrue($extras['glyphs']))
+		if(!empty($extras['glyphs']))
 		{
 			$url .= "&amp;glyphs=1";	
 		}	
 		
-		if(vartrue($extras['video']))
+		if(!empty($extras['video']))
 		{
 			$url .= "&amp;video=1";	
 		}			
+
+		if(!empty($extras['path']) && $extras['path'] == 'plugin')
+		{
+			$url .= "&amp;path=".deftrue('e_CURRENT_PLUGIN');
+		}
 
 		if(E107_DBG_BASIC)
 		{
@@ -1010,7 +1016,7 @@ class e_form
 		foreach($avFiles as $fi)
 		{
 			$img_path = $tp->thumbUrl(e_AVATAR_DEFAULT.$fi['fname']);	
-			$text .= "\n<a class='e-expandit' title='Choose this avatar' href='#{$optioni}'><img src='".$img_path."' alt=''  onclick=\"insertext('".$fi['fname']."', '".$idinput."');document.getElementById('".$previnput."').src = this.src;\" /></a> ";			
+			$text .= "\n<a class='e-expandit' title='Choose this avatar' href='#{$optioni}'><img src='".$img_path."' alt=''  onclick=\"insertext('".$fi['fname']."', '".$idinput."');document.getElementById('".$previnput."').src = this.src;return false\" /></a> ";
 			$count++;
 
 
@@ -1092,13 +1098,14 @@ class e_form
 		}
 
 
-	//	print_a($sc_parameters);
-	
 		if(empty($sc_parameters['media']))
 		{
 			$sc_parameters['media'] = '_common';	
 		}
-	
+
+
+e107::getDebug()->log($sc_parameters);
+
 		$default_thumb = $default;
 		$class = '';
 
@@ -1112,14 +1119,25 @@ class e_form
 			}
 			else 
 			{
-				if('{' != $default[0])
+				if('{' != $default[0]) // legacy path or one without {}
 				{
-					// convert to sc path
-					$default_thumb = $tp->createConstants($default, 'nice');
-					$default = $tp->createConstants($default, 'mix');
+					list($default_thumb,$default) = $this->imagepickerDefault($default, $sc_parameters);
 				}
+
 				$default_url = $tp->replaceConstants($default, 'abs');
 			}
+
+
+			$debugInfo = "
+			<pre>
+			default-thumb: ".$default_thumb."
+			defautlt:   ".$default."
+			default-url: ".$default_url."
+			</pre>";
+
+		//	e107::getDebug()->log($debugInfo);
+
+
 			$blank = FALSE;
 			
 			
@@ -1164,7 +1182,7 @@ class e_form
 
 			$label = "<img id='{$name_id}_prev' src='".$thpath."' alt='{$default_url}' class='well well-small image-selector  img-responsive' style='display:block;' />";
 			
-			if($cat != 'news' && $cat !='page' && $cat !='') 
+			if($cat != 'news' && $cat !='page' && $cat !='' && strpos($cat,'_image')===false)
 			{
 			 	$cat = $cat . "_image";		
 			}
@@ -1198,7 +1216,35 @@ class e_form
 
 	}
 
+	private function imagepickerDefault($path, $parms=array())
+	{
+		$tp = e107::getParser();
 
+			if(!empty($parms['legacyPath'])) // look in a specific path.
+			{
+				$legacyDefault = rtrim($parms['legacyPath'],'/')."/".$path;
+				$legacyRel = $tp->replaceConstants($legacyDefault);
+
+				if(is_readable($legacyRel))
+				{
+					return array($legacyDefault, $legacyDefault);
+				}
+				else
+				{
+			//		e107::getDebug()->log("Legacy Default:".$legacyDefault);
+			//		e107::getDebug()->log("wasnt found:".$legacyRel);
+				}
+
+			}
+
+			$path = str_replace('e_MEDIA_IMAGE/','{e_MEDIA_IMAGE}',$path);
+
+			$default_thumb = $tp->createConstants($path, 'nice');
+			$default = $tp->createConstants($path, 'mix');
+
+			return array($default_thumb, $default);
+
+	}
 
 			
 	/**
@@ -1238,7 +1284,7 @@ class e_form
 		}
 		
 		
-		$default_label 				= ($default) ? $default : "Choose a file";
+		$default_label 				= ($default) ? $default : LAN_CHOOSE_FILE;
 		$label 						= "<span id='{$name_id}_prev' class='btn btn-default btn-small'>".basename($default_label)."</span>";
 			
 		$sc_parameters['mode'] 		= 'main';
@@ -1685,7 +1731,7 @@ class e_form
 		
 		$options['pattern'] = vartrue($options['pattern'],'[\S]{4,}');
 		$options['required'] = varset($options['required'], 1);
-		$options['class'] = vartrue($options['class'],'e-password');
+		$options['class'] = vartrue($options['class'],'e-password tbox');
 
 
 		e107::js('core', 	'password/jquery.pwdMeter.js', 'jquery', 2);
@@ -1871,11 +1917,13 @@ class e_form
 		//width should be explicit set by current admin theme
 	//	$size = 'input-large';
 		$height = '';
+		$cols = 70;
 		
 		switch($size)
 		{
 			case 'tiny':
 				$rows = '3';
+				$cols = 50;
 			//	$height = "style='height:250px'"; // inline required for wysiwyg
 			break;
 			
@@ -1926,7 +1974,7 @@ class e_form
 
 
 		$ret .=	e107::getBB()->renderButtons($template,$help_tagid);
-		$ret .=	$this->textarea($name, $value, $rows, 70, $options, $counter); // higher thank 70 will break some layouts. 
+		$ret .=	$this->textarea($name, $value, $rows, $cols, $options, $counter); // higher thank 70 will break some layouts.
 			
 		$ret .= "</div>\n";
 		
@@ -2797,7 +2845,9 @@ class e_form
 
 	/**
 	 * Render a Breadcrumb in Bootstrap format. 
-	 * @param $array 
+	 * @param $array
+	 * @param $array[url]
+	 * @param $array[text]
 	 */
 	function breadcrumb($array)
 	{
@@ -3810,9 +3860,11 @@ class e_form
 			if(!is_array($attributes['readParms'])) parse_str($attributes['readParms'], $attributes['readParms']);
 			$parms = $attributes['readParms'];
 		}
+
+
 	
-		if(vartrue($attributes['inline'])) $parms['editable'] = true; // attribute alias
-		if(vartrue($attributes['sort'])) $parms['sort'] = true; // attribute alias
+		if(!empty($attributes['inline'])) $parms['editable'] = true; // attribute alias
+		if(!empty($attributes['sort'])) $parms['sort'] = true; // attribute alias
 		
 		if(!empty($parms['type'])) // Allow the use of a different type in readMode. eg. type=method.
 		{
@@ -3826,7 +3878,7 @@ class e_form
 		{
 			case 'options':
 				
-				if(varset($attributes['type']) == "method") // Allow override with 'options' function.
+				if(!empty($attributes['type']) && ($attributes['type'] == "method")) // Allow override with 'options' function.
 				{
 					$attributes['mode'] = "read";
 					if(isset($attributes['method']) && $attributes['method'] && method_exists($this, $attributes['method']))
@@ -3850,7 +3902,7 @@ class e_form
 					
 					$value = "<div class='btn-group'>";
 					
-					if(vartrue($parms['sort']))//FIXME use a global variable such as $fieldpref
+					if(!empty($parms['sort']))//FIXME use a global variable such as $fieldpref
 					{
 						$mode = preg_replace('/[^\w]/', '', vartrue($_GET['mode'], ''));
 						$from = intval(vartrue($_GET['from'],0));
@@ -3891,7 +3943,7 @@ class e_form
 						".deftrue('ADMIN_EDIT_ICON', $tp->toGlyph('fa-edit'))."</a>";
 					}
 
-					$delcls = vartrue($attributes['noConfirm']) ? ' no-confirm' : '';
+					$delcls = !empty($attributes['noConfirm']) ? ' no-confirm' : '';
 					if(varset($parms['deleteClass']) && varset($parms['delete'],1) == 1)
 					{
 						$cls = (deftrue($parms['deleteClass'])) ? constant($parms['deleteClass']) : $parms['deleteClass'];
@@ -3923,7 +3975,7 @@ class e_form
 				if(!$value) $value = '0';
 				if($parms)
 				{
-					if(!isset($parms['sep'])) $value = number_format($value, $parms['decimals']);
+					if(!isset($parms['sep'])) $value = number_format($value, varset($parms['decimals'],0));
 					else $value = number_format($value, $parms['decimals'], vartrue($parms['point'], '.'), vartrue($parms['sep'], ' '));
 				}
 				
@@ -4296,7 +4348,7 @@ class e_form
 				$value = '<a href="'.$url.'" title="Direct link to '.$name.'" rel="external">'.$name.'</a>';
 			break;
 
-			case 'image': //TODO - thumb, js tooltip...
+			case 'image': //js tooltip...
 				if($value)
 				{
 					
@@ -4325,6 +4377,8 @@ class e_form
 						return e107::getParser()->toGlyph('fa-file','size=2x');
 				//		return '<img src="'.$src.'" alt="'.$value.'" class="e-thumb" title="'.$value.'" />';
 					}
+
+
 					
 					if(vartrue($parms['thumb']))
 					{
@@ -4352,13 +4406,26 @@ class e_form
 						{
 							$thparms['aw'] = intval($parms['thumb_aw']);
 						}
-						
+
+						if(!empty($parms['legacyPath']))
+						{
+							$thparms['legacy'] = $parms['legacyPath'];
+							$parms['pre'] = rtrim($parms['legacyPath'],'/').'/';
+						}
 					//	return print_a($thparms,true); 
 					
 						$src = $tp->replaceConstants(vartrue($parms['pre']).$value, 'abs');
 						$thsrc = $tp->thumbUrl(vartrue($parms['pre']).$value, $thparms, varset($parms['thumb_urlraw']));
 						$alt = basename($src);
-						$ttl = '<img src="'.$thsrc.'" alt="'.$alt.'" class="thumbnail e-thumb" />';
+					//	$ttl = '<img src="'.$thsrc.'" alt="'.$alt.'" class="thumbnail e-thumb" />';
+
+						$thparms['alt'] = $alt;
+						$thparms['class'] = "thumbnail e-thumb";
+
+						$ttl = $tp->toImage($value, $thparms);
+
+
+
 						$value = '<a href="'.$src.'" data-modal-caption="'.$alt.'" data-target="#uiModal" class="e-modal e-image-preview" title="'.$alt.'" rel="external">'.$ttl.'</a>';
 					}
 					else
@@ -4375,7 +4442,7 @@ class e_form
 				$ret = '<ol>';
 				for ($i=0; $i < 5; $i++) 
 				{				
-					$k 		= $key.'['.$i.'][path]';
+					//$k 		= $key.'['.$i.'][path]';
 					$ival 	= $value[$i]['path'];
 					$ret .=  '<li>'.$ival.'</li>';		
 				}
@@ -4612,7 +4679,8 @@ class e_form
 				if(method_exists($this,$meth))
 				{
 					$parms['field'] = $field;
-					$value = call_user_func_array(array($this, $meth), array($value, 'read', $parms));
+					$mode = (!empty($attributes['mode'])) ? $attributes['mode'] :'read';
+					$value = call_user_func_array(array($this, $meth), array($value, $mode, $parms));
 				}
 				else
 				{
@@ -5631,7 +5699,7 @@ class e_form
 			if('hidden' === $att['type'])
 			{
 				
-				if(!vartrue($writeParms['show']))
+				if(empty($writeParms['show']))
 				{
 					$hidden_fields[] = $this->renderElement($keyName, $model->getIfPosted($valPath), $att, varset($model_required[$key], array()));
 
@@ -5678,8 +5746,8 @@ class e_form
 				 
 				$leftCell = $required."<span{$required_class}>".defset(vartrue($att['title']), vartrue($att['title']))."</span>".$label;
 				$rightCell = $this->renderElement($keyName, $model->getIfPosted($valPath), $att, varset($model_required[$key], array()), $model->getId())." {$help}";
-				 
-				if(vartrue($att['type']) == 'bbarea' || varset($writeParms['nolabel']) == true)
+
+				if(vartrue($att['type']) == 'bbarea' || !empty($writeParms['nolabel']))
 				{
 					$text .= "
 					<tr><td colspan='2'>";

@@ -805,9 +805,35 @@ class e107forum
 		}
 
 
-
+		$this->clearReadThreads($postInfo['post_thread']);
 
 		return $postId;
+	}
+
+	/**
+	 * Remove threadID from the 'viewed list' list of other users.
+	 * @param $threadId
+	*/
+	private function clearReadThreads($threadId)
+	{
+		if(empty($threadId))
+		{
+			return false;
+		}
+
+		$sql = e107::getDb();
+
+		$threadId = intval($threadId);
+
+		$query = "UPDATE `#user_extended`
+			SET
+			user_plugin_forum_viewed = TRIM(BOTH ',' FROM REPLACE(CONCAT(',', user_plugin_forum_viewed, ','), ',".$threadId.",', ','))
+			WHERE
+			FIND_IN_SET(".$threadId.", user_plugin_forum_viewed)
+		  ";
+
+		$sql->gen($query);
+
 	}
 
 
@@ -982,6 +1008,11 @@ class e107forum
 				}
 
 				$tmp['thread_sef'] = eHelper::title2sef($tmp['thread_name'],'dashl');
+
+				if(empty($tmp['forum_sef']))
+				{
+					e107::getDebug()->log("Forum ".$tmp['forum_name']." is missing a SEF URL. Please add one via the admin area. ");
+				}
 
 				return $tmp;
 			}
@@ -1484,6 +1515,7 @@ class e107forum
 			$ret = array();
 			while ($row = $sql->fetch())
 			{
+
 				if(!$row['forum_parent'])
 				{
 					$ret['parents'][] = $row;
@@ -1592,6 +1624,11 @@ class e107forum
 		SELECT DISTINCT f.forum_sub, ft.thread_forum_id FROM `#forum_thread` AS ft
 		LEFT JOIN `#forum` AS f ON f.forum_id = ft.thread_forum_id
 		WHERE ft.thread_lastpost > '.USERLV.' '.$viewed;
+
+		$ret = array();
+
+	//	e107::getDebug()->log(e107::getParser()->toDate(USERLV,'relative'));
+
 		if($sql->gen($_newqry))
 		{
 			while($row = $sql->fetch())
@@ -1786,7 +1823,15 @@ class e107forum
 		";
 		if ($sql->gen($qry))
 		{
-			return $sql->fetch();
+
+			$row =  $sql->fetch();
+
+			if(empty($row['forum_sef']))
+			{
+				e107::getDebug()->log("Forum ".$row['forum_name']." is missing a SEF URL. Please add one via the admin area. ");
+			}
+
+			return $row;
 		}
 		return FALSE;
 	}
@@ -1824,7 +1869,7 @@ class e107forum
 		$sql = e107::getDb();
 		$forumId = (int)$forumId;
 		$qry = "
-		SELECT t.*, f.forum_id, f.forum_sef, u.user_name, lpu.user_name AS lastpost_username, MAX(p.post_id) AS lastpost_id FROM `#forum_thread` as t
+		SELECT t.*, f.forum_id, f.forum_sef,f.forum_name, u.user_name, lpu.user_name AS lastpost_username, MAX(p.post_id) AS lastpost_id FROM `#forum_thread` as t
 		LEFT JOIN `#forum` AS f ON t.thread_forum_id = f.forum_id
 		LEFT JOIN `#forum_post` AS p ON t.thread_id = p.post_thread
 		LEFT JOIN `#user` AS u ON t.thread_user = u.user_id
@@ -1849,7 +1894,11 @@ class e107forum
 		{
 			while ($row = $sql->fetch())
 			{
-			//	$row['thread_sef'] = eHelper::title2sef($row['thread_name']);
+				if(empty($row['forum_sef']))
+				{
+					e107::getDebug()->log("Forum ".$row['forum_name']." is missing a SEF URL. Please add one via the admin area. ");
+				}
+
 				$ret[] = $row;
 			}
 		}
@@ -1990,8 +2039,10 @@ class e107forum
 	{
 		$e107 = e107::getInstance();
 		$sql = e107::getDb();
+		$tp = e107::getParser();
+
 		$prunedate = time() - (int)$days * 86400;
-		$forumList = implode(',', $forumArray);
+		$forumList = implode(',', $tp->filter($forumArray,'int'));
 
 		if($type == 'delete')
 		{

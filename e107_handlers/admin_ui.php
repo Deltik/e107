@@ -1001,6 +1001,7 @@ class e_admin_dispatcher
 	protected $adminMenu = array();
 	
 
+	protected $adminMenuIcon = null;
 	/**
 	 * Optional (set by child class).
 	 * Page titles for pages not in adminMenu (e.g. main/edit)
@@ -1487,7 +1488,7 @@ class e_admin_dispatcher
 			$tmp = explode('/', trim($key, '/'), 3);
 
 			// sync with mode/route access
-			if(!$this->checkModeAccess($tmp[0]) || !$this->checkRouteAccess($tmp[0].'/'.$tmp[1]))
+			if(!$this->checkModeAccess($tmp[0]) || !$this->checkRouteAccess($tmp[0].'/'.varset($tmp[1])))
 			{
 				continue;
 			}
@@ -1573,7 +1574,10 @@ class e_admin_dispatcher
 		$request = $this->getRequest();
 		if(!$selected) $selected = $request->getMode().'/'.$request->getAction();
 		$selected = vartrue($this->adminMenuAliases[$selected], $selected);
-		return e107::getNav()->admin($this->menuTitle, $selected, $var);
+
+		$icon = (deftrue('e_CURRENT_PLUGIN')) ? e107::getPlugin()->getIcon(e_CURRENT_PLUGIN, 32, '') : e107::getParser()->toIcon($this->adminMenuIcon);
+
+		return e107::getNav()->admin($icon."<span>".$this->menuTitle."</span>", $selected, $var);
 	}
 
 
@@ -1888,8 +1892,13 @@ class e_admin_controller
 	 * @param string $title
 	 * @return e_admin_controller
 	 */
-	public function addMetaTitle($title)
+	public function addMetaTitle($title=null)
 	{
+		if($title === null)
+		{
+			return $this;
+		}
+
 		$this->getResponse()->addMetaTitle($title);
 		return $this;
 	}
@@ -1901,8 +1910,13 @@ class e_admin_controller
 	 * @param string $content
 	 * @return e_admin_controller
 	 */
-	public function addHeader($content)
+	public function addHeader($content=null)
 	{
+		if($content === null)
+		{
+			return $this;
+		}
+
 		$this->getResponse()->addHeaderContent(vartrue($content));
 		return $this;
 	}
@@ -3092,13 +3106,23 @@ class e_admin_controller_ui extends e_admin_controller
 				$selected[$i] = preg_replace('/[^\w-:.]/', '', $_sel);
 			}
 		}
-		
+
+		if(substr($batch_trigger, 0, 6) === 'batch_')
+		{
+			list($tmp,$plugin,$command) = explode("_",$batch_trigger,3);
+			$this->setPosted(array());
+			$this->getRequest()->setAction('batch');
+			$cls = e107::getAddon($plugin,'e_admin',true);
+			e107::callMethod($cls,'process',$this,array('cmd'=>$command,'ids'=>$selected));
+			return $this;
+		}
+
 
 		$this->setTriggersEnabled(false); //disable further triggering
 		
 		switch($trigger[0])
 		{
-			case 'delete': //FIXME - confirmation screen
+			case 'delete': //FIXME - confirmation popup
 				//method handleListDeleteBatch(); for custom handling of 'delete' batch
 				// if(empty($selected)) return $this;
 				// don't check selected data - subclass need to check additional post variables(confirm screen)
@@ -3523,7 +3547,7 @@ class e_admin_controller_ui extends e_admin_controller
 
 	function getJoinField($field)
 	{
-		return vartrue($this->joinField[$field],false);	
+		return isset($this->joinField[$field]) ? $this->joinField[$field] : false; // vartrue($this->joinField[$field],false);
 	}
 
 	/**
@@ -3817,13 +3841,13 @@ class e_admin_controller_ui extends e_admin_controller
 		foreach($this->getFields() as $key => $var)
 		{
 			// disabled or system
-			if((vartrue($var['nolist']) && !vartrue($var['filter'])) || !vartrue($var['type']))
+			if((!empty($var['nolist']) && empty($var['filter'])) || empty($var['type']))
 			{
 				continue;
 			}
 
 			// select FROM... for main table
-			if(vartrue($var['alias']) && vartrue($var['__tableField']))
+			if(!empty($var['alias']) && !empty($var['__tableField']))
 			{
 				$tableSFieldsArr[] = $var['__tableField'];
 			}
@@ -4077,7 +4101,7 @@ class e_admin_controller_ui extends e_admin_controller
 			if(false === $data)
 			{
 				// we don't wanna loose posted data
-				$model->setPostedData($_posted, null, false, false);
+				$model->setPostedData($_posted, null, false);
 				return false;
 			}
 			if($data && is_array($data))
@@ -4128,7 +4152,7 @@ class e_admin_controller_ui extends e_admin_controller
 
 
 		// Scenario I - use request owned POST data - toForm already executed
-		$model->setPostedData($_posted, null, false, false) // insert() or update() dbInsert();
+		$model->setPostedData($_posted, null, false) // insert() or update() dbInsert();
 			->save(true);
 
 
@@ -4335,23 +4359,40 @@ class e_admin_ui extends e_admin_controller_ui
 
 			$form = e107::getAddon($plug, 'e_admin', $plug."_admin_form"); // class | false.
 
-			foreach($config['fields'] as $k=>$v)
+			if(!empty($config['fields']))
 			{
-				$v['data'] = false; // disable data-saving to db table. .
-
-				$fieldName = 'x_'.$plug.'_'.$k;
-
-				if($v['type'] == 'method' && method_exists($form,$fieldName))
+				foreach($config['fields'] as $k=>$v)
 				{
-					$v['method'] = $plug."_admin_form::".$fieldName;
-					//echo "Found method ".$fieldName." in ".$plug."_menu_form";
-					//echo $form->$fieldName();
+					$v['data'] = false; // disable data-saving to db table. .
+
+					$fieldName = 'x_'.$plug.'_'.$k;
+
+					if($v['type'] == 'method' && method_exists($form,$fieldName))
+					{
+						$v['method'] = $plug."_admin_form::".$fieldName;
+						//echo "Found method ".$fieldName." in ".$plug."_menu_form";
+						//echo $form->$fieldName();
+					}
+
+
+					$this->fields[$fieldName] = $v; // ie. x_plugin_key
+
+				}
+			}
+
+			if(!empty($config['batchOptions']))
+			{
+				$opts = array();
+				foreach($config['batchOptions'] as $k=>$v)
+				{
+					$fieldName = 'batch_'.$plug.'_'.$k;
+
+					$opts[$fieldName] = $v; // ie. x_plugin_key
+
 				}
 
-
-				$this->fields[$fieldName] = $v; // ie. x_plugin_key
-
-
+				$batchCat = deftrue('LAN_PLUGIN_'.strtoupper($plug).'_NAME', $plug);
+				$this->batchOptions[$batchCat] = $opts;
 
 			}
 
@@ -4471,8 +4512,8 @@ class e_admin_ui extends e_admin_controller_ui
 		{
 			$this->getTreeModel()->setMessages();
 			// FIXME lan
-			if($delcount) e107::getMessage()->addSuccess($tp->lanVars('[x] record(s) successfully deleted.', $delcount, true));
-			if($nfcount) e107::getMessage()->addError($tp->lanVars('[x] records not found and not deleted.', $nfcount,true));
+			if($delcount) e107::getMessage()->addSuccess($tp->lanVars(LAN_UI_DELETED, $delcount, true));
+			if($nfcount) e107::getMessage()->addError($tp->lanVars(LAN_UI_DELETED_FAILED, $nfcount,true));
 		}
 
 		//$this->redirect();
@@ -5059,9 +5100,11 @@ class e_admin_ui extends e_admin_controller_ui
 
 		$this->convertToData($_POST);
 
-		$model->setPostedData($_POST, null, false, false)
-			->setParam('validateAvailable', true) // new param to control validate of available data only, reset on validate event
-			->update(true);
+		$model->setPostedData($_POST, null, false);
+		$model->setParam('validateAvailable', true); // new param to control validate of available data only, reset on validate event
+		// Do not update here! Because $old_data and $new_data will be the same in afterUpdate() methods.
+		// Data will be saved in _manageSubmit() method.
+		// $model->update(true);
 
 		if($model->hasError())
 		{
@@ -5449,7 +5492,7 @@ class e_admin_ui extends e_admin_controller_ui
 
 /*
 		$this->getConfig()
-			->setPostedData($this->getPosted(), null, false, false)
+			->setPostedData($this->getPosted(), null, false)
 			//->setPosted('not_existing_pref_test', 1)
 			->save(true);
 */
@@ -6048,7 +6091,7 @@ class e_admin_form_ui extends e_form
 								".$this->text('searchquery', $current_query[0], 50, $input_options)."
 								<i class='fa fa-search searchquery form-control-feedback form-control-feedback-left'></i>
 							<span>
-							".$this->select_open('filter_options', array('class' => 'form-control e-tip tbox select filter', 'id' => false, 'title'=>'Filter the results below'))."
+							".$this->select_open('filter_options', array('class' => 'form-control e-tip tbox select filter', 'id' => false, 'title'=>LAN_FILTER))."
 								".$this->option(LAN_FILTER_LABEL_DISPLAYALL, '')."
 								".$this->option(LAN_FILTER_LABEL_CLEAR, '___reset___')."
 								".$this->renderBatchFilter('filter', $current_query[1])."
@@ -6244,36 +6287,66 @@ class e_admin_form_ui extends e_form
 		$text = "
 			<div id='admin-ui-list-batch' class='navbar navbar-inner left' >
 				<div class='span6 col-md-6'>";
-				
-		if(!$this->getController()->getTreeModel()->isEmpty())
-		{		
-			$text .= "
-					<div class='form-inline input-inline'>
+
+		$selectStart = "<div class='form-inline input-inline'>
 	         		<img src='".e_IMAGE_ABS."generic/branchbottom.gif' alt='' class='icon action'  />
 	         		<div class='input-group input-append'>
 						".$this->select_open('etrigger_batch', array('class' => 'tbox form-control input-large select batch e-autosubmit reset', 'id' => false))."
-						".$this->option(LAN_BATCH_LABEL_SELECTED, '', false)."
-						".($allow_copy ? $this->option(LAN_COPY, 'copy', false, array('class' => 'ui-batch-option class', 'other' => 'style="padding-left: 15px"')) : '')."					
-						".($allow_delete ? $this->option(LAN_DELETE, 'delete', false, array('class' => 'ui-batch-option class', 'other' => 'style="padding-left: 15px"')) : '')."					
-					    ".($allow_url ? $this->option(LAN_UI_BATCH_CREATELINK, 'url', false, array('class' => 'ui-batch-option class', 'other' => 'style="padding-left: 15px"')) : '')."   
-					  	".($allow_featurebox ? $this->option(LAN_PLUGIN_FEATUREBOX_BATCH, 'featurebox', false, array('class' => 'ui-batch-option class', 'other' => 'style="padding-left: 15px"')) : '');
+						".$this->option(LAN_BATCH_LABEL_SELECTED, '', false);
+
+		$selectOpt = '';
+				
+		if(!$this->getController()->getTreeModel()->isEmpty())
+		{		
+			$selectOpt .= ($allow_copy ? $this->option(LAN_COPY, 'copy', false, array('class' => 'ui-batch-option class', 'other' => 'style="padding-left: 15px"')) : '');
+			$selectOpt .= ($allow_delete ? $this->option(LAN_DELETE, 'delete', false, array('class' => 'ui-batch-option class', 'other' => 'style="padding-left: 15px"')) : '');
+			$selectOpt .= ($allow_url ? $this->option(LAN_UI_BATCH_CREATELINK, 'url', false, array('class' => 'ui-batch-option class', 'other' => 'style="padding-left: 15px"')) : '');
+			$selectOpt .= ($allow_featurebox ? $this->option(LAN_PLUGIN_FEATUREBOX_BATCH, 'featurebox', false, array('class' => 'ui-batch-option class', 'other' => 'style="padding-left: 15px"')) : '');
 
 			if(!empty($customBatchOptions))
 			{
 				foreach($customBatchOptions as $key=>$val)
 				{
-					$text .= $this->option($val, $key, false, array('class' => 'ui-batch-option class', 'other' => 'style="padding-left: 15px"'));
+
+					if(is_array($val))
+					{
+						$selectOpt .= $this->optgroup_open($key);
+
+						foreach($val as $k=>$v)
+						{
+							$selectOpt .= $this->option($v, $k, false, array('class' => 'ui-batch-option class', 'other' => 'style="padding-left: 15px"'));
+						}
+
+						$selectOpt .= $this->optgroup_close();
+					}
+					else
+					{
+						$selectOpt .= $this->option($val, $key, false, array('class' => 'ui-batch-option class', 'other' => 'style="padding-left: 15px"'));
+					}
+
+
 				}
 
 			}
 
 
-			$text .= "
-				".$this->renderBatchFilter('batch')."
-				".$this->select_close()."
-				<div class='input-group-btn input-append'>
+			$selectOpt .= $this->renderBatchFilter('batch');
+
+			if(!empty($selectOpt))
+			{
+				$text .= $selectStart;
+
+				$text .= $selectOpt;
+
+				$text .= $this->select_close();
+
+				$text .= "<div class='input-group-btn input-append'>
 				".$this->admin_button('e__execute_batch', 'e__execute_batch', 'batch e-hide-if-js', LAN_GO, array('id' => false))."
-				</div></div></div>
+				</div>";
+			}
+
+
+			$text .= "</div></div>
 			";
 		}
 
@@ -6467,11 +6540,11 @@ class e_admin_form_ui extends e_form
 					    //TODO today, yesterday, this-month, last-month .
 					    
 					    $dateFilters = array (
-					    	'hour'		=> "Past Hour",
-					    	"day"		=> "Past 24 hours",
-					    	"week"		=> "Past Week",
-					    	"month"		=> "Past Month",
-					    	"year"		=> "Past Year"
+							'hour'		=> LAN_UI_FILTER_PAST_HOUR,
+					    	"day"		=> LAN_UI_FILTER_PAST_24_HOURS,
+					    	"week"		=> LAN_UI_FILTER_PAST_WEEK,
+					    	"month"		=> LAN_UI_FILTER_PAST_MONTH,
+					    	"year"		=> LAN_UI_FILTER_PAST_YEAR
 						);
 					    
 						foreach($dateFilters as $k => $name)
