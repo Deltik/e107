@@ -16,8 +16,7 @@ if (!getperms('4'))
 	exit;
 }
 
-
-include_lan(e_LANGUAGEDIR . e_LANGUAGE . '/admin/lan_' . e_PAGE);
+e107::coreLan('users_extended', true);
 
 if(varset($_GET['mode']) == "ajax")
 {
@@ -540,7 +539,7 @@ e107::js('footer-inline', js());
 			}
 			else
 			{
-				$mes->addDebug("User Extended Column deleted from table");
+				$mes->addSuccess("User Extended Column deleted from table"); //TODO  LAN
 			}
 
 		}
@@ -596,7 +595,7 @@ e107::js('footer-inline', js());
 			// do something
 		}
 
-		function addPageActivate()
+		private function addPageActivate()
 		{
 			$ue = e107::getUserExt();
 			$tp = e107::getParser();
@@ -636,7 +635,35 @@ e107::js('footer-inline', js());
 		}
 
 
+		private function addPageDeactivate()
+		{
 
+			$tp = e107::getParser();
+			$sql = e107::getDb();
+			$ue = e107::getUserExt();
+
+			$ret = "";
+			foreach(array_keys($_POST['deactivate']) as $f)
+			{
+				$f = $tp->filter($f);
+
+				if($ue->user_extended_remove($f, $f))
+				{
+					$ret .= EXTLAN_68." $f ".EXTLAN_72."<br />";
+					if(is_readable(e_CORE."sql/extended_".$f.".php"))
+					{
+		                $ret .= ($sql->gen("DROP TABLE ".MPREFIX."user_extended_".$f)) ? LAN_DELETED." user_extended_".$f."<br />" : LAN_DELETED_FAILED." user_extended_".$f."<br />";
+					}
+				}
+				else
+				{
+					$ret .= EXTLAN_70." $f ".EXTLAN_73."<br />";
+				}
+			}
+			e107::getLog()->add('EUF_12',implode(', ',$_POST['deactivate']),E_LOG_INFORMATIVE,'');
+			e107::getMessage()->addSuccess($ret);
+			return $ret;
+		}
 
 
 
@@ -647,6 +674,7 @@ e107::js('footer-inline', js());
 			$ue = e107::getUserExt();
 
 			$this->addPageActivate();
+			$this->addPageDeactivate();
 
 
 			// Get list of current extended fields

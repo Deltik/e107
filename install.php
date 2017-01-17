@@ -11,7 +11,7 @@
 */
 
 // minimal software version
-define('MIN_PHP_VERSION',   '5.3');
+define('MIN_PHP_VERSION',   '5.4');
 define('MIN_MYSQL_VERSION', '4.1.2');
 define('MAKE_INSTALL_LOG', true);
 
@@ -866,13 +866,13 @@ class e_install
 		$permColor	= ($perms_pass == true) ? "text-success" : "text-danger";
 		$PHPColor 	= ($version_fail == false) ? "text-success" : "text-danger";
 		$mysqlColor	= ($mysql_pass == true) ? "text-success" : "text-danger";
-
+/*
 		if(version_compare($php_version, 7.1, ">=")) // XXX Remove once tested thoroughly
 		{
 			$php_help = "<span class='glyphicon glyphicon-warning-sign'></span> PHP 7.1 may have issues with e107. We recommend using 7.0.x versions instead until further testing has been performed.";
 			$PHPColor = 'text-warning';
 		}
-
+*/
 
 		$extensionCheck = array(
 			'xml'       => array('label'=> LANINS_050,      'status'=> function_exists('utf8_encode'),      'url'=> 'http://php.net/manual/en/ref.xml.php'),
@@ -1112,42 +1112,47 @@ class e_install
 				<tr>
 					<td><label>".LANINS_109."</label></td>
 					<td style='padding-right:0'>
-						<table class='table table-striped' >
-							<thead>
-								<tr>
-									<th>".LANINS_115."</th>
-									<th>".LANINS_116."</th>
-								</tr>
-							</thead>
-							<tbody>";
+
+							";
 
 				$themes = $this->get_themes();
 
 				foreach($themes as $val)
 				{
-					if($val == 'bootstrap')
+
+					/*if($val != 'bootstrap3' && $val != 'voux')
 					{
-						continue; 
-					} 
-					
+						continue;
+					}*/
+
 					$themeInfo 	= $this->get_theme_xml($val);
 					$title 		= vartrue($themeInfo['@attributes']['name']);
 					$category 	= vartrue($themeInfo['category']);
+					$preview    = e_THEME.$val."/".$themeInfo['thumbnail'];
+					$description = vartrue($themeInfo['description']);
 
-					$selected = ($val == 'bootstrap3') ? " checked" : "";
+					if(!is_readable($preview))
+					{
+						continue;
+					}
+
+					$thumbnail = "<img class='img-responsive thumbnail'  src='".$preview ."' alt='".$val."' />";
+
+
+					$selected = ($val == 'landingzero') ? " checked" : "";
 
 					$output .= "
-								<tr>
-									<td>
-										<label class='radio-inline'><input type='radio' name='sitetheme' value='{$val}' required='required' $selected />{$title}</label>
-									</td>
-									<td>{$category}</td>
-								</tr>";
+									<div class='col-md-6 theme-cell' >
+										<label class='theme-selection' title=\"".$description."\"><input type='radio' name='sitetheme' value='{$val}' required='required' $selected />
+										<div>".$thumbnail."
+										<h5>".$title." <small>(".$category.")</small><span class='glyphicon glyphicon-ok text-success'></span></h5>
+										</div>
+										</label>
+									</div>";
 				}
 
 				$output .= "
-							</tbody>
-						</table>
+
 					</td>
 
 				</tr>
@@ -1753,13 +1758,10 @@ if($this->pdo == true)
 			return FALSE;
 		}
 
-		require_once($this->e107->e107_dirs['HANDLERS_DIRECTORY']."theme_handler.php");
+	//	require_once($this->e107->e107_dirs['HANDLERS_DIRECTORY']."theme_handler.php");
+	//	$tm = new themeHandler;
+		$xmlArray = e107::getTheme()->parse_theme_xml($theme_folder);
 
-		$tm = new themeHandler;
-		$xmlArray = $tm->parse_theme_xml($theme_folder);
-
-		// $xml = e107::getXml();
-		// $xmlArray = $xml->loadXMLfile($path,'advanced');
 		return (is_array($xmlArray)) ? $xmlArray : FALSE;
 	}
 
@@ -2005,7 +2007,7 @@ function create_tables_unattended()
 	$einstall->previous_steps['generate_content'] 	= isset($_GET['gen']) ? intval($_GET['gen']) : 1;
 	$einstall->previous_steps['install_plugins'] 	= isset($_GET['plugins']) ? intval($_GET['plugins']) : 1;
 	$einstall->previous_steps['prefs']['sitename'] 	= isset($_GET['sitename']) ? urldecode($_GET['sitename']) : LANINS_113;
-	$einstall->previous_steps['prefs']['sitetheme'] = isset($_GET['theme']) ? urldecode($_GET['theme']) : 'jayya';
+	$einstall->previous_steps['prefs']['sitetheme'] = isset($_GET['theme']) ? urldecode($_GET['theme']) : 'bootstrap3';
 
 	//@include_once("./{$HANDLERS_DIRECTORY}e107_class.php");
 	//$e107_paths = compact('ADMIN_DIRECTORY', 'FILES_DIRECTORY', 'IMAGES_DIRECTORY', 'THEMES_DIRECTORY', 'PLUGINS_DIRECTORY', 'HANDLERS_DIRECTORY', 'LANGUAGES_DIRECTORY', 'HELP_DIRECTORY', 'CACHE_DIRECTORY', 'DOWNLOADS_DIRECTORY', 'UPLOADS_DIRECTORY');
@@ -2093,7 +2095,20 @@ function template_data()
 		h4						{ margin-left:10px; margin-bottom:20px; color:#181818; }
 		#version				{ position:relative; left:50px; top:-20px; }
 		.well					{ border-radius: 12px }
-		
+
+		.theme-cell             { margin-bottom:15px; padding-left:0; padding-right:5px }
+		.theme-cell .thumbnail  { margin-bottom:5px; height:170px; width:auto }
+		.theme-cell h5          { padding-left:8px; margin-top:0; font-weight:bold }
+
+		label.theme-selection > input { visibility: hidden;  position: absolute; 	}
+		label.theme-selection > input + div{  cursor:pointer;  border:2px solid transparent; border-radius:6px }
+		label.theme-selection > input:checked + div {    border:2px solid #337ab7; 	}
+		label.theme-selection > input + div span { visibility: hidden; float:right; margin-right:10px; color:#337ab7	}
+		label.theme-selection > input:checked + div span { visibility: initial;	}
+		div.tooltip { width:320px }
+
+
+
 		</style>
 		<!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
 		<!--[if lt IE 9]>

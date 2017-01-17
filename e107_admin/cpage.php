@@ -19,11 +19,10 @@ e107::css('inline',"
 .e-wysiwyg { height: 400px }
 ");
 
-include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_'.e_PAGE);
+e107::coreLan('cpage', true);
 include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/lan_page.php');
 
 $e_sub_cat = 'custom';
-
 
 class page_admin extends e_admin_dispatcher
 {
@@ -134,7 +133,7 @@ class page_admin_form_ui extends e_admin_form_ui
 // BOOKS & CHAPTERS 
 class page_chapters_ui extends e_admin_ui
 {
-		protected $pluginTitle	= 'Page';
+		protected $pluginTitle	= CUSLAN_59;
 		protected $pluginName	= 'core';
 		protected $table 		= "page_chapters";
 		protected $pid			= "chapter_id";

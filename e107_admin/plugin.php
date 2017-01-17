@@ -11,7 +11,8 @@
  */
 
 require_once("../class2.php");
-if (!getperms("Z"))
+
+if(!getperms("Z"))
 {
 	e107::redirect('admin');
 	exit;
@@ -162,6 +163,7 @@ class pluginmanager_form extends e_form
 		if ($this->plug['plugin_version'] != $this->plug_vars['@attributes']['version'] && $this->plug['plugin_installflag'])
 		{
 		  //	$text .= "<br /><input type='button' class='btn' onclick=\"location.href='".e_SELF."?upgrade.{$this->plug['plugin_id']}'\" title='".EPL_UPGRADE." to v".$this->plug_vars['@attributes']['version']."' value='".EPL_UPGRADE."' />";
+		    e107::getMessage()->addInfo("<b>".$tp->toHtml($this->plug['plugin_name'],false,'TITLE')."</b> is ready to be upgraded. (see below)"); // TODO LAN
 			$text .= "<a class='btn btn-default' href='".e_SELF."?upgrade.{$this->plug['plugin_id']}' title=\"".EPL_UPGRADE." v".$this->plug_vars['@attributes']['version']."\" >".ADMIN_UPGRADEPLUGIN_ICON."</a>";
 		}
 
@@ -616,7 +618,13 @@ class pluginManager{
 		
 		if($total > $amount)
 		{
-			$parms = $total.",".$amount.",".$from.",".e_SELF.'?mode='.$_GET['mode'].'&amp;frm=[FROM]';
+			$parms = $total.",".$amount.",".$from.",".e_SELF.'?mode=online&amp;frm=[FROM]';
+
+			if(!empty($srch))
+			{
+				$parms .= '&amp;srch='.$srch;
+			}
+
 			$text .= "<div class='control-group form-inline input-inline' style='text-align:center;margin-top:10px'>".$tp->parseTemplate("{NEXTPREV=$parms}",TRUE)."</div>";
 		}
 		
@@ -693,7 +701,7 @@ class pluginManager{
 		$string =  base64_decode($_GET['src']);	
 		parse_str($string, $data);
 
-		if(e_DEBUG === true)
+		if(deftrue('e_DEBUG_MARKETPLACE'))
 		{
 			echo "<b>DEBUG MODE ACTIVE (no downloading)</b><br />";
 			echo '$_GET[src]: ';
@@ -1465,7 +1473,7 @@ class pluginManager{
 					$pgf->plug		= $plug;
 					$text 			.= $pgf->renderTableRow($this->fields, $this->fieldpref, $data, 'plugin_id');
 
-
+/*
 					$folder = $plug['plugin_path'];
 					if(!empty($versions[$folder]['version']) && version_compare( $plug['plugin_version'], $versions[$folder]['version'], '<'))
 					{
@@ -1474,7 +1482,7 @@ class pluginManager{
 						$lan = "A newer version of [x] is available for download.";
 						e107::getMessage()->addInfo($tp->lanVars($lan,$link));
 						e107::getMessage()->addDebug("Local version: ".$plug['plugin_version']." Remote version: ".$versions[$folder]['version']);
-					}
+					}*/
 
 				}
 			}

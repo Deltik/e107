@@ -2,25 +2,13 @@
 /*
 * e107 website system
 *
-* Copyright (C) 2008-2011 e107 Inc (e107.org)
+* Copyright (C) 2008-2016 e107 Inc (e107.org)
 * Released under the terms and conditions of the
 * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
 *
 * Text processing and parsing functions
 *
-* $URL$
-* $Id$
-*
 */
-
-/**
- * @package e107
- * @subpackage e107_handlers
- * @version $Id$
- *
- * Text processing and parsing functions.
- * Simple parse data model.
- */
 
 if (!defined('e107_INIT')) { exit(); }
 
@@ -2561,7 +2549,7 @@ class e_parse extends e_parser
 			if(empty($parm['w']) && isset($parm['h']))
 			{
 				$parm['h'] = ($parm['h'] * $multiply) ;
-				return $this->thumbUrl($src, $parm)." h".$parm['h']." ".$multiply;
+				return $this->thumbUrl($src, $parm)." ".$parm['h']."h ".$multiply;
 			}
 
 			$width = (!empty($parm['w']) || !empty($parm['h'])) ? (intval($parm['w']) * $multiply) : ($this->thumbWidth * $multiply);
@@ -3321,7 +3309,9 @@ class e_parser
 	                                'video'     => array('autoplay', 'controls', 'height', 'loop', 'muted', 'poster', 'preload', 'src', 'width'),
 	                                'td'        => array('id', 'style', 'class', 'colspan', 'rowspan'),
 	                                'th'        => array('id', 'style', 'class', 'colspan', 'rowspan'),
-	                                'col'       => array('id', 'span', 'class','style')
+	                                'col'       => array('id', 'span', 'class','style'),
+		                            'embed'     => array('id', 'src', 'style', 'class', 'wmode', 'type', 'title', 'width', 'height'),
+
                                   );
 
     protected $badAttrValues     = array('javascript[\s]*?:','alert\(','vbscript[\s]*?:','data:text\/html', 'mhtml[\s]*?:', 'data:[\s]*?image');
@@ -3546,7 +3536,7 @@ class e_parser
 	public function toGlyph($text, $space=" ")
 	{
 
-		if(!deftrue('BOOTSTRAP') || empty($text))
+		if(empty($text))
 		{
 			return false;	
 		}
@@ -3620,7 +3610,7 @@ class e_parser
 			}
 			else
 			{
-				$prefix = 'icon-';	
+		//		$prefix = 'icon-';
 				$tag = 'i';
 			}
 			
@@ -3664,19 +3654,26 @@ class e_parser
 		$height 	= ($tp->thumbHeight !== 0) ? $tp->thumbHeight : "";		
 		$linkStart  = '';
 		$linkEnd    =  '';
-		
-		if(!isset($userData['user_image']) && USERID)
+
+		if(!empty($options['h']))
+		{
+			$height = intval($options['h']);
+		}
+
+
+		if($userData === null && USERID)
 		{
 			$userData = array();
 			$userData['user_id']    = USERID;
 			$userData['user_image']	= USERIMAGE;
-			$userData['user_name']	= USERNAME; 
+			$userData['user_name']	= USERNAME;
+			$userData['user_currentvisit'] = USERCURRENTVISIT;
 		}
-		
+
 		
 		$image = (!empty($userData['user_image'])) ? varset($userData['user_image']) : null;
-		
-		$genericImg = $tp->thumbUrl(e_IMAGE."generic/blank_avatar.jpg","w=".$width."&h=".$height,true);	
+
+		$genericImg = $tp->thumbUrl(e_IMAGE."generic/blank_avatar.jpg","w=".$width."&h=".$height,true);
 		
 		if (!empty($image)) 
 		{
@@ -3724,8 +3721,10 @@ class e_parser
 		$heightInsert = empty($height) ? '' : "height='".$height."'";
 		$id = (!empty($options['id'])) ? "id='".$options['id']."' " : "";
 
+		$classOnline = (!empty($userData['user_currentvisit']) && intval($userData['user_currentvisit']) > (time() - 300)) ? " user-avatar-online" : '';
+
 		$text = $linkStart;
-		$text .= "<img ".$id."class='".$shape." user-avatar' alt=\"".$title."\" src='".$img."'  width='".$width."' ".$heightInsert." />";
+		$text .= "<img ".$id."class='".$shape." user-avatar".$classOnline."' alt=\"".$title."\" src='".$img."'  width='".$width."' ".$heightInsert." />";
 		$text .= $linkEnd;
 	//	return $img;
 		return $text;
@@ -4096,8 +4095,8 @@ class e_parser
 					e107::getFile()->getRemoteFile($thumbSrc, $filename,'media');	
 				}
 								
-				return "<a href='".$url."'><img class='video-responsive video-thumbnail' src='{e_MEDIA}".$filename."' alt='Youtube Video' title='Click to view on Youtube' />
-				<div class='video-thumbnail-caption'><small>Click to watch video</small></div></a>";	
+				return "<a href='".$url."'><img class='video-responsive video-thumbnail' src='{e_MEDIA}".$filename."' alt='".LAN_YOUTUBE_VIDEO."' title='".LAN_CLICK_TO_VIEW."' />
+				<div class='video-thumbnail-caption'><small>".LAN_CLICK_TO_VIEW."</small></div></a>";
 			}
 			
 			if($thumb == 'src')
@@ -4127,7 +4126,7 @@ class e_parser
 				{
 					$thumbSrc = e_IMAGE_ABS."generic/playlist_120.png";
 				}
-				return "<img class='img-responsive' src='".$thumbSrc."' alt='Youtube Video Playlist' style='width:".vartrue($parm['w'],'80')."px'/>";
+				return "<img class='img-responsive' src='".$thumbSrc."' alt='".LAN_YOUTUBE_PLAYLIST."' style='width:".vartrue($parm['w'],'80')."px'/>";
 
 			}
 
@@ -4657,6 +4656,7 @@ return;
 		        $value = preg_replace('/^<pre[^>]*>/', '', $value);
 		        $value = str_replace("</pre>", "", $value);
 		        $value = str_replace('<br></br>', PHP_EOL, $value);
+
 		    }
 
 		    if($node->nodeName == 'code')
@@ -4671,6 +4671,16 @@ return;
 
 		    $newNode = $doc->createElement($node->nodeName);
 		    $newNode->nodeValue = $value;
+
+		    if($class = $node->getAttribute('class'))
+		    {
+		        $newNode->setAttribute('class',$class);
+		    }
+
+	        if($style = $node->getAttribute('style'))
+		    {
+		        $newNode->setAttribute('style',$style);
+		    }
 
 		    $node->parentNode->replaceChild($newNode, $node);
        }

@@ -8,8 +8,6 @@
  *
  * Image Administration Area
  *
- * $URL$
- * $Id$
  *
 */
 
@@ -53,7 +51,7 @@ if(isset($_POST['submit_cancel_show']))
 	exit();
 }
 
-include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_'.e_PAGE);
+e107::coreLan('image', true);
 
 if($_GET['action'] == 'dialog')
 {
@@ -1408,8 +1406,6 @@ class media_admin_ui extends e_admin_ui
 
 		$items = array();
 
-		//TODO FIXME Upgrade to bs3 when Bootstrap3 Admin is ready. 
-
 		$bs2 = e107::getMedia()->getGlyphs('bs3','glyphicon-');
 		
 		foreach($bs2 as $val)
@@ -1441,6 +1437,50 @@ class media_admin_ui extends e_admin_ui
 			); 		
 
 		}
+
+
+
+		$custom = e107::getThemeGlyphs();
+
+		if(!empty($custom))
+		{
+			foreach($custom as $glyphConfig)
+			{
+
+				$tmp = e107::getMedia()->getGlyphs($glyphConfig,$glyphConfig['prefix']);
+
+				if(!empty($tmp))
+				{
+					foreach($tmp as $val)
+					{
+						$items[] = array(
+							'previewUrl'	=> $val,
+							'saveValue'		=> $val.'.glyph',
+							'thumbUrl'		=> $val,
+							'title'			=> $val,
+							'slideCaption'	=> ucfirst($glyphConfig['name']),
+							'slideCategory'	=> $glyphConfig['name']
+						);
+
+					}
+
+
+				}
+
+
+
+
+
+			}
+
+
+
+		}
+
+
+
+
+
 		
 		if(vartrue($parm['search']))
 		{

@@ -9,6 +9,7 @@
  * Administration - Site Preferences
  *
  */
+
 require_once ("../class2.php");
 
 if(isset($_POST['newver']))
@@ -17,17 +18,17 @@ if(isset($_POST['newver']))
 	exit();
 }
 
-if(! getperms("1"))
+if(!getperms("1"))
 {
 	e107::redirect('admin');
 	exit();
 }
 
-include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_'.e_PAGE);
+e107::coreLan('prefs', true);
+
 $e_sub_cat = 'prefs';
-e107::lan('core','mailout','admin');
-
-
+//e107::lan('core','mailout','admin');
+e107::coreLan('mailout', true);
 
 
 require_once (e_ADMIN."auth.php");
@@ -1263,7 +1264,11 @@ $text .= "
 					<col class='col-label' />
 					<col class='col-control' />
 				</colgroup>
-				<tbody>
+				<tbody>";
+
+	if(!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off')     // Only allow if an SSL login has been made.
+	{
+		$text .="
 					<tr>
 						<td><label for='ssl-enabled'>".PRFLAN_60."</label></td>
 
@@ -1272,10 +1277,9 @@ $text .= "
 							<div class='field-help'>".PRFLAN_61."</div>
 						</td>
 					</tr>
-					<!-- Secure Image -->
-					
-";
-
+			";
+	}
+	// Secure Image/ Captcha
 	$secureImage = array('signcode'=>PRFLAN_76, 'logcode'=>PRFLAN_81, "fpwcode"=>PRFLAN_138,'admincode'=>PRFLAN_222);
 	
 	foreach($secureImage as $key=>$label)
@@ -1363,7 +1367,18 @@ $text .= "
 						<td><label for='cookie-name'>".PRFLAN_55."</label></td>
 						<td >".$frm->text('cookie_name', $pref['cookie_name'], 20)."
 						<div class='field-help'>".PRFLAN_263.".</div></td></tr>
-					
+
+
+					<tr>
+						<td><label for='session-lifetime'>".PRFLAN_272."</label></td>
+						<td>
+							".$frm->number('session_lifetime', $pref['session_lifetime'],6)."
+							<div class='smalltext field-help'>".PRFLAN_273."</div>
+						</td>
+					</tr>
+
+
+
 					<tr>
 						<td><label for='passwordencoding'>".PRFLAN_188.":</label></td>
 
@@ -1783,10 +1798,10 @@ $text .= '<thead>';
 $text .= '<tr>';
 $text .= '<th>' . LAN_LIBRARY_MANAGER_13 . '</th>';
 $text .= '<th class="text-center">' . LAN_LIBRARY_MANAGER_21 . '</th>';
-$text .= '<th class="text-center">' . LAN_LIBRARY_MANAGER_14 . '</th>';
-$text .= '<th class="text-center">' . LAN_LIBRARY_MANAGER_18 . '</th>';
-$text .= '<th>' . LAN_LIBRARY_MANAGER_19 . '</th>';
-$text .= '<th></th>';
+$text .= '<th class="text-center">' . LAN_VERSION . '</th>';
+$text .= '<th class="text-center">' . LAN_STATUS . '</th>';
+$text .= '<th>' . LAN_MESSAGE . '</th>';
+$text .= '<th>' . LAN_MOREINFO . '</th>';
 $text .= '</tr>';
 $text .= '</thead>';
 $text .= '<tbody>';
@@ -1819,7 +1834,7 @@ foreach($libraries as $machineName => $library)
 if(empty($libraries))
 {
 	$text .= '<tr>';
-	$text .= '<td colspan="6">' . LAN_LIBRARY_MANAGER_26 . '</td>';
+	$text .= '<td colspan="6">' . LAN_NOT_FOUND . '</td>';
 	$text .= '</tr>';
 }
 
@@ -2025,7 +2040,7 @@ function libraryGetHomepage($details)
 	$href = $details['vendor_url'];
 	$title = $details['name'];
 
-	return '<a href="' . $href . '" title="' . $title . '" target="_blank">' . LAN_LIBRARY_MANAGER_15 . '</a>';
+	return '<a href="' . $href . '" title="' . $title . '" target="_blank">' . LAN_WEBSITE . '</a>';
 }
 
 /**
@@ -2041,7 +2056,7 @@ function libraryGetDownload($details)
 	$href = $details['download_url'];
 	$title = $details['name'];
 
-	return '<a href="' . $href . '" title="' . $title . '" target="_blank">' . LAN_LIBRARY_MANAGER_16 . '</a>';
+	return '<a href="' . $href . '" title="' . $title . '" target="_blank">' . LAN_DOWNLOAD . '</a>';
 }
 
 /**
@@ -2050,18 +2065,18 @@ function libraryGetDownload($details)
 function libraryGetProvider($details)
 {
 	$text = 'e107';
-	$provider = LAN_LIBRARY_MANAGER_24;
+	$provider = LAN_CORE;
 
 	if(varset($details['plugin'], false) == true)
 	{
 		$text = $details['plugin'];
-		$provider = LAN_LIBRARY_MANAGER_22;
+		$provider = LAN_PLUGIN;
 	}
 
 	if(varset($details['theme'], false) == true)
 	{
 		$text = $details['theme'];
-		$provider = LAN_LIBRARY_MANAGER_23;
+		$provider = LAN_THEME;
 	}
 
 	return '<span data-toggle="tooltip" data-placement="top" title="' . $text . '">' . $provider . '</span>';

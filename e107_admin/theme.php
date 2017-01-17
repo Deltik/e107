@@ -6,22 +6,17 @@
  * Released under the terms and conditions of the
  * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
  *
- *
- *
- * $Source: /cvs_backup/e107_0.8/e107_admin/theme.php,v $
- * $Revision$
- * $Date$
- * $Author$
  */
 
 require_once("../class2.php");
+
 if (!getperms("1"))
 {
 	e107::redirect('admin');
 	exit;
 }
 
-include_lan(e_LANGUAGEDIR.e_LANGUAGE.'/admin/lan_'.e_PAGE);
+e107::coreLan('theme', true);
 
 $e_sub_cat = 'theme_manage';
 
@@ -74,11 +69,13 @@ if(!empty($_GET['action']))
 		*/
 
 		case 'info':
-			$string =  base64_decode($_GET['src']);
-			parse_str($string,$p);
-			$themeInfo = e107::getSession()->get('thememanager/online/'.intval($p['id']));
-			echo $themec->renderThemeInfo($themeInfo);
-
+			if(!empty($_GET['src']))
+			{
+				$string =  base64_decode($_GET['src']);
+				parse_str($string,$p);
+				$themeInfo = e107::getSession()->get('thememanager/online/'.intval($p['id']));
+				echo $themec->renderThemeInfo($themeInfo);
+			}
 		break;
 		
 		case 'preview':
@@ -165,7 +162,7 @@ if($mode == 'download' && !empty($_GET['src']))
 			return true;
 		}
 
-		if(e_DEBUG === true)
+		if(deftrue('e_DEBUG_MARKETPLACE'))
 		{
 			echo "<b>DEBUG MODE ACTIVE (no downloading)</b><br />";
 			echo '$_GET: ';

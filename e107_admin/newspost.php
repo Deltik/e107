@@ -27,9 +27,6 @@ e107::css('inline', "
 
 ");
 
-
-
-
 class news_admin extends e_admin_dispatcher
 {
 
@@ -509,6 +506,9 @@ class news_admin_ui extends e_admin_ui
 
 		$new_data['news_sef'] =  empty($new_data['news_sef']) ?  eHelper::title2sef($new_data['news_title']) : eHelper::secureSef($new_data['news_sef']);
 
+		$this->checkSEFSimilarity($new_data);
+
+
 		$tmp = explode(chr(35), $new_data['news_author']);
 		$new_data['news_author'] = intval($tmp[0]);
 
@@ -566,6 +566,9 @@ class news_admin_ui extends e_admin_ui
 			$new_data['news_sef'] = eHelper::title2sef($new_data['news_title']);
 		}
 
+
+		$this->checkSEFSimilarity($new_data);
+
 		if(!empty($new_data['news_author']))
 		{
 			$tmp = explode(chr(35), $new_data['news_author']);
@@ -578,6 +581,30 @@ class news_admin_ui extends e_admin_ui
 		}
 
 		return $new_data;
+	}
+
+
+	/**
+	 * Display a warning if there is a mismatch with the SEF Url.
+	 * @param $new_data
+	 */
+	private function checkSEFSimilarity($new_data)
+	{
+		if(e_LANGUAGE === "Japanese" || e_LANGUAGE === "Korean")
+		{
+			return null;
+		}
+
+
+		$expectedSEF = eHelper::title2sef($new_data['news_title']);
+		similar_text($expectedSEF,$new_data['news_sef'],$percSimilar);
+
+		if($percSimilar < 60)
+		{
+			e107::getMessage()->addWarning(LAN_NEWS_108); // The SEF URL is unlike the title of your news item.
+		}
+
+
 	}
 
 
@@ -857,6 +884,7 @@ class news_admin_ui extends e_admin_ui
 		$temp['news_default_template']	= preg_replace('#[^\w\pL\-]#u', '', $_POST['news_default_template']);
 		$temp['news_list_limit']		= intval($_POST['news_list_limit']);
 		$temp['news_list_templates']     = e107::getParser()->toDB($_POST['news_list_templates']);
+		$temp['news_cache_timeout']     = intval($_POST['news_cache_timeout']);
 
 		e107::getConfig()->updatePref($temp);
 
@@ -1141,7 +1169,20 @@ class news_admin_ui extends e_admin_ui
 									".$frm->textarea('news_ping_services', $pingVal, 4, 100, $pingOpt)."
 									<div class='field-help'>".LAN_NEWS_89."<br />".LAN_NEWS_90."</div>
 								</td>
-							</tr>
+							</tr>";
+
+								// TODO LAN
+						$tab1 .= "
+							<tr>
+								<td>News Cache Timeout </td>
+								<td>
+									".$frm->number('news_cache_timeout',varset($pref['news_cache_timeout'],0), 6)."
+									<div class='field-help'>Time in minutes. Applies only when system cache is enabled.</div>
+								</td>
+							</tr>";
+
+
+						$tab1 .= "
 
 							<tr>
 							<td>".NWSLAN_86."</td>

@@ -1,26 +1,14 @@
 <?php
 /*
-+ ----------------------------------------------------------------------------+
-|     e107 website system
-|
-|     Copyright (C) 2008-2010 e107 Inc (e107.org)
-|     http://e107.org
-|
-|
-|     Released under the terms and conditions of the
-|     GNU General Public License (http://gnu.org).
-|
-|     $URL$
-|     $Revision$
-|     $Id$
-|     $Author$
-+----------------------------------------------------------------------------+
-*/
+ * e107 website system
+ *
+ * Copyright (C) 2008-2009 e107 Inc (e107.org)
+ * Released under the terms and conditions of the
+ * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
+ *
+ */
 
 /**
- *	@package    e107
- *	@subpackage	admin
- *	@version 	$Id$;
  *
  *	Update routines from older e107 versions to current.
  *
@@ -59,7 +47,7 @@ $dbupdate = array();			// Array of core upgrade actions
 
 global $e107cache;
 
-if (is_readable(e_ADMIN.'ver.php'))
+if(is_readable(e_ADMIN.'ver.php'))
 {
   include(e_ADMIN.'ver.php');
 }
@@ -168,7 +156,7 @@ class e107Update
 		if(varset($_POST['update_core']) && is_array($_POST['update_core']))
 		{
 			$func = key($_POST['update_core']);
-			$message = $this->updateCore($func);
+			$this->updateCore($func);
 		}	
 		
 		if(varset($_POST['update']) && is_array($_POST['update'])) // Do plugin updates
@@ -176,11 +164,7 @@ class e107Update
 			$func = key($_POST['update']);
 			$this->updatePlugin($func);
 		}	
-			
-		if(vartrue($message))
-		{
-			$mes->addSuccess($message);	
-		}
+
 		
 		$this->renderForm();	
 	}
@@ -250,12 +234,16 @@ class e107Update
 		}
 		
 		$frm = e107::getForm();
-		
+
+		$tp = e107::getParser();
+
 		$text = "";
 		foreach($list as $path=>$val)
 		{
+			$name = !empty($val['@attributes']['lan']) ? $tp->toHtml($val['@attributes']['lan'],false,'TITLE') : $val['@attributes']['name'];
+
 			$text .= "<tr>
-					<td>".$val['@attributes']['name']."</td>
+					<td>".$name."</td>
 					<td>".$frm->admin_button('update['.$path.']', LAN_UPDATE, 'warning', '', 'disabled='.$this->disabled)."</td>
 					</tr>";			
 		}
@@ -425,18 +413,27 @@ function update_check()
 	if ($update_needed === TRUE)
 	{
 		$frm = e107::getForm();
+		$label = LAN_UPDATE." ".e107::getParser()->toGlyph('fa-arrow-right');
+
 		
-		$txt = "
+		$text = "
 		<form method='post' action='".e_ADMIN_ABS."e107_update.php'>
 		<div>
-			".ADLAN_120."
-			".$frm->admin_button('e107_system_update', LAN_UPDATE, 'other')."
-		</div>
+			<p>".ADLAN_120."</p>
+			".$frm->admin_button('e107_system_update', 'update', 'other', $label)."
+		</div><br />
 		</form>
 		";
-		
-		$mes->addInfo($txt);
+
+
+	//	$text = ADLAN_120. "<a class='btn btn-xs btn-inline' href='".e_ADMIN_ABS."e107_update.php'>". e107::getParser()->toGlyph('fa-chevron-circle-right')."</a>";
+	//	$text .= "<hr />";
+		$mes->addInfo($text);
+
 	}
+
+
+	return $update_needed;
 }
 
 	

@@ -96,6 +96,7 @@
 			'" class="btn btn-primary'.($this->var['ntUrl'] ?"":" disabled").'"'
 			.($this->var['ntUrl'] ?"":" data-toggle='tooltip' title='".LAN_FORUM_0006."'
 			style='cursor: not-allowed; pointer-events: all !important;'").'>'.LAN_FORUM_1018.'</a>
+			'.($this->var['ntUrl'] ?"":"<span>&nbsp;</span>").'
 			<button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
 		    	<span class="caret"></span>
 		    	<span class="sr-only">Toggle Dropdown</span>
@@ -801,7 +802,13 @@
 		}
 
 
-		function sc_threadname()
+		/**
+		 *
+		 * @outdated use {TOPIC_TITLE} or {TOPIC_URL}
+		 * @param null $parm
+		 * @return string
+		 */
+		function sc_threadname($parm=null)
 		{
 			global $menu_pref, $forum;
 			$tp = e107::getParser();
@@ -844,8 +851,42 @@
 			$this->addVars($temp);
 
 			$url = e107::url('forum', 'topic', $this->var);
+
+			if($parm === 'url')
+			{
+				return $url;
+			}
+
+			if($parm === 'title')
+			{
+				return $thread_name;
+			}
+
+
 			return "<a {$title} href='" . $url . "'>{$thread_name}</a>";
 		}
+
+		//v2.1.4
+		function sc_topic_title($parm=null)
+		{
+			return $this->sc_threadname('title');
+		}
+
+		//v2.1.4
+		function sc_topic_url($parm=null)
+		{
+			return $this->sc_threadname('url');
+		}
+
+		//v2.1.4
+		function sc_topic_date($parm=null)
+		{
+			return $this->sc_threaddate();
+		}
+
+
+		//@todo more topic_xxxx shortcode aliases.
+
 
 
 		function sc_pages()
