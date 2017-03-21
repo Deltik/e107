@@ -48,6 +48,8 @@ class eurl_admin extends e_admin_dispatcher
 	protected $defaultAction = 'config';
 
 	protected $menuTitle = LAN_EURL_MENU;
+
+	protected $adminMenuIcon = 'e-eurl-24';
 }
 
 class eurl_admin_ui extends e_admin_controller_ui
@@ -251,19 +253,29 @@ class eurl_admin_ui extends e_admin_controller_ui
 
 		//  e107::getDebug()->log($sefActive);
 
+		$plg = e107::getPlug();
+
 		foreach($eUrl as $plug=>$val)
 		{
+
+			$plg->load($plug);
+
 			$active = !empty($sefActive[$plug]) ? true : false;
 			$text .= "<table class='table table-striped table-bordered' style='margin-bottom:40px'>
 			<colgroup>
-				<col style='min-width:200px' />
+				<col style='min-width:220px' />
 				<col style='width:45%' />
 				<col style='width:45%' />
 			</colgroup>";
 
 			$name = 'urlstatus['.$plug.']';
-			$text .= "<tr class='active'><td ><h4>".$plug."</h4></td><td colspan='2'>".$frm->radio_switch($name,$active)."</td></tr>";
-			$text .= "<tr><th>Key</th><th>Regular Expression</th>
+
+			$switch = $frm->radio_switch($name, $active, LAN_ON, LAN_OFF, array(
+				'switch' => 'mini',
+			));
+
+			$text .= "<tr class='active'><td><h4>" . $plg->getName() . "</h4></td><td colspan='2'>" . $switch . "</td></tr>";
+			$text .= "<tr><th>".LAN_EURL_KEY."</th><th>".LAN_EURL_REGULAR_EXPRESSION."</th>
 
 
 			<th>".LAN_URL."</th>
@@ -635,7 +647,7 @@ class eurl_admin_form_ui extends e_admin_form_ui
         $text .= '</p>
                 </div>
                 <div class="modal-footer">
-                <a href="#" data-dismiss="modal" class="btn btn-primary">Close</a>
+                <a href="#" data-dismiss="modal" class="btn btn-primary">'.LAN_CLOSE.'</a>
                 </div>
                 </div>';           
         
@@ -755,7 +767,7 @@ class eurl_admin_form_ui extends e_admin_form_ui
 			$text .= "
                 <tr>
                     <td>".$this->moreInfo($title, $info)."</td>
-                    <td><select name='eurl_config[$module]' class='input-block-level'>".$opt."</select></td>
+                    <td><select name='eurl_config[$module]' class='form-control input-block-level'>".$opt."</select></td>
                     <td>";
 		
 			$bTable = ($admin['generate']['table']);

@@ -211,7 +211,7 @@ class download
 
 		if ($dlcat->down_count == 0)
 	   	{
-			return $ns->tablerender(LAN_PLUGIN_DOWNLOAD_NAME, "<div ".(deftrue('BOOTSTRAP')?"class='alert alert-warning' >":"")."style='text-align:center'>".LAN_NO_RECORDS_FOUND."</div>",'download-categories',true);
+			return $ns->tablerender(LAN_PLUGIN_DOWNLOAD_NAME, "<div class='alert alert-warning' style='text-align:center'>".LAN_NO_RECORDS_FOUND."</div>",'download-categories',true);
 		}
 				
 		$download_cat_table_string = "";
@@ -924,7 +924,7 @@ class download
         	return "Error reading categories<br />";
         	exit;
       }
-      $boxinfo .= "<select name='{$name}' id='download_category' class='tbox'>
+      $boxinfo .= "<select name='{$name}' id='download_category' class='tbox form-control'>
       	<option value=''>{$blankText}</option>\n";
       // Its a structured display option - need a 2-step process to create a tree
       $catlist = array();

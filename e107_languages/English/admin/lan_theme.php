@@ -111,6 +111,7 @@ define("TPVLAN_CONV_12", "A full description of the theme (Must be written in En
 define("TPVLAN_CONV_13", "What category of theme is this?");
 define("TPVLAN_CONV_14", "Enable this stylesheet as a selectable option in the Theme Manager.");
 define("TPVLAN_CONV_15", "Give this stylesheet a name");
+define("TPVLAN_CONV_16", "URL to a live-demo of this theme.");
 
 //marketplace
 define("TPVLAN_81","Downloading..."); 
@@ -123,4 +124,6 @@ define("TPVLAN_86","Could not change site theme.");
 define("TPVLAN_88","Converter");
 define("TPVLAN_89", "Apply dashboard preferences to all administrators");
 
-define("TPVLAN_90","Unable to connect. Please check firewall and/or internet connection.");
+define("TPVLAN_91", "Create a new theme based on");
+define("TPVLAN_92", "New Theme Folder");
+

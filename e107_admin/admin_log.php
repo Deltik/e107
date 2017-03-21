@@ -40,7 +40,7 @@ if(is_array($pref['lan_log_list'])) //... and for any plugins which support it
 		
 	//	echo "orig = ".$file."     ";
 		//e107::lan($path,'log',true);
-		include_lan(e_PLUGIN.$path.'/languages/'.$file);
+		e107::includeLan(e_PLUGIN.$path.'/languages/'.$file);
 	}
 }
 
@@ -96,7 +96,9 @@ class adminlog_admin extends e_admin_dispatcher
 
 	protected $adminMenuAliases = array(
 		'main/edit'	=> 'main/list'				
-	);	
+	);
+
+	protected $adminMenuIcon = 'e-adminlogs-24';
 	
 	protected $menuTitle = ADLAN_155;
 	
@@ -861,7 +863,7 @@ if(is_array($pref['lan_log_list'])) //... and for any plugins which support it
 		
 	//	echo "orig = ".$file."     ";
 		//e107::lan($path,'log',true);
-		include_lan(e_PLUGIN.$path.'/languages/'.$file);
+		e107::includeLan(e_PLUGIN.$path.'/languages/'.$file);
 	}
 }
 
@@ -1351,7 +1353,7 @@ if(isset($page_title[$action]))
 		'auditlog' => array(RL_LAN_019, RL_LAN_020, RL_LAN_104, LAN_USER, RL_LAN_023, LAN_TITLE, RL_LAN_033), 
 		'rolllog' => array(RL_LAN_019, RL_LAN_032, RL_LAN_020, RL_LAN_104, LAN_USER, RL_LAN_023, RL_LAN_024, LAN_TITLE, RL_LAN_033), 
 		'downlog' => array(RL_LAN_019, RL_LAN_020, RL_LAN_104, LAN_USER, RL_LAN_068, RL_LAN_069), 
-		'detailed' => array(LAN_TIME, RL_LAN_096, RL_LAN_098, RL_LAN_032, RL_LAN_020, RL_LAN_104, LAN_USER, RL_LAN_023, LAN_TITLE, RL_LAN_033),  
+		'detailed' => array(LAN_TIME, RL_LAN_096, LAN_SOURCE, RL_LAN_032, RL_LAN_020, RL_LAN_104, LAN_USER, RL_LAN_023, LAN_TITLE, RL_LAN_033),  
 		'online' => array(RL_LAN_019, RL_LAN_020, LAN_ID, LAN_USER, RL_LAN_116, RL_LAN_117, RL_LAN_118, RL_LAN_116));
 
 

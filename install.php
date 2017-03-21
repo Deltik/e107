@@ -875,10 +875,11 @@ class e_install
 */
 
 		$extensionCheck = array(
-			'xml'       => array('label'=> LANINS_050,      'status'=> function_exists('utf8_encode'),      'url'=> 'http://php.net/manual/en/ref.xml.php'),
-			'exif'      => array('label'=> LANINS_048,      'status'=> function_exists('exif_imagetype'),   'url'=> 'http://php.net/manual/en/book.exif.php'),
-			'gd'        => array('label'=> 'GD Library',    'status'=> function_exists('gd_info'),          'url'=> 'http://php.net/manual/en/book.image.php'),
-			'curl'      => array('label'=>'Curl Library',   'status'=> function_exists('curl_version'),     'url'=>'http://php.net/manual/en/book.curl.php')
+			'xml'   => array('label'=> LANINS_050,          'status' => function_exists('utf8_encode'),         'url'=> 'http://php.net/manual/en/ref.xml.php'),
+			'exif'  => array('label'=> LANINS_048,          'status' => function_exists('exif_imagetype'),      'url'=> 'http://php.net/manual/en/book.exif.php'),
+			'curl'  => array('label'=> 'Curl Library',      'status' => function_exists('curl_version'),        'url'=> 'http://php.net/manual/en/book.curl.php'),
+			'gd'    => array('label'=> 'GD Library',        'status' => function_exists('gd_info'),             'url'=> 'http://php.net/manual/en/book.image.php'),
+			'mb'    => array('label'=> 'MB String Library', 'status' => function_exists('mb_strimwidth'),       'url'=> 'http://php.net/manual/en/book.mbstring.php'),
 		);
 
 
@@ -1136,7 +1137,7 @@ class e_install
 						continue;
 					}
 
-					$thumbnail = "<img class='img-responsive thumbnail'  src='".$preview ."' alt='".$val."' />";
+					$thumbnail = "<img class='img-responsive img-fluid thumbnail'  src='".$preview ."' alt='".$val."' />";
 
 
 					$selected = ($val == 'landingzero') ? " checked" : "";
@@ -1760,9 +1761,9 @@ if($this->pdo == true)
 
 	//	require_once($this->e107->e107_dirs['HANDLERS_DIRECTORY']."theme_handler.php");
 	//	$tm = new themeHandler;
-		$xmlArray = e107::getTheme()->parse_theme_xml($theme_folder);
+		$xmlArray = e107::getTheme($theme_folder)->get();
 
-		return (is_array($xmlArray)) ? $xmlArray : FALSE;
+		return (is_array($xmlArray)) ? $xmlArray : false;
 	}
 
 	/**
@@ -1970,6 +1971,8 @@ function create_tables_unattended()
 	{
 		return false;
 	}
+
+	$mySQLserver = null;
 	
 	if(file_exists('e107_config.php'))
 	{
@@ -2121,7 +2124,7 @@ function template_data()
 
 		  <div class="masthead">
 			<ul class="nav nav-pills pull-right" >
-			  <li class="active" style="width:200px;text-align:center" ><a href="#" >'.LANINS_134.' &#58  {stage_pre} {stage_num} '.LANINS_135.' 8</a>
+			  <li style="width:200px;text-align:center" ><a href="#" >'.LANINS_134.' &#58  {stage_pre} {stage_num} '.LANINS_135.' 8</a>
 			  <div class="progress progress-{bartype}">
 				<div class="progress-bar bar" style="width: {percent}%"></div>
 			</div>

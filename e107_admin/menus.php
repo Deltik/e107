@@ -42,38 +42,27 @@ require_once("../class2.php");
 
 if(e_MENUMANAGER_ACTIVE === false )
 {
-	if(!deftrue("e_DEBUG_MENUMANAGER"))
+	e107::library('load', 'bootstrap.switch');
+	e107::js('footer', '{e_WEB}js/bootstrap.switch.init.js', 'jquery', 5);
+
+//	if(!deftrue("e_DEBUG"))
 	{
 		e107::getJs()->inlineCSS('
-
-		body { overflow:hidden }
-
-
+			body { overflow:hidden }
 		');
 	}
-	else
-	{
+//	else
+/*	{
 		e107::js('footer-inline',"
-
 			$('#menu_iframe').attr('scrolling','no');
 			$('#menu_iframe').load(function() {
-		//	$('#menu_iframe').bind('load', function() {
-
-			  var height = this.contentWindow.document.body.offsetHeight + 400 + 'px';
-
-			//	$(this).css('overflow-y','visible');
+				var height = this.contentWindow.document.body.offsetHeight + 400 + 'px';
 				$(this).css('height',height);
-			 // alert(this.style.height);
-
 			});
-
-
 		");
-
-	}
+	}*/
 
 	e107::getJs()->inlineCSS("
-
 		.menu-manager-items          { padding-right:15px}
 		.menu-manager-items div.item { padding:5px; margin:5px 0; border:1px solid rgba(255,255,255,0.3); border-radius:3px; cursor: move }
 		.menu-manager-sticky {
@@ -101,24 +90,23 @@ if(e_MENUMANAGER_ACTIVE === false )
 
 			.menu-selector ul li:nth-child(odd){ background-color:rgba(0,0,0,0.2) }
 
-			.menu-selector { height:330px; display:block; padding-bottom:50px; overflow-y:scroll; margin-bottom:10px }
+			.menu-selector { /*height:330px; */ display:block; padding-bottom:50px; /*overflow-y:scroll;*/ margin-bottom:10px }
 
 			.menu-selector input:checked + span {  color: white; }
 
 			@media all and (min-height: 1000px) {
 
-				.menu-selector { height:500px }
+				/*.menu-selector { height:200px }*/
 			}
 
 			@media all and (max-height: 800px) {
 
-				.menu-selector { height:250px }
+				/*.menu-selector { height:250px }*/
 				iframe#menu_iframe { height: 87vh }
-				.menu-selector ul li { font-size: 0.8em }
+				/*.menu-selector ul li { font-size: 0.8em }*/
 			}
 
 			ul.dropdown-menu.e-mm-selector { padding: 10px; margin-top: -2px; margin-right:-2px; }
-
 		");
 }
 
@@ -138,33 +126,7 @@ if(e_MENUMANAGER_ACTIVE === true || vartrue($_GET['enc']))
 {
 
 
-	
-	//e107::js('core', 	'core/jquery.elastic.source.js', 'jquery', 2);
-	
-	//e107::js('core', 	'plupload/plupload.full.js', 'jquery', 2);
-	//e107::css('core', 	'plupload/jquery.plupload.queue/css/jquery.plupload.queue.css', 'jquery');
-	//e107::js('core', 	'plupload/jquery.plupload.queue/jquery.plupload.queue.js', 'jquery', 2);
-	
-	//e107::css('core', 	'chosen/chosen.css', 'jquery');
-	//e107::js('core', 	'chosen/chosen.jquery.min.js', 'jquery', 2);
-	
-	//e107::css('core', 	'password/style.css', 'jquery');
-	//e107::js('core', 	'password/jquery.pwdMeter.js', 'jquery', 2);
-	// 
-	//e107::js("core",	"plupload/customUpload.js","jquery",3);
-	
-	//e107::js("core",	"core/mediaManager.js","jquery",3);
-
-	
-	// e107::css('core', 	'core/admin.css', 'jquery');
-//	e107::js('core', 	'core/admin.jquery.js', 'jquery', 4);
-// e107::js('core','bootstrap/js/bootstrap-tooltip.js');
-
-
-
-//	e107::css('core','bootstrap/css/bootstrap.min.css');
-
-$JSMODAL = <<<TEMPL
+	$JSMODAL = <<<TEMPL
 	$(function() {
 		$('.e-modal-menumanager').on('click', function(e)
 		{
@@ -203,72 +165,63 @@ TEMPL;
 
 	e107::getJs()->footerInline("
 		$(function() {
-						
 			// Visibility/Instance Options etc.
-
 			$('.e-menumanager-option').on('click', function(){
-    			
-    			var link = $(this).attr('href');
+				var link = $(this).attr('href');
 				var caption = $(this).attr('data-modal-caption');
-				window.parent.$('#uiModal .modal-caption').text(caption);	
-				window.parent.$('#uiModal .modal-body').load(link, function(){
-				 					   
-				 	window.parent.$('.modal-body :input').on('change', function(){
 
+				window.parent.$('#uiModal .modal-caption').text(caption);	
+
+				window.parent.$('#uiModal .modal-body').load(link, function(){
+					window.parent.$('.modal-body :input').on('change', function(){
 						var target 	= window.parent.$('#e-save-form').attr('action');
 						var data 	= window.parent.$('#e-save-form').serialize();
-
-					//	alert(data);
-				//	alert(target);
+		
 						$.post(target, data ,function(ret)
 						{
-					//	alert('Posted: '+ret);
-						//	console.log('Posted: '+ ret);
-
 							if(ret == '')
 							{
 								return false;
 							}
-
-						  	var a = $.parseJSON(ret);
-
+		
+							var a = $.parseJSON(ret);
+		
 							if(a.error)
 							{
 								alert(a.msg);
 							}
-						
 						});
-					
-					});					   
+					});
+
+					// Attach all registered behaviors to the new content.
+					window.parent.e107.attachBehaviors();
 				});
-					
-					
+	
 				window.parent.$('#uiModal').modal('show');
-				
-    			return false;
-    			
-			}) ;	
-				
-				
-				
-			// Delete Button (Remove Menu) Function
-				
-			$('.e-menumanager-delete').on('click', function(e){
-			e.preventDefault();
-			var area = 'remove';
-			var remove = $(this).attr('id');
-			var opt = remove.split('-');
-			var hidem = '#block-' + opt[1] +'-' + opt[2];
-			$(hidem).hide('slow');
-			// alert(hidem);
-			$.ajax({
-				  type: 'POST',
-				  url: 'menus.php',
-				  data: { removeid: remove, area: area, mode: 'delete' }
-		
-				}).done(function( data ) {
 					
-			
+				return false;		
+			});	
+
+			// Delete Button (Remove Menu) Function
+			$('.e-menumanager-delete').on('click', function(e) {
+				e.preventDefault();
+
+				var area = 'remove';
+				var remove = $(this).attr('id');
+				var opt = remove.split('-');
+				var hidem = '#block-' + opt[1] +'-' + opt[2];
+
+				$(hidem).hide('slow');
+
+				$.ajax({
+					type: 'POST',
+					url: 'menus.php',
+					data: {
+						removeid: remove, 
+						area: area, 
+						mode: 'delete'
+					}
+				}).done(function(data) {
 					var a = $.parseJSON(data);
 					
 					if(a.error)
@@ -277,21 +230,11 @@ TEMPL;
 					}
 				});		
 			});
-				
-				
-							
-				
-				
+
 	  	});
-
-
-
-
-
-
 	");
-	
-	
+
+
 	e107::getJs()->inlineCSS("	.column { width:100%;  padding-bottom: 100px; }
 	
 
@@ -323,7 +266,7 @@ TEMPL;
 	    margin-top: 1px;
 	    line-height: 14px;
 	    vertical-align: text-top;
-	    background-image: url('".e_JS."bootstrap/img/glyphicons-halflings.png');
+	    background-image: url('".e_THEME."bootstrap3/images/glyphicons-halflings.png');
 	    background-position: 14px 14px;
 	    background-repeat: no-repeat;
 	}
@@ -501,7 +444,7 @@ TEMPL;
 	
 	.regularMenu {  border-bottom:1px dotted silver; margin-bottom:6px; padding-left:3px; padding-right:3px; padding-top:10px; padding-bottom:10px;background-color: #E0EBF1; border-radius: 5px; }
 	.regularMenu span {padding:3px; font-weight:bold; color:#2F2F2F;text-align:left; }
-	.ui-draggable	{  background-color: rgb(245, 245, 245); min-width:100px;}
+	.ui-draggable	{ min-width:100px;}
 
 	.regularMenu:hover { background-color: #B1D7EA; }
 
@@ -780,11 +723,15 @@ class e_menu_layout
 			$theme = e107::pref('core','sitetheme');
 		}
 
+		$sql = e107::getDb();
+		$tp = e107::getParser();
+
 		$HEADER         = null;
 		$FOOTER         = null;
 		$LAYOUT         = null;
 		$CUSTOMHEADER   = null;
 		$CUSTOMFOOTER   = null;
+
 
 		$file = e_THEME.$theme."/theme.php";
 
@@ -796,13 +743,38 @@ class e_menu_layout
 		e107::set('css_enabled',false);
 		e107::set('js_enabled',false);
 
-		require($file);
+		$themeFileContent = file_get_contents($file);
+
+		$srch = array('<?php','?>');
+
+		$themeFileContent = preg_replace('/\(\s?THEME\s?\./', '( e_THEME. "'.$theme.'/" .', str_replace($srch, '', $themeFileContent));
+
+		try
+		{
+		   @eval($themeFileContent);
+		}
+		catch (ParseError $e)
+		{
+			echo "<div class='alert alert-danger'>Couldn't parse theme.php: ". $e->getMessage()." </div>";
+		}
+
+
+	//	@eval($themeFileContent);
 
 		e107::set('css_enabled',true);
 		e107::set('js_enabled',true);
 
 		$head = array();
 		$foot = array();
+
+		if(isset($LAYOUT) && (isset($HEADER) || isset($FOOTER)))
+		{
+			$fallbackLan = "This theme is using deprecated elements. All [x]HEADER and [x]FOOTER variables should be removed from theme.php."; // DO NOT TRANSLATE!
+			$warningLan = $tp->lanVars(deftrue('MENLAN_60',$fallbackLan),'$');
+			echo "<div class='alert alert-danger'>".$warningLan."</div>";
+
+		}
+
 
 
 		if(isset($LAYOUT) && is_array($LAYOUT)) // $LAYOUT is a combined $HEADER,$FOOTER.
@@ -885,7 +857,7 @@ class e_menu_layout
 		{
 			$template = $head[$k]."\n{---}".$foot[$k];
 			$layout['templates'][$k] = $template;
-			$layout['menus'][$k] = self::countMenus($template);
+			$layout['menus'][$k] = self::countMenus($template, $k);
 		}
 
 
@@ -895,13 +867,15 @@ class e_menu_layout
 	}
 
 
-	private static function countMenus($template)
+	private static function countMenus($template, $name)
 	{
 		if(preg_match_all("/\{MENU=([\d]{1,3})(:[\w\d]*)?\}/", $template, $matches))
 		{
 			sort($matches[1]);
 			return $matches[1];
 		}
+
+		e107::getDebug()->log("No Menus Found in Template:".$name." with strlen: ".strlen($template));
 
 		return array();
 	}
@@ -978,6 +952,7 @@ class e_menu_layout
 		//TODO FIXME parse the theme file (or store it somewhere) to get the number of menu areas for each layout. ie. $menu_areas below.
 
 		$layouts = self::getLayouts();
+		$tp = e107::getParser();
 
 	//	$text .= print_a($layouts['menus'],true);
 
@@ -985,19 +960,21 @@ class e_menu_layout
 
 		    <div class="dropdown pull-right">
 
-		        <a class="btn btn-default btn-sm e-mm-selector " title="Activate">'.LAN_GO." ".e107::getParser()->toGlyph('fa-chevron-right').'</a>';
+		        <a class="btn btn-default btn-sm e-mm-selector " title="'.LAN_ACTIVATE.'">'.LAN_GO." ".e107::getParser()->toGlyph('fa-chevron-right').'</a>';
 
+				$menuButtonLabel = defset("MENLAN_59", "Area [x]");
 
 		        foreach($layouts['menus'] as $name=>$areas)
 		        {
-					$text .= '<ul class="dropdown-menu e-mm-selector '.$name.'" >';
+					$text .= '<ul class="dropdown-menu e-mm-selector '.$name.'" >
+					<li><div class="btn-group">';
 
 					foreach ($areas as $menu_act)
 					{
-						$text .= "<li><input type='submit' class='btn btn-primary btn-block'  name='menuActivate[".trim($menu_act)."]' value='".MENLAN_13." ".trim($menu_act)."' /></li>\n";
+						$text .= "<input type='submit' class='btn btn-sm btn-primary col-xs-6'  name='menuActivate[".trim($menu_act)."]' value=\"".$tp->lanVars($menuButtonLabel,trim($menu_act))."\" />\n";
 					}
 
-					$text .= '</ul>';
+					$text .= '</div></li></ul>';
 
 		        }
 
@@ -1771,28 +1748,27 @@ $mes = e107::getMessage();
 if(e_AJAX_REQUEST)
 {
 	
-	if(vartrue($_GET['enc']))
+	if(!empty($_GET['enc']))
 	{
 		$string = base64_decode($_GET['enc']);
 		parse_str($string,$_GET);
-		
-	//	 print_a($_GET);			
+
 	}
 //	print_a($_POST);
 	
-	if(vartrue($_GET['vis']))
+	if(!empty($_GET['vis']))
 	{
 		$text = $men->menuVisibilityOptions();
 	}
 	
 	// print_a($_GET);
 	
-	if(vartrue($_GET['parmsId']))
+	if(!empty($_GET['parmsId']))
 	{
 		$text = $men->menuInstanceParameters();
 	}
 		
-	if(vartrue($_POST['mode']))
+	if(!empty($_POST['mode']))
 	{
 		// print_r($_POST);
 	//	$men->setMenuId($this->menuId);

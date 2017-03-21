@@ -299,6 +299,7 @@ if(!BOOTSTRAP)
 --*/
 }
 
+//XXX  What is this?
 if(substr($forumInfo['forum_name'], 0, 1) == '*')
 {
 	$forum_info['forum_name'] = substr($forum_info['forum_name'], 1);
@@ -558,9 +559,9 @@ if($container_only)
 
 //var_dump ($FORUM_VIEW_START);
 //  	var_dump ($FORUM_VIEW_SUB);
-$forum_view_start = $tp->parseTemplate($FORUM_VIEW_START, false, $sc);
-$forum_view_forum = $tp->parseTemplate($forum_view_forum, false, $sc);
-$forum_view_end = $tp->parseTemplate($FORUM_VIEW_END, false, $sc);
+$forum_view_start = $tp->parseTemplate($FORUM_VIEW_START_CONTAINER.$FORUM_VIEW_START, true, $sc);
+$forum_view_forum = $tp->parseTemplate($forum_view_forum, true, $sc);
+$forum_view_end = $tp->parseTemplate($FORUM_VIEW_END.$FORUM_VIEW_END_CONTAINER, true, $sc);
 
 //$forum_view_start .= "<hr><hr>FVARS FORUM<hr><hr>".$tp->simpleParse($FORUM_VIEW_START, $fVars);
 //$forum_view_end = $tp->simpleParse($FORUM_VIEW_END, $fVars);
@@ -568,7 +569,7 @@ $forum_view_end = $tp->parseTemplate($FORUM_VIEW_END, false, $sc);
 if ($forum->prefs->get('enclose'))
 {	
 // $forum_view_subs????
-	$caption = varset($FORUM_VIEW_CAPTION) ? $tp->parseTemplate($FORUM_VIEW_CAPTION, TRUE, $sc) : $forum->prefs->get('title');
+	$caption = varset($FORUM_VIEW_CAPTION) ? $tp->parseTemplate($FORUM_VIEW_CAPTION, true, $sc) : $forum->prefs->get('title');
 
 	$ns->tablerender($caption, $forum_view_start.$forum_view_subs.$forum_view_forum.$forum_view_end, array('forum_viewforum', 'main1'));
 }

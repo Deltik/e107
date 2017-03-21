@@ -111,6 +111,10 @@ function loadJSAddons()
 
 }
 
+// Load library dependencies.
+e107::getTheme('current', true)->loadLibrary();
+
+// Load other JS files.
 loadJSAddons();
 
 
@@ -227,6 +231,7 @@ else // backend css.
 	}
 
 		//NEW - Iframe mod
+		/*
 	if(!deftrue('e_IFRAME') && !empty($pref['admincss']))
 	{
 		$css_file = file_exists(THEME.'admin_'.$pref['admincss']) ? 'admin_'.$pref['admincss'] : $pref['admincss'];
@@ -245,7 +250,7 @@ else // backend css.
 		$css_file = (file_exists(THEME.'admin_style.css')) ? 'admin_style.css' : 'style.css';
 		//echo "<link rel='stylesheet' href='".$css_file."' type='text/css' />\n";
 		$e_js->themeCSS($css_file);
-	}
+	}*/
 
 
 
@@ -459,6 +464,10 @@ if (count($js_body_onload)) $body_onload = " onload=\"".implode(" ",$js_body_onl
 if(deftrue('e_MENUMANAGER_ACTIVE'))
 {
 	$body_onload .= " id=\"layout-".e107::getForm()->name2id(THEME_LAYOUT)."\" ";
+}
+else
+{
+	$body_onload .= " id=\"admin-".str_replace(".php","",e_PAGE)."\" ";
 }
 
 //

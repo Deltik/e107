@@ -18,6 +18,10 @@
  *	@version 	$Id$;
  */
 
+if(!empty($_POST) && !isset($_POST['e-token']))
+{
+	$_POST['e-token'] = '';
+}
 require_once ('../class2.php');
 if(! getperms('G'))
 {
@@ -392,6 +396,7 @@ class frontpage
 		$show_legend = $show_button ? " class='e-hideme'" : '';
 		$text = "
 		<form method='post' action='".e_SELF."'>
+		<input type='hidden' name='e-token' value='".e_TOKEN."' />
 			<fieldset id='frontpage-settings'>
 				<legend{$show_legend}>".FRTLAN_13."</legend>
 
@@ -494,7 +499,9 @@ class frontpage
 // <legend class='e-hideme'>".($rule_info['order'] ? FRTLAN_46 : FRTLAN_42)."</legend>
 
 		$text = "
-		<form method='post' action='".e_SELF."'>";
+		<form method='post' action='".e_SELF."'>
+		<input type='hidden' name='e-token' value='".e_TOKEN."' />
+		";
 		
 		$text .= '<ul class="nav nav-tabs" id="myTabs">
 			<li class="active"><a data-toggle="tab" href="#home">'.FRTLAN_49.'</a></li>
@@ -736,8 +743,11 @@ function frontpage_adminmenu()
 	$var['create']['text'] = LAN_CREATE;
 	$var['create']['link'] = e_SELF."?mode=create";
 
+		$icon  = e107::getParser()->toIcon('e-frontpage-24');
+		$caption = $icon."<span>".FRTLAN_PAGE_TITLE."</span>";
 
-	show_admin_menu(FRTLAN_PAGE_TITLE, $action, $var);
+
+	show_admin_menu($caption, $action, $var);
 }
 
 

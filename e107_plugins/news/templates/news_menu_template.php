@@ -86,15 +86,7 @@ $NEWS_MENU_TEMPLATE['other2']['end'] 	= "</ul>";
 
 
 // Grid Menu
-$NEWS_MENU_TEMPLATE['grid']['start']    = '<div class="row news-menu-grid">';
-$NEWS_MENU_TEMPLATE['grid']['item']		= '<div class="item {NEWSGRID}">
-												{SETIMAGE: w=400&h=400&crop=1}
-												{NEWSTHUMBNAIL=placeholder}
-              									<h3>{NEWSTITLE: limit=_titleLimit_}</h3>
-              									<p>{NEWSSUMMARY: limit=_summaryLimit_}</p>
-              									<p class="text-right"><a class="btn btn-primary btn-othernews" href="{NEWSURL}">'.LAN_READ_MORE.'</a></p>
-            							   </div>';
-$NEWS_MENU_TEMPLATE['grid']['end']      = '</div>';
+// Moved to news_grid_template.php
 
 
 // $NEWS_MENU_WRAPPER['grid']['NEWSTITLE'] = "<span style='color:red'>{---}</span>"; // example
@@ -124,7 +116,7 @@ $NEWS_MENU_TEMPLATE['carousel']['end'] = '
 
 $NEWS_MENU_TEMPLATE['carousel']['item'] = '<!-- Start Item -->
 											<div class="item {ACTIVE}">{SETIMAGE: w=800&h=370&crop=1}
-									          {NEWS_IMAGE: class=img-responsive}
+									          {NEWS_IMAGE: class=img-responsive img-fluid}
 									           <div class="carousel-caption">
 									            <small>{NEWS_DATE=dd MM, yyyy}</small>
 									            <h1>{NEWS_TITLE}</h1>

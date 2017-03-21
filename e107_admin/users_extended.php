@@ -2,7 +2,7 @@
 /*
  * e107 website system
  *
- * Copyright (C) 2008-2013 e107 Inc (e107.org)
+ * Copyright (C) 2008-2017 e107 Inc (e107.org)
  * Released under the terms and conditions of the
  * GNU General Public License (http://www.gnu.org/licenses/gpl.txt)
  *
@@ -63,7 +63,7 @@ if(varset($_GET['mode']) == "ajax")
 				$text = "<table class='table table-striped table-bordered' style='width:70%;margin-left:0;'><tr><td>";
 				$text .= EXTLAN_62 . "</td><td style='70%'>\n";
 				$text .= "<select name='table_db' style='width:99%' class='tbox e-ajax' data-src='{$ajaxGetTableSrc}'>";
-				$text .= "<option value='' class='caption'>" . EXTLAN_61 . "</option>";
+				$text .= "<option value='' class='caption'>" . LAN_NONE . "</option>";
 				$result = e107::getDb()->tables();
 				foreach($result as $row2)
 				{
@@ -78,7 +78,7 @@ if(varset($_GET['mode']) == "ajax")
 					// Field ID.
 					$text .= "<tr><td>" . EXTLAN_63 . "</td><td>";
 					$text .= "<select style='width:99%' class='tbox e-select' name='field_id'>";
-					$text .= "<option value='' class='caption'>" . EXTLAN_61 . "</option>";
+					$text .= "<option value='' class='caption'>" . LAN_NONE . "</option>";
 					$table_list = ($_POST['table_db']) ? $_POST['table_db'] : $curVals[0];
 					if($sql->gen("DESCRIBE " . MPREFIX . "{$table_list}"))
 					{
@@ -94,7 +94,7 @@ if(varset($_GET['mode']) == "ajax")
 					// Display Value.
 					$text .= EXTLAN_64 . "</td><td>";
 					$text .= "<select style='width:99%' class='tbox e-select' name='field_value'>";
-					$text .= "<option value='' class='caption'>" . EXTLAN_61 . "</option>";
+					$text .= "<option value='' class='caption'>" . LAN_NONE . "</option>";
 					$table_list = ($_POST['table_db']) ? $_POST['table_db'] : $curVals[0];
 					if($sql->gen("DESCRIBE " . MPREFIX . "{$table_list}"))
 					{
@@ -110,7 +110,7 @@ if(varset($_GET['mode']) == "ajax")
 					// Order.
 					$text .= LAN_ORDER . "</td><td>";
 					$text .= "<select style='width:99%' class='tbox e-select' name='field_order'>";
-					$text .= "<option value='' class='caption'>" . EXTLAN_61 . "</option>";
+					$text .= "<option value='' class='caption'>" . LAN_NONE . "</option>";
 					$table_list = ($_POST['table_db']) ? $_POST['table_db'] : $curVals[0];
 					if($sql->gen("DESCRIBE " . MPREFIX . "{$table_list}"))
 					{
@@ -291,13 +291,15 @@ e107::js('footer-inline', js());
 
 			'main/list'			=> array('caption'=> LAN_MANAGE, 'perm' => '0'),
 			'main/add'		=> array('caption'=>  EXTLAN_45, 'perm' => '0'),
-			'main/create'		=> array('caption'=> 'Add Custom Field', 'perm' => '0'),
+			'main/create'		=> array('caption'=> EXTLAN_81, 'perm' => '0'),
 			'cat/list'		=> array('caption'=> LAN_CATEGORIES, 'perm' => '0'),
 			'cat/create'		=> array('caption'=> LAN_CREATE_CATEGORY, 'perm' => '0'),
 
 
 			// 'main/custom'		=> array('caption'=> 'Custom Page', 'perm' => 'P')
 		);
+
+			protected $adminMenuIcon = 'e-extended-24';
 
 		/*
 		 * 	}
@@ -355,13 +357,13 @@ e107::js('footer-inline', js());
 		    'user_extended_struct_name' =>   array ( 'title' => LAN_NAME, 'type' => 'text', 'data' => 'str', 'readonly'=>true, 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => 'tdClassRight=form-inline&pre=user_ ', 'class' => 'left', 'thclass' => 'left',  ),
 		    'user_extended_struct_text' =>   array ( 'title' => EXTLAN_79, 'type' => 'text', 'data' => 'str', 'width' => 'auto', 'inline' => true, 'help' => '', 'readParms' => 'constant=1', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
 			'user_extended_struct_type' =>   array ( 'title' => EXTLAN_2, 'type' => 'method', 'data' => 'int', 'width' => 'auto', 'batch' => true, 'filter' => true, 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
-			'user_extended_struct_values' =>   array ( 'title' => "Values", 'type' => 'method', 'nolist'=>true, 'data' => 'str', 'width' => 'auto', 'inline' => true, 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
+			'user_extended_struct_values' =>   array ( 'title' => EXTLAN_82, 'type' => 'method', 'nolist'=>true, 'data' => 'str', 'width' => 'auto', 'inline' => true, 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
             'user_extended_struct_default' =>   array ( 'title' => EXTLAN_16, 'type' => 'text', 'data' => 'str', 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
              'user_extended_struct_parent' =>   array ( 'title' => LAN_CATEGORY, 'type' => 'dropdown', 'tab'=>1, 'data' => 'int', 'width' => 'auto', 'batch' => true, 'filter' => true, 'help' => '', 'readParms' => '', 'writeParms' => array('size'=>'xxlarge'), 'class' => 'left', 'thclass' => 'left',  ),
 
 			// These are combined into user_extended_struct_parms on submit.
-             'field_placeholder' => array('title'=>'Placeholder', 'tab'=>1, 'type'=>'text', 'data'=>false, 'writeParms'=>array('size'=>'xxlarge')),
-            'field_helptip'     => array('title'=>'Help Tip', 'tab'=>1, 'type'=>'text', 'data'=>false, 'writeParms'=>array('size'=>'xxlarge')),
+             'field_placeholder' => array('title'=>EXTLAN_83, 'tab'=>1, 'type'=>'text', 'data'=>false, 'writeParms'=>array('size'=>'xxlarge')),
+            'field_helptip'     => array('title'=>EXTLAN_84, 'tab'=>1, 'type'=>'text', 'data'=>false, 'writeParms'=>array('size'=>'xxlarge')),
 
             'field_include'     => array('title'=> EXTLAN_15, 'tab'=>1, 'type'=>'textarea', 'data'=>false, 'help'=>EXTLAN_51, 'writeParms'=>array('size'=>'xxlarge')),
 			'field_regex'       => array('title'=> EXTLAN_52, 'tab'=>1, 'type'=>'text', 'data'=>false, 'help'=> EXTLAN_53, 'writeParms'=>array('size'=>'xxlarge')),
@@ -373,7 +375,7 @@ e107::js('footer-inline', js());
 		     'user_extended_struct_applicable' =>   array ( 'title' => EXTLAN_5, 'type' => 'userclass', 'data' => 'int', 'filter'=>true, 'batch'=>true, 'width' => '10%', 'inline' => true, 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
              'user_extended_struct_parms' =>   array ( 'title' => "Params", 'type' => 'hidden', 'data' => 'str', 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
              'user_extended_struct_read' =>   array ( 'title' =>EXTLAN_6, 'type' => 'userclass', 'data' => 'int',  'filter'=>true, 'batch'=>true,'width' => '10%', 'inline' => true, 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
-             'user_extended_struct_write' =>   array ( 'title' => 'Write Access', 'type' => 'userclass', 'data' => 'int', 'filter'=>true, 'batch'=>true, 'width' => '10%', 'inline' => true, 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
+             'user_extended_struct_write' =>   array ( 'title' => EXTLAN_7, 'type' => 'userclass', 'data' => 'int', 'filter'=>true, 'batch'=>true, 'width' => '10%', 'inline' => true, 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
              'user_extended_struct_signup' =>   array ( 'title' => 'Signup', 'type' => 'hidden', 'nolist'=>true, 'data' => 'int', 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
              'user_extended_struct_order' =>   array ( 'title' => LAN_ORDER, 'type' => 'hidden', 'nolist'=>true, 'data' => 'int', 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
              'options' =>   array ( 'title' => LAN_OPTIONS, 'type' => 'method', 'data' => null, 'width' => '10%', 'thclass' => 'center last', 'class' => 'center last', 'forced' => '1', 'readParms'=>'sort=1' ),
@@ -539,7 +541,7 @@ e107::js('footer-inline', js());
 			}
 			else
 			{
-				$mes->addSuccess("User Extended Column deleted from table"); //TODO  LAN
+				$mes->addSuccess(EXTLAN_86); 
 			}
 
 		}
@@ -845,7 +847,7 @@ e107::js('footer-inline', js());
 						$curVal = '1';
 					}
 
-					$types = e107::getUserExt()->user_extended_types;
+					$types = e107::getUserExt()->getFieldTypes();
 
 					return $this->select('user_extended_struct_type', $types, $curVal, array('class'=>'tbox e-select'));
 
@@ -942,7 +944,7 @@ e107::js('footer-inline', js());
 			<input type='button' class='btn btn-primary' value='".EXTLAN_48."' onclick=\"duplicateHTML('value_line','value_container');\"  />
 			<br /><span class='field-help'>".EXTLAN_17."</span>";
 
-				$text .= "<div style='margin-top:10px'>".$frm->checkbox('sort_user_values',1, false, "Sort values")."</div>";
+				$text .= "<div style='margin-top:10px'>".$frm->checkbox('sort_user_values',1, false, EXTLAN_87)."</div>";
 			$text .= "</div>";
 
 
@@ -962,7 +964,7 @@ e107::js('footer-inline', js());
 			$text .= "<table class='table table-striped table-bordered' style='width:70%;margin-left:0;'><tr><td>";
 			$text .= EXTLAN_62 . "</td><td style='70%'>";
 			$text .= "<select name='table_db' style='width:99%' class='tbox e-ajax' data-src='{$ajaxGetTableSrc}'>";
-			$text .= "<option value='' class='caption'>" . EXTLAN_61 . "</option>";
+			$text .= "<option value='' class='caption'>" . LAN_NONE . "</option>";
 
 			$result = e107::getDb()->tables();
 
@@ -981,7 +983,7 @@ e107::js('footer-inline', js());
 			{
 				// Field ID
 				$text .= "<tr><td>".EXTLAN_63."</td><td><select style='width:99%' class='tbox e-select' name='field_id' >\n
-			<option value='' class='caption'>".EXTLAN_61."</option>\n";
+			<option value='' class='caption'>".LAN_NONE."</option>\n";
 				$table_list = ($_POST['table_db']) ? $_POST['table_db'] : $curVals[0] ;
 
 				if($sql->gen("DESCRIBE ".MPREFIX."{$table_list}"))
@@ -996,7 +998,7 @@ e107::js('footer-inline', js());
 				$text .= " </select></td></tr><tr><td>";
 				// Field Value
 				$text .= EXTLAN_64."</td><td><select style='width:99%' class='tbox e-select' name='field_value' >
-			<option value='' class='caption'>".EXTLAN_61."</option>\n";
+			<option value='' class='caption'>".LAN_NONE."</option>\n";
 				$table_list = ($_POST['table_db']) ? $_POST['table_db'] : $curVals[0] ;
 
 				if($sql->gen("DESCRIBE ".MPREFIX."{$table_list}"))
@@ -1011,7 +1013,7 @@ e107::js('footer-inline', js());
 				$text .= " </select></td></tr><tr><td>";
 
 				$text .= LAN_ORDER."</td><td><select style='width:99%' class='tbox e-select' name='field_order' >
-			<option value='' class='caption'>".EXTLAN_61."</option>\n";
+			<option value='' class='caption'>".LAN_NONE."</option>\n";
 				$table_list = ($_POST['table_db']) ? $_POST['table_db'] : $curVals[0] ;
 
 				if($sql ->gen("DESCRIBE ".MPREFIX."{$table_list}"))
@@ -1076,7 +1078,7 @@ e107::js('footer-inline', js());
 
 		       //      'user_extended_struct_parms' =>   array ( 'title' => "Params", 'type' => 'text', 'data' => 'str', 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
 		              'user_extended_struct_read' =>   array ( 'title' =>EXTLAN_6, 'type' => 'userclass', 'data' => 'int', 'width' => '15%', 'inline' => true, 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
-		              'user_extended_struct_write' =>   array ( 'title' => 'Write Access', 'type' => 'userclass', 'data' => 'int', 'width' => '15%', 'inline' => true, 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
+		              'user_extended_struct_write' =>   array ( 'title' => EXTLAN_7, 'type' => 'userclass', 'data' => 'int', 'width' => '15%', 'inline' => true, 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
 		       //       'user_extended_struct_signup' =>   array ( 'title' => 'Signup', 'type' => 'boolean', 'data' => 'int', 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'left', 'thclass' => 'left',  ),
 		               'user_extended_struct_order' =>   array ( 'title' => LAN_ORDER, 'type' => 'number', 'data' => 'int', 'width' => 'auto', 'help' => '', 'readParms' => '', 'writeParms' => '', 'class' => 'right', 'thclass' => 'right',  ),
 		               'options' =>   array ( 'title' => LAN_OPTIONS, 'type' => null, 'data' => null, 'width' => '10%', 'thclass' => 'center last', 'class' => 'center last', 'forced' => '1', 'readParms'=>'sort=0' ),
@@ -1819,7 +1821,7 @@ class users_ext
 		$text .= "<table style='width:70%;margin-left:0;'><tr><td>";
 		$text .= EXTLAN_62 . "</td><td style='70%'>";
 		$text .= "<select name='table_db' style='width:99%' class='tbox e-ajax' data-src='{$ajaxGetTableSrc}'>";
-		$text .= "<option value='' class='caption'>" . EXTLAN_61 . "</option>";
+		$text .= "<option value='' class='caption'>" . LAN_NONE . "</option>";
 
 
 			$result = e107::getDb()->tables();
@@ -1838,7 +1840,7 @@ class users_ext
 		{
 			// Field ID
 			$text .= "<tr><td>".EXTLAN_63."</td><td><select style='width:99%' class='tbox e-select' name='field_id' >\n
-			<option value='' class='caption'>".EXTLAN_61."</option>\n";
+			<option value='' class='caption'>".LAN_NONE."</option>\n";
 			$table_list = ($_POST['table_db']) ? $_POST['table_db'] : $curVals[0] ;
 
 			if($sql->gen("DESCRIBE ".MPREFIX."{$table_list}"))
@@ -1853,7 +1855,7 @@ class users_ext
     		$text .= " </select></td></tr><tr><td>";
              // Field Value
 			$text .= EXTLAN_64."</td><td><select style='width:99%' class='tbox e-select' name='field_value' >
-			<option value='' class='caption'>".EXTLAN_61."</option>\n";
+			<option value='' class='caption'>".LAN_NONE."</option>\n";
 			$table_list = ($_POST['table_db']) ? $_POST['table_db'] : $curVals[0] ;
 
 			if($sql->gen("DESCRIBE ".MPREFIX."{$table_list}"))
@@ -1868,7 +1870,7 @@ class users_ext
     		$text .= " </select></td></tr><tr><td>";
 
 			$text .= LAN_ORDER."</td><td><select style='width:99%' class='tbox e-select' name='field_order' >
-			<option value='' class='caption'>".EXTLAN_61."</option>\n";
+			<option value='' class='caption'>".LAN_NONE."</option>\n";
 			$table_list = ($_POST['table_db']) ? $_POST['table_db'] : $curVals[0] ;
 
 			if($sql ->gen("DESCRIBE ".MPREFIX."{$table_list}"))
@@ -2210,7 +2212,7 @@ class users_ext
 		$var['pre']['text'] = EXTLAN_45;
 		$var['pre']['link'] = e_SELF."?pre";
 
-		$var['editext']['text'] = "Add Custom Field";
+		$var['editext']['text'] = EXTLAN_81;
 		$var['editext']['link'] = e_SELF."?editext";
 
 		$var['cat']['text'] = EXTLAN_35;

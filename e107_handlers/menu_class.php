@@ -41,10 +41,21 @@ class e_menu
 	 */
 	protected $_visibility_cache = array();
 
-
+	/**
+	 * @var null
+	 */
 	protected $_current_menu = null;
 
+	/**
+	 * @var array
+	 */
 	protected $_current_parms = array();
+
+	/**
+	 * Params of all active menus.
+	 * @var array
+	 */
+	protected $_menu_parms = array();
 
 	/**
 	 * Constructor
@@ -101,6 +112,13 @@ class e_menu
 						$total[$area] = 0;
 					}
 					$this->eMenuActive[$area][] = $row;
+
+					if(!empty($row['menu_parms']))
+					{
+						$key = $row['menu_name'];
+						$this->_menu_parms[$area][$key][] = $row['menu_parms'];
+					}
+
 					$total[$area]++;
 				}
 			}
@@ -141,6 +159,36 @@ class e_menu
 	public function pref()
 	{
 		return (empty($this->_current_parms)) ?  array() : $this->_current_parms;
+	}
+
+
+	/**
+	 * Return the parameters of an active Menu.
+	 * @param string $menuName
+	 * @param int $area
+	 * @example $parms = $tmp->getParams('news_months_menu',1);
+	 * @return array|bool
+	 */
+	public function getParams($menuName, $area)
+	{
+
+		if(empty($area) || empty($menuName))
+		{
+			return false;
+		}
+
+		if(!empty($this->_menu_parms[$area][$menuName]))
+		{
+			$arr = array();
+			foreach($this->_menu_parms[$area][$menuName] as $val)
+			{
+				$arr[] = e107::unserialize($val);
+			}
+
+			return $arr;
+		}
+
+		return false;
 	}
 
 
@@ -212,7 +260,106 @@ class e_menu
 		return  e107::getDb()->update('menus', $qry);
 	}
 
-	
+
+	/**
+	 * @param int $id menu_id
+	 * @param array $parms
+	 * @return mixed
+	 */
+	public function updateParms($id, $parms)
+	{
+		$model = e107::getModel();
+		$model->setModelTable("menus");
+		$model->setFieldIdName("menu_id");
+		$model->setDataFields(array('menu_parms'=>'json'));
+
+		$model->load($id, true);
+
+		$d = $model->get('menu_parms');
+
+		$model->setPostedData('menu_parms', e107::unserialize($d));
+
+		foreach($parms as $key=>$value)
+		{
+			if(!is_array($value))
+			{
+				$model->setPostedData('menu_parms/'.$key, $value);
+			}
+			else
+			{
+				$lang = key($value);
+				$val = $value[$lang];
+				$model->setPostedData('menu_parms/'.$key.'/'.$lang, $val);
+			}
+		}
+
+
+		return $model->save();
+
+		// return $model;
+
+	}
+
+
+
+
+	/**
+	 * Add a Menu to the Menu Table.
+	 * @param string $plugin folder name
+	 * @param string $menufile name without the .php
+	 * @return bool|int
+	 */
+	public function add($plugin, $menufile)
+	{
+		$sql = e107::getDb();
+
+		if(empty($plugin) || empty($menufile))
+		{
+			return false;
+		}
+
+		if($sql->select('menus', 'menu_id' , 'menu_path="'.$plugin.'/" AND menu_name="'.$menufile.'" LIMIT 1'))
+		{
+			return false;
+		}
+
+		$insert = array(
+			'menu_id'       => 0,
+			'menu_name'     => $menufile,
+			'menu_location' => 0,
+			'menu_order'    => 0,
+			'menu_class'    => 0,
+			'menu_pages'    => 0,
+			'menu_path'     => $plugin."/",
+			'menu_layout'   => '',
+			'menu_parms'    => ''
+		);
+
+		return  $sql->insert('menus', $insert);
+
+
+	}
+
+
+	/**
+	 * Remove a menu from the Menu table.
+	 * @param string $plugin folder name
+	 * @param string $menufile
+	 * @return int
+	 */
+	public function remove($plugin, $menufile=null)
+	{
+		$qry = 'menu_path="'.$plugin.'/" ';
+
+		if(!empty($menufile))
+		{
+			$qry .= ' AND menu_name="'.$menufile.'" ';
+		}
+
+		return e107::getDb()->delete('menus', $qry);
+	}
+
+
 	/** 
 	 * Function to retrieve Menu data from tables.
 	 */
@@ -451,6 +598,8 @@ class e_menu
 	public function renderMenu($mpath, $mname='', $parm = '', $return = false)
 	{
 	//	global $sql; // required at the moment.
+
+
 		global $sc_style, $e107_debug;
 				
 
@@ -540,7 +689,8 @@ class e_menu
 			$id = e107::getForm()->name2id($mpath . $mname);
 			$ns->setUniqueId($id);
 
-			global $pref; // possibly used by plugin menu.
+
+			$pref = e107::getPref(); // possibly used by plugin menu.
 
 
 			$e107_debug ? include(e_PLUGIN.$mpath.$mname.'.php') : @include(e_PLUGIN.$mpath.$mname.'.php');

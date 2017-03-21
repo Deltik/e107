@@ -62,6 +62,11 @@ class news_shortcodes extends e_shortcode
 			$text = e107::getParser()->toAttribute($text);
 		}
 
+		if(!empty($this->param['titleLimit']))
+		{
+			$parm['limit'] = $this->param['titleLimit'];
+		}
+
 		if(!empty($parm['limit']))
 		{
 			$text = e107::getParser()->text_truncate($text, $parm['limit']);
@@ -234,6 +239,13 @@ class news_shortcodes extends e_shortcode
 	}
 
 
+
+	function sc_news_category_id($parm=null)
+	{
+		return (int) $this->news_item['category_id'];
+	}
+
+
 	function sc_news_category_icon($parm=null)
 	{
 		return $this->sc_newscaticon($parm);
@@ -269,6 +281,8 @@ class news_shortcodes extends e_shortcode
 	}
 
 
+
+
 	//New v2.x Aliases
 
 	public function sc_news_id($parm=null)
@@ -298,7 +312,6 @@ class news_shortcodes extends e_shortcode
 
 	public function sc_news_author_signature($parm=null)
 	{
-
 		$user = e107::user($this->news_item['user_id']);
 
 		if(!empty($user['user_signature']))
@@ -415,7 +428,9 @@ class news_shortcodes extends e_shortcode
 	{
 		if(!empty($this->news_item['user_id']))
 		{
-			return e107::getParser()->toAvatar($this->news_item['user_id'], $parm);
+
+
+			return e107::getParser()->toAvatar($this->news_item, $parm);
 		}
 	} 
 
@@ -510,7 +525,7 @@ class news_shortcodes extends e_shortcode
 			
 			$class = varset($parm['class']);
 			
-			return "<a class='e-tip e-instant-edit ".$class." hidden-print' rel='external' href='".e_ADMIN_ABS."newspost.php?action=edit&amp;id=".$this->news_item['news_id']."' title=\"".LAN_EDIT."\">".$adop_icon."</a>\n";
+			return "<a class='e-tip ".$class." hidden-print' rel='external' href='".e_ADMIN_ABS."newspost.php?action=edit&amp;id=".$this->news_item['news_id']."' title=\"".LAN_EDIT."\">".$adop_icon."</a>\n";
 		}
 		else
 		{
@@ -582,6 +597,12 @@ class news_shortcodes extends e_shortcode
 				$text = trim($tmp[0]).trim($tmp[1]);
 			}
 		}
+
+		if(!empty($this->param['summaryLimit']))
+		{
+			$parm['limit'] = $this->param['summaryLimit'];
+		}
+
 
 		if(!empty($parm['limit']))
 		{
@@ -693,7 +714,7 @@ class news_shortcodes extends e_shortcode
 			break;
 
 			default:
-				return "<a href='".e107::getUrl()->create('news/view/item', $this->news_item)."'><img class='news_image img-responsive img-rounded ".$class."' src='".$src."' alt='' style='".$style."' {$dimensions} {$srcset} /></a>";
+				return "<a href='".e107::getUrl()->create('news/view/item', $this->news_item)."'><img class='news_image img-responsive img-fluid img-rounded rounded ".$class."' src='".$src."' alt='' style='".$style."' {$dimensions} {$srcset} /></a>";
 			break;
 		}
 	}
@@ -721,7 +742,7 @@ class news_shortcodes extends e_shortcode
 		$this->imageItem = varset($media[$parm['item']]); // Set the current Image for other image shortcodes. 
 
 
-		if(vartrue($parm['placeholder']))
+		if(!empty($parm['placeholder']))
 		{
 			return $this->sc_newsimage('placeholder');	
 		}
@@ -734,7 +755,7 @@ class news_shortcodes extends e_shortcode
 			$parm['item'] = ($parm['item'] +1);
 			if(empty($parm['class']))
 			{
-				$parm['class'] = 'img-responsive news-media news-media-'.$parm['item'];
+				$parm['class'] = 'img-responsive img-fluid news-media news-media-'.$parm['item'];
 			}
 			return $this->sc_newsimage($parm);
 		}
@@ -811,7 +832,7 @@ class news_shortcodes extends e_shortcode
 	 * Display News Images (but not video thumbnails )
 	 * @param $parm array
 	 * @example {NEWSIMAGE: type=src&placeholder=true}
-	 * @example {NEWSIMAGE: class=img-responsive}
+	 * @example {NEWSIMAGE: class=img-responsive img-fluid}
 	 */
 	function sc_newsimage($parm = null)
 	{
@@ -824,31 +845,32 @@ class news_shortcodes extends e_shortcode
 
 
 		$tmp = $this->handleMultiple($parm);
+
+
+
 		$srcPath = $tmp['file'];
 		
-		$class = (!empty($parm['class'])) ? $parm['class'] : "news_image news-image img-responsive img-rounded";
+		$class = (!empty($parm['class'])) ? $parm['class'] : "news_image news-image img-responsive img-fluid img-rounded rounded";
 		$class .= ' news-image-'.$tmp['count'];
 		$dimensions = null;
 		$srcset = null;
 			
 		if($tp->isVideo($srcPath))
 		{
-			return; 
+
+			return null;
 		}
 		else 
 		{
-		
-			if(!$srcPath)
+
+			if(empty($srcPath))
 			{
-				if(varset($parm['type']) == 'placeholder' || vartrue($parm['placeholder']))
+				if(varset($parm['type']) == 'placeholder' || !empty($parm['placeholder']))
 				{
 					$src = 	$tp->thumbUrl(); // placeholder;
 					$dimensions = $tp->thumbDimensions();
 				}
-				else
-				{
-					return;
-				}
+
 			}
 			elseif($srcPath[0] == '{' ) // Always resize. Use {SETIMAGE: w=x&y=x&crop=0} PRIOR to calling shortcode to change. 
 			{
@@ -860,19 +882,20 @@ class news_shortcodes extends e_shortcode
 			else
 			{
 				// We store SC path in DB now + BC
+
 				$src = $srcPath[0] == '{' ? $tp->replaceConstants($srcPath, 'abs') : e_IMAGE_ABS."newspost_images/".$srcPath;			
 			}
 		}
 		
 	
 		
-		if(vartrue($parm['nolegacy'])) // Remove legacy thumbnails. 
+		if(!empty($parm['nolegacy'])) // Remove legacy thumbnails.
 		{
 			$legSrc = urldecode($src);
 
 		 	if(strpos($legSrc,'newspost_images/thumb_')!==false)
 			{
-				return;	
+				return null;
 			}
 		}
 		
@@ -885,8 +908,9 @@ class news_shortcodes extends e_shortcode
 
 		$imgParms = array(
 			'class'=>$class,
-			'alt'=>basename($src),
-			'style'=>$style
+			'alt'=>basename($srcPath),
+			'style'=>$style,
+			'placeholder'=>varset($parm['placeholder'])
 		);
 
 
@@ -895,7 +919,7 @@ class news_shortcodes extends e_shortcode
 		switch(vartrue($parm['type']))
 		{
 			case 'src':
-				return $src;
+				return empty($src) ? e_IMAGE_ABS."generic/nomedia.png" : $src;
 			break;
 
 			case 'tag':
@@ -920,7 +944,7 @@ class news_shortcodes extends e_shortcode
 
 
 
-	function sc_newstitlelink($parm = '')
+	function sc_newstitlelink($parm = null)
 	{
 		if(is_string($parm))
 		{
@@ -932,11 +956,20 @@ class news_shortcodes extends e_shortcode
 		}
 
 		$url = e107::getUrl()->create('news/view/item', $this->news_item);
+
 		if(isset($parms['href']))
 		{
 			return $url;
 		}
-		return "<a style='".(isset($this->param['itemlink']) ? $this->param['itemlink'] : 'null')."' href='{$url}'>".e107::getParser()->toHTML($this->news_item['news_title'], TRUE, "TITLE").'</a>';
+
+		if(isset($parm['link']))
+		{
+			unset($parm['link']);
+		}
+		
+		$title = $this->sc_news_title($parm);
+
+		return "<a style='".(isset($this->param['itemlink']) ? $this->param['itemlink'] : 'null')."' href='{$url}'>".$title.'</a>';
 	}
 
 	function sc_newsurl($parm=null)

@@ -10,6 +10,10 @@
  *
  *
 */
+if(!empty($_POST) && !isset($_POST['e-token']))
+{
+	$_POST['e-token'] = '';
+}
 require_once("../class2.php");
 
 if (!getperms("T")) 
@@ -96,12 +100,12 @@ $text = "
 					</tr>
 					<tr>
 						<td>".LAN_COPYRIGHT."</td>
-						<td><input class='tbox input-text' size='70' type='text' name='meta_copyright' value=\"".$meta_copyright[e_LANGUAGE]."\" /></td>
+						<td><input class='tbox form-control input-xxlarge' size='70' type='text' name='meta_copyright' value=\"".$meta_copyright[e_LANGUAGE]."\" /></td>
 					</tr>
 
 					<tr>
 						<td>".LAN_AUTHOR."</td>
-						<td><input class='tbox input-text' size='70' type='text' name='meta_author' value=\"".$meta_author[e_LANGUAGE]."\" /></td>
+						<td><input class='tbox form-control input-xxlarge' size='70' type='text' name='meta_author' value=\"".$meta_author[e_LANGUAGE]."\" /></td>
 					</tr>
 
 					<tr>
@@ -128,6 +132,7 @@ $text = "
 			<div class='buttons-bar center'>".
 				$frm->admin_button('metasubmit','no-value','update', LAN_UPDATE)."
 			</div>
+			<input type='hidden' name='e-token' value='".e_TOKEN."' />
 		</fieldset>
 	</form>
 ";

@@ -192,7 +192,7 @@ class e_marketplace
 	{
 		if(E107_DEBUG_LEVEL > 0)
 		{
-			e107::getMessage()->addDebug("Calling e107.org  using <b> ".$this->_adapter_name."</b> adapter");
+			e107::getDebug()->log("Calling e107.org  using <b> ".$this->_adapter_name."</b> adapter");
 		}
 		return $this->adapter()->call($method, $data, $apply);
 	}
@@ -227,6 +227,7 @@ class e_marketplace
 
 	/**
 	 * @param $data - e107.org plugin/theme feed data.
+	 * @return bool|string
 	 */
 	public function getDownloadModal($type='plugin',$data)
 	{
@@ -236,18 +237,34 @@ class e_marketplace
 		if($type === 'plugin')
 		{
 
-			$srcData = array(
-				'plugin_id'     => $data['params']['id'],
-				'plugin_folder' => $data['folder'],
-				'plugin_price'  => $data['price'],
-				'plugin_mode'   => $data['params']['mode'],
-				'plugin_url'    => $data['url'],
-			);
+			if(empty($data['plugin_id']))
+			{
 
-
+				$srcData = array(
+					'plugin_id'     => $data['params']['id'],
+					'plugin_folder' => $data['folder'],
+					'plugin_price'  => $data['price'],
+					'plugin_mode'   => $data['params']['mode'],
+					'plugin_url'    => $data['url'],
+				);
+			}
+			else
+			{
+				$srcData = $data;
+			}
 
 			$d = http_build_query($srcData,false,'&');
-			$url = e_ADMIN.'plugin.php?mode=download&src='.base64_encode($d);
+
+		//	if(deftrue('e_DEBUG_PLUGMANAGER'))
+			{
+				$url = e_ADMIN.'plugin.php?mode=online&action=download&src='.base64_encode($d);
+			}
+		//	else
+			{
+			//	$url = e_ADMIN.'plugin.php?mode=download&src='.base64_encode($d);
+			}
+
+
 		}
 
 		if($type === 'theme')
@@ -307,10 +324,14 @@ class e_marketplace
 
 		}
 
-// print_a($xdata['data']);
 
-		$data = e107::serialize($arr);
-		$cache->set($tag, $data, true, null, true);
+		if(empty($arr))
+		{
+			$arr = array('-unable-to-connect'); // make sure something is cached so further lookups stop.
+		}
+
+		$data = e107::serialize($arr, 'json');
+		$cache->set($tag, $data, true, true, true);
 
 		return $arr;
 
@@ -544,18 +565,20 @@ class e_marketplace_adapter_wsdl extends e_marketplace_adapter_abstract
 			'exception' 			=> true,
 		    "uri" 					=> "http://server.soap.e107.inc.com/",
 		    'cache_wsdl'			=> WSDL_CACHE_NONE,
-		    'connection_timeout' 	=> 60,
+		    'connection_timeout' 	=> 5,
 		);
 
 
 		try
 		{
+			//libxml_disable_entity_loader(false);
             $this->client = new SoapClient($this->serviceUrl, $options);
         }
         catch (Exception $e)
         {
-           e107::getMessage()->addError(TPVLAN_90);
-           e107::getMessage()->addDebug($e->getMessage());
+	        $message = deftrue('LAN_ERROR_CONNECTION', "Unable to connect for updates. Please check firewall and/or internet connection.");
+            e107::getMessage()->addInfo($message);
+            e107::getMessage()->addDebug($e->getMessage());
         }
 
 
@@ -595,9 +618,18 @@ class e_marketplace_adapter_wsdl extends e_marketplace_adapter_abstract
 		$auth = new stdClass;
 		$auth->authKey = $this->getAuthKey();
 		$header = new SoapHeader('http://e107.org/services/auth', 'checkAuthHeader', $auth);
+
+		if(!is_object($this->client))
+		{
+			$result['exception'] = array();
+			$result['exception']['message'] = "Unable to connect at this time.";
+			return $result;
+		}
 		
 		try
 		{
+
+
 			$this->client->__setSoapHeaders(array($header));
 			if(is_array($args) && $apply)
 			{

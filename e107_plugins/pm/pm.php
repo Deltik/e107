@@ -40,7 +40,7 @@ if(vartrue($_POST['keyword']))
 e107::css('pm','pm.css');
 require_once(e_PLUGIN.'pm/pm_class.php');
 require_once(e_PLUGIN.'pm/pm_func.php');
-include_lan(e_PLUGIN.'pm/languages/'.e_LANGUAGE.'.php');
+e107::includeLan(e_PLUGIN.'pm/languages/'.e_LANGUAGE.'.php');
 e107::getScParser();
 // require_once(e_PLUGIN.'pm/shortcodes/batch/pm_shortcodes.php');
 
@@ -616,7 +616,9 @@ function pm_user_lookup()
 {
 	$sql = e107::getDb();
 
-	$query = "SELECT * FROM #user WHERE user_name REGEXP '^".$_POST['keyword']."' ";
+	$tp = e107::getParser();
+
+	$query = "SELECT * FROM #user WHERE user_name REGEXP '^".$tp->filter($_POST['keyword'],'w')."' ";
 	if($sql->gen($query))
 	{
 		echo '[';

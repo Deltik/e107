@@ -1,3 +1,141 @@
+var e107 = e107 || {'settings': {}, 'behaviors': {}};
+
+(function ($)
+{
+
+	/**
+	 * Initializes click event on '.e-modal' elements.
+	 *
+	 * @type {{attach: e107.behaviors.eModalAdmin.attach}}
+	 */
+	e107.behaviors.eModalAdmin = {
+		attach: function (context, settings)
+		{
+			$(context).find('.e-modal').once('e-modal-admin').each(function ()
+			{
+				var $that = $(this);
+
+				$that.on('click', function ()
+				{
+					var $this = $(this);
+
+					if($this.attr('data-cache') == 'false')
+					{
+						$('#uiModal').on('shown.bs.modal', function ()
+						{
+							$(this).removeData('bs.modal');
+						});
+					}
+
+					var url = $this.attr('href');
+					var caption = $this.attr('data-modal-caption');
+					var height = ($(window).height() * 0.7) - 120;
+
+					if(caption === undefined)
+					{
+						caption = '';
+					}
+
+					$('.modal-body').html('<div class="well"><iframe id="e-modal-iframe" width="100%" height="' + height + 'px" frameborder="0" scrolling="auto" style="display:block;background-color:transparent" allowtransparency="true" src="' + url + '"></iframe></div>');
+					$('.modal-caption').html(caption + ' <i id="e-modal-loading" class="fa fa-spin fa-spinner"></i>');
+					$('.modal').modal('show');
+
+					$("#e-modal-iframe").on("load", function ()
+					{
+						$('#e-modal-loading').hide();
+					});
+
+					return false;
+				});
+			});
+		}
+	};
+
+	/**
+	 * Run tips on .field-help.
+	 *
+	 * @type {{attach: e107.behaviors.fieldHelpTooltip.attach}}
+	 */
+	e107.behaviors.fieldHelpTooltip = {
+		attach: function (context, settings)
+		{
+			var selector = 'div.tbox,div.checkboxes,input,textarea,select,label,.e-tip,div.form-control';
+
+			$(context).find(selector).once('field-help-tooltip').each(function ()
+			{
+				var $this = $(this);
+				var $fieldHelp = $this.nextAll(".field-help");
+				var placement = 'bottom';
+
+				if($this.is("textarea"))
+				{
+					placement = 'top';
+				}
+
+				var custPlace = $fieldHelp.attr('data-placement'); // ie top|left|bottom|right
+
+				if(custPlace !== undefined)
+				{
+					placement = custPlace;
+				}
+
+				$fieldHelp.hide();
+
+				$this.tooltip({
+					title: function ()
+					{
+						return $fieldHelp.html();
+					},
+					fade: true,
+					html: true,
+					opacity: 1.0,
+					placement: placement,
+					container: 'body',
+					delay: {
+						show: 300,
+						hide: 600
+					}
+				});
+			});
+		}
+	};
+
+})(jQuery);
+
+(function (jQuery)
+{
+
+	/**
+	 * jQuery extension to make admin tab 'fadeIn' with 'display: inline-block'.
+	 *
+	 * @param displayMode
+	 *  A string determining display mode for element after the animation.
+	 *  Default: 'inline-block'.
+	 * @param duration
+	 *  A string or number determining how long the animation will run.
+	 *  Default: 400.
+	 */
+	jQuery.fn.fadeInAdminTab = function (displayMode, duration)
+	{
+		var $this = $(this);
+
+		if($this.css('display') !== 'none')
+		{
+			return;
+		}
+
+		displayMode = displayMode || 'inline-block';
+		duration = duration || 400;
+
+		$this.fadeIn(duration, function ()
+		{
+			$this.css('display', displayMode);
+		});
+	};
+
+})(jQuery);
+
+
 $(document).ready(function()
 {
 		$('form').h5Validate(
@@ -84,12 +222,40 @@ $(document).ready(function()
 		
 		$("#uiModal").draggable({
    			 handle: ".modal-header"
-		}); 
-		
-	
-		$('div.e-container').editable({
-			selector: '.e-editable'
-         });
+		});
+
+
+	$('div.e-container').editable({
+		selector: '.e-editable',
+		display: function (value, sourceData)
+		{
+			// HTML entities decoding... fix for:
+			// @see https://github.com/e107inc/e107/issues/2351
+			$.each(sourceData, function (index, element)
+			{
+				element.text = $("<div/>").html(element.text).text();
+				sourceData[index] = element;
+			});
+
+			// Display checklist as comma-separated values.
+			var html = [];
+			var checked = $.fn.editableutils.itemsByValue(value, sourceData);
+
+			if(checked.length)
+			{
+				$.each(checked, function (i, v)
+				{
+					html.push($.fn.editableutils.escape(v.text));
+				});
+
+				$(this).html(html.join(', '));
+			}
+			else
+			{
+				$(this).text(value);
+			}
+		}
+	});
 		
 //		$('.e-editable').editable();
 		
@@ -207,44 +373,6 @@ $(document).ready(function()
 	
 		});
 
-
-
-
-	
-
-
-		
-		
-		/*  Bootstrap Modal window within an iFrame */
-		$('.e-modal').on('click', function(e) 
-		{
-
-			e.preventDefault();
-
-            if($(this).attr('data-cache') == 'false')
-            {
-                $('#uiModal').on('shown.bs.modal', function () {
-                    $(this).removeData('bs.modal');
-                });
-            }
-            
-			var url 		= $(this).attr('href');
-			var caption  	= $(this).attr('data-modal-caption');
-			var height 		= ($(window).height() * 0.7) - 120;
-
-            if(caption === undefined)
-            {
-                caption = '';
-            }
-
-    		$('.modal-body').html('<div class="well"><iframe id="e-modal-iframe" width="100%" height="'+height+'px" frameborder="0" scrolling="auto" style="display:block;background-color:transparent" allowtransparency="true" src="' + url + '"></iframe></div>');
-    		$('.modal-caption').html(caption + ' <i id="e-modal-loading" class="fa fa-spin fa-spinner"></i>');
-    		$('.modal').modal('show');
-    		
-    		$("#e-modal-iframe").on("load", function () {
-				 $('#e-modal-loading').hide(); 
-			});
-    	});	
 
 		
 
@@ -374,41 +502,7 @@ $(document).ready(function()
 			
 		});
 		
-			// run tips on .field-help 
-		$("div.tbox,div.checkboxes,input,textarea,select,label,.e-tip").each(function(c) {
-						
-			var t = $(this).nextAll(".field-help");
 
-			var placement = 'bottom';
-			
-			if($(this).is("textarea"))
-			{
-				var placement = 'top';	
-			}
-
-            var custplace = $(t).attr('data-placement'); // ie top|left|bottom|right
-
-            if(custplace !== undefined)
-            {
-                placement = custplace;
-            }
-			
-			
-			t.hide();
-		//	alert('hello');
-			$(this).tooltip({
-				title: function() {
-					var tip = t.html();			
-					return tip; 
-				},
-				fade: true,
-				html: true,
-				opacity: 1.0,
-				placement: placement,
-				delay: { show: 300, hide: 600 } 
-			});
-		
-		});
 	
 	//	 $(".e-spinner").spinner(); //FIXME breaks tooltips etc. 
 
@@ -459,6 +553,7 @@ $(document).ready(function()
 	   		
 			$(this).switchClass( "link", "link-active", 30 );
 			$(this).closest("li").addClass("active");
+	
 			$(id).removeClass('e-hideme').show({
 				effect: "slide"
 			});
@@ -466,7 +561,8 @@ $(document).ready(function()
 			if(hash) {
 				window.location.hash = 'nav-' + hash;
 			  	if(form) {
-			    	$(form).attr('action', $(form).attr('action').split('#')[0] + '#nav-' + hash);
+
+			  //  	$(form).attr('action', $(form).attr('action').split('#')[0] + '#nav-' + hash); // breaks menu-manager nav.
 			    }
 			    return false; 
 			}
@@ -679,8 +775,12 @@ $(document).ready(function()
 		
 			$(selector).toggle();
 
+		//	$('.menu-selector input[type="checkbox"]').removeAttr("checked");
+
 			return false; 
 		});
+
+		
 
 
 		$(".e-mm-selector li input").click(function(e){

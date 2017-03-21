@@ -16,7 +16,7 @@ if (!defined('e107_INIT'))
 {
 	exit;
 }
-include_lan(e_LANGUAGEDIR.e_LANGUAGE."/lan_comment.php");
+e107::includeLan(e_LANGUAGEDIR.e_LANGUAGE."/lan_comment.php");
 global $comment_shortcodes;
 require_once (e_CORE."shortcodes/batch/comment_shortcodes.php");
 /**
@@ -1489,6 +1489,7 @@ class comment
 					//author - no ned to split now
 					$comment_author_id = $row['comment_author_id'];
 					$ret['comment_author_id'] = $comment_author_id ;
+					$ret['comment_author_image'] = $row['user_image'];
 					$comment_author_name = $row['comment_author_name'];
 					$ret['comment_author'] = (USERID ? "<a href='".e107::getUrl()->create('user/profile/view', array('id' => $comment_author_id, 'name' => $comment_author_name))."'>".$comment_author_name."</a>" : $comment_author_name);
 					//comment text

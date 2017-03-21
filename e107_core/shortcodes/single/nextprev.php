@@ -68,9 +68,12 @@ function nextprev_shortcode($parm = '')
 	 * New parameter requirements formatted as a GET string.
 	 * Template support.
 	 */
-	if(is_string($parm) && strpos($parm, 'total=') !== false)
+	if(is_array($parm) || strpos($parm, 'total=') !== false)
 	{
-		parse_str($parm, $parm);
+		if(is_string($parm))
+		{
+			parse_str($parm, $parm);
+		}
 
 		// Calculate
 		$total_items = intval($parm['total']);
@@ -283,6 +286,9 @@ function nextprev_shortcode($parm = '')
 			}
 		}
 
+
+
+
 		// Add 'first', 'previous' navigation
 		if($show_prev)
 		{
@@ -302,6 +308,21 @@ function nextprev_shortcode($parm = '')
 				$ret_array[] = $tp->simpleParse($tmpl[$tprefix.'nav_prev'], $e_vars);
 			}
 		}
+
+
+		if($tprefix === 'basic_' && $show_prev === false)
+		{
+			if(!empty($tmpl[$tprefix.'nav_prev']))
+			{
+				$e_vars->url = '#';
+				$e_vars->label = $LAN_NP_PREVIOUS;
+				$e_vars->url_label = '';
+				$e_vars->disabled = "disabled";
+				$ret_array[] = $tp->simpleParse($tmpl[$tprefix.'nav_prev'], $e_vars);
+				$e_vars->disabled = '';
+			}
+		}
+
 
 		$e_vars_loop = new e_vars();
 		$e_vars_loop->bullet = stripslashes($bullet); // fix magicquotes 
@@ -350,6 +371,22 @@ function nextprev_shortcode($parm = '')
 			}
 		}
 
+		if($tprefix === 'basic_' && $show_next === false)
+		{
+			if(!empty($tmpl[$tprefix.'nav_next']))
+			{
+				$e_vars->url = '#';
+				$e_vars->label = $LAN_NP_NEXT;
+				$e_vars->url_label = '';
+				$e_vars->disabled = "disabled";
+				$ret_array[] = $tp->simpleParse($tmpl[$tprefix.'nav_next'], $e_vars);
+				$e_vars->disabled = '';
+			}
+		}
+
+
+
+
 		$ret .= implode($tmpl[$tprefix.'separator'], $ret_array);
 
 		// Nextprev navigation end
@@ -363,10 +400,6 @@ function nextprev_shortcode($parm = '')
 	 */
 	else
 	{
-		if(empty($parm))
-		{
-			$parm = '';
-		}
 		$parm_count = substr_count($parm, ',');
 		while($parm_count < 5)
 		{

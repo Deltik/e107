@@ -15,13 +15,16 @@ define('VIEWPORT', 		"width=device-width, initial-scale=1.0");
 e107::lan('theme');
 
 $cndPref = e107::pref('theme', 'cdn','cdnjs');
+
+e107::library('load', 'bootstrap');
+e107::library('load', 'fontawesome');
  
 switch($cndPref)
 {
 	case "jsdelivr":
-		e107::css('url', 'https://cdn.jsdelivr.net/bootstrap/3.3.7/css/bootstrap.min.css');
-		e107::css('url',    'https://cdn.jsdelivr.net/fontawesome/4.7.0/css/font-awesome.min.css');
-		e107::js("footer", "https://cdn.jsdelivr.net/bootstrap/3.3.6/js/bootstrap.min.js", 'jquery');
+	//	e107::css('url', 'https://cdn.jsdelivr.net/bootstrap/3.3.7/css/bootstrap.min.css');
+	//	e107::css('url',    'https://cdn.jsdelivr.net/fontawesome/4.7.0/css/font-awesome.min.css');
+	//	e107::js("footer", "https://cdn.jsdelivr.net/bootstrap/3.3.6/js/bootstrap.min.js", 'jquery');
         e107::js("footer", "https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.3/jquery.easing.min.js", 'jquery');
 
 
@@ -32,9 +35,9 @@ switch($cndPref)
 		break;	*/
 	case "cdnjs":
 	default:
-		e107::css('url', 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css');
-		e107::css('url', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css');
-		e107::js("footer", "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js", 'jquery', 2);
+	//	e107::css('url', 'https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css');
+	//	e107::css('url', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css');
+	//	e107::js("footer", "https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js", 'jquery', 2);
 	    e107::js("footer", "https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.3/jquery.easing.min.js", 'jquery', 2);
 
 
@@ -302,9 +305,9 @@ $LAYOUT['homepage'] =  '
 			<div class="container">
 				<div class="row">
 					<div class="col-lg-8 col-lg-offset-2 text-center">
-						<h2 class="margin-top-0 wow fadeIn">Get in Touch</h2>
+						<h2 class="margin-top-0 wow fadeIn">'.LAN_LZ_THEME_13.'</h2>
 						<hr class="primary">
-						<p>We love feedback. Fill out the form below and we\'ll get back to you as soon as possible.</p>
+						<p>'.LAN_LZ_THEME_14.'</p>
 					</div>
 					<div class="col-lg-10 col-lg-offset-1 text-center">
 						{MENU=contact/contact}

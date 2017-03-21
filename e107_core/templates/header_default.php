@@ -23,10 +23,11 @@ $sql = e107::getDb();
 
 $sql->db_Mark_Time('(Header Top)');
 
+// Load library dependencies.
+e107::getTheme('current', true)->loadLibrary();
 
-
-e107::js('core',	'bootstrap/js/bootstrap-tooltip.js','jquery');
-e107::css('core',	'bootstrap/css/tooltip.css','jquery');
+//e107::js('core',	'bootstrap/js/bootstrap-tooltip.js','jquery');
+// e107::css('core',	'bootstrap/css/tooltip.css','jquery');
 
 if(deftrue('BOOTSTRAP'))
 {
@@ -120,7 +121,8 @@ if (!function_exists("parseheader"))
 if(!defined("XHTML4"))
 {
 	echo "<!doctype html>\n";
-	echo "<html".(defined("TEXTDIRECTION") ? " dir='".TEXTDIRECTION."'" : "").(defined("CORE_LC") ? " lang=\"".CORE_LC."\"" : "").">\n";	
+	$htmlTag = "<html".(defined("TEXTDIRECTION") ? " dir='".TEXTDIRECTION."'" : "").(defined("CORE_LC") ? " lang=\"".CORE_LC."\"" : "").">";
+	echo deftrue('HTMLTAG', $htmlTag)."\n";
 	echo "<head>\n";
 	echo "<meta charset='utf-8' />\n";
 }
@@ -187,7 +189,7 @@ if (/*!defined("PREVIEWTHEME") && */! (isset($no_core_css) && $no_core_css !==tr
 	$e_js->otherCSS('{e_WEB_CSS}e107.css');
 }
 
-if(!deftrue('BOOTSTRAP'))
+if(THEME_LEGACY === true)
 {
 	$e_js->otherCSS('{e_WEB_CSS}backcompat.css');
 }
@@ -665,12 +667,13 @@ echo "</head>\n";
 
 	$HEADER = str_replace("{e_PAGETITLE}",deftrue('e_PAGETITLE',''),$HEADER);
 
-	$body_onload .= " id='layout-".e107::getForm()->name2id(THEME_LAYOUT)."' ";
+	//$body_onload .= " id='layout-".e107::getForm()->name2id(THEME_LAYOUT)."' ";
 
 
 
 if(!deftrue('BODYTAG')) //TODO Discuss a better way?
 {
+	$body_onload .= " id='layout-".e107::getForm()->name2id(THEME_LAYOUT)."' ";
 	echo "<body".$body_onload.">\n";
 }
 else

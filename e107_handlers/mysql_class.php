@@ -193,7 +193,12 @@ class e_db_mysql
 			{
 				list($this->mySQLserver,$this->mySQLport) = explode(':',$mySQLserver,2);
 			}
-	
+
+			if($this->mySQLserver === 'localhost')
+			{
+				$this->mySQLserver = '127.0.0.1';  // faster by almost 1 second
+			}
+
 			try
 			{
 				$this->mySQLaccess = new PDO("mysql:host=".$this->mySQLserver."; port=".$this->mySQLport, $this->mySQLuser, $this->mySQLpassword, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
@@ -284,7 +289,13 @@ class e_db_mysql
 		{
 			list($this->mySQLserver,$this->mySQLport) = explode(':',$mySQLserver,2);
 		}
-		
+
+		if($this->mySQLserver === 'localhost')
+		{
+			$this->mySQLserver = '127.0.0.1'; // faster by almost 1 second. 
+		}
+
+
 		if($this->pdo) // PDO 
 		{		
 			try
@@ -2572,7 +2583,7 @@ class e_db_mysql
 				$d = array();
 				foreach($fields as $val)
 				{
-					$d[] = is_numeric($row[$val]) ? $row[$val] : "'".mysql_real_escape_string($row[$val])."'"; 				
+					$d[] = is_numeric($row[$val]) ? $row[$val] : "'".mysqli_real_escape_string($row[$val])."'"; 				
 				}
 	
 				$data_array = "(".implode(", ",$d).");\n"; 

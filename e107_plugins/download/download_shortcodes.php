@@ -327,7 +327,7 @@ class download_shortcodes extends e_shortcode
       {
            $opts = array(
              'legacy' => "{e_FILE}downloadthumbs/",
-             'class'  => 'download-image img-responsive',
+             'class'  => 'download-image img-responsive img-fluid',
               'alt'     => $this->var['download_name']
          );
 
@@ -378,13 +378,25 @@ class download_shortcodes extends e_shortcode
      	}
      	else
      	{
-     		$url = e107::getUrl()->create('download/request/item',array('id'=>$this->var['download_id'], 'name'=>$this->var['download_sef']));	
+     		$url = $tp->parseTemplate("{DOWNLOAD_REQUEST_URL}",true, $this); // $this->sc_download_request_url();
      	  	return ($pref['agree_flag'] ? "<a class='e-tip' title='".LAN_DOWNLOAD."' href='".$url."' onclick= \"return confirm('{$agreetext}');\">{$img}</a>" : "<a class='e-tip' title='".LAN_DOWNLOAD."' href='".$url."' >{$img}</a>");
    
 		//	return ($pref['agree_flag'] ? "<a class='e-tip' title='".LAN_DOWNLOAD."' href='".e_PLUGIN_ABS."download/request.php?".$this->var['download_id']."' onclick= \"return confirm('{$agreetext}');\">{$img}</a>" : "<a class='e-tip' title='".LAN_DOWNLOAD."' href='".e_PLUGIN_ABS."download/request.php?".$this->var['download_id']."' >{$img}</a>");
      	}
    }
-   
+
+
+   function sc_download_request_url($parm=null)
+   {
+    	return e107::getUrl()->create('download/request/item',array('id'=>$this->var['download_id'], 'name'=>$this->var['download_sef']));
+
+   }
+
+	function sc_download_filename($parm=null)
+	{
+		return basename($this->var['download_url']);
+
+	}
    
    function sc_download_list_icon($parm='') //XXX FIXME $img. 
    {
@@ -484,7 +496,7 @@ class download_shortcodes extends e_shortcode
 		$tp = e107::getParser();
 
 		$viewUrl = e107::getUrl()->create('download/view/item',array('id'=>$this->var['download_id'], 'name'=>$this->var['download_sef']));	
-		$requestUrl = e107::getUrl()->create('download/request/item',array('id'=>$this->var['download_id'], 'name'=>$this->var['download_sef']));	
+		$requestUrl = 	$url = $tp->parseTemplate("{DOWNLOAD_REQUEST_URL}",true,$this); // $this->sc_download_request_url();
 
 		$link['view'] = "<a href='".$viewUrl."'>".$this->var['download_name']."</a>";
 		$link['request'] = "<a href='".$requestUrl."' title='".LAN_dl_46."'>".$this->var['download_name']."</a>";
@@ -506,7 +518,7 @@ class download_shortcodes extends e_shortcode
       global $dl;
 	  $tp = e107::getParser();
 	  $pref = e107::getPref();
-	  $url = e107::getUrl()->create('download/request/item',array('id'=>$dl['download_id'], 'name'=>$dl['download_sef']));	
+	  $url = 	$url = $tp->parseTemplate("{DOWNLOAD_REQUEST_URL}",true,$this);  //$this->sc_download_request_url();
 	  
       if ($pref['agree_flag'] == 1) 
       {
@@ -583,7 +595,7 @@ class download_shortcodes extends e_shortcode
       {
          $opts = array(
              'legacy' => "{e_FILE}downloadthumbs/",
-             'class'  => 'download-image dl_image img-responsive'
+             'class'  => 'download-image dl_image img-responsive img-fluid'
          );
          $image = $tp->toImage($this->var['download_thumb'], $opts);
 
@@ -610,7 +622,7 @@ class download_shortcodes extends e_shortcode
 
          $opts = array(
                 'legacy' => "{e_FILE}downloadimages/",
-                'class'  => 'download-image dl_image download-view-image img-responsive '.vartrue($parm['class']),
+                'class'  => 'download-image dl_image download-view-image img-responsive img-fluid '.vartrue($parm['class']),
                'alt' => basename($this->var['download_image'])
          );
 
@@ -641,7 +653,7 @@ class download_shortcodes extends e_shortcode
       		$click = " onclick='return confirm(\"".$tp->toJS($tp->toHTML($pref['agree_text'],true,'emotes, no_tags'))."\")'";
 		}
 		
-		$url = e107::getUrl()->create('download/request/item',array('id'=>$this->var['download_id'], 'name'=>$this->var['download_sef']));	
+		$url = 	$url = $tp->parseTemplate("{DOWNLOAD_REQUEST_URL}",true,$this); //$this->sc_download_request_url();
      	
      	if(varset($parm['type']) == 'href')
 		{

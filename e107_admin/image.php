@@ -55,7 +55,7 @@ e107::coreLan('image', true);
 
 if($_GET['action'] == 'dialog')
 {
-	e107::css('inline', "body { background-color: #373737 } ");
+//	e107::css('inline', "body { background-color: #373737 } ");
 }
 
 if(vartrue($_GET['action']) == 'nav' && e_AJAX_REQUEST) //XXX Doesn't work correctly inside the class for some reason 
@@ -138,6 +138,8 @@ class media_admin extends e_admin_dispatcher
 		'main/prefs' 		=> array('caption'=> LAN_PREFS, 'perm' => 'A'),
 		'main/avatar'		=> array('caption'=> LAN_IMA_M_05, 'perm' => 'A')
 	);
+
+	protected $adminMenuIcon = 'e-images-24';
 
 /*
 	$var['main']['text'] = IMALAN_7;
@@ -1038,7 +1040,13 @@ class media_admin_ui extends e_admin_ui
 		$mes->addDebug("For:".$cat);
 		$mes->addDebug("Bbcode: ".$this->getQuery('bbcode'));
 
-	
+		$video = $this->getQuery('video');
+
+		if($video == 2)
+		{
+			echo $this->mediaSelectUpload('video');
+			return;
+		}
 		
 		$this->processUploadUrl(true, $cat);
 		
@@ -1119,10 +1127,10 @@ class media_admin_ui extends e_admin_ui
 
 		$text .= "<tr>
 				<td class='text-nowrap'>".IMALAN_148.":</td>
-				<td><input type='text' name='upload_url' size='255' style='width:100%' placeholder='eg. http://website.com/some-image.jpg' /></td>
+				<td><input class='form-control' type='text' name='upload_url' size='255' style='width:100%' placeholder='eg. http://website.com/some-image.jpg' /></td>
 				<td style='text-align:left'>".$frm->admin_button('upload_remote_url',1,'create',IMALAN_149)."</td>
 				</tr>";
-		$text .= "<tr><td>".LAN_CAPTION." (".LAN_OPTIONAL."):</td><td><input type='text' name='upload_caption' size='255' style='width:100%' placeholder='eg. My Image Caption' /></td>
+		$text .= "<tr><td>".LAN_CAPTION." (".LAN_OPTIONAL."):</td><td><input type='text' class='form-control' name='upload_caption' size='255' style='width:100%' placeholder='eg. My Image Caption' /></td>
 <td></td></tr>";
 
 		$text .= "</table>";
@@ -1140,6 +1148,19 @@ class media_admin_ui extends e_admin_ui
 	function mediaSelectUpload($type='image') 
 	{
 		$frm = e107::getForm();
+
+		if($type === 'video')
+		{
+			$tabs = array(
+				'youtube' => array('caption'=>'Youtube', 'text' => $this->videoTab())
+			);
+
+			return $frm->tabs($tabs, array('class'=>'media-manager'));
+		}
+
+
+
+
 		$videoActive = 'inactive';
 		
 		$options = array();
@@ -1482,7 +1503,7 @@ class media_admin_ui extends e_admin_ui
 
 
 		
-		if(vartrue($parm['search']))
+		if(!empty($parm['search']))
 		{
 			$filtered = array();
 			if(!empty($items))
@@ -1612,12 +1633,15 @@ class media_admin_ui extends e_admin_ui
 			$accData = json_decode($accData,true);
 			$channelID = e107::pref('core', 'youtube_default_account');
 
-			foreach($accData['items'] as $val)
+			if(!empty($accData['items']))
 			{
-				if($val['kind'] == 'youtube#channel')
+				foreach($accData['items'] as $val)
 				{
+					if($val['kind'] == 'youtube#channel')
+					{
 						$channelID = $val['id'];
 						break;
+					}
 				}
 			}
 
@@ -2135,7 +2159,7 @@ class media_admin_ui extends e_admin_ui
 
 					$img_src = "
 				<div class='thumbnail'>
-				<label for='".$for."' ><img  class='img-responsive' src='".$img_path."' alt='{$image_name}' title='".IMALAN_66.": {$image_name}' /></label>
+				<label for='".$for."' ><img  class='img-responsive img-fluid' src='".$img_path."' alt='{$image_name}' title='".IMALAN_66.": {$image_name}' /></label>
 				</div>
 				";
 
