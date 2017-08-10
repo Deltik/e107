@@ -330,6 +330,8 @@ City, State, Country
   'system' => 'core',
   'user' => 'core',
 )]]></core>
+<core name="url_profiles"><![CDATA[array (
+)]]></core>
 		<core name="url_disable_pathinfo">1</core>
 		<core name="url_error_redirect">0</core>
 		<core name="url_locations"><![CDATA[array (
@@ -394,6 +396,7 @@ City, State, Country
 		<core name="user_reg_secureveri">1</core>
 		<core name="user_reg_veri">1</core>
 		<core name="user_tracking">cookie</core>
+		<core name="version">2.1.6</core>
 		<core name="wm_enclose">1</core>
 		<core name="wmessage_sc">0</core>
 		<core name="wysiwyg">1</core>
@@ -1205,7 +1208,7 @@ City, State, Country
 			<item>
 				<field name="category_id">1</field>
 				<field name="category_name">Misc</field>
-				<field name="category_sef"></field>
+				<field name="category_sef">misc</field>
 				<field name="category_meta_description"></field>
 				<field name="category_meta_keywords"></field>
 				<field name="category_manager">254</field>

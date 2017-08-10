@@ -723,7 +723,7 @@ class admin_shortcodes
 	{
 		if(e_DEBUG !== false)
 		{
-			return "<div class='navbar-right navbar-text admin-icon-debug' title='DEBUG MODE ACTIVE'>".e107::getParser()->toGlyph('fa-bug', array('class'=>'text-warning'))."&nbsp;&nbsp;</div>";
+			return "<div class='navbar-right nav-admin navbar-text admin-icon-debug' title='DEBUG MODE ACTIVE'>".e107::getParser()->toGlyph('fa-bug', array('class'=>'text-warning'))."&nbsp;&nbsp;</div>";
 		}
 
 	}
@@ -754,10 +754,10 @@ class admin_shortcodes
 		$outboxUrl = e_PLUGIN.'pm/admin_config.php?mode=outbox&amp;action=list&amp;iframe=1';
 		$composeUrl = e_PLUGIN.'pm/admin_config.php?mode=outbox&amp;action=create&amp;iframe=1';
 
-       $text = '<ul class="nav navbar-nav navbar-right">
+       $text = '<ul class="nav nav-admin navbar-nav navbar-right">
         <li class="dropdown">
             <a class="dropdown-toggle" title="'.LAN_PM.'" role="button" data-toggle="dropdown" href="#" >
-                '.$tp->toGlyph('fa-envelope').$countDisp.'<b class="caret"></b>
+                '.$tp->toGlyph('fa-envelope').$countDisp.'
             </a> 
             <ul class="dropdown-menu" role="menu" >
                 <li class="nav-header navbar-header dropdown-header">'.LAN_PM.'</li>
@@ -1022,14 +1022,14 @@ class admin_shortcodes
 		{
 			global $ns, $pref, $themename, $themeversion, $themeauthor, $themedate, $themeinfo, $mySQLdefaultdb;
 
-			if (file_exists(e_ADMIN.'ver.php'))
+		//	if (file_exists(e_ADMIN.'ver.php'))
 			{
-				include(e_ADMIN.'ver.php');
+			//	include(e_ADMIN.'ver.php');
 			}
 			
 			if($parm == "version")
 			{
-				return $e107info['e107_version'];
+				return e_VERSION;
 			}
 
 			$obj = e107::getDateConvert();
@@ -1057,7 +1057,7 @@ class admin_shortcodes
 			<br />
 			<b>e107</b>
 			<br />
-			".FOOTLAN_3." ".$e107info['e107_version']."
+			".FOOTLAN_3." ".e_VERSION."
 			<br /><br />
 			<b>".FOOTLAN_20."</b>
 			<br />
@@ -1230,7 +1230,7 @@ class admin_shortcodes
 							$type = empty($val['invert']) ? 'latest' : 'invert';
 							$class = admin_shortcodes::getBadge($val['total'], $type);
 							$link =  "<a href='".$val['url']."'>".$val['icon']." ".str_replace(":"," ",$val['title'])." <span class='".$class."'>".$val['total']."</span></a>";
-							$text .= "<li class='list-group-item'>".$link."</li>\n";
+							$text .= "<li class='list-group-item clearfix'>".$link."</li>\n";
 						}	
 					}
 					$text .= "</ul>";
@@ -1397,7 +1397,7 @@ Inverse 	10 	<span class="badge badge-inverse">10</span>
 
 			if(!empty($versions[$folder]['version']) && version_compare( $version, $versions[$folder]['version'], '<'))
 			{
-				$versions[$folder]['modalDownload'] = $mp->getDownloadModal('theme', $versions[$folder]);
+				$versions[$folder]['modalDownload'] = $mp->getDownloadModal($type, $versions[$folder]);
 				$ret[] = $versions[$folder];
 				e107::getMessage()->addDebug("Local version: ".$version." Remote version: ".$versions[$folder]['version']);
 			}
@@ -1833,6 +1833,15 @@ Inverse 	10 	<span class="badge badge-inverse">10</span>
 		$tmpl = strtoupper(varset($parms['tmpl'], 'E_ADMIN_NAVIGATION'));
 		global $$tmpl;
 
+
+		if($parm == 'enav_popover') // @todo move to template and make generic.
+		{
+			$template = $$tmpl;
+
+			return $template['start']. '<li><a tabindex="0" href="'.e_ADMIN_ABS.'e107_update.php" class="hide e-popover text-primary" role="button" data-container="body" data-toggle="popover" data-placement="right" data-trigger="bottom" data-content="'.$tp->toAttribute(ADLAN_120).'"><span class="text-info">'.$tp->toGlyph('fa-database').'</span></a></li>' .$template['end'];
+
+		}
+
 		if($parm == self::ADMIN_NAV_HOME || $parm == self::ADMIN_NAV_LOGOUT || $parm == self::ADMIN_NAV_LANGUAGE || $parm == 'pm')
 		{
 			$template = $$tmpl;
@@ -2176,12 +2185,12 @@ Inverse 	10 	<span class="badge badge-inverse">10</span>
 				$c = 0;
 				foreach($languages as $lng)
 				{			
-					$checked = "<i >&nbsp;</i>&nbsp;";
+					$checked = "<i class='fa fa-fw'>&nbsp;</i>&nbsp;";
 					$code = $slng->convert($lng);
 					
 					if($lng == e_LANGUAGE)
 					{
-						$checked = $tp->toGlyph('ok')." ";
+						$checked = $tp->toGlyph('fa-check', array('fw'=>1))." ";
 						$link = '#';
 					}
 					elseif(in_array(e_DOMAIN,$multiDoms))
@@ -2276,6 +2285,10 @@ Inverse 	10 	<span class="badge badge-inverse">10</span>
 
 		$icon  = e107::getParser()->toIcon('e-menus-24');
 		$caption = $icon."<span>".ADLAN_6."</span>";
+
+				$diz = MENLAN_58;
+
+		$caption .= "<span class='e-help-icon pull-right'><a data-placement=\"bottom\" class='e-tip' title=\"".e107::getParser()->toAttribute($diz)."\">".ADMIN_INFO_ICON."</a></span>";
 
 	   return e107::getNav()->admin($caption,$action, $var);
 

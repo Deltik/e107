@@ -1350,15 +1350,16 @@ class e_parse extends e_parser
 
 		$text = html_entity_decode($text,ENT_QUOTES,'utf-8');
 
-		return mb_strimwidth($text, 0, $len, $more);
+		if(function_exists('mb_strimwidth'))
+		{
+			return mb_strimwidth($text, 0, $len, $more);
+		}
 		
-	//	$ret = $this->usubstr($text, 0, $len);
+		$ret = $this->usubstr($text, 0, $len);
 
 		// search for possible broken html entities
 		// - if an & is in the last 8 chars, removing it and whatever follows shouldn't hurt
 		// it should work for any characters encoding
-
-/*
 
 		$leftAmp = $this->ustrrpos($this->usubstr($ret, -8), '&');
 		if($leftAmp)
@@ -1366,7 +1367,8 @@ class e_parse extends e_parser
 			$ret = $this->usubstr($ret, 0, $this->ustrlen($ret) - 8 + $leftAmp);
 		}
 
-		return $ret.$more;*/
+		return $ret.$more;
+
 	}
 
 
@@ -1539,17 +1541,25 @@ class e_parse extends e_parser
 		}
 
 		// Turn off a few things if not enabled in options
-		if(!vartrue($pref['smiley_activate']))
+		if(empty($pref['smiley_activate']))
 		{
-			$opts['emotes'] = FALSE;
+			$opts['emotes'] = false;
 		}
-		if(!vartrue($pref['make_clickable']))
+
+		if(empty($pref['make_clickable']))
 		{
-			$opts['link_click'] = FALSE;
+			$opts['link_click'] = false;
 		}
-		if(!vartrue($pref['link_replace']))
+
+		if(empty($pref['link_replace']))
 		{
-			$opts['link_replace'] = FALSE;
+			$opts['link_replace'] = false;
+		}
+
+		if($this->isHtml($text)) //BC FIx for when HTML is saved without [html][/html]
+		{
+			$opts['nobreak'] = true;
+			$text = trim($text);
 		}
 
 		$fromadmin = $opts['fromadmin'];
@@ -1568,7 +1578,7 @@ class e_parse extends e_parser
 			$text = strip_tags($text);
 		}
 		
-		if (MAGIC_QUOTES_GPC == TRUE) // precaution for badly saved data. 
+		if (MAGIC_QUOTES_GPC === true) // precaution for badly saved data.
 		{
 			$text = stripslashes($text);
 		}
@@ -1590,7 +1600,7 @@ class e_parse extends e_parser
 		
 		
 		
-		if ($parseBB == FALSE)
+		if ($parseBB == false)
 		{
 			$content = array($text);
 		}
@@ -2519,6 +2529,11 @@ class e_parse extends e_parser
 		if($raw) $url = $this->createConstants($url, 'mix');
 		
 		$baseurl = ($full ? SITEURL : e_HTTP).'thumb.php?';
+
+		if(defined('e_HTTP_STATIC'))
+		{
+			$baseurl = e_HTTP_STATIC.'thumb.php?';
+		}
         
 		$thurl = 'src='.urlencode($url).'&amp;';
 
@@ -2600,6 +2615,8 @@ class e_parse extends e_parser
 	 */
 	function thumbSrcSet($src='', $width=null)
 	{
+		$multiply = null;
+
 		if(is_array($width))
 		{
 			$parm = $width;
@@ -2638,8 +2655,8 @@ class e_parse extends e_parser
 				return $this->thumbUrl($src, $parm)." ".$parm['h']."h ".$multiply;
 			}
 
-			$width = (!empty($parm['w']) || !empty($parm['h'])) ? (intval($parm['w']) * $multiply) : ($this->thumbWidth * $multiply);
-			$height = (!empty($parm['h']) || !empty($parm['w'])) ? (intval($parm['h']) * $multiply) : ($this->thumbHeight * $multiply);
+			$width = (!empty($parm['w']) || !empty($parm['h'])) ? (intval($parm['w']) * $multiply) : (intval($this->thumbWidth) * $multiply);
+			$height = (!empty($parm['h']) || !empty($parm['w'])) ? (intval($parm['h']) * $multiply) : (intval($this->thumbHeight) * $multiply);
 
 		}
 		else
@@ -2709,6 +2726,11 @@ class e_parse extends e_parser
 		else
 		{
 			$base = (!empty($options['ebase'])) ? '{e_BASE}' : e_HTTP;
+		}
+
+		if(defined('e_HTTP_STATIC'))
+		{
+			$base = e_HTTP_STATIC;
 		}
 	//	$base = (!empty($options['full'])) ? SITEURL : e_HTTP;
 
@@ -3395,7 +3417,7 @@ class e_parser
                                     'default'   => array('id', 'style', 'class'),
                                     'img'       => array('id', 'src', 'style', 'class', 'alt', 'title', 'width', 'height'),
                                     'a'         => array('id', 'href', 'style', 'class', 'title', 'target'),
-                                    'script'	=> array('type', 'src', 'language'),
+                                    'script'	=> array('type', 'src', 'language', 'async'),
                                     'iframe'	=> array('id', 'src', 'frameborder', 'class', 'width', 'height', 'style'),
 	                                'input'     => array('type','name','value','class','style'),
 	                                'form'      => array('action','method','target'),
@@ -3419,7 +3441,7 @@ class e_parser
                                         'div','pre','section','article', 'blockquote','hgroup','aside','figure','figcaption', 'abbr','span', 'audio', 'video', 'br',
                                         'small', 'caption', 'noscript', 'hr', 'section', 'iframe', 'sub', 'sup', 'cite'
                                    );
-    protected $scriptTags 		= array('script','applet','form','input','button', 'embed', 'object'); //allowed when $pref['post_script'] is enabled.
+    protected $scriptTags 		= array('script','applet','form','input','button', 'embed', 'object', 'ins', 'select','textarea'); //allowed when $pref['post_script'] is enabled.
 	
 	protected $blockTags		= array('pre','div','h1','h2','h3','h4','h5','h6','blockquote'); // element includes its own line-break. 
 
@@ -3993,8 +4015,11 @@ class e_parser
 	//		e107::getDebug()->log($file);
 	//	e107::getDebug()->log($parm);
 
-
-		if(strpos($file,'e_MEDIA')!==false || strpos($file,'e_THEME')!==false || strpos($file,'e_PLUGIN')!==false || strpos($file,'{e_IMAGE}')!==false) //v2.x path.
+		if(strpos($file,'http')===0)
+		{
+			$path = $file;
+		}
+		elseif(strpos($file,'e_MEDIA')!==false || strpos($file,'e_THEME')!==false || strpos($file,'e_PLUGIN')!==false || strpos($file,'{e_IMAGE}')!==false) //v2.x path.
 		{
 
 			if(!isset($parm['w']) && !isset($parm['h']))
@@ -4020,10 +4045,6 @@ class e_parser
 				$parm['srcset'] = $tp->thumbSrcSet($file, $srcSetParm);
 			}
 
-		}
-		elseif(strpos($file,'http')===0)
-		{
-			$path = $file;
 		}
 		elseif($file[0] === '{') // Legacy v1.x path. Example: {e_PLUGIN}myplugin/images/fixedimage.png
 		{
@@ -4077,16 +4098,24 @@ class e_parser
 	 */
 	function isBBcode($text)
 	{
-		$bbsearch = array('[/h]','[/b]','[/link]', '[/right]');
-
-		if(str_replace($bbsearch,'',$text))
-		{
-			return true;
-		}
-		else
+		if(preg_match('#(?<=<)\w+(?=[^<]*?>)#', $text))
 		{
 			return false;
 		}
+
+		$bbsearch = array('[/h]', '[/b]', '[/link]', '[/right]', '[/center]', '[/flash]', '[/code]', '[/table]');
+
+		foreach($bbsearch as $v)
+		{
+			if(strpos($text,$v)!==false)
+			{
+				return true;
+			}
+
+		}
+
+		return false;
+
 
 	}
 
@@ -4099,14 +4128,23 @@ class e_parser
 	function isHtml($text)
 	{
 
-		if(strpos($text,'[html]') !== false || (htmlentities($text, ENT_NOQUOTES,'UTF-8') != $text && $this->isBBcode($text) === false ) || preg_match('#(?<=<)\w+(?=[^<]*?>)#', $text))
+		if(strpos($text,'[html]'))
 		{
 			return true;
 		}
-		else
+
+		if($this->isBBcode($text))
 		{
 			return false;
 		}
+
+		if(preg_match('#(?<=<)\w+(?=[^<]*?>)#', $text))
+		{
+			return true;
+		}
+
+		return false;
+
 
 	}
 
@@ -4780,6 +4818,12 @@ return;
 
                 if(!in_array($name, $allow))
                 {
+
+                    if(strpos($name,'data-') === 0 && $this->scriptAccess == true)
+                    {
+                        continue;
+                    }
+
                     $removeAttributes[] = $name;
                     //$node->removeAttribute($name);
                     $this->removedList['attributes'][] = $name. " from <".$tag.">";
@@ -5080,6 +5124,8 @@ class e_emotefilter
 			return;
 		}
 
+		$base = deftrue('e_HTTP_STATIC', SITEURLBASE);
+
 		foreach($this->emotes as $key => $value)
 		{
 
@@ -5096,8 +5142,10 @@ class e_emotefilter
 			  $key = str_replace("!", "_", $key);
 
 			  $filename = e_IMAGE."emotes/" . $pref['emotepack'] . "/" . $key;
+
+
 			  
-			  $fileloc = SITEURLBASE.e_IMAGE_ABS."emotes/" . $pref['emotepack'] . "/" . $key;
+			  $fileloc = $base.e_IMAGE_ABS."emotes/" . $pref['emotepack'] . "/" . $key;
 
 			  $alt = str_replace(array('.png','.gif', '.jpg'),'', $key);
 

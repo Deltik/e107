@@ -1154,7 +1154,7 @@ $text .= "
 					<tr>
 						<td><label for='profanity-words'>".PRFLAN_43.":</label></td>
 						<td>
-							".$frm->tags('profanity_words', $pref['profanity_words'])."
+							".$frm->tags('profanity_words', $pref['profanity_words'], 250, array('maxItems'=>40))."
 							<div class='field-help'>".PRFLAN_44."</div>
 						</td>
 					</tr>
@@ -1411,7 +1411,7 @@ $text .= "
 
 						if(function_exists('password_verify')) // ie. php 5.5 or higher
 						{
-							$pwdEncodeOpts[3]	 = "PHP Default (Preferred)";
+							$pwdEncodeOpts[3]	 = PRFLAN_276;
 
 						}
 

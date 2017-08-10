@@ -212,6 +212,7 @@ class e107
 		'e_userperms'                    => '{e_HANDLER}user_handler.php',
 		'e_validator'                    => '{e_HANDLER}validator_class.php',
 		'e_vars'                         => '{e_HANDLER}model_class.php',
+		'e_url'                          => '{e_HANDLER}application.php',
 		'ecache'                         => '{e_HANDLER}cache_handler.php',
 		'eController'                    => '{e_HANDLER}application.php',
 		'eDispatcher'                    => '{e_HANDLER}application.php',
@@ -379,9 +380,17 @@ class e107
 
 			// mysql connection info
 			$this->e107_config_mysql_info = $e107_config_mysql_info;
-			
-			// unique folder for e_MEDIA - support for multiple websites from single-install. Must be set before setDirs() 
-			$this->site_path = $this->makeSiteHash($e107_config_mysql_info['mySQLdefaultdb'], $e107_config_mysql_info['mySQLprefix']); 
+
+			// unique folder for e_MEDIA - support for multiple websites from single-install. Must be set before setDirs()
+			if (!empty($e107_config_override['site_path']))
+			{
+				// $E107_CONFIG['site_path']
+				$this->site_path = $e107_config_override['site_path'];
+			}
+			else
+			{
+				$this->site_path = $this->makeSiteHash($e107_config_mysql_info['mySQLdefaultdb'], $e107_config_mysql_info['mySQLprefix']);
+			}
 		
 			// Set default folder (and override paths) if missing from e107_config.php
 			$this->setDirs($e107_paths, $e107_config_override);
@@ -407,17 +416,20 @@ class e107
 				mkdir(e_SYSTEM, 0755);
 			}
 
+			// Prepare essential directories.
+			$this->prepareDirs();
 		}
 
 		
 		return $this;
 	}
 
-	// Create a unique hash for each database configuration (multi-site support)
-	function makeSiteHash($db,$prefix) // also used by install. 
+	/**
+	 * Create a unique hash for each database configuration (multi-site support).
+	 */
+	function makeSiteHash($db, $prefix) // also used by install.
 	{
-		return substr(md5($db.".".$prefix),0,10);	
-		
+		return substr(md5($db . "." . $prefix), 0, 10);
 	}
 
 	/**
@@ -448,11 +460,15 @@ class e107
 		$this->e107_dirs['MEDIA_BASE_DIRECTORY'] = $this->e107_dirs['MEDIA_DIRECTORY'];
 		$this->e107_dirs['SYSTEM_BASE_DIRECTORY'] = $this->e107_dirs['SYSTEM_DIRECTORY'];
 
+		// FIXME - remove this condition because:
+		// $this->site_path is appended to MEDIA_DIRECTORY in defaultDirs(), which is called above.
 		if(strpos($this->e107_dirs['MEDIA_DIRECTORY'],$this->site_path) === false)
 		{
 			$this->e107_dirs['MEDIA_DIRECTORY'] .= $this->site_path."/"; // multisite support.  
 		}
-		
+
+		// FIXME - remove this condition because:
+		// $this->site_path is appended to SYSTEM_DIRECTORY in defaultDirs(), which is called above.
 		if(strpos($this->e107_dirs['SYSTEM_DIRECTORY'],$this->site_path) === false)
 		{
 			$this->e107_dirs['SYSTEM_DIRECTORY'] .= $this->site_path."/"; // multisite support.  
@@ -465,6 +481,42 @@ class e107
 		}
 		
 		return $this;
+	}
+
+	/**
+	 * Prepares essential directories.
+	 */
+	public function prepareDirs()
+	{
+		$file = e107::getFile();
+
+		// Essential directories which should be created and writable.
+		$essential_directories = array(
+			'MEDIA_DIRECTORY',
+			'SYSTEM_DIRECTORY',
+			'CACHE_DIRECTORY',
+
+			'CACHE_CONTENT_DIRECTORY',
+			'CACHE_IMAGE_DIRECTORY',
+			'CACHE_DB_DIRECTORY',
+			'CACHE_URL_DIRECTORY',
+
+			'LOGS_DIRECTORY',
+			'BACKUP_DIRECTORY',
+			'TEMP_DIRECTORY',
+			'IMPORT_DIRECTORY',
+		);
+
+		// Create directories which don't exist.
+		foreach($essential_directories as $directory)
+		{
+			if (!isset($this->e107_dirs[$directory])) {
+				continue;
+			}
+
+			$path = e_ROOT . $this->e107_dirs[$directory];
+			$file->prepareDirectory($path, FILE_CREATE_DIRECTORY);
+		}
 	}
 
 	/**
@@ -530,7 +582,6 @@ class e107
 		$ret['BACKUP_DIRECTORY'] 			= $ret['SYSTEM_DIRECTORY'].'backup/';
 		$ret['TEMP_DIRECTORY'] 				= $ret['SYSTEM_DIRECTORY'].'temp/';
 		$ret['IMPORT_DIRECTORY'] 			= $ret['SYSTEM_DIRECTORY'].'import/';
-		//TODO create directories which don't exist. 
 
 		return $ret;
 	}
@@ -1024,6 +1075,21 @@ class e107
 		}
 
 		return self::$_plug_config_arr[$plug_name.$multi_row];
+	}
+
+
+
+	/**
+	 * Retrieve the global LAN for a specific plugin.
+	 * @param $dir
+	 * @param string $type
+	 * @return mixed
+	 */
+	public static function getPlugLan($dir, $type='name')
+	{
+		$lan = "LAN_PLUGIN_".strtoupper($dir)."_".strtoupper($type);
+
+		return defset($lan,false);
 	}
 
 	/**
@@ -1800,7 +1866,7 @@ class e107
 	 */
 	public static function getChart()
 	{
-		return self::getSingleton('e_chart', true);
+		return self::getObject('e_chart', null, true);
 	}
 
 
@@ -2260,17 +2326,20 @@ class e107
 	 */
 	public static function meta($name = null, $content = null, $extended = array())
 	{
+		$response = self::getSingleton('eResponse');
+
 		if($name === 'description')
 		{
-			self::getUrl()->response()->addMetaDescription($content);	//Cam: TBD
+			$response->addMetaDescription($content);	//Cam: TBD
 		}
 		
 		if($name === 'keywords')
 		{
-			self::getUrl()->response()->addMetaKeywords($content);	//Cam: TBD
+			$response->addMetaKeywords($content);	//Cam: TBD
 		}
-		
-		return self::getUrl()->response()->addMeta($name, $content, $extended);
+
+		return $response->addMeta($name, $content, $extended);
+	//	return self::getUrl()->response()->addMeta($name, $content, $extended);
 	}
 
 	/**
@@ -2416,6 +2485,98 @@ class e107
 		return FALSE;
 	}
 
+	/**
+	 * Retrieves the e_url config  - new v2.1.6
+	 * @param string $mode config | alias | profile
+	 * @return array
+	 */
+	public static function getUrlConfig($mode='config')
+	{
+		$new_addon = array();
+
+		$filename = 'e_url';
+		$elist = self::getPref($filename.'_list');
+		$className = substr($filename, 2); // remove 'e_'
+		$methodName = 'config';
+
+		$url_profiles = e107::getPref('url_profiles');
+
+		if(!empty($elist))
+		{
+			foreach(array_keys($elist) as $key)
+			{
+				if(is_readable(e_PLUGIN.$key.'/'.$filename.'.php'))
+				{
+
+
+					include_once(e_PLUGIN.$key.'/'.$filename.'.php');
+
+					$class_name = $key.'_'.$className;
+
+					if(is_object($class_name))
+					{
+						$obj = $class_name;
+						$class_name = get_class($obj);
+					}
+					else
+					{
+						$obj = new $class_name;
+					}
+
+					if($mode === 'alias')
+					{
+						if(!empty($obj->alias))
+						{
+							$new_addon[$key] = $obj->alias;
+						}
+
+						continue;
+					}
+
+					if($mode === 'profiles')
+					{
+						if(!empty($obj->profiles))
+						{
+							$new_addon[$key] = $obj->profiles;
+						}
+
+						continue;
+					}
+
+					if($mode === 'generate')
+					{
+						if(!empty($obj->generate))
+						{
+							$new_addon[$key] = $obj->generate;
+						}
+
+						continue;
+					}
+
+					$profile = !empty($url_profiles[$key]) ? $url_profiles[$key] : null;
+
+					$array = self::callMethod($obj, $methodName,$profile);
+
+					if($array)
+					{
+						foreach($array as $k=>$v)
+						{
+							if(empty($v['alias']) && !empty($obj->alias))
+							{
+								$v['alias'] = $obj->alias;
+							}
+							$new_addon[$key][$k] = $v;
+
+						}
+
+					}
+
+				}
+			}
+		}
+
+		return $new_addon;
+	}
 
 	/**
 	 * Get theme name or path.
@@ -3157,7 +3318,7 @@ class e107
 
 		if(!$tmp = self::getRegistry('core/e107/addons/e_url'))
 		{
-			$tmp = self::getAddonConfig('e_url');
+			$tmp = self::getUrlConfig();
 			self::setRegistry('core/e107/addons/e_url',$tmp);
 		}
 
@@ -3165,6 +3326,8 @@ class e107
 
 		$pref = self::getPref('e_url_alias');
 		$sefActive = self::getPref('e_url_list');
+		$rootNamespace = self::getPref('url_main_module');
+
 
 		if(is_string($options)) // backwards compat.
 		{
@@ -3185,12 +3348,22 @@ class e107
 			$options['fragment'] = '#' . $options['fragment'];
 		}
 
-		if(varset($tmp[$plugin][$key]['sef']))
+		if(!empty($tmp[$plugin][$key]['sef']))
 		{
 			if(!empty($tmp[$plugin][$key]['alias']))
 			{
 				$alias = (!empty($pref[e_LAN][$plugin][$key])) ? $pref[e_LAN][$plugin][$key] : $tmp[$plugin][$key]['alias'];
-				$tmp[$plugin][$key]['sef'] = str_replace('{alias}', $alias, $tmp[$plugin][$key]['sef']);
+
+				if(!empty($rootNamespace) && $rootNamespace === $plugin)
+				{
+					$replaceAlias = array('{alias}\/','{alias}/');
+					$tmp[$plugin][$key]['sef'] = str_replace($replaceAlias, '', $tmp[$plugin][$key]['sef']);
+				}
+				else
+				{
+					$tmp[$plugin][$key]['sef'] = str_replace('{alias}', $alias, $tmp[$plugin][$key]['sef']);
+				}
+
 			}
 
 
@@ -3767,6 +3940,11 @@ class e107
 		if(!defined('e_MOD_REWRITE_MEDIA')) // Allow e107_config.php to override.
 		{
 			define('e_MOD_REWRITE_MEDIA', (getenv('HTTP_MOD_REWRITE_MEDIA')=='On' || getenv('REDIRECT_HTTP_MOD_REWRITE_MEDIA')=='On'  ? true : false));
+		}
+
+		if(!defined('e_MOD_REWRITE_STATIC')) // Allow e107_config.php to override.
+		{
+			define('e_MOD_REWRITE_STATIC', (getenv('HTTP_MOD_REWRITE_STATIC')=='On' || getenv('REDIRECT_HTTP_MOD_REWRITE_STATIC')=='On'  ? true : false));
 		}
 
 		// Define the domain name and subdomain name.

@@ -235,12 +235,15 @@ class e107Update
 		{
 			return false;
 		}
-		
+
 		$frm = e107::getForm();
 
 		$tp = e107::getParser();
 
 		$text = "";
+
+		uksort($list, "strnatcasecmp");
+
 		foreach($list as $path=>$val)
 		{
 			$name = !empty($val['@attributes']['lan']) ? $tp->toHtml($val['@attributes']['lan'],false,'TITLE') : $val['@attributes']['name'];
@@ -436,7 +439,7 @@ function update_check()
 
 	//	$text = ADLAN_120. "<a class='btn btn-xs btn-inline' href='".e_ADMIN_ABS."e107_update.php'>". e107::getParser()->toGlyph('fa-chevron-circle-right')."</a>";
 	//	$text .= "<hr />";
-		$mes->addInfo($text);
+	//	$mes->addInfo($text);
 
 	}
 
@@ -590,6 +593,20 @@ function update_core_database($type = '')
 			
 			e107::getPlugin()->refresh('social');
 		}
+
+
+		if(empty($pref['themecss'])) // FIX
+		{
+			if($just_check)
+			{
+				return update_needed("Theme CSS pref value is blank.");
+			}
+
+			e107::getConfig()->set('themecss','style.css')->save(false,true,false);
+		}
+
+
+
 
 		return $just_check;
 

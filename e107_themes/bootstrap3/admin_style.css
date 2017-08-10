@@ -59,6 +59,52 @@ a.core-mainpanel-link-icon:hover { text-decoration: none; filter: none; }
 
 #admin-ui-nav-menu li.divider                  {   padding-top: 10px; 	border-bottom: 1px outset #262626; 	margin-bottom: 10px; }
 
+
+
+/* e-overlay */
+.e-overlay                      { position: relative; height: 100%; }
+.e-overlay .e-overlay-content   { position: absolute; top: 0; left: 0; width: 100%; height: 100%; color: #FFF; opacity: 0; 	}
+.e-overlay:hover .e-overlay-content { opacity: 1; padding-top:30%; transition: opacity .20s ease-in-out;
+									-moz-transition: opacity .20s ease-in-out;
+									-webkit-transition: opacity .20s ease-in-out;
+									vertical-align: middle;
+									  background: rgba(0, 0, 0, .7);
+									text-align:center;
+
+									}
+.e-overlay .thumbnail           { margin:0; }
+
+.admin-ui-grid img.fallback { opacity: 0.3; }
+.admin-ui-grid img.thumbnail { max-width: 100% }
+/*
+
+#admin-ui-carousel .carousel-inner { min-height: 65vh; }
+
+*/
+
+div.e-mm-selector-container { position: absolute;
+top: 4px;
+right: 5px; }
+
+body#admin-menus #sc-admin-help { position: relative }
+
+.admin-menu .panel-title .e-help-icon a {
+display: inline-block;
+vertical-align: middle;
+cursor: help;
+}
+
+
+		.e-image-radio             {  padding-left:0;}
+
+		.e-image-radio label > input { visibility: hidden;  position: absolute; 	}
+		.e-image-radio label > input + div{  cursor:pointer;  border:2px solid transparent; border-radius:4px;height: 60px; padding: 5px; vertical-align: middle; }
+		.e-image-radio label > input:checked + div {    border:2px solid #337ab7; 	}
+		.e-image-radio label > input + div span { visibility: hidden; float:right; margin-right:10px; color:#337ab7	}
+		.e-image-radio label > input:checked + div span { visibility: initial;	}
+
+
+
 /* TODO - use col-xx-x markup where core-mainpanel-block occurs. ? */
 @media (max-width: 1700px){ 
 	.core-mainpanel-block 		{ width:25%; }
@@ -1299,6 +1345,7 @@ li.rssRow > div {
 .selectize-control div.item { border-radius:3px; }
 .selectize-control div.item .remove { margin-top:3px }
 .selectize-input.focus { box-shadow: inherit; }
+.form-control.selectize-input { min-height:38px; height:auto; }
 
 
 /*
@@ -1494,6 +1541,8 @@ footer {
 body#admin-menus > .container-fluid > .row,
 body#admin-menus .admin-left-panel,
 
+
+/* Flex Classes */
 .row-flex,
 .row-flex > div[class*='col-'] {
     display: -webkit-box;
@@ -1502,8 +1551,38 @@ body#admin-menus .admin-left-panel,
     display: -webkit-flex;
     display: flex;
     flex:1 1 auto;
+}
+
+.row-flex-wrap {
+	-webkit-flex-flow: row wrap;
+    align-content: flex-start;
+    flex:0;
+}
+
+.row-flex > div[class*='col-'], .container-flex > div[class*='col-'] {
+	 margin:-.2px;
 
 }
+
+.row-flex .draggable-panels {
+	width: 100%;
+	margin-bottom: 15px;
+}
+
+.flex-col {
+    display: flex;
+    display: -webkit-flex;
+    flex: 1 100%;
+	flex-flow: column nowrap;
+}
+
+.flex-grow {
+	display: flex;
+    -webkit-flex: 2;
+    flex: 2;
+}
+
+.row-flex .panel { height: 100%;  }
 
 body#admin-menus > .container-fluid > .row {
 	height: 92vh;
@@ -1515,11 +1594,6 @@ flex-flow: column nowrap;
 
 .row-flex > div[class*='col-'], .container-flex > div[class*='col-'] {
 	 margin:-.2px; /* hack adjust for wrapping */
-}
-
-.container-flex > div[class*='col-'] div,
-.row-flex > div[class*='col-'] div {
-	width:100%;
 }
 
 body#admin-menus #sc-admin-help,
@@ -1537,6 +1611,16 @@ body#admin-menus #sc-admin-help .panel-body,
     flex: 2;
 }
 
+body#admin-menus .admin-left-panel .panel {
+  max-height: 50%;
+}
+body#admin-menus .admin-left-panel .admin-menu  {
+  overflow-y: auto;
+  display: flex;
+  display: -webkit-flex;
+  flex: 1 100%;
+  flex-flow: column nowrap;
+}
 body#admin-menus #sc-admin-help  {
 	overflow-y:hidden;
 	}
@@ -1547,21 +1631,39 @@ body#admin-menus #sc-admin-help .panel-body {
 
 .form-control[disabled] { opacity: 0.5; 	}
 
+.e-image-preview { display:inline-block }
+
+td img.thumbnail { margin-bottom:0 }
 
 
+/* Parent/Child Indicator */
+.treeprefix {margin-right:4px}
+.treeprefix.level-2 { margin-left:10px }
+.treeprefix.level-3 { margin-left:35px }
+.treeprefix.level-4 { margin-left:60px }
+.treeprefix.level-5 { margin-left:85px }
 
+/* Cleanup tables for light themes */
+.adminlist.table-bordered > thead > tr > th,
+.adminlist.table-bordered > thead > tr > td,
+.adminlist.table-bordered > tbody > tr > th,
+.adminlist.table-bordered > tbody > tr > td,
+.adminlist.table-bordered > tfoot > tr > th,
+.adminlist.table-bordered > tfoot > tr > td {
+    border-left: 0;
+    border-right:0;
+}
 
+/* Cleanup table borders/headers */
+#admin-ui-list-batch ,
+.adminlist > thead > tr { background-color: rgba(0,0,0,0.1); }
 
+.adminlist { border:1px solid rgba(0,0,0,0.1);  }
 
+.nav-admin .fa { font-size:18px }
+.nav-admin.navbar-left li a { padding-left:20px; padding-right:20px}
 
-
-
-
-
-
-
-
-
+#e-addon-updates .media-list img { width: 64px}
 
 @media (min-width: 1101px ){
 .navbar-fixed-top { height: 51px; }
@@ -1569,7 +1671,7 @@ body#admin-menus #sc-admin-help .panel-body {
 
 @media (max-width: 1400px ){
 
-ul.navbar-nav.navbar-left > li > a > i { display:none; }
+/* ul.navbar-nav.navbar-left > li > a > i { display:none; } */
 
 }
 
@@ -1618,3 +1720,5 @@ ul.navbar-nav.navbar-left > li > a > i { display:none; }
 
 
 	}
+
+

@@ -478,7 +478,7 @@ class e_plugin
 		{
 			$ret = null;
 
-			if($plugName === '.' || $plugName === '..' || !is_dir(e_PLUGIN.$plugName))
+			if((htmlentities($plugName) != $plugName) || empty($plugName) || $plugName === '.' || $plugName === '..' || !is_dir(e_PLUGIN.$plugName))
 			{
 				continue;
 			}
@@ -492,8 +492,10 @@ class e_plugin
 				$ret = $this->parse_plugin_php($plugName);
 			}
 
-			$arr[$plugName] = $ret;
-
+			if(!empty($ret))
+			{
+				$arr[$plugName] = $ret;
+			}
 		}
 
 		if(empty($arr))
@@ -892,13 +894,13 @@ class e107plugin
 
 
 	protected $core_plugins = array(
-		"_blank","admin_menu","alt_auth","banner","blogcalendar_menu",
+		"_blank","admin_menu","banner","blogcalendar_menu",
 		"chatbox_menu",	"clock_menu","comment_menu",
-		"contact", "download","faqs", "featurebox", "forum","gallery", 
+		"contact", "download", "featurebox", "forum","gallery",
 		"gsitemap","import", "linkwords", "list_new", "log", "login_menu",
 		"metaweblog", "newforumposts_main", "news", "newsfeed",
 		"newsletter","online", "page", "pm","poll",
-		"rss_menu","search_menu","siteinfo", "social", "tagwords", "tinymce4",
+		"rss_menu","search_menu","siteinfo", "social", "tagcloud", "tinymce4",
 		"trackback","tree_menu","user"
 	);
 
@@ -1048,10 +1050,9 @@ class e107plugin
 		{
 			return FALSE;
 		}
-		
-	//	require_once(e_HANDLER."db_verify_class.php");
-		$dbv = e107::getSingleton('db_verify', e_HANDLER."db_verify_class.php");
-		
+
+
+		$dbv = e107::getObject('db_verify', null, e_HANDLER."db_verify_class.php");
 
 		$plg = e107::getPlug();
 
@@ -1073,6 +1074,7 @@ class e107plugin
 					
 				if($dbv->errors())
 				{
+					$mes->addDebug("Plugin Update(s) Required - db structure change [".$path."]");
 					$needed[$path] = $data;
 				}
 			}
@@ -1117,7 +1119,7 @@ class e107plugin
 		{
 			$log->addDebug("Plugin: <strong>{$path}</strong> requires an update.");	
 		}	
-	
+
 		return count($needed) ? $needed : FALSE;		
 	}
 

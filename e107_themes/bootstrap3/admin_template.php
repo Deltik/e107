@@ -20,15 +20,15 @@ if (!defined('e107_INIT')) { exit(); }
 //e107::lan('theme', 'admin',true);
 
 
-$E_ADMIN_NAVIGATION['start'] = '<ul class="nav navbar-nav navbar-left">';
+$E_ADMIN_NAVIGATION['start'] = '<ul class="nav nav-admin navbar-nav navbar-left">';
 
-$E_ADMIN_NAVIGATION['start_other'] = '<ul class="nav navbar-nav navbar-right">';
+$E_ADMIN_NAVIGATION['start_other'] = '<ul class="nav nav-admin navbar-nav navbar-right">';
 
 $E_ADMIN_NAVIGATION['button'] = '
 	<li class="dropdown">
 		<a class="dropdown-toggle"  role="button" data-toggle="dropdown" data-target="#" href="{LINK_URL}" title="{LINK_TEXT}">
-		 {LINK_IMAGE} {LINK_TEXT}
-		<b class="caret"></b>
+		 {LINK_IMAGE} <span class="hidden-md hidden-lg">{LINK_TEXT}</span>
+
 		</a> 
 		{SUB_MENU}
 	</li>
@@ -38,13 +38,15 @@ $E_ADMIN_NAVIGATION['button'] = '
 
 $E_ADMIN_NAVIGATION['button_active'] = '
 	<li class="dropdown active">
-		<a class="dropdown-toggle"  role="button" data-toggle="dropdown" data-target="#" href="{LINK_URL}">
-		 {LINK_IMAGE} {LINK_TEXT}
-		<b class="caret"></b>
+		<a class="dropdown-toggle"  role="button" data-toggle="dropdown" data-target="#" href="{LINK_URL}" title="{LINK_TEXT}">
+		 {LINK_IMAGE}  <span class="hidden-md hidden-lg">{LINK_TEXT}</span>
+
 		</a>
 		{SUB_MENU}
 	</li>
 ';
+
+
 
 
 // Leave Admin Area. 
@@ -155,7 +157,7 @@ $E_ADMIN_NAVIGATION['end'] = '</ul>';
 		</div>
  */
 
-$inverse = (e107::getPref('admincss') == "admin_light.css") ? "navbar-inverse" : "";
+// $inverse = (e107::getPref('admincss') == "admin_light.css") ? "navbar-inverse" : "";
     
 
 $ADMIN_MODAL = '
@@ -196,6 +198,7 @@ $ADMIN_HEADER = $ADMIN_MODAL . '
 		</div>
 		<div class="navbar-collapse collapse">
 			{ADMIN_NAVIGATION=no-main}
+			{ADMIN_NAVIGATION=enav_popover}
 			<div>
 				{ADMIN_NAVIGATION=enav_logout}
 				{ADMIN_NAVIGATION=enav_language}
@@ -278,6 +281,7 @@ $ADMIN_FOOTER = '
  * see function e107::getNav()->admin() in e107_admin/header.php
  */
 $E_ADMIN_MENU['start'] = '
+<div class="nav-panel-body">
 <ul id="admin-ui-nav-menu" class="plugin-navigation nav nav-pills nav-stacked">
 ';
 
@@ -317,6 +321,7 @@ $E_ADMIN_MENU['end_sub'] = '
 
 $E_ADMIN_MENU['end'] = '
 </ul>
+</div>
 ';
 
 $E_ADMIN_MENU['divider'] = '<li role="separator" class="divider"></li>';
