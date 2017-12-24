@@ -475,7 +475,8 @@ class e_db_mysql
 		}
 		if ($debug !== FALSE || strstr($_SERVER['QUERY_STRING'], 'showsql'))
 		{
-			$queryinfo[] = "<b>{$qry_from}</b>: $query";
+			$debugQry = is_array($query) ? print_a($query,true) : $query;
+			$queryinfo[] = "<b>{$qry_from}</b>: ".$debugQry;
 		}
 		if ($log_type != '')
 		{
@@ -614,8 +615,14 @@ class e_db_mysql
 					}
 				}
 
-			//	$query = var_export($query,true);
-			   	$db_debug->Mark_Query($query, $buglink, $sQryRes, $aTrace, $mytime, $pTable);
+				if($this->pdo == true && $buglink instanceof PDO)
+				{
+					$db_debug->Mark_Query($query, 'PDO', $sQryRes, $aTrace, $mytime, $pTable);
+				}
+				else
+				{
+					$db_debug->Mark_Query($query, $buglink, $sQryRes, $aTrace, $mytime, $pTable);
+				}
 			}
 			else
 			{
@@ -1877,7 +1884,7 @@ class e_db_mysql
 
 	/**
 	* Check for the existence of a matching language table when multi-language tables are active.
-	* @param string $table Name of table, without the prefix. or an array of table names.
+	* @param string|array $table Name of table, without the prefix. or an array of table names.
 	* @access private
 	* @return mixed the name of the language table (eg. lan_french_news) or an array of all matching language tables. (with mprefix)
 	*/

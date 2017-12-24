@@ -374,7 +374,7 @@ class news {
 
 		// Retrieve batch sc object, set required vars
 
-		$wrapperKey = (!empty($param['template_key'])) ? 'news/'.$param['template_key'].'/item' : 'news/view/item';
+		$wrapperKey = (!empty($param['template_key'])) ? $param['template_key'].'/item' : 'news/view/item';
 
 		$editable = array(
 			'table' => 'news',
@@ -773,7 +773,7 @@ class e_news_tree extends e_front_tree_model
 			LEFT JOIN #news_category AS nc ON n.news_category = nc.category_id
 			{$where}
 			ORDER BY ".$db_order." LIMIT ".$db_limit;
-		
+
 		$this->setParam('db_query', $query);
 		
 		return parent::load($force);
@@ -799,6 +799,8 @@ class e_news_tree extends e_front_tree_model
 		";
 		
 		$params['db_where'] = $where;
+
+		$this->_cache_string = null; // disable sys cache, otherwise we get a new cache file every time the time() changes.
 		
 		return $this->loadJoin($category_id, $force, $params);
 	}
@@ -818,8 +820,16 @@ class e_news_tree extends e_front_tree_model
 			return '';
 		}
 
+		if(is_string($template) || empty($template))
+		{
+			return "<div class='alert alert-danger'>Couldn't find template/layout with the following params: ".print_a($parms,true)."</div>";
+		}
+
 		$ret = array();
 		$tp = e107::getParser();
+		$start = '';
+		$end = '';
+
 		$param = $parms;
 		$param['current_action'] = 'list';
 		// TODO more default parameters
@@ -987,6 +997,12 @@ class e_news_category_item extends e_front_model
 		{
 			return '';
 		}
+
+		if($parm === 'raw')
+		{
+			return (string) $this->cat('news_count');
+		}
+
 		return (string) e107::getParser()->toBadge( $this->cat('news_count'));
 	}
 }

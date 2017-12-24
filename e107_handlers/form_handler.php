@@ -580,7 +580,7 @@ class e_form
 	 * @param string $name : A unique name
 	 * @param array $array
 	 * @param array $options : default, interval, pause, wrap
-	 * @return string
+	 * @return string|array
 	 * @example
 	 * $array = array(
 	 *        'slide1' => array('caption' => 'Slide 1', 'text' => 'first slide content' ),
@@ -955,11 +955,15 @@ class e_form
 		}
 		else
 		{
-				$title = LAN_EDIT;
+			$title = LAN_EDIT;
 		}
 
+		$class = !empty($extras['class']) ? $extras['class']." " : '';
+		$title = !empty($extras['title']) ? $extras['title'] : $title;
+
+
 	//	$ret = "<a title=\"{$title}\" rel='external' class='e-dialog' href='".$url."'>".$label."</a>"; // using colorXXXbox. 
-	 $ret = "<a title=\"{$title}\" class='e-modal' data-modal-caption='".LAN_EFORM_007."' data-cache='false' data-target='#uiModal' href='".$url."'>".$label."</a>"; // using bootstrap. 
+	    $ret = "<a title=\"{$title}\" class='".$class."e-modal' data-modal-caption='".LAN_EFORM_007."' data-cache='false' data-target='#uiModal' href='".$url."'>".$label."</a>"; // using bootstrap.
 
 	
 	//	$footer = "<div style=\'padding:5px;text-align:center\' <a href=\'#\' >Save</a></div>";
@@ -1041,7 +1045,7 @@ class e_form
 		$count = 0;
 		if (vartrue($pref['avatar_upload']) && FILE_UPLOADS && vartrue($options['upload']))
 		{
-				$diz = LAN_USET_32.($pref['im_width'] || $pref['im_height'] ? "\n".str_replace(array('--WIDTH--','--HEIGHT--'), array($pref['im_width'], $pref['im_height']), LAN_USER_86) : "");
+				$diz = LAN_USET_32.($pref['im_width'] || $pref['im_height'] ? "\n".str_replace(array('[x]-','[y]'), array($pref['im_width'], $pref['im_height']), LAN_USER_86) : "");
 	
 				$text .= "<div style='margin-bottom:10px'>".LAN_USET_26."
 				<input  class='tbox' name='file_userfile[avatar]' type='file' size='47' title=\"{$diz}\" />
@@ -1114,7 +1118,7 @@ class e_form
 
 
 	/**
-	 * FIXME {IMAGESELECTOR} rewrite
+	 * Image Picker
 	
 	 * @param string $name input name
 	 * @param string $default default value
@@ -1140,6 +1144,10 @@ class e_form
 		{
 			if(strpos($sc_parameters, '=') === false) $sc_parameters = 'media='.$sc_parameters;
 			parse_str($sc_parameters, $sc_parameters);
+		}
+		elseif(empty($sc_parameters))
+		{
+			$sc_parameters = array();
 		}
 
 
@@ -1204,17 +1212,18 @@ class e_form
 			$ret = "<div class='imgselector-container'  style='display:block;width:64px;min-height:64px'>";
 			$thpath = isset($sc_parameters['nothumb']) || vartrue($hide) ? $default : $default_thumb;
 			
-			$label = "<div id='{$name_id}_prev' class='text-center well well-small image-selector img-responsive img-fluid' >";			
+			$label = "<div id='{$name_id}_prev' class='text-center well well-small image-selector icon-selector img-responsive img-fluid' >";
 			$label .= $tp->toIcon($default_url,array('class'=>'img-responsive img-fluid'));
 
             //$label = "<div id='{$name_id}_prev' class='text-center well well-small image-selector' >";			
 			//$label .= $tp->toIcon($default_url);
 			
-			$label .= "				
-			</div>";
+			$label .= "</div>";
 			
 		//	$label = "<img id='{$name_id}_prev' src='{$default_url}' alt='{$default_url}' class='well well-small image-selector' style='{$style}' />";
-				
+
+
+			$ret = $this->mediaUrl($cat, $label, $name_id, $sc_parameters);
 		}
 		else // Images 
 		{
@@ -1235,34 +1244,39 @@ class e_form
 			 	$cat = $cat . "_image";		
 			}
 
+			$sc_parameters['class'] = 'btn btn-sm btn-default';
 
+			if($blank === true)
+			{
+				$sc_parameters['title'] = LAN_ADD;
+				$editIcon        = $this->mediaUrl($cat, $tp->toGlyph('fa-plus', array('fw'=>1)), $name_id,$sc_parameters);
+				$previewIcon     = '';
+
+				// @todo drag-n-drop upload code in here.
+			}
+			else
+			{
+				$editIcon       = $this->mediaUrl($cat, $tp->toGlyph('fa-edit', array('fw'=>1)), $name_id,$sc_parameters);
+				$previewIcon    = "<a title='".LAN_PREVIEW."' class='btn btn-sm btn-default e-modal' data-modal-caption='".LAN_PREVIEW."' href='".$default_url."'>".$tp->toGlyph('fa-search', array('fw'=>1))."</a>";
+			}
+
+			$ret .= $label; // image
+
+			$ret .= '<div class="overlay">
+				    <div class="text">'.$editIcon.$previewIcon.'</div>
+				  </div>';
 		}
 
-		if(!empty($previewURL))
-		{
-			$default_url = $previewURL;
-		}
 
-
-		$ret .= $this->mediaUrl($cat, $label,$name_id,$sc_parameters);
-
-		if($cat != '_icon' && $blank == false) // ICONS
-		{
-			$ret .= "<div class='text-right'><a title='".LAN_PREVIEW."' class='btn btn-sm btn-default btn-block e-modal' data-modal-caption='".LAN_PREVIEW."' href='".$default_url."'>".$tp->toGlyph('fa-search')."</a></div>";
-		}
 		$ret .= "</div>\n";
 		$ret .=	"<input type='hidden' name='{$name}' id='{$name_id}' value='{$default}' />"; 
 		$ret .=	"<input type='hidden' name='mediameta_{$name}' id='{$meta_id}' value='' />"; 
-	//	$ret .=	$this->text($name,$default); // to be hidden eventually. 
-		return $ret;
-		
 
-		
-		
-		
-		// ----------------
+		return $ret;
 
 	}
+
+
 
 	private function imagepickerDefault($path, $parms=array())
 	{
@@ -1744,7 +1758,15 @@ class e_form
 	 */
 	function file($name, $options = array())
 	{
+		if(e_ADMIN_AREA && empty($options['class']))
+		{
+			$options = array('class'=>'tbox well file');
+		}
+
 		$options = $this->format_options('file', $name, $options);
+
+
+
 		//never allow id in format name-value for text fields
 		return "<input type='file' name='{$name}'".$this->get_attributes($options, $name)." />";
 	}
@@ -1869,7 +1891,7 @@ class e_form
 	/**
 	 * Render a bootStrap ProgressBar. 
 	 * @param string $name
-	 * @param number $value
+	 * @param number|string $value
 	 * @param array $options
 	 * @example  Use 
 	 */
@@ -1891,15 +1913,35 @@ class e_form
 		
 		$striped = (vartrue($options['btn-label'])) ? ' progress-striped active' : '';	
 
-		$percVal = number_format($value,0).'%';
+		if(strpos($value,'/')!==false)
+		{
+			$label = $value;
+			list($score,$denom) = explode('/',$value);
+
+			$multiplier = 100 / (int) $denom;
+
+			$value = (int) $score * (int) $multiplier;
+			$percVal = number_format($value,0).'%';
+		}
+		else
+		{
+			$percVal = number_format($value,0).'%';
+			$label = $percVal;
+		}
+
+		if(!empty($options['label']))
+		{
+			$label = $options['label'];
+		}
+
 
 		$text =	"<div class='progress ".$class."{$striped}' >
-   		 	<div id='".$target."' class='progress-bar bar' role='progressbar' aria-valuenow='".intval($value)."' aria-valuemin='0' aria-valuemax='100' style='min-width: 2em;width: ".$percVal."'>";
-   		$text .= $percVal;
+   		 	<div id='".$target."' class='progress-bar bar ".$class."' role='progressbar' aria-valuenow='".intval($value)."' aria-valuemin='0' aria-valuemax='100' style='min-width: 2em;width: ".$percVal."'>";
+   		$text .= $label;
    		 	$text .= "</div>
     	</div>";
 		
-		$loading = vartrue($options['loading'],LAN_LOADING);
+		$loading = vartrue($options['loading'], defset('LAN_LOADING', "Loading"));
 		
 		$buttonId = $target.'-start';
 		
@@ -4713,8 +4755,12 @@ class e_form
 						$value = $tmp[0];
 						unset($tmp);	
 					}		
-						
-					
+
+					if(empty($parms['thumb_aw']) && !empty($parms['thumb']) && strpos($parms['thumb'],'x')!==false)
+					{
+						list($parms['thumb_aw'],$parms['thumb_ah']) = explode('x',$parms['thumb']);
+					}
+
 					$vparm = array('thumb'=>'tag','w'=> vartrue($parms['thumb_aw'],'80'));
 					
 					if($video = e107::getParser()->toVideo($value,$vparm))
@@ -5323,6 +5369,7 @@ class e_form
 			break; 
 
 			case 'text':
+			case 'progressbar':
 
 				$maxlength = vartrue($parms['maxlength'], 255);
 				unset($parms['maxlength']);
@@ -5496,7 +5543,21 @@ class e_form
 				$where = vartrue($parms['area'], 'front'); //default is 'front'
 				$filter = varset($parms['filter']);
 				$merge = vartrue($parms['merge']) ? true : false;
+
+
+				if($tmp = e107::getTemplateInfo($location,$ilocation, null,true,$merge)) // read xxxx_INFO array from template file.
+				{
+					$opt = array();
+					foreach($tmp as $k=>$inf)
+					{
+						$opt[$k] = $inf['title'];
+					}
+
+					return vartrue($parms['pre'],'').$this->select($key,$opt,$value,$parms).vartrue($parms['post'],'');
+				}
+
 				$layouts = e107::getLayouts($location, $ilocation, $where, $filter, $merge, true);
+
 				if(varset($parms['default']) && !isset($layouts[0]['default']))
 				{
 					$layouts[0] = array('default' => $parms['default']) + $layouts[0];

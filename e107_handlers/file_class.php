@@ -450,7 +450,7 @@ class e_file
 
         $cp = $this->initCurl($remote_url);
 		curl_setopt($cp, CURLOPT_FILE, $fp);
-		curl_setopt($cp, CURLOPT_TIMEOUT, 20);//FIXME Make Pref - avoids get file timeout on slow connections
+		curl_setopt($cp, CURLOPT_TIMEOUT, 40);//FIXME Make Pref - avoids get file timeout on slow connections
        	/*
        	$cp = curl_init($remote_url);
 
@@ -1152,7 +1152,32 @@ class e_file
 		{
 			return $newFile;		
 		}
-	}		
+	}
+
+
+	/**
+	 * Delete a file.
+	 * @param $file
+	 * @return bool
+	 */
+	public function delete($file)
+	{
+		if(empty($file))
+		{
+			return false;
+		}
+
+		$file = e107::getParser()->replaceConstants($file);
+
+		if(file_exists($file))
+		{
+			return unlink($file);
+		}
+
+		return false;
+
+	}
+
 
 	
 	/**
@@ -1346,6 +1371,12 @@ class e_file
 	//	$text = `$cmd1 2>&1`;
 		$text = `$cmd2 2>&1`;
 		$text .= `$cmd3 2>&1`;
+
+		if(deftrue('e_DEBUG'))
+		{
+			$message = date('r')."\t\tgitPull()\t\t".$text;
+			file_put_contents(e_LOG."fileClass.log",$message,FILE_APPEND);
+		}
 
 	//	$text .= `$cmd4 2>&1`;
 

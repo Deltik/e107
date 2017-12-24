@@ -416,6 +416,11 @@ class e107
 				mkdir(e_SYSTEM, 0755);
 			}
 
+			if(!is_dir(e_CACHE_IMAGE))
+			{
+				mkdir(e_CACHE_IMAGE, 0755);
+			}
+
 			// Prepare essential directories.
 			$this->prepareDirs();
 		}
@@ -571,7 +576,16 @@ class e107
 
 		$ret['CACHE_DIRECTORY'] 			= $ret['SYSTEM_DIRECTORY'].'cache/';
 		$ret['CACHE_CONTENT_DIRECTORY'] 	= $ret['CACHE_DIRECTORY'].'content/';
-		$ret['CACHE_IMAGE_DIRECTORY'] 		= $ret['CACHE_DIRECTORY'].'images/';
+
+		if(defined('e_MEDIA_STATIC')) // experimental - subject to change.
+		{
+			$ret['CACHE_IMAGE_DIRECTORY'] 	= $ret['MEDIA_IMAGES_DIRECTORY'].'cache/';
+		}
+		else
+		{
+			$ret['CACHE_IMAGE_DIRECTORY'] 	= $ret['CACHE_DIRECTORY'].'images/';
+		}
+
 		$ret['CACHE_DB_DIRECTORY'] 			= $ret['CACHE_DIRECTORY'].'db/';
 		$ret['CACHE_URL_DIRECTORY'] 		= $ret['CACHE_DIRECTORY'].'url/';
 		
@@ -653,7 +667,7 @@ class e107
 	{
 		if(null === $data)
 		{
-			if(is_object(self::$_registry[$id]) && method_exists(self::$_registry[$id], '__destruct'))
+			if(isset(self::$_registry[$id]) && is_object(self::$_registry[$id]) && method_exists(self::$_registry[$id], '__destruct'))
 			{
 				self::$_registry[$id]->__destruct();
 			}
@@ -1230,6 +1244,11 @@ class e107
 				}
 
 				$arr[] = $glyphConfig;
+
+				if(E107_DBG_INCLUDES)
+				{
+					e107::getDebug()->log("Loading Glyph Icons: ".print_a($glyphConfig,true));
+				}
 			}
 
 		}
@@ -3084,7 +3103,7 @@ class e107
 	 *
 	 * @param string $fname filename without the extension part (e.g. 'comment')
 	 * @param boolean $admin true if it's an administration language file
-	 * @return void
+	 * @return bool
 	 */
 	public static function coreLan($fname, $admin = false)
 	{
@@ -3095,7 +3114,8 @@ class e107
 		$path = e_LANGUAGEDIR.e_LANGUAGE.'/'.$fname;
 
 		self::setRegistry($cstring, true);
-		self::includeLan($path, false);
+
+		return self::includeLan($path, false);
 	}
 
 	/**
@@ -3124,7 +3144,7 @@ class e107
 	 * @param string $plugin plugin name
 	 * @param string $fname filename without the extension part (e.g. 'common')
 	 * @param boolean $flat false (default, preferred) Language folder structure; true - prepend Language to file name
-	 * @return void
+	 * @return bool
 	 */
 	public static function plugLan($plugin, $fname = '', $flat = false)
 	{
@@ -3133,8 +3153,11 @@ class e107
 
 		$plugin = preg_replace('/[^\w]/', '', $plugin);
 
-
-		if($fname && is_string($fname))
+		if($fname === 'global') // fix ambiguity
+		{
+			 $fname = e_LANGUAGE."_global";
+		}
+		elseif($fname && is_string($fname))
 		{
 			 $fname = e_LANGUAGE.($flat ? '_' : '/').preg_replace('#[^\w/]#', '', trim($fname, '/'));
 		}
@@ -3149,7 +3172,7 @@ class e107
 			$fname = e_LANGUAGE."_front";
 		}
 
-		if($flat === true && is_dir(e_PLUGIN.$plugin."/languages/".e_LANGUAGE)) // support for alt_auth/languages/English/English_log.php etc.
+		if($flat === true) // support for alt_auth/languages/English/English_log.php etc.
 		{
 			$path = e_PLUGIN.$plugin.'/languages/'.e_LANGUAGE.'/'.$fname.'.php';	
 		} 
@@ -3165,7 +3188,8 @@ class e107
 		
 		
 		self::setRegistry($cstring, true);
-		self::includeLan($path, false);
+
+		return self::includeLan($path, false);
 	}
 	
 	/**
@@ -3193,11 +3217,11 @@ class e107
 	 * @param string $fname filename without the extension part (e.g. 'common' for common.php)
 	 * @param string $theme theme name, if null current theme will be used
 	 * @param boolean $flat false (default, preferred) Language folder structure; true - prepend Language to file name
-	 * @return void
+	 * @return bool
 	 */
 	public static function themeLan($fname = '', $theme = null, $flat = false)
 	{
-		if(null === $theme) $theme = THEME.'/languages/';
+		if(null === $theme) $theme = THEME.'languages/';
 		else $theme = e_THEME.preg_replace('#[^\w/]#', '', $theme).'/languages/';
 		
 		$cstring  = 'themelan/'.$theme.$fname.($flat ? '_1' : '_0');
@@ -3214,7 +3238,8 @@ class e107
 		}	
 
 		self::setRegistry($cstring, true);
-		self::includeLan($path, false);
+
+		return self::includeLan($path, false);
 	}
 
 
@@ -3222,11 +3247,17 @@ class e107
 	/**
 	 * PREFERRED Generic Language File Loading Function for use by theme and plugin developers. 
 	 * Language-file equivalent to e107::js, e107::meta and e107::css
+	 *
 	 * FIXME disallow themes and plugins named 'core' and 'theme'
-	 * @param string $type : 'theme' or plugin name
-	 * @param $string $fname (optional): relative path to the theme or plugin language folder. (same as in the other functions)
-	 * when missing, [e_LANGUAGE]_front.php will be used, when true [e_LANGUAGE]_admin.php will be used
-	 * @param $options : Set to True for admin. 
+	 *
+	 * @param string $type
+	 *   'theme' or plugin name
+	 * @param string $fname
+	 *   (optional): relative path to the theme or plugin language folder. (same as in the other functions)
+	 *   when missing, [e_LANGUAGE]_front.php will be used, when true [e_LANGUAGE]_admin.php will be used
+	 * @param $options
+	 *   Set to True for admin.
+	 *
 	 * @example e107::lan('theme'); // Loads THEME."languages/English.php (if English is the current language)
 	 * @example e107::lan('gallery'); // Loads e_PLUGIN."gallery/languages/English_front.php (if English is the current language)
 	 * @example e107::lan('gallery', 'admin'); // Loads e_PLUGIN."gallery/languages/English/admin.php (if English is the current language)
@@ -3234,6 +3265,8 @@ class e107
 	 * @example e107::lan('gallery', 'admin/example'); // Loads e_PLUGIN."gallery/languages/English/admin/example.php (if English is the current language)
 	 * @example e107::lan('gallery', true); // Loads e_PLUGIN."gallery/languages/English_admin.php (if English is the current language)
 	 * @example e107::lan('gallery', "something", true); // Loads e_PLUGIN."gallery/languages/English_something.php (if English is the current language)
+	 * @example e107::lan('gallery', true, true); // Loads e_PLUGIN."gallery/languages/English/English_admin.php (if English is the current language)
+	 * @example e107::lan('gallery', false, true); // Loads e_PLUGIN."gallery/languages/English/English_front.php (if English is the current language)
 	 */
 	public static function lan($type, $fname = null, $options = null)
 	{
@@ -3433,8 +3466,28 @@ class e107
 
 				$legacyUrl = preg_replace('/&?\$[\d]/i', "", $legacyUrl); // remove any left-over $x (including prefix of '&')
 
+
+				// Avoid duplicate query keys. eg. URL has ?id=x and $options['query']['id'] exists.
+				// @see forum/e_url.php - topic/redirect and forum/view_shortcodes.php sc_post_url()
+				list($legacyUrl,$tmp) = explode("?",$legacyUrl);
+
+				if(!empty($tmp))
+				{
+					parse_str($tmp,$qry);
+
+					foreach($qry as $k=>$v)
+					{
+						if(!isset($options['query'][$k])) // $options['query'] overrides any in the original URL.
+						{
+							$options['query'][$k] = $v;
+						}
+					}
+				}
+
 				// Append the query.
-				if (is_array($options['query']) && !empty($options['query'])) {
+				if (is_array($options['query']) && !empty($options['query']))
+				{
+
 					$legacyUrl .= (strpos($legacyUrl, '?') !== FALSE ? '&' : '?') . self::httpBuildQuery($options['query']);
 				}
 
@@ -3534,7 +3587,7 @@ class e107
 	}
 
 
-	public static function minify($js,$options=null)
+	public static function minify($js,$options=array())
 	{
 		if(empty($js))
 		{
@@ -3861,7 +3914,7 @@ class e107
 				exit();
 			}
 
-			if(($key == "QUERY_STRING") && empty($_GET['hauth_done']) && ( // exception for hybridAuth.
+			if(($key == "QUERY_STRING") && empty($_GET['hauth_done']) && empty($_GET['hauth.done']) && ( // exception for hybridAuth.
 				strpos(strtolower($input),"=http")!==FALSE
 				|| strpos(strtolower($input),strtolower("http%3A%2F%2F"))!==FALSE
 				))
@@ -3947,33 +4000,37 @@ class e107
 			define('e_MOD_REWRITE_STATIC', (getenv('HTTP_MOD_REWRITE_STATIC')=='On' || getenv('REDIRECT_HTTP_MOD_REWRITE_STATIC')=='On'  ? true : false));
 		}
 
+		$subdomain = false;
+
 		// Define the domain name and subdomain name.
 		if(is_numeric(str_replace(".","",$_SERVER['HTTP_HOST'])))
 		{
-			$domain = FALSE;
-			$subdomain = FALSE;
+			$domain = false;
+			$subdomain = false;
 		}
 		else
-		{	
-			if(preg_match("/\.?([a-z0-9-]+)(\.(com|net|org|co|me|ltd|plc|gov)\.[a-z]{2})$/i", $_SERVER['HTTP_HOST'], $m)) //eg. mysite.co.uk
+		{
+			$host = !empty($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : $_SERVER['SERVER_NAME'];
+			$domain = preg_replace('/^www\.|:\d*$/', '', $host); // remove www. and port numbers.
+
+			$dtemp = explode(".", $domain);
+
+			if(count($dtemp) > 2 && strlen($dtemp[0]) === 2) // eg. fr.mysite.com or fr.mysite.com.fr
 			{
-		        $domain = $m[1].$m[2];
-		    }
-			elseif(preg_match("/\.?([a-z0-9-]+)(\.[a-z]{2,})$/i", $_SERVER['HTTP_HOST'], $m))//  eg. .com/net/org/ws/biz/info
-			{       
-		        $domain = $m[1].$m[2];		
-		    }
-			else
-			{
-				$domain = FALSE; //invalid domain
+				$subdomain = $dtemp[0];
+				unset($dtemp[0]);
+				$domain = implode('.',$dtemp); // remove subdomain because it's a language-code.
 			}
-			
-			$replace = array(".".$domain,"www.","www",$domain);
-			$subdomain = str_replace($replace,'',$_SERVER['HTTP_HOST']);
+
+		}
+
+		if($domain === 'localhost') // Fix for chrome.
+		{
+			$domain = false;
 		}
 
 		define("e_DOMAIN", $domain);
-		define("e_SUBDOMAIN",($subdomain) ? $subdomain : FALSE);
+		define("e_SUBDOMAIN", ($subdomain) ? $subdomain : false);
 		
 		define('e_UC_PUBLIC', 0);
 		define('e_UC_MAINADMIN', 250);
@@ -4015,6 +4072,7 @@ class e107
 		{
 			return $this->e107_dirs[$dir.'_HTTP'];
 		}
+
 		return e_HTTP.$this->e107_dirs[$dir.'_DIRECTORY'];
 	}
 
@@ -4212,6 +4270,11 @@ class e107
 			define('e_AVATAR_ABS', $this->get_override_http('AVATARS'));
 			define('e_AVATAR_UPLOAD_ABS', $this->get_override_http('AVATARS_UPLOAD'));
 			define('e_AVATAR_DEFAULT_ABS', $this->get_override_http('AVATARS_DEFAULT'));
+
+			if(defined('e_MEDIA_STATIC')) // experimental - subject to change.
+			{
+				define('e_CACHE_IMAGE_ABS', $this->get_override_http('CACHE_IMAGE'));
+			}
 			
 			// Special
 			
@@ -4378,6 +4441,7 @@ class e107
 			  || (preg_match('/^\/(.*?)\/user(settings\.php|\/edit)(\?|\/)(\d+)$/i', $_SERVER['REQUEST_URI']) && ADMIN)
 			  || ($isPluginDir && $curPage === 'prefs.php') //BC Fix for old plugins
 			  || ($isPluginDir && $curPage === 'config.php') // BC Fix for old plugins
+			  || ($isPluginDir && strpos($curPage,'_config.php')!==false) // BC Fix for old plugins eg. dtree_menu
 			)
 		{
 			$inAdminDir = TRUE;
@@ -4637,16 +4701,15 @@ class e107
 
 	/**
 	 * Retrieve & cache host name
-	 *
+	 * @deprecated but needed by some old plugins/menus.
+	 * @todo Find old calls and replace with code within.
 	 * @param string $ip_address
 	 * @return string host name
-	 * FIXME - moved to ipHandler - check for calls elsewhere
 	 */
-	 /*
 	public function get_host_name($ip_address)
 	{
-
-	} */
+		return self::getIPHandler()->get_host_name($ip_address);
+	}
 
 	/**
 	 * MOVED TO eHelper::parseMemorySize()

@@ -221,6 +221,13 @@ if(!isset($ADMIN_DIRECTORY))
   exit();
 }
 
+// Upgrade Compatibility - Disable CL_WIDGETS before e107_class.php is loaded.
+$tmpPlugDir = realpath(dirname(__FILE__).'/'.$PLUGINS_DIRECTORY);
+if(is_dir($tmpPlugDir."/cl_widgets"))
+{
+	rename($tmpPlugDir."/cl_widgets",$tmpPlugDir."/cl_widgets__");
+}
+unset($tmpPlugDir);
 //
 // clever stuff that figures out where the paths are on the fly.. no more need for hard-coded e_HTTP :)
 //
@@ -230,6 +237,8 @@ $tmp = realpath(dirname(__FILE__).'/'.$HANDLERS_DIRECTORY);
 @require_once($tmp.'/core_functions.php');
 e107_require_once($tmp.'/e107_class.php');
 unset($tmp);
+
+
 
 $e107_paths = compact('ADMIN_DIRECTORY', 'FILES_DIRECTORY', 'IMAGES_DIRECTORY', 'THEMES_DIRECTORY', 'PLUGINS_DIRECTORY', 'HANDLERS_DIRECTORY', 'LANGUAGES_DIRECTORY', 'HELP_DIRECTORY', 'DOWNLOADS_DIRECTORY','UPLOADS_DIRECTORY','SYSTEM_DIRECTORY', 'MEDIA_DIRECTORY','CACHE_DIRECTORY','LOGS_DIRECTORY', 'CORE_DIRECTORY', 'WEB_DIRECTORY');
 $sql_info = compact('mySQLserver', 'mySQLuser', 'mySQLpassword', 'mySQLdefaultdb', 'mySQLprefix', 'mySQLport');
@@ -681,7 +690,11 @@ if(isset($pref['lan_global_list']))
 {
 	foreach($pref['lan_global_list'] as $path)
 	{
-		e107::plugLan($path,'global',true);			
+		if(e107::plugLan($path, 'global', true) === false)
+		{
+			e107::plugLan($path, 'global', false);
+		}
+
 	}			
 }
 
@@ -970,6 +983,7 @@ if (!class_exists('e107table', false))
 		public function setUniqueId($id)
 		{
 			$this->uniqueId = $id;
+			return $this;
 		}
 
 
@@ -1367,7 +1381,11 @@ if(!defined("THEME_LAYOUT"))
 	}
 	*/
 
-	if(varset($pref['themecss']) && file_exists(THEME.$pref['themecss']))
+	if(deftrue('e_ADMIN_AREA'))
+	{
+		define("THEME_STYLE", $pref['admincss']);
+	}
+	elseif(varset($pref['themecss']) && file_exists(THEME.$pref['themecss']))
 	{
 		define("THEME_STYLE", $pref['themecss']);
 	}
@@ -1846,6 +1864,8 @@ function init_session()
 	
 	// ----------------------------------------
 
+	// Set 'UTC' as default timezone to avoid PHP warnings.
+	date_default_timezone_set('UTC');
 
 	global $user_pref, $currentUser;
 
@@ -2063,7 +2083,12 @@ function session_set($name, $value, $expire='', $path = e_HTTP, $domain = '', $s
 		if(($domain == '' && !e_SUBDOMAIN) || (defined('MULTILANG_SUBDOMAIN') && MULTILANG_SUBDOMAIN === TRUE))
 		{
 			$domain = (e_DOMAIN != FALSE) ? ".".e_DOMAIN : "";
-		}	
+		}
+
+		if(defined('e_MULTISITE_MATCH'))
+		{
+			$path = '/';
+		}
 		
 		setcookie($name, $value, $expire, $path, $domain, $secure, true);
 		$_COOKIE[$name] = $value;
@@ -2409,15 +2434,15 @@ class error_handler
 		{
 			$text .= "
 			<tr>
-				<td>".$key."</td>
-				<td>";
+				<td class='forumheader3'>".$key."</td>
+				<td class='forumheader3'>";
 			$text .= !empty($val['class']) ? $val['class']."->" : '';
 			$text .= !empty($val['include_filename']) ? "include: ". str_replace($this->docroot,'', $val['include_filename']) : '';
 			$text .= !empty($val['function']) ? $val['function']."(" : "";
 			$text .= !empty($val['params']) ? print_r($val['params'],true) : '';
 			$text .= !empty($val['function']) ? ")" : "";
 			$text .="</td>
-				<td>";
+				<td class='forumheader3'>";
 			$text .= str_replace($this->docroot,'', $val['file']).":".$val['line'];
 			$text .= "</td>
 			</tr>";
@@ -2455,7 +2480,7 @@ class error_handler
 		{
 			foreach ($this->errors as $key => $value)
 			{
-				$ret .= "<tr class='forumheader3'><td>{$value['short']}</td></tr>\n";
+				$ret .= "<tr><td class='forumheader3'>{$value['short']}</td></tr>\n";
 			}
 		}
 
@@ -2605,7 +2630,14 @@ class e_http_header
 		echo $text;
 		
 	}			
-		
+
+	private function unsetHeader($header)
+	{
+		header_remove($header);
+	}
+
+
+
 	
 	function send()
 	{
@@ -2619,7 +2651,35 @@ class e_http_header
 		$this->setHeader("Cache-Control: max-age=0", false);
 		*/
 	//	$this->setHeader("Cache-Control: public", true);
-	
+
+/*
+		if(defined('e_HTTP_STATIC'))
+		{
+			unset($_COOKIE);
+
+			$siteurl = str_replace('https','http',SITEURL);
+			$static = str_replace('https','http', e_HTTP_STATIC);
+
+			if($siteurl === $static && deftrue('e_SUBDOMAIN'))
+			{
+				$accessControl = str_replace(e_SUBDOMAIN.'.', '', SITEURLBASE);
+
+				$this->unsetHeader("Cache-Control");
+			//	$this->unsetHeader("Content-Type");
+				$this->unsetHeader("Set-Cookie");
+				$this->unsetHeader("Pragma");
+				$this->unsetHeader("Expires");
+
+				$this->setHeader("Access-Control-Allow-Origin: ".$accessControl, true);
+				$this->setHeader("Cache-Control: public", true);
+			}
+			else
+			{
+				$this->setHeader("Access-Control-Allow-Origin: ".$static, true);
+			}
+		}
+*/
+
 	
 		$canCache = e107::canCache();
 		
@@ -2672,7 +2732,9 @@ class e_http_header
 		{
 			$this->setHeader('Vary: Accept');
 		}
-		
+
+
+
 		// should come after the Etag header
 		if ($canCache && isset($_SERVER['HTTP_IF_NONE_MATCH']))
 		{
