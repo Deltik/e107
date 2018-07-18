@@ -178,6 +178,8 @@ if(!empty($FORUM_VIEWFORUM_TEMPLATE) && is_array($FORUM_VIEWFORUM_TEMPLATE) && T
 	$FORUM_IMPORTANT_ROW			= $FORUM_VIEWFORUM_TEMPLATE['divider-important'];
 	$FORUM_NORMAL_ROW				= $FORUM_VIEWFORUM_TEMPLATE['divider-normal'];	
 	
+	$FORUM_CRUMB				    = $FORUM_VIEWFORUM_TEMPLATE['forum-crumb'];	
+	
 }
 
 
@@ -270,11 +272,14 @@ if ($pages)
 {
 	if(strpos($FORUM_VIEW_START, 'THREADPAGES') !== false || strpos($FORUM_VIEW_END, 'THREADPAGES') !== false)
 	{
-		$url = e107::url('forum','forum',$forumInfo, array('query'=>array('p'=>'[FROM]')));
-/*--
+		// issue #3087 url need to be decoded first (because the [FROM] get's encoded in url())
+		// and to encode the full url to not loose the id param when being used in the $forumSCvars['parms']
+		$url = rawurlencode(rawurldecode(e107::url('forum','forum',$forumInfo, array('query'=>array('p'=>'[FROM]')))));
+
+		/*--
 		$parms = "total={$pages}&type=page&current={$page}&url=".$url."&caption=off";
 		$fVars->THREADPAGES = $tp->parseTemplate("{NEXTPREV={$parms}}");
---*/
+		--*/
 		$forumSCvars['parms'] = "total={$pages}&type=page&current={$page}&url=".$url."&caption=off";
 //-- ?????????? unset $ulrparms????
 		unset($urlparms);
@@ -582,7 +587,7 @@ if ($forum->prefs->get('enclose'))
 // $forum_view_subs????
 	$caption = varset($FORUM_VIEW_CAPTION) ? $tp->parseTemplate($FORUM_VIEW_CAPTION, true, $sc) : $forum->prefs->get('title');
 
-	$ns->tablerender($caption, $forum_view_start.$forum_view_subs.$forum_view_forum.$forum_view_end, array('forum_viewforum', 'main1'));
+	$ns->tablerender($caption, $forum_view_start.$forum_view_subs.$forum_view_forum.$forum_view_end, 'forum-viewforum');
 }
 else
 {
@@ -972,7 +977,7 @@ function forumjump()
 	{
 		$text .= "\n<option value='".e107::url('forum','forum',$val, 'full')."'>".$val['forum_name']."</option>";
 	}
-	$text .= "</select> <input class='btn btn-default button' type='submit' name='fjsubmit' value='".LAN_GO."' /></form>";
+	$text .= "</select> <input class='btn btn-default btn-secondary button' type='submit' name='fjsubmit' value='".LAN_GO."' /></form>";
 	return $text;
 }
 
@@ -984,7 +989,7 @@ function fadminoptions($thread_info)
 	$tp = e107::getParser();
 	
 //	$text = "<form method='post' action='".e_REQUEST_URI."' id='frmMod_{$forumId}_{$threadId}' style='margin:0;'>";
-	$text = '<div class="btn-group"><button class="btn btn-default btn-sm btn-mini dropdown-toggle" data-toggle="dropdown">
+	$text = '<div class="btn-group"><button class="btn btn-default btn-secondary btn-sm btn-mini dropdown-toggle" data-toggle="dropdown">
     <span class="caret"></span>
     </button>
     <ul class="dropdown-menu pull-right">	

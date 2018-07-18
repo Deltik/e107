@@ -122,6 +122,8 @@ if (!$dont_check_update)
 	$LAN_UPDATE_4 = deftrue('LAN_UPDATE_4',"Update from [x] to [y]"); // in case language-pack hasn't been upgraded.
 	$LAN_UPDATE_5 = deftrue('LAN_UPDATE_5', "Core database structure");
 
+	$dbupdate['217_to_218'] = array('master'=>false, 'title'=> e107::getParser()->lanVars($LAN_UPDATE_4, array('2.1.7','2.1.8')), 'message'=> null, 'hide_when_complete'=>true);
+
 
 	$dbupdate['214_to_215'] = array('master'=>false, 'title'=> e107::getParser()->lanVars($LAN_UPDATE_4, array('2.1.4','2.1.5')), 'message'=> null, 'hide_when_complete'=>true);
 
@@ -560,6 +562,50 @@ function update_core_database($type = '')
 
 	return $just_check;
 }
+
+	/**
+	 * @param string $type
+	 * @return bool true = no update required, and false if update required.
+	 */
+	 function update_217_to_218($type='')
+	{
+		$just_check = ($type == 'do') ? false : true;
+
+		$e_user_list = e107::getPref('e_user_list');
+
+		if(empty($e_user_list['user'])) // check e107_plugins/user/e_user.php is registered.
+		{
+			if($just_check)
+			{
+				return update_needed("user/e_user.php need to be registered"); // NO LAN.
+			}
+
+			e107::getPlug()->clearCache()->buildAddonPrefLists();
+		}
+
+
+		// Make sure, that the pref "post_script" contains one of the allowed userclasses
+		// Close possible security hole
+		if (!array_key_exists(e107::getPref('post_script'), e107::getUserClass()->uc_required_class_list('nobody,admin,main,classes,no-excludes', true)))
+		{
+			if ($just_check)
+			{
+				return update_needed("Pref 'Class which can post < script > and similar tags' contains an invalid value"); // NO LAN.
+			}
+			else
+			{
+				e107::getConfig()->setPref('post_script', 255)->save(false, true);
+			}
+		}
+
+
+		return $just_check;
+
+
+
+	}
+
+
 
 	/**
 	 * @param string $type

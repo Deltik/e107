@@ -174,6 +174,7 @@ $ADMIN_MODAL = '
 				<p>'.LAN_LOADING.'</p>
 			</div>
 			<div class="modal-footer">
+				<button type="button" id="e-modal-submit" class="btn btn-success" style="display:none" data-loading-icon="fa-spinner"><!-- placeholder --></button>
 				<button type="button" class="btn btn-primary" data-dismiss="modal">'.LAN_CLOSE.'</button>
 			</div>
 		</div>
@@ -227,7 +228,7 @@ else
 {
 
 	$ADMIN_HEADER .= '
-		<div class="col-md-3 col-lg-2 admin-left-panel">
+		<div class="col-md-3 col-lg-2 admin-left-panel hidden-print">
 			{SETSTYLE=warning}
 			{ADMIN_ADDON_UPDATES}
 			{SETSTYLE=site_info}

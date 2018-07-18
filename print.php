@@ -48,13 +48,14 @@ e107::css('inline',$CSS);
 
 define('e_IFRAME', true); 
 
-$source = $qs[0];
+$source = preg_replace('/[^\w\d_\:]/',"", $qs[0]);
 $parms = varset($qs[1],'');
 unset($qs);
 
 if(strpos($source,'plugin:') !== FALSE)
 {
 	$plugin = substr($source,7);
+
 	if(file_exists(e_PLUGIN.$plugin."/e_emailprint.php"))
 	{
 		include_once(e_PLUGIN.$plugin."/e_emailprint.php");
@@ -70,13 +71,18 @@ if(strpos($source,'plugin:') !== FALSE)
 else
 {
 	//$con = new convert;
-
+//	$id = intval($parms);
+	$nws = e107::getObject('e_news_item');
+	$row = $nws->load($parms)->toArray();
+/*
 	$query = "SELECT n.*, c.*, u.user_id, u.user_name FROM `#news` AS n LEFT JOIN `#news_category` AS c ON n.news_category = c.category_id LEFT JOIN `#user` AS u ON n.news_author = u.user_id WHERE n.news_id = " . intval($parms);
 
 	//$sql->db_Select("news", "*", "news_id='{$parms}'");
 	$sql = e107::getDb();
 	$sql->gen($query);
 	$row = $sql->fetch();
+	*/
+
 	$newsUrl = e107::getUrl()->create('news/view/item', $row, 'full=1');
 
 

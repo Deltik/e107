@@ -73,7 +73,7 @@ class plugman_adminArea extends e_admin_dispatcher
 		'online'	=> array(
 			'controller' 	=> 'plugin_online_ui',
 			'path' 			=> null,
-			'ui' 			=> 'plugin_form_ui',
+			'ui' 			=> 'plugin_form_online_ui',
 			'uipath' 		=> null
 		),
 		'create'	=> array(
@@ -179,6 +179,7 @@ class plugin_ui extends e_admin_ui
 		protected $table			= 'plugin';
 		protected $pid				= 'plugin_id';
 		protected $perPage			= 10;
+
 		protected $batchDelete		= false;
 		protected $batchExport     = false;
 		protected $batchCopy		= false;
@@ -364,6 +365,9 @@ class plugin_ui extends e_admin_ui
 
 			//	$log->log_event('PLUGMAN_01', $name, E_LOG_INFORMATIVE, '');
 
+				// make sure ALL plugin/addon pref lists get update and are current
+				e107::getPlug()->clearCache()->buildAddonPrefLists();
+
 				e107::getMessage()->add($text, E_MESSAGE_SUCCESS);
 			}
 
@@ -421,6 +425,9 @@ class plugin_ui extends e_admin_ui
 
 			$text = e107::getPlugin()->uninstall($id, $post);
 
+			// make sure ALL plugin/addon pref lists get update and are current
+			e107::getPlug()->clearCache()->buildAddonPrefLists();
+
 			e107::getMessage()->add($text, E_MESSAGE_SUCCESS);
 			$log = e107::getPlugin()->getLog();
 			e107::getDebug()->log($log);
@@ -445,7 +452,7 @@ class plugin_ui extends e_admin_ui
 
 			e107::getMessage()->addSuccess("Repair Complete (".$id.")"); // Repair Complete ([x])
 
-			 $this->redirectAction('list');
+			$this->redirectAction('list');
 		}
 
 
@@ -640,7 +647,10 @@ class plugin_ui extends e_admin_ui
 
 
 			$mes->addSuccess($text);
-			$plugin->save_addon_prefs('update');
+			//$plugin->save_addon_prefs('update');
+
+			// make sure ALL plugin/addon pref lists get update and are current
+			e107::getPlug()->clearCache()->buildAddonPrefLists();
 
 			$this->redirectAction('list');
 	   }
@@ -923,7 +933,6 @@ class plugin_form_ui extends e_admin_form_ui
 
 		$mode = $this->getController()->getMode();
 
-
 	//	e107::getDebug()->log($var);
 
 		$_path = e_PLUGIN . $var['plugin_path'] . '/';
@@ -969,7 +978,7 @@ class plugin_form_ui extends e_admin_form_ui
 
 		if($var['plugin_version'] != $var['plugin_version_file'] && $var['plugin_installflag'])
 		{
-			$text .= "<a class='btn btn-default' href='" . e_SELF . "?mode=".$mode."&action=upgrade&id={$var['plugin_path']}' title=\"" . EPL_UPGRADE . " v" . $var['plugin_version'] . "\" >" . ADMIN_UPGRADEPLUGIN_ICON . "</a>";
+			$text .= "<a class='btn btn-default' href='" . e_SELF . "?mode=".$mode."&action=upgrade&id={$var['plugin_path']}' title=\"" . EPL_UPGRADE . " v" . $var['plugin_version_file'] . "\" >" . ADMIN_UPGRADEPLUGIN_ICON . "</a>";
 		}
 
 		if($var['plugin_installflag'] && e_DEBUG == true)
@@ -1018,7 +1027,7 @@ class plugin_online_ui extends e_admin_ui
 
 		protected $fields 		= array ();
 
-		protected $fieldpref = array('plugin_icon', 'plugin_name', 'plugin_version', 'plugin_license', 'plugin_description', 'plugin_compatible', 'plugin_released','plugin_author', 'plugin_category','plugin_installflag');
+		protected $fieldpref = array('plugin_icon', 'plugin_name', 'plugin_version', 'plugin_license', 'plugin_description', 'plugin_compatible', 'plugin_date','plugin_author', 'plugin_category','plugin_installflag');
 
 
 	//	protected $preftabs        = array('General', 'Other' );
@@ -1171,7 +1180,6 @@ class plugin_online_ui extends e_admin_ui
 	function options($data)
 	{
 
-	//	print_a($data);
 
 		/*
 		if(!e107::getFile()->hasAuthKey())
@@ -1207,7 +1215,7 @@ class plugin_online_ui extends e_admin_ui
 
 	//	$d = http_build_query($srcData,false,'&');
 	//	$url = e_SELF.'?mode=download&src='.base64_encode($d);
-		$dicon = '<a title="'.EPL_ADLAN_237.'" class="e-modal btn btn-default" href="'.$url.'" rel="external" data-loading="'.e_IMAGE.'/generic/loading_32.gif"  data-cache="false" data-modal-caption="'.$modalCaption.'"  target="_blank" >'.ADMIN_INSTALLPLUGIN_ICON.'</a>';
+		$dicon = '<a title="'.EPL_ADLAN_237.'" class="e-modal btn btn-default btn-secondary" href="'.$url.'" rel="external" data-loading="'.e_IMAGE.'/generic/loading_32.gif"  data-cache="false" data-modal-caption="'.$modalCaption.'"  target="_blank" >'.ADMIN_INSTALLPLUGIN_ICON.'</a>';
 
 		/*
 
@@ -1294,7 +1302,7 @@ class plugin_online_ui extends e_admin_ui
 			// do the request, retrieve and parse data
 			$xdata = $mp->call('getList', array(
 				'type' => 'plugin',
-				'params' => array('limit' => 10, 'search' => $srch, 'from' => $from)
+				'params' => array('limit' => $this->perPage, 'search' => $srch, 'from' => $from)
 			));
 			$total = $xdata['params']['count'];
 
@@ -1337,6 +1345,7 @@ class plugin_online_ui extends e_admin_ui
 						'plugin_featured'		=> $featured,
 						'plugin_sef'			=> '',
 						'plugin_folder'			=> $row['folder'],
+						'plugin_path'			=> $row['folder'],
 						'plugin_date'			=> vartrue($row['date']),
 						'plugin_category'		=> vartrue($row['category'], 'n/a'),
 						'plugin_author'			=> vartrue($row['author']),
@@ -1380,7 +1389,6 @@ class plugin_online_ui extends e_admin_ui
 
 
 
-
 			foreach($data as $key=>$val	)
 			{
 			//	print_a($val);
@@ -1388,7 +1396,7 @@ class plugin_online_ui extends e_admin_ui
 
 				foreach($this->fields as $v=>$foo)
 				{
-					if(!in_array($v,$this->fieldpref) || $v == 'checkboxes')
+					if(!in_array($v,$this->fieldpref) || $v == 'checkboxes' || $v === 'options')
 					{
 						continue;
 					}
@@ -1412,12 +1420,9 @@ class plugin_online_ui extends e_admin_ui
 				</form>
 			";
 
-			$amount = 30;
-
-
-			if($total > $amount)
+			if($total > $this->perPage)
 			{
-				$parms = $total.",".$amount.",".$from.",".e_SELF.'?mode=online&amp;action=list&amp;frm=[FROM]';
+				$parms = $total.",".$this->perPage.",".$from.",".e_SELF.'?mode=online&amp;action=list&amp;frm=[FROM]';
 
 				if(!empty($srch))
 				{
@@ -1532,6 +1537,42 @@ class plugin_form_online_ui extends e_admin_form_ui
 				return  array();
 			break;
 		}
+	}
+
+
+
+	// Custom Method/Function
+	function plugin_compatible($curVal,$mode)
+	{
+		$frm = e107::getForm();
+
+		switch($mode)
+		{
+			case 'read': // List Page
+
+				if(intval($curVal) > 1)
+				{
+					return "<span class='label label-warning'>".$curVal."</span>";
+				}
+
+				return $curVal;
+			break;
+
+			case 'write': // Edit Page
+				return $frm->text('plugin_name',$curVal, 255, 'size=large');
+			break;
+
+			case 'filter':
+			case 'batch':
+				return  array();
+			break;
+		}
+	}
+
+
+	function options($data)
+	{
+return null;
 	}
 
 }
@@ -2528,12 +2569,9 @@ class pluginManager{
 			</form>
 		";
 		
-		$amount = 30;
-		
-		
-		if($total > $amount)
+		if($total > $this->perPage)
 		{
-			$parms = $total.",".$amount.",".$from.",".e_SELF.'?mode=online&amp;frm=[FROM]';
+			$parms = $total.",".$this->perPage.",".$from.",".e_SELF.'?mode=online&amp;frm=[FROM]';
 
 			if(!empty($srch))
 			{
@@ -4216,7 +4254,7 @@ $content .= '}';
 			$frm = e107::getForm();	
 			list($cat,$type) = explode("-",$info);
 			
-			$size 		= 30;
+			$size 		= 30; // Textbox size.
 			$help		= '';
 			$pattern	= "";
 			$required	= false;
@@ -5093,7 +5131,9 @@ $text .= "
 ";
 }
 $text .= "
-		// 'main/custom'		=> array('caption'=> 'Custom Page', 'perm' => 'P')
+		// 'main/div0'      => array('divider'=> true),
+		// 'main/custom'		=> array('caption'=> 'Custom Page', 'perm' => 'P'),
+		
 	);
 
 	protected \$adminMenuAliases = array(
@@ -5160,7 +5200,17 @@ $text .= "
 					if($val['type'] == 'image' && empty($val['readParms']))
 					{	
 						$vars['fields'][$key]['readParms'] = 'thumb=80x80'; // provide a thumbnail preview by default. 
-					}	
+					}
+
+					if(empty($vars['fields'][$key]['readParms']))
+					{
+						$vars['fields'][$key]['readParms'] = array();
+					}
+
+					if(empty($vars['fields'][$key]['writeParms']))
+					{
+						$vars['fields'][$key]['writeParms'] = array();
+					}
 				}
 						
 

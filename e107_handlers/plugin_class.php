@@ -75,6 +75,8 @@ class e_plugin
 		'e_upload',
 		'e_user',
 		'e_library', // For third-party libraries are defined by plugins/themes.
+		'e_gsitemap',
+		'e_output', //hook into all pages at the end (after closing </html>)
 	);
 
 
@@ -247,8 +249,8 @@ class e_plugin
 
 		$link = $this->_data[$this->_plugdir]['adminLinks']['link'][0]['@attributes'];
 
-		$k = array(16 => 'iconSmall', 32 => 'icon', 128=>'icon128');
-		$def = array(16 => E_16_PLUGIN, 32 => E_32_PLUGIN);
+		$k = array(16 => 'iconSmall', 24 => 'icon', 32 => 'icon', 128=>'icon128');
+		$def = array(16 => E_16_PLUGIN, 24 => E_24_PLUGIN, 32 => E_32_PLUGIN);
 
 		$key = $k[$size];
 
@@ -1067,6 +1069,8 @@ class e107plugin
 		'e_upload',
 		'e_user',
 		'e_library', // For third-party libraries are defined by plugins/themes.
+		'e_gsitemap',
+		'e_output', //hook into all pages at the end (after closing </html>)
 	);
 
 
@@ -1112,8 +1116,8 @@ class e107plugin
 		'e_upload'      => "Use data from your plugin in the user upload form.",
 		'e_user'        => "Have your plugin include data on the user-profile page.",
 		'e_library'     => "Include a third-party library",
-		'e_parse'       => "Hook into e107's text/html parser"
-
+		'e_parse'       => "Hook into e107's text/html parser",
+		'e_output'      => "Hook into all pages at the end (after closing </html>)"
 	);
 
 

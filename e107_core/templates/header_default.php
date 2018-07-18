@@ -165,13 +165,22 @@ unset($e_headers);
 // echo e107::getUrl()->response()->renderMeta()."\n"; // render all the e107::meta() entries.
 echo e107::getSingleton('eResponse')->renderMeta()."\n";
 
-echo "<title>".(defined('e_PAGETITLE') ? e_PAGETITLE.' - ' : (defined('PAGE_NAME') ? PAGE_NAME.' - ' : "")).SITENAME."</title>\n\n";
+if (deftrue('e_FRONTPAGE'))
+{
+	// Ignore any additional title when current page is the frontpage
+	echo "<title>".SITENAME."</title>\n\n";
+}
+else
+{
+	echo "<title>".(defined('e_PAGETITLE') ? e_PAGETITLE.' - ' : (defined('PAGE_NAME') ? PAGE_NAME.' - ' : "")).SITENAME."</title>\n\n";
+}
 
 
 //
 // D: Register CSS
 //
 $e_js = e107::getJs();
+
 $e_pref = e107::getConfig('core');
 
 // Other Meta tags. 
@@ -315,7 +324,7 @@ else
 
 
 
-$CSSORDER = deftrue('CSSORDER') ? explode(",",CSSORDER) : array('other','core','plugin','theme','inline');
+$CSSORDER = deftrue('CSSORDER') ? explode(",",CSSORDER) : array('library', 'other','core','plugin','theme','inline');
 
 
 foreach($CSSORDER as $val)
@@ -789,7 +798,7 @@ if ($e107_popup != 1) {
     /**
      * Display Welcome Message when old method activated.
      * fix - only when e_FRONTPAGE set to true
-     * @see \core_index_index_controller\actionIndex
+     * @see core_index_index_controller/actionIndex
      */
     if(deftrue('e_FRONTPAGE') && strstr($HEADER,"{WMESSAGE")===false && strstr($FOOTER,"{WMESSAGE")===false) // Auto-detection to override old pref.
 	{

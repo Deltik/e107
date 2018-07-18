@@ -90,9 +90,31 @@ class news_front
 			return null;
 		}
 
+		if(!empty($this->pref['nfp_display']) && intval($this->pref['nfp_display']) === 1) // top position
+		{
+			$this->text .= $this->renderNewForumPosts();
+		}
+
 		$this->text .= $this->renderDefaultTemplate();
 
-		// BC replacement for newforumposts_main
+		if(!empty($this->pref['nfp_display']) && intval($this->pref['nfp_display']) === 2) // bottom position
+		{
+			$this->text .= $this->renderNewForumPosts();
+		}
+
+		$this->text .= $this->show_newsarchive();
+		$this->text .= $this->render_newscats();
+		return null;
+
+	}
+
+
+	/**
+	* BC replacement for newforumposts_main
+	 * @return string
+	 */
+	private function renderNewForumPosts()
+	{
 		if(e107::isInstalled('newforumposts_main') && !empty($this->pref['nfp_display']))
 		{
 			$parms = array('layout'=>'main', 'display'=>$this->pref['nfp_amount']);
@@ -102,15 +124,10 @@ class news_front
 				$parms['scroll'] = $this->pref['nfp_layer_height'];
 			}
 
-			$this->text .= e107::getMenu()->renderMenu('forum','newforumposts_menu', $parms, true);
+			return e107::getMenu()->renderMenu('forum','newforumposts_menu', $parms, true);
 		}
 
-		$this->text .= $this->show_newsarchive();
-		$this->text .= $this->render_newscats();
-		return null;
-
 	}
-
 
 
 
@@ -921,7 +938,7 @@ class news_front
 			$c = 1;
 			foreach($newsList as $row)
 			{
-				$tpl = ($c === 1 && !empty($template['first'])) ? $template['first'] : $template['item'];
+				$tpl = ($c === 1 && !empty($template['first']) && $this->from === 0) ? $template['first'] : $template['item'];
 
 				$text .= $this->ix->render_newsitem($row, 'return', '', $tpl, $param);
 				$c++;

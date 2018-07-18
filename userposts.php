@@ -70,7 +70,8 @@ if ($action == "comments")
 	$sql2 = e107::getDb('sql2');
 	if($user_name)
 	{
-		$ccaption = UP_LAN_1.$user_name;
+	//	$ccaption = UP_LAN_1.$user_name;
+		$ccaption = str_replace('[x]', $user_name, UP_LAN_1);
 		/*$sql->db_Select("user", "user_comments", "user_id=".$id);
 		$row = $sql->db_Fetch();
 		$ctotal = $row['user_comments'];*/
@@ -159,7 +160,8 @@ elseif ($action == 'forums')
 		exit;
 	}
 
-	$fcaption = UP_LAN_0.' '.$user_name;
+//	$fcaption = UP_LAN_0.' '.$user_name;
+	$fcaption = str_replace('[x]', $user_name, UP_LAN_0);
 /*
 	if (!$USERPOSTS_FORUM_TABLE)
 	{
@@ -258,8 +260,8 @@ elseif ($action == 'forums')
 		if($vars->NEXTPREV) $vars->NEXTPREV =  str_replace('{USERPOSTS_NEXTPREV}', $vars->NEXTPREV, $USERPOSTS_TEMPLATE['np_table']);
 		$vars->USERPOSTS_FORUM_SEARCH_VALUE = htmlspecialchars($_POST['f_query'], ENT_QUOTES, CHARSET);
 		$vars->USERPOSTS_FORUM_SEARCH_FIELD = "<input class='tbox input' type='text' name='f_query' size='20' value='{$vars->USERPOSTS_FORUM_SEARCH_VALUE}' maxlength='50' />";
-		$vars->USERPOSTS_FORUM_SEARCH_BUTTON = "<input class='btn btn-default button' type='submit' name='fsearch' value='".UP_LAN_12."' />";
-		$vars->USERPOSTS_FORUM_SEARCH = "<input class='tbox' type='text' name='f_query' size='20' value='{$vars->USERPOSTS_FORUM_SEARCH_VALUE}' maxlength='50' /> <input class='btn btn-default button' type='submit' name='fsearch' value='".UP_LAN_12."' />";
+		$vars->USERPOSTS_FORUM_SEARCH_BUTTON = "<input class='btn btn-default btn-secondary button' type='submit' name='fsearch' value='".UP_LAN_12."' />";
+		$vars->USERPOSTS_FORUM_SEARCH = "<input class='tbox' type='text' name='f_query' size='20' value='{$vars->USERPOSTS_FORUM_SEARCH_VALUE}' maxlength='50' /> <input class='btn btn-default btn-secondary button' type='submit' name='fsearch' value='".UP_LAN_12."' />";
 
 		// $userposts_forum_table_start = preg_replace("/\{(.*?)\}/e", '$\1', $USERPOSTS_FORUM_TABLE_START);
 		$userposts_forum_table_start = $tp->simpleParse($USERPOSTS_TEMPLATE['forum_table_start'], $vars);

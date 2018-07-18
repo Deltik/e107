@@ -332,7 +332,7 @@ class e_install
 		{
 			//		$this->form .= "<a class='btn btn-large ' href='javascript:history.go(-1)'>&laquo; ".LAN_BACK."</a>&nbsp;";
 			$prevStage = ($this->stage - 1);
-			$e_forms->form .= "<button class='btn btn-default btn-large no-validate ' name='back' value='".$prevStage."' type='submit'>&laquo; ".LAN_BACK."</button>&nbsp;";
+			$e_forms->form .= "<button class='btn btn-default btn-secondary btn-large no-validate ' name='back' value='".$prevStage."' type='submit'>&laquo; ".LAN_BACK."</button>&nbsp;";
 		}
 		if($id != 'back')
 		{
@@ -885,7 +885,8 @@ class e_install
 */
 
 		$extensionCheck = array(
-			'xml'   => array('label'=> LANINS_050,          'status' => function_exists('utf8_encode'),         'url'=> 'http://php.net/manual/en/ref.xml.php'),
+			'pdo'   => array('label'=> "PDO (MySQL)",       'status' => extension_loaded('pdo_mysql'),          'url'=> ''),
+			'xml'   => array('label'=> LANINS_050,          'status' => function_exists('utf8_encode') && class_exists('DOMDocument', false),  'url'=> 'http://php.net/manual/en/ref.xml.php'),
 			'exif'  => array('label'=> LANINS_048,          'status' => function_exists('exif_imagetype'),      'url'=> 'http://php.net/manual/en/book.exif.php'),
 			'curl'  => array('label'=> 'Curl Library',      'status' => function_exists('curl_version'),        'url'=> 'http://php.net/manual/en/book.curl.php'),
 			'gd'    => array('label'=> 'GD Library',        'status' => function_exists('gd_info'),             'url'=> 'http://php.net/manual/en/book.image.php'),
@@ -1124,6 +1125,10 @@ class e_install
 		if(!empty($_POST['admincss']))
 		{
 			$this->previous_steps['prefs']['admincss'] = $tp->filter($_POST['admincss']);
+		}
+		else // empty
+		{
+			$this->previous_steps['prefs']['admincss'] = 'css/bootstrap-dark.min.css';
 		}
 
 		// -------------   Validate Step 5 Data. --------------------------
@@ -1893,7 +1898,7 @@ if($this->pdo == true)
 
 	//	require_once($this->e107->e107_dirs['HANDLERS_DIRECTORY']."theme_handler.php");
 	//	$tm = new themeHandler;
-		$xmlArray = e107::getTheme($theme_folder)->get();
+		$xmlArray = e107::getTheme($theme_folder, $this->debug)->get();
 
 		return (is_array($xmlArray)) ? $xmlArray : false;
 	}
@@ -2068,7 +2073,7 @@ class e_forms
 		<select class='form-control input-large' name='{$id}' id='{$id}'>\n";
 		foreach ($labels as $label)
 		{
-			$this->form .= "<option".($label == $selected ? " selected='selected'" : "").">{$label}</option>\n";
+			$this->form .= "<option value='".$label."' ".($label == $selected ? " selected='selected'" : "").">{$label}</option>\n";
 		}
 		$this->form .= "</select>\n";
 	}

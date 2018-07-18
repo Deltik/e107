@@ -480,7 +480,7 @@ class e_parse extends e_parser
 	/**
 	 * Converts the supplied text (presumed to be from user input) to a format suitable for storing in a database table.
 	 *
-	 * @param string $data
+	 * @param mixed $data
 	 * @param boolean $nostrip [optional] Assumes all data is GPC ($_GET, $_POST, $_COOKIE) unless indicate otherwise by setting this var to TRUE.
 	 * 				If magic quotes is enabled on the server and you do not tell toDB() that the data is non GPC then slashes will be stripped when they should not be.
 	 * @param boolean $no_encode [optional] This parameter should nearly always be FALSE. It is used by the save_prefs() function to preserve HTML content within prefs even when
@@ -1423,7 +1423,7 @@ class e_parse extends e_parser
 	 * @param bool $opts['ext'] load link in new window (not for email)
 	 * @return string
 	 */
-	private function makeClickable($text='', $type='email', $opts=array())
+	public function makeClickable($text='', $type='email', $opts=array())
 	{
 
 		if(empty($text))
@@ -1478,6 +1478,34 @@ class e_parse extends e_parser
 
 
 	}
+
+
+
+	function parseBBCodes($text, $postID)
+	{
+		if (!is_object($this->e_bb))
+		{
+			require_once(e_HANDLER.'bbcode_handler.php');
+			$this->e_bb = new e_bbcode;
+		}
+
+
+		$text = $this->e_bb->parseBBCodes($text, $postID);
+
+		return $text;
+	}
+
+
+
+
+
+
+
+
+
+
+
+
 
 	/**
 	 * Converts the text (presumably retrieved from the database) for HTML output.
@@ -1687,10 +1715,14 @@ class e_parse extends e_parser
 							$html_start = "<!-- bbcode-html-start -->"; // markers for html-to-bbcode replacement. 
 							$html_end	= "<!-- bbcode-html-end -->";
 							$full_text = str_replace(array("[html]","[/html]"), "",$code_text); // quick fix.. security issue?
-							$full_text =$this->replaceConstants($full_text,'abs');
+
+							$full_text = $this->parseBBCodes($full_text, $postID); // parse any embedded bbcodes eg. [img]
+							$full_text = $this->replaceConstants($full_text,'abs'); // parse any other paths using {e_....
 							$full_text = $html_start.$full_text.$html_end;
 							$full_text = $this->parseBBTags($full_text); // strip <bbcode> tags. 
 							$opts['nobreak'] = true;
+							$parseBB = false; // prevent further bbcode processing.
+
 
 							break;
 
@@ -2354,6 +2386,32 @@ class e_parse extends e_parser
 
 
 	/**
+	 * Convert a string to a number (int/float)
+	 *
+	 * @param string $value
+	 * @return int|float
+	 */
+	function toNumber($value) 
+	{
+		// adapted from: https://secure.php.net/manual/en/function.floatval.php#114486
+		$dotPos = strrpos($value, '.');
+		$commaPos = strrpos($value, ',');
+		$sep = (($dotPos > $commaPos) && $dotPos) ? $dotPos :
+			((($commaPos > $dotPos) && $commaPos) ? $commaPos : false);
+	  
+		if (!$sep) {
+			return preg_replace("/[^-0-9]/", "", $value);
+		}
+	
+		return (
+			preg_replace("/[^-0-9]/", "", substr($value, 0, $sep)) . '.' .
+			preg_replace("/[^0-9]/", "", substr($value, $sep+1, strlen($value)))
+		);
+	}
+
+
+	
+	/**
 	 * Clean and Encode Ampersands '&' for output to browser.
 	 * @param string $text
 	 * @return mixed|string
@@ -2591,15 +2649,23 @@ class e_parse extends e_parser
 
 
 	/**
+	 * @todo Move to e107_class ?
 	 * @param string $path - absolute path
 	 * @return string - static path.
 	 */
-	public function staticUrl($path=null)
+	public function staticUrl($path=null, $opts=array())
 	{
-		if(!defined('e_HTTP_STATIC'))
+		if(!defined('e_HTTP_STATIC') || deftrue('e_ADMIN_AREA'))
 		{
 			// e107::getDebug()->log("e_HTTP_STATIC not defined");
-			return ($path === null) ? e_HTTP : $path;
+			if($path === null)
+			{
+				return !empty($opts['full']) ? SITEURL : e_HTTP;
+			}
+			else
+			{
+				return $path;
+			}
 		}
 
 
@@ -2633,6 +2699,7 @@ class e_parse extends e_parser
 		$base = '';
 
 		$srch = array(
+		//
 			e_PLUGIN_ABS,
 			e_THEME_ABS,
 			e_WEB_ABS,
@@ -2641,6 +2708,7 @@ class e_parse extends e_parser
 
 
 		$repl = array(
+
 			$http.$base.e107::getFolder('plugins'),
 			$http.$base.e107::getFolder('themes'),
 			$http.$base.e107::getFolder('web'),
@@ -2648,6 +2716,11 @@ class e_parse extends e_parser
 		);
 
 		$ret = str_replace($srch,$repl,$path);
+
+		if(strpos($ret, 'http') !== 0) // if not converted, check media folder also. 
+		{
+			$ret = str_replace(e_MEDIA_ABS,$http.$base.e107::getFolder('media'),$ret);
+		}
 
 		return $ret;
 
@@ -2764,12 +2837,16 @@ class e_parse extends e_parser
 
 			$staticFile = $this->thumbCacheFile($url, $opts);
 
+
+
 			if(!empty($staticFile) && is_readable(e_CACHE_IMAGE.$staticFile))
 			{
 				$staticImg = $this->staticUrl(e_CACHE_IMAGE_ABS.$staticFile);
 			//	var_dump($staticImg);
 				return $staticImg;
 			}
+
+		//	echo "<br />static-not-found: ".$staticFile;
 
 			$options['nosef'] = true;
 			$options['x'] = null;
@@ -2798,6 +2875,56 @@ class e_parse extends e_parser
 		return $baseurl.$thurl;
 	}
 
+
+
+	/**
+	 * Split a thumb.php url into an array which can be parsed back into the thumbUrl method. .
+	 * @param $src
+	 * @return array
+	 */
+	function thumbUrlDecode($src)
+	{
+		list($url,$qry) = explode("?",$src);
+
+		$ret = array();
+
+		if(strstr($url,"thumb.php") && !empty($qry)) // Regular
+		{
+			parse_str($qry,$val);
+			$ret = $val;
+		}
+		elseif(preg_match('/media\/img\/(a)?([\d]*)x(a)?([\d]*)\/(.*)/',$url,$match)) // SEF
+		{
+			$wKey = $match[1].'w';
+			$hKey = $match[3].'h';
+
+			$ret = array(
+				'src'=> 'e_MEDIA_IMAGE/'.$match[5],
+				$wKey => $match[2],
+				$hKey => $match[4]
+			);
+		}
+		elseif(preg_match('/theme\/img\/(a)?([\d]*)x(a)?([\d]*)\/(.*)/', $url, $match)) // Theme-image SEF Urls
+		{
+			$wKey = $match[1].'w';
+			$hKey = $match[3].'h';
+
+			$ret = array(
+				'src'=> 'e_THEME/'.$match[5],
+				$wKey => $match[2],
+				$hKey => $match[4]
+			);
+
+		}
+		elseif(defined('TINYMCE_DEBUG'))
+		{
+			print_a("thumbUrlDecode: No Matches");
+
+		}
+
+
+		return $ret;
+	}
 
 
 
@@ -4533,7 +4660,7 @@ class e_parser
 			$ytpref['cc_lang_pref'] = e_LAN; // switch captions with chosen user language.
 		}
 
-		$ytqry = http_build_query($ytpref);
+		$ytqry = http_build_query($ytpref, null, '&amp;');
 
 		$defClass = (deftrue('BOOTSTRAP')) ? "embed-responsive embed-responsive-16by9" : "video-responsive"; // levacy backup.
 
@@ -4639,13 +4766,17 @@ class e_parser
 	 * Includes support for 'livestamp' (http://mattbradley.github.io/livestampjs/)
 	 * @param integer $datestamp - unix timestamp
 	 * @param string $format - short | long | relative 
-	 * @return HTML with converted date. 
+	 * @return string converted date (html)
 	 */
 	public function toDate($datestamp = null, $format='short')
 	{
 		if(!is_numeric($datestamp)){ return null; }
 
-		return '<span data-livestamp="'.$datestamp.'">'.e107::getDate()->convert($datestamp, $format).'</span>';	
+		$value = e107::getDate()->convert_date($datestamp, $format);
+
+		$inc = ($format === 'relative') ? ' data-livestamp="'.$datestamp.'"' : '';
+
+		return '<span'.$inc.'>'.$value.'</span>';
 	}
 	
 
@@ -5373,7 +5504,7 @@ class e_emotefilter
 			return;
 		}
 
-		$base = defined('e_HTTP_STATIC') && is_string(e_HTTP_STATIC) ? e_HTTP_STATIC : SITEURLBASE;
+		$base = defined('e_HTTP_STATIC') && is_string(e_HTTP_STATIC)  ? e_HTTP_STATIC : SITEURLBASE;
 
 		foreach($this->emotes as $key => $value)
 		{

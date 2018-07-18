@@ -113,6 +113,19 @@ if($register_globals == true)
 //	}
 //}
 
+// Set Absolute file-path of directory containing class2.php
+if(!defined('e_ROOT'))
+{
+	$e_ROOT = realpath(dirname(__FILE__)."/");
+
+	if ((substr($e_ROOT,-1) !== '/') && (substr($e_ROOT,-1) !== '\\') )
+	{
+		$e_ROOT .= DIRECTORY_SEPARATOR;  // Should function correctly on both windows and Linux now.
+	}
+
+	define('e_ROOT', $e_ROOT);
+	unset($e_ROOT);
+}
 
 // MOVED TO $e107->prepare_request()
 // e107 uses relative url's, which are broken by "pretty" URL's. So for now we don't support / after .php
@@ -200,7 +213,9 @@ else
 //
 // F: Grab e107_config, get directory paths and create $e107 object
 //
-@include(realpath(dirname(__FILE__).'/e107_config.php'));
+
+
+@include(e_ROOT.'e107_config.php');
 
 if(!defined('e_POWEREDBY_DISABLE'))
 {
@@ -209,7 +224,7 @@ if(!defined('e_POWEREDBY_DISABLE'))
 
 if(isset($CLASS2_INCLUDE) && ($CLASS2_INCLUDE!=''))
 {
-	 require_once(realpath(dirname(__FILE__).'/'.$CLASS2_INCLUDE));
+	 require_once(e_ROOT.$CLASS2_INCLUDE);
 }
 
 //define("MPREFIX", $mySQLprefix); moved to $e107->set_constants()
@@ -222,7 +237,7 @@ if(!isset($ADMIN_DIRECTORY))
 }
 
 // Upgrade Compatibility - Disable CL_WIDGETS before e107_class.php is loaded.
-$tmpPlugDir = realpath(dirname(__FILE__).'/'.$PLUGINS_DIRECTORY);
+$tmpPlugDir = e_ROOT.$PLUGINS_DIRECTORY;
 if(is_dir($tmpPlugDir."/cl_widgets"))
 {
 	rename($tmpPlugDir."/cl_widgets",$tmpPlugDir."/cl_widgets__");
@@ -231,7 +246,7 @@ unset($tmpPlugDir);
 //
 // clever stuff that figures out where the paths are on the fly.. no more need for hard-coded e_HTTP :)
 //
-$tmp = realpath(dirname(__FILE__).'/'.$HANDLERS_DIRECTORY);
+$tmp = e_ROOT.$HANDLERS_DIRECTORY;
 
 //Core functions - now API independent
 @require_once($tmp.'/core_functions.php');
@@ -242,7 +257,7 @@ unset($tmp);
 
 $e107_paths = compact('ADMIN_DIRECTORY', 'FILES_DIRECTORY', 'IMAGES_DIRECTORY', 'THEMES_DIRECTORY', 'PLUGINS_DIRECTORY', 'HANDLERS_DIRECTORY', 'LANGUAGES_DIRECTORY', 'HELP_DIRECTORY', 'DOWNLOADS_DIRECTORY','UPLOADS_DIRECTORY','SYSTEM_DIRECTORY', 'MEDIA_DIRECTORY','CACHE_DIRECTORY','LOGS_DIRECTORY', 'CORE_DIRECTORY', 'WEB_DIRECTORY');
 $sql_info = compact('mySQLserver', 'mySQLuser', 'mySQLpassword', 'mySQLdefaultdb', 'mySQLprefix', 'mySQLport');
-$e107 = e107::getInstance()->initCore($e107_paths, realpath(dirname(__FILE__)), $sql_info, varset($E107_CONFIG, array()));
+$e107 = e107::getInstance()->initCore($e107_paths, e_ROOT, $sql_info, varset($E107_CONFIG, array()));
 
 e107::getSingleton('eIPHandler');			// This auto-handles bans etc
 
@@ -253,9 +268,6 @@ if(!function_exists('spl_autoload_register'))
 	// PHP >= 5.1.2 required
 	die('Fatal exception - spl_autoload_* required.');
 }
-
-
-
 
 
 // allow disable of autoloading - may be removed as e107::autoload_register() is flexible enough
@@ -452,6 +464,10 @@ elseif ($merror === 'e2')
 /* PHP Compatabilty should *always* be on. */
 e107_require_once(e_HANDLER.'php_compatibility_handler.php');
 
+// SITEURL constant depends on the database
+// See https://github.com/e107inc/e107/issues/3033 for details.
+$e107->set_urls_deferred();
+
 //
 // L: Extract core prefs from the database
 //
@@ -482,6 +498,7 @@ $sysprefs = new prefs;
 e107::getConfig()->load(); // extra load, required if mysql handler already called e107::getConfig()
 if(!e107::getConfig()->hasData())
 {
+
 	// Core prefs error - admin log
 	e107::getAdminLog()->log_event('CORE_LAN8', 'CORE_LAN7', E_LOG_WARNING);
 
@@ -823,6 +840,7 @@ if(isset($pref['e_module_list']) && $pref['e_module_list'])
 	{
 		if (is_readable(e_PLUGIN."{$mod}/e_module.php"))
 		{
+			$sql->db_Mark_Time('[e_module in '.$mod.']');
 			require_once(e_PLUGIN."{$mod}/e_module.php");
  		}
 	}
@@ -848,7 +866,8 @@ if (!function_exists('checkvalidtheme'))
 	{
 		// arg1 = theme to check
 		//global $ADMIN_DIRECTORY, $tp, $e107;
-		global $sql;
+	//	global $sql;
+		$sql = e107::getDb();
 		$e107 = e107::getInstance();
 		$tp = e107::getParser();
 		$ADMIN_DIRECTORY = $e107->getFolder('admin');
@@ -962,7 +981,7 @@ if (!class_exists('e107table', false))
 		
 		function __construct()
 		{
-		//	$this->themeClass 		= e107::getPref('sitetheme')."_theme"; // disabled at the moment. 
+			$this->themeClass 		= e107::getPref('sitetheme')."_theme"; // disabled at the moment.
 			$this->adminThemeClass 	= e107::getPref('admintheme')."_admintheme";	// Check for a class. 
 		}
 
@@ -973,7 +992,7 @@ if (!class_exists('e107table', false))
 		 */
 		public function setStyle($style)
 		{
-			$this->eSetStyle = $style;
+			$this->eSetStyle = (string) $style;
 		}
 
 		/**
@@ -988,8 +1007,8 @@ if (!class_exists('e107table', false))
 
 
 		/**
-		 * Set Advanced Menu content (beyond just $caption and $text)
-		 * @param string $type header|footer|text|title|image
+		 * Set Advanced Page/Menu content (beyond just $caption and $text)
+		 * @param string $type header|footer|text|title|image|list
 		 * @param string $val
 		 */
 		public function setContent($type, $val)
@@ -1000,6 +1019,43 @@ if (!class_exists('e107table', false))
 			}
 
 			$this->content[$type] = (string) $val;
+		}
+
+
+		/**
+		 * Return the value of custom content
+		 * @param string $type header|footer|text|title|image|list
+		 * @return array
+		 */
+		public function getContent($type='')
+		{
+			if(empty($type))
+			{
+				return $this->content;
+			}
+
+			return $this->content[$type];
+
+		}
+
+
+		/**
+		 * Return the current value of {SETSTYLE}
+		 * @return mixed
+		 */
+		public function getStyle()
+		{
+			return $this->eSetStyle;
+		}
+
+
+		/**
+		 * Return the currenty set uniqueId.
+		 * @return mixed
+		 */
+		public function getUniqueId()
+		{
+			return $this->uniqueId;
 		}
 
 
@@ -1901,6 +1957,9 @@ function init_session()
 		unset($tz);
 	}
 
+e107::getDebug()->log("Timezone: ".USERTIMEZONE); // remove later on.
+
+
 	define('USERIP', e107::getIPHandler()->getIP(FALSE));
 	define('POST_REFERER', md5($user->getToken()));
 
@@ -2049,6 +2108,8 @@ if(!isset($_E107['no_online']) && varset($pref['track_online']))
 {
 	e107::getOnline()->goOnline($pref['track_online'], $pref['flood_protect']);
 }
+
+$sql->db_Mark_Time('(After Go online)');
 
 /**
  * Set Cookie
@@ -2313,7 +2374,7 @@ class error_handler
 	{
 		$this->label = array(E_NOTICE => "Notice", E_WARNING => "Warning", E_DEPRECATED => "Deprecated", E_STRICT => "Strict");
 		$this->color = array(E_NOTICE=> 'info', E_WARNING=>'warning', E_DEPRECATED => 'danger', E_STRICT => 'primary');
-		$this->docroot = dirname(realpath(__FILE__)).DIRECTORY_SEPARATOR;
+		$this->docroot = e_ROOT; // dirname(realpath(__FILE__)).DIRECTORY_SEPARATOR;
 
 		// This is initialized before the current debug level is known
 		if(function_exists('xdebug_get_function_stack'))
@@ -2734,6 +2795,7 @@ class e_http_header
 		}
 
 
+		$this->setHeader('X-Frame-Options: SAMEORIGIN');
 
 		// should come after the Etag header
 		if ($canCache && isset($_SERVER['HTTP_IF_NONE_MATCH']))
@@ -2758,7 +2820,7 @@ class e_http_header
 
 
 
-$sql->db_Mark_Time('(After class2)');
+
 
 
 function e107_ini_set($var, $value)
@@ -2786,3 +2848,4 @@ function plugInstalled($plugname)
 	return isset($pref['plug_installed'][$plugname]);*/
 }
 
+$sql->db_Mark_Time('(After class2)');

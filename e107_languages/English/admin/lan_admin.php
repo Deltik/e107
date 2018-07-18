@@ -353,6 +353,7 @@ define("LAN_UPLOAD_CONFIRM","Any unsaved changes to this page will be lost. Cont
 define("LAN_UPLOAD_777","Folder is missing or not writable, you need to CHMOD 777 the following folder before uploading:");
 define("LAN_UPLOAD_SERVEROFF", "This option is disabled as file uploading is not enabled on your server");
 define("LAN_WIDTH","Width");
+define("LAN_HEIGHT","Height");
 
 define("LAN_ON","On");
 define("LAN_OFF", "Off");
@@ -486,6 +487,7 @@ define("LAN_UI_FILTER_PAST_WEEK", "Past Week");
 define("LAN_UI_FILTER_PAST_MONTH", "Past Month");
 define("LAN_UI_FILTER_PAST_YEAR", "Past Year");
 
+
 define("LAN_USER_MANAGEALL", "Manage all User, Userclass and Extended User-Field settings");
 define("LAN_USER_LIST", "User List");
 define("LAN_USER_QUICKADD","Quick Add User");
@@ -543,3 +545,11 @@ define("LAN_UI_VIEW_GRID_LABEL", "Grid view");
 define("LAN_UI_VIEW_LIST_LABEL", "List view");
 define("LAN_CHECKING_FOR_UPDATES", "Checking for updates");
 
+define("LAN_UI_FILTER_NEXT_HOUR", "Next Hour");
+define("LAN_UI_FILTER_NEXT_24_HOURS", "Next 24 hours");
+define("LAN_UI_FILTER_NEXT_WEEK", "Next Week");
+define("LAN_UI_FILTER_NEXT_MONTH", "Next Month");
+define("LAN_UI_FILTER_NEXT_YEAR", "Next Year");
+define("LAN_UI_FILTER_IS_EMPTY", "Is Empty");
+define("LAN_RECALCULATE_COMMENT_COUNT", "Recalculate comment count");
+define("LAN_SUCC_RECALCULATE_COMMENT_COUNT", "Comment count successfully recalculated!");

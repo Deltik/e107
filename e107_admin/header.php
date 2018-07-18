@@ -83,12 +83,12 @@ function loadJSAddons()
 	e107::js('footer', '{e_WEB}js/core/admin.jquery.js', 'jquery', 5); // Load all default functions.
 	e107::js('footer', '{e_WEB}js/core/all.jquery.js', 'jquery', 5); // Load all default functions.
 
-	$plUpload = '{e_WEB}js/plupload/i18n/' . e_LAN . '.js';
+	$plUpload = 'plupload/i18n/' . e_LAN . '.js';
 
-	if(e_LAN != 'en' && file_exists(e_WEB_JS . $plUpload))
-	{
-		e107::js('footer', $plUpload, 'jquery', 5);
-	}
+    if(e_LAN != 'en' && file_exists(e_WEB_JS . $plUpload))
+    {
+     e107::js('footer', e_WEB_JS. $plUpload, 'jquery', 5);
+    }
 }
 
 // Load library dependencies.
@@ -164,6 +164,7 @@ echo "<title>".(defined("e_PAGETITLE") ? e_PAGETITLE." - " : (defined("PAGE_NAME
 //
 echo "<!-- *CSS* -->\n";
 $e_js =  e107::getJs();
+
 
 // Core CSS - XXX awaiting for path changes
 if (!isset($no_core_css) || !$no_core_css)
@@ -267,9 +268,14 @@ unset($e_headers);
 
 // ################### RENDER CSS
 
+echo "\n<!-- Library CSS -->\n";
+
+$e_js->renderJs('library_css', false, 'css', false);
+echo "\n<!-- footer_library_css -->\n"; // substituted in footer when detected.
+
 // Other CSS - from unknown location, different from core/theme/plugin location or backward compatibility
 $e_js->renderJs('other_css', false, 'css', false);
-echo "\n<!-- footer_other_css -->\n";
+echo "\n<!-- footer_other_css -->\n"; // substituted in footer when detected.
 
 // Core CSS
 $e_js->renderJs('core_css', false, 'css', false);

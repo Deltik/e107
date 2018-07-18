@@ -1,5 +1,6 @@
 
 body						{ padding-top: 75px; font-size: 14px;  }
+body#admin-admin .popover   { position: fixed }
 
 @media (max-width: 992px) {
     body { height: 100vh; overflow-y: auto!important; }
@@ -217,6 +218,8 @@ td.options .btn-group                   {  display: flex; }
 
 .table .nav-tabs a,
 .table th a, .table td a                { text-decoration: none }
+
+
 
 .table > thead > tr > th, tr > th      { padding: 15px 10px;  font-weight:bold; font-variant: small-caps; }
 
@@ -514,9 +517,11 @@ i.s-message-warning	{ background-position: -777px -37px; width: 32px; height: 32
 i.s-message-info	{ background-position: -1480px 0; width: 32px; height: 32px;  }
 i.s-message-debug	{ background-position: -1480px 0; width: 32px; height: 32px;  }
 
+.s-message .well { background-color: rgba(0,0,0,0.4) }
 .s-message-body { padding-left: 42px; }
 .s-message-item {}
 .s-message-item .btn { margin-top: 15px; }
+
 
 .e-footer-info 		{ text-align: center }
 

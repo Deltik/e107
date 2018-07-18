@@ -194,7 +194,7 @@ class userlogin
 			case USER_VALIDATED :		// Valid user
 				break;			// Nothing to do ATM
 			case USER_EMAIL_BOUNCED:
-				$bounceLAN      = "Emails to [x] are bouncing back. Please [verify your email address is correct]."; //TODO LAN
+				$bounceLAN      = LAN_LOGIN_36;
 				$bounceMessage  =  $tp->lanVars($bounceLAN, $this->userData['user_email'],true );
 				$bounceMessage  = str_replace(array('[',']'),array("<a href='".e_HTTP."usersettings.php'>","</a>"), $bounceMessage);
 
@@ -238,7 +238,7 @@ class userlogin
 		$user_email = $this->userData['user_email'];
 
 		/* restrict more than one person logging in using same us/pw */
-		if(!empty($pref['disallowMultiLogin']) && !empty($user_id))
+		if(!empty($pref['track_online']) && !empty($pref['disallowMultiLogin']) && !empty($user_id))
 		{
 			if($sql->select("online", "online_ip", "online_user_id='".$user_id.".".$user_name."'"))
 			{

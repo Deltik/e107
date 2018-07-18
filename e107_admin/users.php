@@ -10,6 +10,11 @@
 *
 */
 
+if(!empty($_POST) && !isset($_POST['e-token']))
+{
+	$_POST['e-token'] = ''; // make sure e-token hasn't been deliberately removed.
+}
+
 if (!defined('e107_INIT'))
 {
 	require_once("../class2.php");
@@ -60,7 +65,7 @@ class users_admin extends e_admin_dispatcher
 		'main/list'		=> array('caption'=> LAN_MANAGE, 'perm' => '0|4'),
 		'main/add' 		=> array('caption'=> LAN_USER_QUICKADD, 'perm' => '4|U0|U1'),
 		'main/prefs' 	=> array('caption'=> LAN_OPTIONS, 'perm' => '4|U2'),
-		'main/ranks'	=> array('caption'=> LAN_USER_RANKS, 'perm' => '4|U3'),
+		'ranks/list'	=> array('caption'=> LAN_USER_RANKS, 'perm' => '4|U3'),
 		'main/maintenance'  => array('caption'=> LAN_MAINTENANCE, 'perms'=>'4')
 	//	'ranks/list'	=> array('caption'=> LAN_USER_RANKS, 'perm' => '4|U3')
 	);
@@ -86,11 +91,6 @@ class users_admin extends e_admin_dispatcher
 
 	function init()
 	{
-		if(E107_DEBUG_LEVEL > 0)
-		{
-			$this->adminMenu['ranks/list']	= array('caption'=> LAN_USER_RANKS. " (experimental)", 'perm' => '4|U3');
-		}
-
 
 		$JS = <<<JS
 
@@ -154,7 +154,7 @@ JS;
 				case 'deluser':
 					if($_POST['userid'])
 					{
-						$id = $_POST['userid'];
+						$id = (int) $_POST['userid'];
 						$_POST['etrigger_delete'] = array($id => $id);
 						$user = e107::getDb()->retrieve('user', 'user_email, user_name', 'user_id='.$id);
 						$rplc_from = array('[x]', '[y]', '[z]');
@@ -306,7 +306,7 @@ class users_admin_ui extends e_admin_ui
 		'user_currentvisit' => array('title' => LAN_USER_16,	'tab'=>0, 'noedit'=>true, 'type' => 'datestamp', 	'width' => 'auto'),
 		'user_comments' 	=> array('title' => LAN_COMMENTS,	'tab'=>0, 'noedit'=>true, 'type' => 'int', 	'width' => 'auto','thclass'=>'right','class'=>'right'),
 		'user_lastpost' 	=> array('title' => USRLAN_195,	'tab'=>0, 'noedit'=>true, 'type' => 'datestamp', 	'width' => 'auto'),
-		'user_ip' 			=> array('title' => LAN_USER_18,	'tab'=>0, 'noedit'=>true, 'type' => 'ip',		'width' => 'auto'),
+		'user_ip' 			=> array('title' => LAN_USER_18,	'tab'=>0, 'noedit'=>true, 'type' => 'ip',	'data'=>'str',	'width' => 'auto'),
 		//	'user_prefs' 		=> array('title' => LAN_USER_20,	'type' => 'text', 	'width' => 'auto'),
 		'user_visits' 		=> array('title' => LAN_USER_21,	'tab'=>0, 'noedit'=>true, 'type' => 'int', 'width' => 'auto','thclass'=>'right','class'=>'right'),
 		'user_admin' 		=> array('title' => LAN_USER_22,	'tab'=>0, 'type' => 'method', 'width' => 'auto', 'thclass'=>'center', 'class'=>'center', 'filter'=>true, 'batch'=>true, 'readParms'=>'trueonly=1'),
@@ -470,7 +470,7 @@ class users_admin_ui extends e_admin_ui
 	}
 
 
-	public function afterDelete($deletedData,$id=null)
+	public function afterDelete($deletedData, $id=null, $deleted_check)
 	{
 		if(!empty($id))
 		{
@@ -507,7 +507,13 @@ class users_admin_ui extends e_admin_ui
 		else 
 		{
 
-			$new_data['user_password']	= e107::getUserSession()->HashPassword($new_data['user_password'], $new_data['user_login']);
+			// issues #3126, #3143: Login not working after admin set a new password using the backend
+			// Backend used user_login instead of user_loginname (used in usersettings) and did't escape the password.
+			$savePassword = $new_data['user_password'];
+			$loginname = $new_data['user_loginname'] ? $new_data['user_loginname'] : $old_data['user_loginname'];
+			$email = (isset($new_data['user_email']) && $new_data['user_email']) ? $new_data['user_email'] : $old_data['user_email'];
+			$new_data['user_password'] = e107::getDb()->escape(e107::getUserSession()->HashPassword($savePassword, $loginname), false);
+
 			e107::getMessage()->addDebug("Password Hash: ".$new_data['user_password']);
 		}
 		
@@ -959,7 +965,7 @@ class users_admin_ui extends e_admin_ui
 		$response->appendBody($frm->open('adminperms'))
 			->appendBody($prm->renderPermTable('grouped', $sysuser->getValue('perms')))
 			->appendBody($prm->renderCheckAllButtons())
-			->appendBody($prm->renderSubmitButtons())
+			->appendBody($prm->renderSubmitButtons().$frm->token())
 			->appendBody($frm->close());
 		
 		$this->addTitle(str_replace(array('[x]', '[y]'), array($sysuser->getName(), $sysuser->getValue('email')), USRLAN_230));
@@ -1615,8 +1621,8 @@ class users_admin_ui extends e_admin_ui
 
 		<tr>
 			<td>".LAN_PASSWORD."</td>
-			<td>".$frm->password('password', '', 20, array('size' => 'xlarge', 'class' => 'tbox e-password', 'generate' => 1, 'strength' => 1))."
-			</td>
+			<td>".$frm->password('password', '', 128, array('size' => 'xlarge', 'class' => 'tbox e-password', 'generate' => 1, 'strength' => 1, 'autocomplete' => 'new-password'))."
+ 			</td>
 		</tr>";
 		
 
@@ -1647,7 +1653,7 @@ class users_admin_ui extends e_admin_ui
 				".USRLAN_120."
 			</td>
 			<td>
-				<a href='#set_class' class='btn btn-default e-expandit'>".USRLAN_120."</a>
+				<a href='#set_class' class='btn btn-default btn-secondary e-expandit'>".USRLAN_120."</a>
 				<div class='e-hideme' id='set_class'>
 				{$temp}
 				</div>
@@ -1660,7 +1666,7 @@ class users_admin_ui extends e_admin_ui
 		<tr>
 			<td>".USRLAN_35."</td>
 			<td>
-				<a href='#set_perms' class='btn btn-default e-expandit'>".USRLAN_243."</a>
+				<a href='#set_perms' class='btn btn-default btn-secondary e-expandit'>".USRLAN_243."</a>
 				<div class='e-hideme' id='set_perms'>
 		";
 			
@@ -2319,10 +2325,10 @@ class users_admin_ui extends e_admin_ui
 		{
 		// Option to delete emails - only if there are some in the list
 			$text .= "</table><table style='".ADMIN_WIDTH."'><tr>
-			<td style='text-align: center;'><input class='btn btn-default button' type='submit' name='delnonbouncesubmit' value='".USRLAN_183."' /></td>\n
-			<td style='text-align: center;'><input class='btn btn-default button' type='submit' name='clearemailbouncesubmit' value='".USRLAN_184."' /></td>\n
-			<td style='text-align: center;'><input class='btn btn-default button' type='submit' name='delcheckedsubmit' value='".USRLAN_179."' /></td>\n
-			<td style='text-align: center;'><input class='btn btn-default button' type='submit' name='delallsubmit' value='".USRLAN_180."' /></td>\n
+			<td style='text-align: center;'><input class='btn btn-default btn-secondary button' type='submit' name='delnonbouncesubmit' value='".USRLAN_183."' /></td>\n
+			<td style='text-align: center;'><input class='btn btn-default btn-secondary button' type='submit' name='clearemailbouncesubmit' value='".USRLAN_184."' /></td>\n
+			<td style='text-align: center;'><input class='btn btn-default btn-secondary button' type='submit' name='delcheckedsubmit' value='".USRLAN_179."' /></td>\n
+			<td style='text-align: center;'><input class='btn btn-default btn-secondary button' type='submit' name='delallsubmit' value='".USRLAN_180."' /></td>\n
 			</td></tr>";
 		}
 		$text .= "</table></form></div>";
@@ -2493,8 +2499,7 @@ class users_admin_form_ui extends e_admin_form_ui
 		{
 			$fieldName = 'user_password_'. $this->getController()->getId();
 
-			return $this->password($fieldName, '', 20, array('size' => 50, 'class' => 'tbox e-password', 'placeholder' => USRLAN_251, 'generate' => 1, 'strength' => 1, 'required'=>0, 'autocomplete'=>'off'))."
-			";			
+			return $this->password($fieldName, '', 128, array('size' => 50, 'class' => 'tbox e-password', 'placeholder' => USRLAN_251, 'generate' => 1, 'strength' => 1, 'required'=>0, 'autocomplete'=>'new-password'));
 		}
 			
 		
@@ -2511,7 +2516,8 @@ class users_admin_form_ui extends e_admin_form_ui
 			'<span class="label label-success label-status">'.LAN_ACTIVE.'</span>',
 			"<span class='label label-important label-danger label-status'>".LAN_BANNED."</span>",
 			"<span class='label label-default label-status'>".LAN_NOTVERIFIED."</span>",
-			"<span class='label label-info label-status'>".LAN_BOUNCED."</span>"
+			"<span class='label label-info label-status'>".LAN_BOUNCED."</span>",
+			"<span class='label label-important label-danger label-status'>".USRLAN_56."</span>", // Deleted
 		);
 		
 		if($mode == 'filter' || $mode == 'batch')
@@ -2723,7 +2729,7 @@ class users_admin_form_ui extends e_admin_form_ui
 			//		$text .= "<option value='unadmin'>".USRLAN_34."</option>\n";
 
 					$opts['adminperms'] = USRLAN_221;
-					$opts['uadmin']     = USRLAN_34;
+					$opts['unadmin']     = USRLAN_34;
 				}
 		}
 		elseif(USERID ===  $user_id ||  $user_id > USERID)
@@ -2751,7 +2757,7 @@ class users_admin_form_ui extends e_admin_form_ui
 
 		$btn =  '<div class="btn-group pull-right">
 
-		<button aria-expanded="false" class="btn btn-default btn-user-action dropdown-toggle" data-toggle="dropdown">
+		<button aria-expanded="false" class="btn btn-default btn-secondary btn-user-action dropdown-toggle" data-toggle="dropdown">
 		<span class="user-action-indicators" id="user-action-indicator-'.$user_id.'">'.e107::getParser()->toGlyph('cog').'</span>
 		<span class="caret"></span>
 		</button>
@@ -2861,10 +2867,10 @@ class users_admin_form_ui extends e_admin_form_ui
 			}
 
 			unset($tmp);
-			natsort($imageList);
+		//	natsort($imageList);
 		}
 
-		public function afterDelete($data)
+		public function afterDelete($data, $id, $deleted_check)
 		{
 			e107::getCache()->clear_sys('nomd5_user_ranks');
 		}
@@ -2939,7 +2945,7 @@ class users_admin_form_ui extends e_admin_form_ui
 				parse_str(str_replace('&amp;', '&', e_QUERY), $query); //FIXME - FIX THIS
 				$query['action'] = 'edit';
 				$query['id'] = $id;
-				$query = http_build_query($query);
+				$query = http_build_query($query, null, '&amp;');
 
 				$text = "<a href='".e_SELF."?{$query}' class='btn btn-default' title='".LAN_EDIT."' data-toggle='tooltip' data-placement='left'>
 						".ADMIN_EDIT_ICON."</a>";

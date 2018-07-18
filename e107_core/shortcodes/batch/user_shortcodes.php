@@ -265,44 +265,29 @@ class user_shortcodes extends e_shortcode
 
 
 	
-	function sc_user_email($parm='')
+function sc_user_email($parm='')
+{
+
+	$tp = e107::getParser();
+	
+	$aCurUserData = e107::user(USERID);
+
+	if( ($this->var['user_hideemail'] && !ADMIN ) && ( $this->var['user_email']!=$aCurUserData['user_email'] ) )
 	{
-
-		$tp = e107::getParser();
-
-		if($this->var['user_hideemail'] && !ADMIN)
-		{
-			return "<i>".LAN_USER_35."</i>";
-		}
-		else
-		{
+		return "<i>".LAN_USER_35."</i>";
+	}
+	else
+	{
+		if($this->var['user_email']!=$aCurUserData['user_email']){
 			return $tp->emailObfuscate($this->var['user_email']);
 			//list($user,$dom) = explode('@', $this->var['user_email']);
 			//return "<span class='e-email' data-user='".$user."' data-dom='".$dom."'>&#64;</span>";
+		}else{
+			return $this->var['user_email'];
 		}
-
-		      ########################################################
-		       # Security Note - 04 May 2013                          #
-		       ########################################################
-		       #                                                      #
-		       # The CSS code direction rtl is an effective way to    #
-		       # prevent spam bots from scraping emails that are      #
-		       # not hidden.                                          #
-		       #                                                      #
-		       # You can find empirical support for this method at    #
-		       # <http://superuser.com/a/235965>.                     #
-		       #                                                      #
-		       # {e_CORE}templates/user_template.php was modified to  #
-		       # support this code.  In $USER_FULL_TEMPLATE, the      #
-		       # LAN_USER_60 value {USER_EMAIL_LINK} was changed to   #
-		       # {USER_EMAIL}.  I couldn't figure out how the two     #
-		       # shortcodes were different, so I took precautions in  #
-		       # hopes that the CSS direction won't break actual HTML #
-		       # tags.                                                #
-		       #                                                      #
-		       #       -- Deltik                                      #
-		       ########################################################
 	}
+
+}
 
 
 	/**
@@ -546,7 +531,8 @@ class user_shortcodes extends e_shortcode
 		if (USERID == $this->var['user_id']) 
 		{
 			//return "<a href='".$url->create('user/myprofile/edit')."'>".LAN_USER_38."</a>";
-			return "<a class='btn btn-default' href='".e_HTTP."usersettings.php'>".LAN_USER_38."</a>"; // TODO: repair dirty fix for usersettings
+			//return "<a class='btn btn-default' href='".e_HTTP."usersettings.php'>".LAN_USER_38."</a>"; // TODO: repair dirty fix for usersettings
+			return "<a class='btn btn-default' href='".$url->create('user/myprofile/edit')."'>".LAN_USER_38."</a>"; // TODO: repair dirty fix for usersettings
 		}
 		else if(ADMIN && getperms("4") && !$this->var['user_admin']) 
 		{
@@ -555,6 +541,7 @@ class user_shortcodes extends e_shortcode
 			return "<a class='btn btn-default' href='".$editUrl."'>".LAN_USER_39."</a>";
 
 			//	return "<a class='btn btn-default' href='".$url->create('user/profile/edit', array('id' => $this->var['user_id'], 'name' => $this->var['user_name']))."'>".LAN_USER_39."</a>";
+
 		}
 	}
 	
@@ -653,7 +640,7 @@ class user_shortcodes extends e_shortcode
 		{
 			return "
 			<form method='post' action='".e_SELF."?".e_QUERY."'>
-			<input class='btn btn-default button' type='submit' name='delp' value='".LAN_USER_43."' />
+			<input class='btn btn-default btn-secondary button' type='submit' name='delp' value='".LAN_USER_43."' />
 			</form>
 			";
 		}
@@ -856,7 +843,7 @@ class user_shortcodes extends e_shortcode
 	
 	function sc_user_form_submit($parm) 
 	{
-		return "<input class='btn btn-default button' type='submit' name='submit' value='".LAN_GO."' />";
+		return "<input class='btn btn-default btn-secondary button' type='submit' name='submit' value='".LAN_GO."' />";
 	}
 
 

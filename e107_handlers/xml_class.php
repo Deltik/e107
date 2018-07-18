@@ -553,7 +553,7 @@ class xmlClass
 		}
 
 		//Recursive calls start here
-		if($tags)
+		if(self::is_assoc($tags))
 		{
 			$tags = array_keys($tags);
 			$count_tags = count($tags);
@@ -561,16 +561,17 @@ class xmlClass
 			//loop through tags
 			foreach ($tags as $tag)
 			{
+				if(is_int($tag)) continue;
 				switch($tag)
 				{
 					case '@attributes':
 						$tmp = (array) $xml->attributes();
 						$ret['@attributes'] = $tmp['@attributes'];
 
-						if($count_tags == 1) //only attributes & possible value
+						if($count_tags == 1 || ['@attributes', 0] === $tags) //only attributes & possible value
 						{
 							$ret[$this->_optValueKey] = trim((string) $xml);
-							return $ret;
+							//return $ret;
 						}
 					break;
 
@@ -747,6 +748,25 @@ class xmlClass
 		}
 		
 		return $vars;
+	}
+
+	/**
+	 * Determine if the provided variable is an associative array
+	 *
+	 * This method is necessary because since PHP 7.2, get_object_vars() on
+	 * a SimpleXMLElement object began returning sequential arrays, and
+	 * xmlClass::xml2array() interpreted the sequence as XML tags.
+	 *
+	 * See https://github.com/e107inc/e107/issues/3018 for details.
+	 *
+	 * @param array $array The variable to check
+	 * @return boolean true if the provided variable is an associative array,
+	 *                 false if it's a sequential array or anything else
+	 */
+	private static function is_assoc($array)
+	{
+		if (!is_array($array) || array() === $array) return false;
+		return array_keys($array) !== range(0, count($array) - 1);
 	}
 
 	/**

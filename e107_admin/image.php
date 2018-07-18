@@ -41,6 +41,10 @@ e107::js('core', 'plupload/plupload.full.js', 'jquery', 2);
 e107::css('core', 'plupload/jquery.plupload.queue/css/jquery.plupload.queue.css', 'jquery');
 e107::js('core', 'plupload/jquery.plupload.queue/jquery.plupload.queue.min.js', 'jquery', 2);
 e107::js('core', 'core/mediaManager.js',"jquery",5);
+// issue #3051 Preview url is wrong when target page is a plugin
+// Using this variable to check for the plugins directory and replace with empty space in case of...
+// see mediaManager.js (line ~399ff)
+e107::js('inline', 'var e107_plugins_directory = "' . str_replace('../', '', e_PLUGIN) . '";');
 e107::wysiwyg(true);
 /*
  * CLOSE - GO TO MAIN SCREEN
@@ -593,41 +597,51 @@ class media_form_ui extends e_admin_form_ui
 	{
 
 		$text = "";
-	
-		$frm = e107::getForm();
+
 		$pref 	= e107::getPref();
 		
 		$options = array(
-			"news-image" 			=> LAN_IMA_O_001,
-			"news-bbcode" 			=> LAN_IMA_O_002,
-			"page-bbcode" 			=> LAN_IMA_O_003,
+	//		"news-image" 			=> LAN_IMA_O_001,
+	//		"news-bbcode" 			=> LAN_IMA_O_002,
+	//		"page-bbcode" 			=> LAN_IMA_O_003,
 		//	"featurebox-image" 		=> LAN_IMA_O_004,
 		//	"featurebox-bbcode" 	=> LAN_IMA_O_005,
 		);
-		
-		if(vartrue($pref['e_imageresize']) && is_array($pref['e_imageresize']))
+
+		$options = $pref['resize_dimensions'];
+
+		/* @deprecated  */
+		if(!empty($pref['e_imageresize']) && is_array($pref['e_imageresize']))
 		{
 			foreach($pref['e_imageresize'] as $k=>$val)
 			{
-			
 				$options[$k]		= ucfirst($k)." ".LAN_IMA_O_006;
 			}
 		}
-		
-		$options = $pref['resize_dimensions'];
-		
+
+		unset($options['news-image']); /* @deprecated  */
+
+		$text = "<table class='table table-striped table-condensed table-bordered' style='width:400px; margin-bottom:0'>
+		<tr>
+			<th>".LAN_TYPE."</th>
+			<th class='text-right'>".LAN_WIDTH."</th>
+			<th class='text-right'>".LAN_HEIGHT."</th>
+		</tr>\n";
+
+
 		foreach($options as $key=>$title)
 		{
 			$title = ucwords(str_replace("-"," ",$key));
 			$valW = vartrue($curval[$key]['w']);
 			$valH = vartrue($curval[$key]['h']);
 		
-			$text .= "<div style='margin-bottom:8px; text-align:right; width:400px'>".$title.": ";
-			$text .= "<input class='e-tip e-spinner input-small' placeholder='ex. 400' style='text-align:right' type='text' name='resize_dimensions[{$key}][w]' value='$valW' size='5' title='maximum width in pixels' /> X ";
-			$text .= "<input class='e-tip e-spinner input-small' placeholder='ex. 400' style='text-align:right' type='text' name='resize_dimensions[{$key}][h]' value='$valH' size='5' title='maximum height in pixels' />";
-			$text .= "</div>";
-		//	$text .= $frm->text("resize_dimensions[{$key}]",$val, 5, array('size'=>'5')).$title."<br />";			
-		}	
+			$text .= "<tr><td style='width:45%'>".$title."</td><td class='text-right'>";
+			$text .= "<input class='e-tip e-spinner input-small' placeholder='ex. 400' style='text-align:right' type='text' name='resize_dimensions[{$key}][w]' value='$valW' size='5' title='maximum width in pixels' />";
+			$text .= "</td><td class='text-right'><input class='e-tip e-spinner input-small' placeholder='ex. 400' style='text-align:right' type='text' name='resize_dimensions[{$key}][h]' value='$valH' size='5' title='maximum height in pixels' />";
+			$text .= "</td></tr>";
+
+		}
+		$text .= "</table>";
 		
 	//	$text .= "<div><br />Warning: This feature is experimental.</div>";
 		
@@ -886,7 +900,7 @@ class media_admin_ui extends e_admin_ui
 
 		'im_width'						=> array('title'=> IMALAN_75, 'type'=>'number', 'data'=>'int', 'writeParms'=>'', 'help'=>IMALAN_76),
 		'im_height'						=> array('title'=> IMALAN_77, 'type'=>'number', 'data'=>'int', 'writeParms'=>'', 'help'=>IMALAN_76),
-		'resize_dimensions'				=> array('title'=> IMALAN_79, 'type'=>'method', 'data'=>'str'),
+		'resize_dimensions'				=> array('title'=> IMALAN_184, 'type'=>'method', 'data'=>'str'),
 		
 		'watermark_activate'			=> array('title'=> IMALAN_80, 'tab'=>1, 'type' => 'number', 'data' => 'str', 'help'=>IMALAN_81), // 'validate' => 'regex', 'rule' => '#^[\d]+$#i', 'help' => 'allowed characters are a-zA-Z and underscore')),
 		'watermark_text'				=> array('title'=> IMALAN_82,'tab'=>1, 'type' => 'text', 'data' => 'str', 'help'=>IMALAN_83), // 'validate' => 'regex', 'rule' => '#^[\d]+$#i', 'help' => 'allowed characters are a-zA-Z and underscore')),
@@ -1063,17 +1077,31 @@ class media_admin_ui extends e_admin_ui
 
 
 		
-		if($this->getAction() == 'youtube')
+		if($this->getAction() === 'youtube')
 		{
 			$parm = array('search' => $tp->filter($_GET['search']));	
-			echo $this->videoTab($parm);
+			echo $this->youtubeTab($parm);
 			exit;
 		}
 		
-		if($this->getAction() == 'glyph')
+		if($this->getAction() === 'glyph')
 		{
 			$parm = array('search' => $tp->filter($_GET['search']));	
 			echo $this->glyphTab($parm);
+			exit;
+		}
+
+		if($this->getAction() === 'video')
+		{
+			$parm = array('search' => $tp->filter($_GET['search']));
+			echo $this->videoTab($parm);
+			exit;
+		}
+
+		if($this->getAction() === 'audio')
+		{
+			$parm = array('search' => $tp->filter($_GET['search']));
+			echo $this->audioTab($parm);
 			exit;
 		}
 		
@@ -1301,7 +1329,7 @@ class media_admin_ui extends e_admin_ui
 		if($type === 'video')
 		{
 			$tabs = array(
-				'youtube' => array('caption'=>'Youtube', 'text' => $this->videoTab())
+				'youtube' => array('caption'=>'Youtube', 'text' => $this->youtubeTab())
 			);
 
 			return $frm->tabs($tabs, array('class'=>'media-manager'));
@@ -1310,7 +1338,7 @@ class media_admin_ui extends e_admin_ui
 
 
 
-		$videoActive = 'inactive';
+		$youtubeActive = 'inactive';
 		
 		$options = array();
 		$options['bbcode'] = ($this->getQuery('bbcode')=='img') ? 'img' : FALSE;
@@ -1330,7 +1358,7 @@ class media_admin_ui extends e_admin_ui
 			}
 			else 
 			{
-				$videoActive = 'active';		
+				$youtubeActive = 'active';
 			}
 				
 					
@@ -1353,7 +1381,12 @@ class media_admin_ui extends e_admin_ui
 		
 		if($this->getQuery('video') == 1 || $this->getQuery('bbcode') == 'video')
 		{
-			$text .= "<li class='{$videoActive}'><a data-toggle='tab' href='#core-media-video'>Youtube</a></li>\n";	
+			$text .= "<li class='{$youtubeActive}'><a data-toggle='tab' href='#core-media-youtube'>Youtube</a></li>\n";
+
+			if(deftrue('e_DEBUG_VIDEO'))
+			{
+			$text .= "<li class='{$videoActive}'><a data-toggle='tab' href='#core-media-video'>Videos</a></li>\n";
+			}
 		}
 		
 		
@@ -1482,15 +1515,33 @@ class media_admin_ui extends e_admin_ui
 		
 		if($this->getQuery('video') || $this->getQuery('bbcode') == 'video')
 		{
-			$text .= "<div class='tab-pane clearfix {$videoActive}' id='core-media-video' >";
+			$text .= "<div class='tab-pane clearfix {$youtubeActive}' id='core-media-youtube' >";
 		//	$text .= "<div class='row-fluid'>";
-			$text .= $this->videoTab();
-			$text .= "</div>";	
-		//	$text .= "</div>";	
+			$text .= $this->youtubeTab();
+			$text .= "</div>";
+
+			if(deftrue('e_DEBUG_VIDEO'))
+			{
+				$text .= "<div class='tab-pane clearfix {$videoActive}' id='core-media-video' >";
+			//	$text .= "<div class='row-fluid'>";
+				$text .= $this->videoTab();
+				$text .= "</div>";
+			}
+
 		}
 			
-		
-		
+		// todo
+		if($this->getQuery('audio') || $this->getQuery('bbcode') == 'audio')
+		{
+			if(deftrue('e_DEBUG_AUDIO'))
+			{
+				$text .= "<div class='tab-pane clearfix {$videoActive}' id='core-media-audio' >";
+			//	$text .= "<div class='row-fluid'>";
+				$text .= $this->audioTab();
+				$text .= "</div>";
+			}
+
+		}
 		
 		
 		
@@ -1507,7 +1558,7 @@ class media_admin_ui extends e_admin_ui
 			<button type='submit' class='btn btn-success submit e-dialog-save' data-bbcode='".$options['bbcode']."' data-target='".$this->getQuery('tagid')."' name='save_image' value='Save it'  >
 			<span>".LAN_SAVE."</span>
 			</button>
-			<button type='submit' class=' btn btn-default submit e-dialog-close' name='cancel_image' value='Cancel' >
+			<button type='submit' class=' btn btn-default btn-secondary submit e-dialog-close' name='cancel_image' value='Cancel' >
 			<span>".LAN_CANCEL."</span>
 			</button>
 			</div>";
@@ -1552,13 +1603,74 @@ class media_admin_ui extends e_admin_ui
 		return $text;
 	}
 		
-		
+	function audioTab($parm=array())
+	{
+		//todo (@see videoTab)
+
+	}
+
+
+	function videoTab($parm=array())
+	{
+
+		$tp = e107::getParser();
+
+		$parms = array(
+			'width'	 	=> 340,
+			'height'	=> 220,
+			'type'		=>'video',
+			'tagid'		=> $this->getQuery('tagid'),
+			'action'	=>'video', 								// Used by AJAX to identify correct function.
+			'perPage'	=> 12,
+			'gridClass'	=> 'media-carousel-item-video pull-left',
+			'bbcode'	=> 'video',
+			'close'		=> 'true'
+
+		);
+
+		$items = array();
+
+		$videos = e107::getMedia()->getVideos();
+
+		foreach($videos as $val)
+		{
+			$items[] = array(
+					'previewUrl'	=> e_IMAGE_ABS."generic/playlist_120.png", //todo place entire video tag into imagepicker when saving.
+					'saveValue'		=> $val['media_url'],
+					'thumbUrl'		=> $tp->replaceConstants($val['media_url']),
+					'title'			=> $val['media_name'],
+					'slideCaption'	=> '',
+					'slideCategory'	=> 'bootstrap',
+					'mime'          => $val['media_type']
+			);
+
+		}
+
+
+		if(!empty($parm['search']))
+		{
+			$filtered = array();
+			if(!empty($items))
+			{
+				foreach($items as $v)
+				{
+					if(strpos($v['title'], $parm['search'])!==false)
+					{
+						$filtered[] = $v;
+					}
+				}
+			}
+			$items = $filtered;
+		}
+
+		return e107::getMedia()->browserCarousel($items, $parms);
+	}
 		
 		
 
 	
 	
-	function glyphTab($parm='')
+	function glyphTab($parm=array())
 	{
 
 		$parms = array(
@@ -1649,9 +1761,6 @@ class media_admin_ui extends e_admin_ui
 		}
 
 
-
-
-
 		
 		if(!empty($parm['search']))
 		{
@@ -1712,7 +1821,7 @@ class media_admin_ui extends e_admin_ui
 	 * @return mixed|string
 	 * @see https://www.googleapis.com/youtube/v3/search
 	 */
-	function videoTab($parm='')
+	function youtubeTab($parm='')
 	{
 		$apiKey = e107::pref('core','youtube_apikey');
 
@@ -2677,7 +2786,7 @@ class media_admin_ui extends e_admin_ui
 
 			$default = $this->getFileXml($f['fname']);
 			$f = $fl->cleanFileName($f,true);
-			
+
 			$c = md5($f['path'].$f['fname']);
 			
 			if($f['error'])
