@@ -487,7 +487,7 @@ class e_parse extends e_parser
 	 * 				the save_prefs() function has been called by a non admin user / user without html posting permissions.
 	 * @param boolean|string $mod [optional] model = admin-ui usage. The 'no_html' and 'no_php' modifiers blanket prevent HTML and PHP posting regardless of posting permissions. (used in logging)
 	 *		The 'pReFs' value is for internal use only, when saving prefs, to prevent sanitisation of HTML.
-	 * @param boolean $original_author [optional]
+	 * @param mixed $parm [optional]
 	 * @return string
 	 * @todo complete the documentation of this essential method
 	 */
@@ -501,7 +501,7 @@ class e_parse extends e_parser
 			foreach ($data as $key => $var)
 			{
 				//Fix - sanitize keys as well
-				$ret[$this->toDB($key, $nostrip, $no_encode, $mod, $original_author)] = $this->toDB($var, $nostrip, $no_encode, $mod, $original_author);
+				$ret[$this->toDB($key, $nostrip, $no_encode, $mod, $parm)] = $this->toDB($var, $nostrip, $no_encode, $mod, $parm);
 			}
 			return $ret;
 		}
@@ -814,8 +814,8 @@ class e_parse extends e_parser
 		}
 	//	return htmlentities($text);
 
-		$search = array('&#036;', '&quot;', '<', '>');
-		$replace = array('$', '"', '&lt;', '&gt;');
+		$search = array('&#036;', '&quot;', '<', '>', '+');
+		$replace = array('$', '"', '&lt;', '&gt;', '%2B');
 		$text = str_replace($search, $replace, $text);
 		if (e107::wysiwyg() !== true && is_string($text))
 		{
@@ -2745,6 +2745,13 @@ class e_parse extends e_parser
 	{
 		$this->staticCount++; // increment counter.
 
+		$ext = pathinfo($url, PATHINFO_EXTENSION);
+
+		if($ext === 'svg')
+		{
+			return $this->replaceConstants($url, 'abs');
+		}
+
 		if(strpos($url,"{e_") === 0) // Fix for broken links that use {e_MEDIA} etc.
 		{
 			//$url = $this->replaceConstants($url,'abs');	
@@ -2764,6 +2771,8 @@ class e_parse extends e_parser
 			unset($options['scale']);
 			return $this->thumbSrcSet($url,$options);
 		}
+
+
 
 
 		
@@ -3720,7 +3729,8 @@ class e_parse extends e_parser
 /**
  * New v2 Parser 
  * Start Fresh and Build on it over time to become eventual replacement to e_parse. 
- * Cameron's DOM-based parser. 
+ * Cameron's DOM-based parser.
+ *
  */
 class e_parser
 {
@@ -4108,8 +4118,9 @@ class e_parser
 		$idAtt = (!empty($parm['id'])) ? "id='".$parm['id']."' " : '';
 		$style = (!empty($parm['style'])) ? "style='".$parm['style']."' " : '';
 		$class = (!empty($parm['class'])) ? $parm['class']." " : '';
+		$placeholder = isset($parm['placeholder']) ? $parm['placeholder'] : "<!-- -->";
 
-		$text = "<".$tag." {$idAtt}class='".$class.$prefix.$id.$size.$spin.$rotate.$fixedW."' {$style}><!-- --></".$tag.">" ;
+		$text = "<".$tag." {$idAtt}class='".$class.$prefix.$id.$size.$spin.$rotate.$fixedW."' {$style}>".$placeholder."</".$tag.">" ;
 		$text .= ($options !== false) ? $options : "";
 
 		return $text;
@@ -4304,7 +4315,7 @@ class e_parser
 		}
 		elseif($icon[0] === '{')
 		{
-			$path = $this->replaceConstants($icon,'full');		
+			$path = $this->replaceConstants($icon,'abs');
 		}
 		elseif(!empty($parm['legacy']))
 		{
@@ -4373,7 +4384,7 @@ class e_parser
 			$path       = null;
 			$file       = trim($file);
 			$ext        = pathinfo($file, PATHINFO_EXTENSION);
-			$accepted   = array('jpg','gif','png','jpeg');
+			$accepted   = array('jpg','gif','png','jpeg', 'svg');
 
 
 			if(!in_array($ext,$accepted))
@@ -4624,6 +4635,29 @@ class e_parser
 		return ($ext === 'jpg' || $ext === 'png' || $ext === 'gif' || $ext === 'jpeg') ? true : false;
 	}
 
+
+	/**
+	 * @param $file
+	 * @param array $parm
+	 * @return string
+	 */
+	public function toAudio($file, $parm=array())
+	{
+
+		$file = $this->replaceConstants($file, 'abs');
+
+		$mime = varset($parm['mime'], 'audio/mpeg');
+
+		$text = '<audio controls style="max-width:100%">
+					<source src="'.$file.'" type="'.$mime .'">
+					  Your browser does not support the audio tag.
+				</audio>';
+
+		return $text;
+
+	}
+
+
 	
 	/**
 	 * Display a Video file. 
@@ -4637,9 +4671,13 @@ class e_parser
 			return false;
 		}
 
-		list($id,$type) = explode(".",$file,2);
+		$type = pathinfo($file, PATHINFO_EXTENSION);
+
+		$id = str_replace(".".$type, "", $file);
 
 		$thumb = vartrue($parm['thumb']);
+		$mode = varset($parm['mode'],false); // tag, url
+
 
 
 		$pref = e107::getPref();
@@ -4667,9 +4705,17 @@ class e_parser
 
 		if($type === 'youtube')
 		{
+
 		//	$thumbSrc = "https://i1.ytimg.com/vi/".$id."/0.jpg";
 			$thumbSrc = "https://i1.ytimg.com/vi/".$id."/mqdefault.jpg";
 			$video =  '<iframe class="embed-responsive-item" width="560" height="315" src="//www.youtube.com/embed/'.$id.'?'.$ytqry.'" style="background-size: 100%;background-image: url('.$thumbSrc.');border:0px" allowfullscreen></iframe>';
+			$url 	= 'http://youtu.be/'.$id;
+
+
+			if($mode === 'url')
+			{
+				return $url;
+			}
 
 		
 			if($thumb === 'tag')
@@ -4682,7 +4728,7 @@ class e_parser
 				$thumbSrc = "http://i1.ytimg.com/vi/".$id."/maxresdefault.jpg"; // 640 x 480
 				$filename = 'temp/yt-thumb-'.md5($id).".jpg";
 				$filepath = e_MEDIA.$filename;
-				$url 	= 'http://youtu.be/'.$id;
+
 				
 				if(!file_exists($filepath))
 				{
@@ -4742,12 +4788,24 @@ class e_parser
 			return '<div class="'.$defClass.' '.vartrue($parm['class']).'">'.$video.'</div>';
 		}
 				
-		if($type === 'mp4') //TODO FIXME
+		if($type === 'mp4')
 		{
+			$file = $this->replaceConstants($file, 'abs');
+
+			if($mode === 'url')
+			{
+				return $file;
+			}
+
+
+			$width = varset($parm['w'], 320);
+			$height = varset($parm['h'], 240);
+			$mime = varset($parm['mime'], 'video/mp4');
+
 			return '
 			<div class="video-responsive">
-			<video width="320" height="240" controls>
-			  <source src="'.$file.'" type="video/mp4">
+			<video width="'.$width.'" height="'.$height.'" controls>
+			  <source src="'.$file.'" type="'.$mime.'">
 		
 			  Your browser does not support the video tag.
 			</video>

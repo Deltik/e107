@@ -369,6 +369,7 @@ if(!defined('e_SECURITY_LEVEL'))
 //$e107->url = e107::getUrl(); - caught by __get()
 //TODO - find & replace $e107->url
 //DEPRECATED, BC, $e107->tp caught by __get()
+/** @var e_parse $tp */
 $tp = e107::getParser(); //TODO - find & replace $tp, $e107->tp
 
 //define("e_QUERY", $matches[2]);
@@ -431,6 +432,7 @@ e107::getSingleton('e107_traffic'); // We start traffic counting ASAP
 // e107_require_once(e_HANDLER.'mysql_class.php');
 
 //DEPRECATED, BC, $e107->sql caught by __get()
+/** @var e_db_mysql $sql */
 $sql = e107::getDb(); //TODO - find & replace $sql, $e107->sql
 $sql->db_SetErrorReporting(false);
 
@@ -719,7 +721,7 @@ if(isset($pref['lan_global_list']))
 
 $sql->db_Mark_Time('CHAP challenge');
 
-$die = (e_AJAX_REQUEST == true) ? false : true; 
+$die = (e_AJAX_REQUEST == true) ? false : true;
 e107::getSession()
 	->challenge() // Make sure there is a unique challenge string for CHAP login
 	->check($die); // Token protection
@@ -1982,8 +1984,7 @@ e107::getDebug()->log("Timezone: ".USERTIMEZONE); // remove later on.
 		define('GUEST', false);
 		define('USERCLASS', '');
 		define('USEREMAIL', '');
-		define('USERCLASS_LIST', '');
-		define('USERCLASS', '');
+		define('USERCLASS_LIST', '253,254,250,251,0'); // needed to run some queries.
 		define('USERJOINED', '');
 		return;
 	}
@@ -2794,8 +2795,10 @@ class e_http_header
 			$this->setHeader('Vary: Accept');
 		}
 
-
-		$this->setHeader('X-Frame-Options: SAMEORIGIN');
+		if(defset('X-FRAME-SAMEORIGIN') !== false)
+		{
+			$this->setHeader('X-Frame-Options: SAMEORIGIN');
+		}
 
 		// should come after the Etag header
 		if ($canCache && isset($_SERVER['HTTP_IF_NONE_MATCH']))

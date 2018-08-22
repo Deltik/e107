@@ -1029,20 +1029,14 @@
 				{
 					$thread->page = 1;
 				}
-//	$url = rawurlencode(e107::getUrl()->create('forum/thread/view', array('name' => $thread->threadInfo['thread_name'], 'id' => $thread->threadId, 'page' => '[FROM]')));
 
-//	$url = e_REQUEST_SELF."?p=[FROM]"; // SEF URL Friendly.
-				$url = e107::url('forum', 'topic', $this->var) . "&amp;p=[FROM]";
+				// issue #3171 old method produced an invalid url: /forum/subforum/35/forum-topic/&p=2
+				// moved additional parameter p= to the options/query array
+				$url = e107::url('forum', 'topic', $this->var, array('query' => array('p' => '--FROM--'))); // . "&amp;p=[FROM]";
 
 				$parms = "total={$thread->pages}&type=page&current={$thread->page}&url=" . urlencode($url) . "&caption=off&tmpl=default&navcount=4&glyphs=1";
 
-				//XXX FIXME - pull-down template not practical here. Can we force another?
-
-//	$tVars->GOTOPAGES = $tp->parseTemplate("{NEXTPREV={$parms}}");
 				return e107::getParser()->parseTemplate("{NEXTPREV={$parms}}");
-				/*
-					$parms = ($thread->pages).",1,{$thread->page},url::forum::thread::func=view&id={$thread->threadId}&page=[FROM],off";
-					$tVars->GOTOPAGES = $tp->parseTemplate("{NEXTPREV={$parms}}");*/
 			}
 		}
 
@@ -1196,17 +1190,40 @@
 					$urlParms = array('f' => 'rp', 'id' => $this->var['thread_id'], 'post' => $this->var['thread_id']);
 					$url = e107::url('forum', 'post', null, array('query' => $urlParms));; // ."?f=rp&amp;id=".$thread->threadInfo['thread_id']."&amp;post=".$thread->threadInfo['thread_id'];
 
-					return "
-					<form action='" . $url . "' method='post'>
-					<div class='form-group'>
-						<textarea cols='80' placeholder='" . LAN_FORUM_2007 . "' rows='4' id='forum-quickreply-text' class='tbox input-xxlarge form-control' name='post' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'></textarea>
-					</div>
-					<div class='center text-center form-group'>
-						<input type='submit' data-token='" . e_TOKEN . "' data-forum-insert='" . $ajaxInsert . "' data-forum-post='" . $this->var['thread_forum_id'] . "' data-forum-thread='" . $this->var['thread_id'] . "' data-forum-action='quickreply' name='reply' value='" . LAN_FORUM_2006 . "' class='btn btn-success button' />
-						<input type='hidden' name='thread_id' value='" . $this->var['thread_id'] . "' />
-					</div>
+					$qr = e107::getPlugPref('forum', 'quickreply', 'default');
+					if ($qr == 'default')
+					{
 
-					</form>";
+						return "
+						<form action='" . $url . "' method='post'>
+						<div class='form-group'>
+							<textarea cols='80' placeholder='" . LAN_FORUM_2007 . "' rows='4' id='forum-quickreply-text' class='tbox input-xxlarge form-control' name='post' onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);'></textarea>
+						</div>
+						<div class='center text-center form-group'>
+							<input type='submit' data-token='" . e_TOKEN . "' data-forum-insert='" . $ajaxInsert . "' data-forum-post='" . $this->var['thread_forum_id'] . "' data-forum-thread='" . $this->var['thread_id'] . "' data-forum-action='quickreply' name='reply' value='" . LAN_FORUM_2006 . "' class='btn btn-success button' />
+							<input type='hidden' name='thread_id' value='" . $this->var['thread_id'] . "' />
+						</div>
+	
+						</form>";
+					}
+					else
+					{
+						$editor = $this->forum->prefs->get('editor');
+						$editor = is_null($editor) ? 'default' : $editor;
+						$text = "
+						<form action='" . $url . "' method='post'>
+						<div class='form-group'>" .
+						e107::getForm()->bbarea('post','','forum', '_common', 'small', array('id' => 'forum-quickreply-text', 'wysiwyg' => $editor)) .
+						"</div>
+						<div class='center text-center form-group'>
+							<input type='submit' data-token='" . e_TOKEN . "' data-forum-insert='" . $ajaxInsert . "' data-forum-post='" . $this->var['thread_forum_id'] . "' data-forum-thread='" . $this->var['thread_id'] . "' data-forum-action='quickreply' name='reply' value='" . LAN_FORUM_2006 . "' class='btn btn-success button' />
+							<input type='hidden' name='thread_id' value='" . $this->var['thread_id'] . "' />
+						</div>
+	
+						</form>";
+
+						return $text;
+					}
 
 					if(E107_DEBUG_LEVEL > 0)
 					{

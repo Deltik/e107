@@ -69,7 +69,6 @@ class e_form
 	protected $_field_warnings = array();
 
 
-
 	/**
 	 * @var user_class
 	 */
@@ -512,9 +511,10 @@ class e_form
 	function tabs($array,$options = array())
 	{
 		$initTab = varset($options['active'],false);
+		$id = !empty($options['id']) ? 'id="'.$options['id'].'"' : '';
 		$text  ='
 		<!-- Nav tabs -->
-			<ul class="nav nav-tabs">';
+			<ul '.$id.' class="nav nav-tabs">';
 
 		$c = 0;
 
@@ -958,7 +958,15 @@ class e_form
 	 */
 	function iconpicker($name, $default, $label, $options = array(), $ajax = true)
 	{
+		if(deftrue('e_DEBUG_MEDIAPICKER'))
+		{
+			$options['icon'] = 1;
+			$options['glyph'] = 1;
+			$options['w'] = 64;
+			$options['h'] = 64;
 
+			return $this->mediapicker($name, $default, $options);
+		}
 
 		$options['media'] = '_icon';
 		$options['legacyPath'] = "{e_IMAGE}icons";
@@ -968,29 +976,45 @@ class e_form
 
 	}
 
+
 	/**
-	 * Internal Function used by imagepicker and filepicker
-	 */ 
-	private function mediaUrl($category = '', $label = '', $tagid='', $extras=null)
+	 * Internal Function used by imagepicker, filepicker, mediapicker()
+	 * @param string $category
+	 * @param string $label
+	 * @param string $tagid
+	 * @param null   $extras
+	 * @return string
+	 */
+	public function mediaUrl($category = '', $label = '', $tagid='', $extras=null)
 	{
-		
-		$cat = ($category) ? '&amp;for='.$category : "";
-		if(!$label) $label = ' Upload an image or file';
-		if($tagid) $cat .= '&amp;tagid='.$tagid; 
-		
 		if(is_string($extras))
 		{
 			parse_str($extras,$extras);
 		}
-		
-		if(vartrue($extras['bbcode'])) $cat .= '&amp;bbcode=1'; 	
-		$mode = vartrue($extras['mode'],'main');
-		$action = vartrue($extras['action'],'dialog'); 
-		// $tabs // TODO - option to choose which tabs to display.  
-		
-		//TODO Parse selection data back to parent form. 
+
+		$cat    = ($category) ? '&amp;for='.urlencode($category) : "";
+		$mode   = vartrue($extras['mode'],'main');
+		$action = vartrue($extras['action'],'dialog');
+
+		if(empty($label))
+		{
+			 $label = ' Upload an image or file';
+		}
+
+		// TODO - option to choose which tabs to display by default.
 
 		$url = e_ADMIN_ABS."image.php?mode={$mode}&amp;action={$action}".$cat;
+
+		if(!empty($tagid))
+		{
+			$url .= '&amp;tagid='.$tagid;
+		}
+
+		if(!empty($extras['bbcode']))
+		{
+			$url .= '&amp;bbcode='.$extras['bbcode'];
+		}
+
 		$url .= "&amp;iframe=1";
 		
 		if(vartrue($extras['w']))
@@ -998,15 +1022,35 @@ class e_form
 			$url .= "&amp;w=".$extras['w'];	
 		}
 
-		if(!empty($extras['glyphs']))
+		if(!empty($extras['image']))
 		{
-			$url .= "&amp;glyphs=1";	
-		}	
+			$url .= "&amp;image=1";
+		}
+
+		if(!empty($extras['glyphs']) || !empty($extras['glyph']))
+		{
+			$url .= "&amp;glyph=1";
+		}
+
+		if(!empty($extras['icons']) || !empty($extras['icon']))
+		{
+			$url .= "&amp;icon=1";
+		}
+
+		if(!empty($extras['youtube']))
+		{
+			$url .= "&amp;youtube=1";
+		}
 		
 		if(!empty($extras['video']))
 		{
 			$url .= ($extras['video'] == 2) ? "&amp;video=2" : "&amp;video=1";
-		}			
+		}
+
+		if(!empty($extras['audio']))
+		{
+			$url .= "&amp;audio=1";
+		}
 
 		if(!empty($extras['path']) && $extras['path'] == 'plugin')
 		{
@@ -1026,37 +1070,13 @@ class e_form
 		$class = !empty($extras['class']) ? $extras['class']." " : '';
 		$title = !empty($extras['title']) ? $extras['title'] : $title;
 
+	    $ret = "<a title=\"{$title}\" class='".$class."e-modal' data-modal-submit='true' data-modal-caption='".LAN_EFORM_007."' data-cache='false' data-target='#uiModal' href='".$url."'>".$label."</a>"; // using bootstrap.
 
-	//	$ret = "<a title=\"{$title}\" rel='external' class='e-dialog' href='".$url."'>".$label."</a>"; // using colorXXXbox. 
-	    $ret = "<a title=\"{$title}\" class='".$class."e-modal' data-modal-caption='".LAN_EFORM_007."' data-cache='false' data-target='#uiModal' href='".$url."'>".$label."</a>"; // using bootstrap.
-
-	
-	//	$footer = "<div style=\'padding:5px;text-align:center\' <a href=\'#\' >Save</a></div>";
-	$footer = '';
 		if(!e107::getRegistry('core/form/mediaurl'))
 		{
-			/*
-			e107::js('core','core/admin.js','prototype');
-			e107::js('core','core/dialog.js','prototype');
-			e107::js('core','core/draggable.js','prototype');
-			e107::css('core','core/dialog/dialog.css','prototype');
-			e107::css('core','core/dialog/e107/e107.css','prototype');
-			e107::js('footer-inline','
-			$$("a.e-dialog").invoke("observe", "click", function(ev) {
-					var element = ev.findElement("a");
-					ev.stop();
-					new e107Widgets.URLDialog(element.href, {
-						id: element["id"] || "e-dialog",
-						width: 890,
-						height: 680
-		
-					}).center().setHeader("Media Manager : '.$category.'").setFooter('.$footer.').activate().show();
-				});
-			
-			','prototype');
-			*/
 			e107::setRegistry('core/form/mediaurl', true);
 		}
+
 		return $ret;
 	}
 
@@ -1201,6 +1221,7 @@ class e_form
 	 */
 	function imagepicker($name, $default, $previewURL = '', $sc_parameters = '')
 	{
+
 		$tp = e107::getParser();
 		$name_id = $this->name2id($name);
 		$meta_id = $name_id."-meta";
@@ -1213,6 +1234,21 @@ class e_form
 		elseif(empty($sc_parameters))
 		{
 			$sc_parameters = array();
+		}
+
+		$cat = $tp->toDB(vartrue($sc_parameters['media']));
+
+		if(deftrue('e_DEBUG_MEDIAPICKER'))
+		{
+
+			$sc_parameters['image'] = 1;
+			$sc_parameters['dropzone'] = 1;
+			if(!empty($sc_parameters['video'])) // bc fix
+			{
+				$sc_parameters['youtube'] = 1;
+			}
+
+			return $this->mediapicker($name, $default, $sc_parameters);
 		}
 
 
@@ -1270,7 +1306,7 @@ class e_form
 		
 
 		//$width = intval(vartrue($sc_parameters['width'], 150));
-		$cat = $tp->toDB(vartrue($sc_parameters['media']));	
+
 		
 		if($cat == '_icon') // ICONS
 		{
@@ -1340,6 +1376,188 @@ class e_form
 		return $ret;
 
 	}
+
+
+/**
+	 * Media Picker
+
+	 * @param string $name input name
+	 * @param string $default default value
+	 * @param string $parms shortcode parameters
+	 *  --- $parms list ---
+	 * - media: if present - load from media category table
+	 * - w: preview width in pixels
+	 * - h: preview height in pixels
+	 * - help: tooltip
+	 * - youtube=1 (Enables the Youtube tab)
+     * - image=1 (Enable the Images tab)
+	 * - video=1 (Enable the Video tab)
+	 * - audio=1  (Enable the Audio tab)
+     * - glyph=1 (Enable the Glyphs tab).
+	 * @example $frm->imagepicker('banner_image', $_POST['banner_image'], '', 'media=banner&w=600');
+	 * @return string html output
+	 */
+	function mediapicker($name, $default, $parms = '')
+	{
+
+
+		$tp = e107::getParser();
+		$name_id = $this->name2id($name);
+		$meta_id = $name_id."-meta";
+
+		if(is_string($parms))
+		{
+			if(strpos($parms, '=') === false) $parms = 'media='.$parms;
+			parse_str($parms, $parms);
+		}
+		elseif(empty($parms))
+		{
+			$parms = array();
+		}
+
+
+		if(empty($parms['media']))
+		{
+			$parms['media'] = '_common';
+		}
+
+		$title = !empty($parms['help']) ? "title='".$parms['help']."'" : "";
+
+		if(!isset($parms['w']))
+		{
+			$parms['w'] = 220;
+		}
+
+		if(!isset($parms['h']))
+		{
+			$parms['h'] = 190;
+		}
+
+
+	//	$width = vartrue($parms['w'], 220);
+	//	$height = vartrue($parms['h'], 190);
+	// e107::getDebug()->log($parms);
+
+		// Test Files...
+	//	$default = '{e_MEDIA_VIDEO}2018-07/samplevideo_720x480_2mb.mp4';
+	//	$default = '{e_MEDIA_FILE}2016-03/Colony_Harry_Gregson_Williams.mp3';
+	//	$default = '{e_PLUGIN}gallery/images/butterfly.jpg';
+	//	$default = 'NuIAYHVeFYs.youtube';
+	//	$default = ''; // empty
+	//	$default = '{e_MEDIA_IMAGE}2018-07/Jellyfish.jpg';
+
+		$class = '';
+
+		if($parms['icon'])
+		{
+			$class = 'mediaselector-container-icon';
+			$parms['type'] = 'icon';
+		}
+
+		$preview = e107::getMedia()->previewTag($default,$parms);
+
+		$cat = $tp->toDB(vartrue($parms['media']));
+
+		$ret = "<div  class='mediaselector-container e-tip well well-small ".$class."' {$title} style='position:relative;vertical-align:top;margin-right:25px; display:inline-block; width:".$parms['w']."px;min-height:".$parms['h']."px;'>";
+
+		$parms['class'] = 'btn btn-sm btn-default';
+
+		$dropzone = !empty($parms['dropzone']) ? " dropzone" : "";
+	//	$parms['modal-delete-label'] = LAN_DELETE;
+
+		if(empty($preview))
+		{
+			$parms['title'] = LAN_ADD;
+			$editIcon        = $this->mediaUrl($cat, $tp->toGlyph('fa-plus', array('fw'=>1)), $name_id,$parms);
+			$previewIcon     = '';
+		}
+		else
+		{
+			$editIcon       = $this->mediaUrl($cat, $tp->toGlyph('fa-edit', array('fw'=>1)), $name_id,$parms);
+		//	$previewIcon    = "<a title='".LAN_PREVIEW."' class='btn btn-sm btn-default btn-secondary e-modal' data-modal-caption='".LAN_PREVIEW."' href='".$previewURL."'>".$tp->toGlyph('fa-search', array('fw'=>1))."</a>";
+			$previewIcon    = '';
+		}
+
+
+		if(!empty($parms['icon'])) // empty overlay without button.
+		{
+			$parms['class'] = '';
+			$editIcon = $this->mediaUrl($cat, "<span><!-- --></span>", $name_id,$parms);
+		}
+
+		$ret .= "<div id='{$name_id}_prev' class='mediaselector-preview".$dropzone."'>";
+
+		$ret .= $preview; // image, video. audio tag etc.
+
+		$ret .= '</div><div class="overlay">
+				    <div class="text">'.$editIcon.$previewIcon.'</div>
+				  </div>';
+
+		$ret .= "</div>\n";
+		$ret .=	"<input type='hidden' name='{$name}' id='{$name_id}' value='{$default}' />";
+		$ret .=	"<input type='hidden' name='mediameta_{$name}' id='{$meta_id}' value='' />";
+
+		if(empty($dropzone))
+		{
+			return $ret;
+		}
+		// Drag-n-Drop Upload
+		// @see https://www.dropzonejs.com/#server-side-implementation
+
+		e107::js('footer', e_WEB_ABS."lib/dropzone/dropzone.min.js");
+		e107::css('url', e_WEB_ABS."lib/dropzone/dropzone.min.css");
+		e107::css('inline', "
+			.dropzone { background: transparent; border:0 }
+		");
+
+			$INLINEJS = "
+				Dropzone.autoDiscover = false;
+				$(function() {
+				    $('#".$name_id."_prev').dropzone({ 
+				        url: '".e_JS."plupload/upload.php?for=".$cat."',
+				        createImageThumbnails: false,
+				        maxFilesize: ".(int) ini_get('upload_max_filesize').",
+				         success: function (file, response) {
+				            
+				            file.previewElement.classList.add('dz-success');
+				    
+				         //   console.log(response);
+				            
+				            if(response)
+				            {   
+				                var decoded = jQuery.parseJSON(response);
+				                console.log(decoded);
+				                if(decoded.preview && decoded.result)
+				                {
+				                    $('#".$name_id."').val(decoded.result);
+				                    $('#".$name_id."_prev').html(decoded.preview);
+				                }
+								else if(decoded.error)
+								{
+									file.previewElement.classList.add('dz-error');
+									$('#".$name_id."_prev').html(decoded.error.message);
+								}				            
+				            }
+				            
+				        },
+				        error: function (file, response) {
+				            file.previewElement.classList.add('dz-error');
+				        }
+				    });
+				});
+			
+			";
+
+
+		e107::js('footer-inline', $INLINEJS);
+
+		return $ret;
+
+	}
+
+
+
+
 
 
 
@@ -2077,12 +2295,15 @@ class e_form
 	/**
 	 * Bbcode Area. Name, value, template, media-Cat, size, options array eg. counter
 	 * IMPORTANT: $$mediaCat is also used is the media-manager category identifier
-	 * @param $name
-	 * @param $value
-	 * @param $template
-	 * @param $mediaCat _common
-	 * @param $size : small | medium | large
-	 * @param $options array(); 
+	 * @param string $name
+	 * @param mixed $value
+	 * @param string $template
+	 * @param string $mediaCat _common
+	 * @param string $size : small | medium | large
+	 * @param array $options array();
+	 * @param bool $options['wysiwyg'] when set to false will disable wysiwyg if active.
+	 * @param string $options['class'] override class.
+	 * @param string $options['id']
 	 */
 	function bbarea($name, $value, $template = '', $mediaCat='_common', $size = 'large', $options = array())
 	{
@@ -2124,14 +2345,41 @@ class e_form
 		}
 
 		// auto-height support
-	   	$options['class'] 	= 'tbox bbarea '.($size ? ' '.$size : '').' e-wysiwyg e-autoheight form-control';
+/*
 		$bbbar 				= '';
-		
+		$wysiwyg = null;
+		$wysiwygClass = ' e-wysiwyg';
 
-		$help_tagid 		= $this->name2id($name)."--preview";
+		if(isset($options['wysiwyg']))
+		{
+			$wysiwyg = $options['wysiwyg'];
+		}
 
+		if($wysiwyg === false)
+		{
+			$wysiwygClass = '';
+		}
 
-		if(e107::wysiwyg(true) === false) // bbarea loaded, so activate wysiwyg (if enabled in preferences)
+		$options['class'] 	= 'tbox bbarea '.($size ? ' '.$size : '').$wysiwygClass.' e-autoheight form-control';
+*/
+		$options['class'] 	= 'tbox bbarea '.($size ? ' '.$size : '').' e-wysiwyg e-autoheight form-control';
+
+		if (isset($options['id']) && !empty($options['id']))
+		{
+			$help_tagid 		= $this->name2id($options['id'])."--preview";
+		}
+		else
+		{
+			$help_tagid 		= $this->name2id($name)."--preview";
+		}
+
+		if (!isset($options['wysiwyg']))
+		{
+			$options['wysiwyg'] = true;
+		}
+
+		//if(e107::wysiwyg(true) === false || $wysiwyg === false) // bbarea loaded, so activate wysiwyg (if enabled in preferences)
+		if(e107::wysiwyg($options['wysiwyg'],true) === 'bbcode') // bbarea loaded, so activate wysiwyg (if enabled in preferences)
 		{
 			$options['other'] 	= "onselect='storeCaret(this);' onclick='storeCaret(this);' onkeyup='storeCaret(this);' {$height}";
 		}
@@ -2140,14 +2388,14 @@ class e_form
 			$options['other'] 	= " ".$height;
 		}
 
-	
+
 		$counter 			= vartrue($options['counter'],false); 
 		
 		$ret = "<div class='bbarea {$size}'>
 		<div class='field-spacer'><!-- --></div>\n";
 
 
-		if(e107::wysiwyg() === true)
+		if(e107::wysiwyg() === true) // && $wysiwyg !== false)
 		{
 			$eParseList = e107::getConfig()->get('e_parse_list');
 
@@ -2891,7 +3139,22 @@ class e_form
 
 		if(!empty($current_value) && !is_numeric($current_value)) // convert name to id.
 		{
-			$current_value = $this->_uc->getID($current_value);
+			//$current_value = $this->_uc->getID($current_value);
+			// issue #3249 Accept also comma separated values
+			if (!is_array($current_value))
+			{
+				$current_value = explode(',', $current_value);
+			}
+			$tmp = array();
+			foreach($current_value as $val)
+			{
+				if (!empty($val))
+				{
+					$tmp[] = !is_numeric($val) ? $this->_uc->getID(trim($val)) : (int) $val;
+				}
+			}
+			$current_value = implode(',', $tmp);
+			unset($tmp);
 		}
 
 		return $this->select_open($name, $select_options)."\n".$this->_uc->vetted_tree($name, array($this, '_uc_select_cb'), $current_value, $uc_options, $opt_options)."\n".$this->select_close();
@@ -3863,9 +4126,10 @@ class e_form
 		if(!varset($fromval)){ $fromval = 0; }
 
         $ascdesc = (varset($ascdesc) == 'desc') ? 'asc' : 'desc';
+
 		foreach($fieldarray as $key=>$val)
 		{
-     		if ((in_array($key, $columnPref) || $key == 'options' || (vartrue($val['forced']))) && !vartrue($val['nolist']))
+     		if ((in_array($key, $columnPref) || ($key === 'options' && isset($val['title'])) || (vartrue($val['forced']))) && !vartrue($val['nolist']))
 			{
 				$cl = (vartrue($val['thclass'])) ? " class='".$val['thclass']."'" : "";
 				$text .= "
@@ -3883,8 +4147,8 @@ class e_form
 				$text .= (vartrue($val['url'])) ? "<a href='".str_replace(array('&amp;', '&'), array('&', '&amp;'),$val['url'])."'>" : "";  // Really this column-sorting link should be auto-generated, or be autocreated via unobtrusive js.
 	            $text .= defset($val['title'], $val['title']);
 				$text .= ($val['url']) ? "</a>" : "";
-	            $text .= ($key == "options" && !vartrue($val['noselector'])) ? $this->columnSelector($fieldarray, $columnPref) : "";
-				$text .= ($key == "checkboxes") ? $this->checkbox_toggle('e-column-toggle', vartrue($val['toggle'], 'multiselect')) : "";
+	            $text .= ($key === "options" && !vartrue($val['noselector'])) ? $this->columnSelector($fieldarray, $columnPref) : "";
+				$text .= ($key === "checkboxes") ? $this->checkbox_toggle('e-column-toggle', vartrue($val['toggle'], 'multiselect')) : "";
 
 	
 	 			$text .= "
@@ -4924,16 +5188,23 @@ class e_form
 							$parms['pre'] = rtrim($parms['legacyPath'],'/').'/';
 						}
 					//	return print_a($thparms,true); 
-					
-						$src = $tp->replaceConstants(vartrue($parms['pre']).$value, 'abs');
-				//		$thsrc = $tp->thumbUrl(vartrue($parms['pre']).$value, $thparms, varset($parms['thumb_urlraw']));
+
+						if(!empty($value[0]) && $value[0] === '{') // full path to convert.
+						{
+							$src = $tp->replaceConstants($value, 'abs');
+						}
+						else // legacy link without {e_XXX} path. eg. downloads thumbs.
+						{
+							$src = $tp->replaceConstants(vartrue($parms['pre']).$value, 'abs');
+						}
+
 						$alt = basename($src);
-					//	$ttl = '<img src="'.$thsrc.'" alt="'.$alt.'" class="thumbnail e-thumb" />';
+
 
 						$thparms['alt'] = $alt;
 						$thparms['class'] = "thumbnail e-thumb";
 
-
+						e107::getDebug()->log($value);
 
 						$ttl = $tp->toImage($value, $thparms);
 
@@ -4959,6 +5230,11 @@ class e_form
 					$thparms['class'] = "thumbnail e-thumb fallback";
 					return $tp->toImage($value, $thparms);
 				}
+			break;
+
+
+			case 'media':
+				return e107::getMedia()->previewTag($value, $parms);
 			break;
 			
 			case 'files':
@@ -5598,6 +5874,28 @@ class e_form
 					$ret .=  $this->imagepicker($k, $ival, defset($label, $label), $parms);		
 				}
 				
+			break;
+
+			/** Generic Media Pick for combinations of images, audio, video, glyphs, files, etc. Field Type = json */
+			case 'media':
+
+				if(!deftrue('e_DEBUG_MEDIAPICKER'))
+				{
+					return null;
+				}
+
+				$max = varset($parms['max'],1);
+
+				$ret = '';
+				for ($i=0; $i < $max; $i++)
+				{
+					$k 		= $key.'['.$i.'][path]';
+					$ival 	= $value[$i]['path'];
+
+					$ret .=  $this->mediapicker($k, $ival, $parms);
+				}
+
+				return $ret;
 			break;
 			
 			case 'files':

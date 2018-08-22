@@ -46,9 +46,13 @@
 	$chunks = isset($_REQUEST["chunks"]) ? intval($_REQUEST["chunks"]) : 0;
 	$fileName = isset($_REQUEST["name"]) ? $_REQUEST["name"] : '';
 
-
 // Clean the fileName for security reasons
 	$fileName = preg_replace('/[^\w\._]+/', '_', $fileName);
+
+	if(!empty($_FILES['file']['name'])) // dropzone support v2.1.9
+	{
+		$fileName = $_FILES['file']['name'];
+	}
 
 // Make sure the fileName is unique but only if chunking is disabled
 	if($chunks < 2 && file_exists($targetDir . DIRECTORY_SEPARATOR . $fileName))
@@ -143,8 +147,10 @@
 		}
 		else
 		{
-			die('{"jsonrpc" : "2.0", "error" : {"code": 103, "message": "Failed to move uploaded file."}, "id" : "id"}');
+			die('{"jsonrpc" : "2.0", "error" : {"code": 103, "message": "Failed to move uploaded file. '.ini_get('upload_max_filesize').'"}, "id" : "id"}');
 		}
+
+
 	}
 	else
 	{
@@ -185,6 +191,14 @@
 
 	$filePath = str_replace('//','/',$filePath); // cleanup .
 
+
+	if(e107::getFile()->isClean($filePath) !== true)
+	{
+		@unlink($filePath);
+		die('{"jsonrpc" : "2.0", "error" : {"code": 103, "message": "Bad File Detected."}, "id" : "id"}');
+	}
+
+
 	$convertToJpeg = e107::getPref('convert_to_jpeg', 0);
 	$fileSize = filesize($filePath);
 
@@ -199,6 +213,9 @@
 
 	}
 
+
+
+
 	if($_GET['for'] != '') // leave in upload directory if no category given.
 	{
 		$uploadPath = varset($_GET['path'],null);
@@ -211,6 +228,11 @@
 	$log['filename'] = $fileName;
 	$log['filesize'] = $fileSize;
 	$log['status'] = ($result) ? 'ok' : 'failed';
+	$log['_files'] = $_FILES;
+//	$log['_get'] = $_GET;
+//	$log['_post'] = $_POST;
+
+
 
 	
 
@@ -218,7 +240,9 @@
 
 	e107::getLog()->add('LAN_AL_MEDIA_01', print_r($log, true), $type, 'MEDIA_01');
 
-	$array = array("jsonrpc" => "2.0", "result" => $result, "id" => "id");
+
+	$preview = e107::getMedia()->previewTag($result);
+	$array = array("jsonrpc" => "2.0", "result" => $result, "id" => "id", 'preview' => $preview, 'data'=>$_FILES );
 
 	echo json_encode($array);
 // Return JSON-RPC response

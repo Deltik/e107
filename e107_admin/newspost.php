@@ -1752,6 +1752,7 @@ class news_form_ui extends e_admin_form_ui
 				}
 			}
 
+
 			$text = $frm->imagepicker('news_thumbnail[0]', varset($thumbTmp[0]), varset($paths[0]),'media=news&video=1&legacyPath={e_IMAGE}newspost_images');
 			$text .= $frm->imagepicker('news_thumbnail[1]', varset($thumbTmp[1]), varset($paths[1]),'media=news&video=1&legacyPath={e_IMAGE}newspost_images');
 			$text .= $frm->imagepicker('news_thumbnail[2]', varset($thumbTmp[2]), varset($paths[2]),'media=news&video=1&legacyPath={e_IMAGE}newspost_images');

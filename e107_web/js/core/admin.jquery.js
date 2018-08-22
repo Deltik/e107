@@ -48,7 +48,11 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 						if($this.attr('data-modal-submit'))
 						{
 							var buttonCaption = $('#e-modal-iframe').contents().find('#etrigger-submit').text(); // copy submit button caption from iframe form.
-							$('#e-modal-submit').text(buttonCaption).fadeIn(); // display the button in the modal footer.
+
+							if(buttonCaption)
+							{
+								$('#e-modal-submit').text(buttonCaption).fadeIn(); // display the button in the modal footer.
+							}
 							$('#e-modal-iframe').contents().find('.buttons-bar').hide(); // hide buttons in the iframe's form.
 						}
 
@@ -782,11 +786,28 @@ $(document).ready(function()
         });
 
 
-
-		$('.carousel').on('slid.bs.carousel', function () {
+		$('body').on('slid.bs.carousel', '.carousel', function(){
 		  var currentIndex = $(this).find('.active').index();
 		  var text = (currentIndex + 1);
-		  $('#admin-ui-carousel-index').text(text);
+		  var id = $(this).attr('id') + '-index'; // admin-ui-carousel-index etc.
+		  $('#'+id).text(text);
+
+			// this takes commented content for each carousel slide and enables it, one slide at a time as we scroll.
+
+			$(this).find('.item').each(function(index, node)
+			{
+				var content = $(this).contents();
+
+				var item = content[0];
+
+				if(item.nodeType === 8) // commented code @see e_media::browserCarousel() using '<!--'
+				{
+					$(item).replaceWith(item.nodeValue);
+					return false;
+				}
+
+			});
+
 		});
 		
 

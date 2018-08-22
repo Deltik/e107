@@ -7,5 +7,5 @@
 
 if (!defined('e107_INIT')) { exit; }
 
-$e107info['e107_version'] = "2.1.8";
+$e107info['e107_version'] = "2.1.9";
 ?>

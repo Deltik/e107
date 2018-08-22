@@ -1751,17 +1751,17 @@ class e107
     * Return a string containg exported array data. - preferred. 
     *
     * @param array $ArrayData array to be stored
-    * @param bool $AddSlashes default false, add slashes for db storage, else false
-    * @return string
+    * @param bool|string $mode true = var_export with addedslashes, false = var_export (default), 'json' = json encoded
+    * @return array|string
     */
-    public static function serialize($ArrayData, $AddSlashes = false) 
+    public static function serialize($ArrayData, $mode = false)
     {
     	if(empty($ArrayData))
 		{
 			return array();	
 		}			
 		       
-		return self::getArrayStorage()->serialize($ArrayData, $AddSlashes); 
+		return self::getArrayStorage()->serialize($ArrayData, $mode);
     }
 	
 	  /**
@@ -3627,27 +3627,52 @@ class e107
 
 	/**
 	 * Set or Retrieve WYSIWYG active status. (replaces constant  e_WYSIWYG)
-	 * @param null $val
-	 * @return bool|mixed|void
+	 *
+	 * @param bool/string $val if null, return current value, otherwise define editor to use
+	 * @param bool $returnEditor true = return name of active editor, false = return "false" for non wysiwyg editor, return "true" if wysiwyg editor should be used
+	 * @return bool|mixed
 	 */
-	public static function wysiwyg($val=null)
+	public static function wysiwyg($val=null, $returnEditor=false)
 	{
-		
+		static $editor = 'bbcode';
+		static $availEditors;
+		$fallbackEditor = 'bbcode';
+
 		if (self::getPref('wysiwyg',false) != true)
 		{
-			return false; 	
-		}
-
-		if(is_null($val))
-		{
-			return self::getRegistry('core/e107/wysiwyg');
+			// wysiwyg disabled by global pref
+			$editor = $fallbackEditor;
 		}
 		else
 		{
-			self::setRegistry('core/e107/wysiwyg',$val);
-			return true;
-		}	
-		
+			if(!isset($availEditors))
+			{
+				// init list of installed wysiwyg editors
+				$availEditors = array_keys(e107::getPlug()->getInstalledWysiwygEditors());
+			}
+
+			if(!is_null($val))
+			{
+				// set editor if value given
+				$editor = empty($val) ? $fallbackEditor : ($val === 'default' ? true : $val);
+			}
+
+
+			// check if choosen editor is installed,
+			// if not, but a different editor is available use that one (e.g. tinymce4 choosen, but only simplemde available available, use simplemde)
+			// if no wysiwyg editor available, use fallback editor (bbcode)
+			if(is_bool($editor) || ($editor !== $fallbackEditor && !in_array($editor, $availEditors)))
+			{
+				$editor = count($availEditors) > 0 ? $availEditors[0] : $fallbackEditor;
+			}
+		}
+		// $returnEditor => false:
+		// false => fallback editor (bbcode)
+		// true => default wysiwyg editor
+		// $returnEditor => true:
+		// return name of the editor
+		//return $returnEditor ? $editor : ($editor === $fallbackEditor || $editor === false ? false : true);
+		return $returnEditor ? $editor : ($editor !== $fallbackEditor);
 	}
 
 

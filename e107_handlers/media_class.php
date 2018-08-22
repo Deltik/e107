@@ -29,6 +29,18 @@ class e_media
 				'video'			=> e_MEDIA_VIDEO,
 				'other'			=> e_MEDIA_FILE
 		);
+
+	/** @var array  */
+	protected $mimeExtensions = array(
+				'text'			=> array('txt'),
+				'multipart'		=> array(),
+				'application'	=> array('zip','doc','gz'),
+				'audio'			=> array('mp3','wav'),
+				'image'			=> array('jpeg','jpg','png','gif', 'svg'),
+				'video'			=> array('mp4', 'youtube','youtubepl'),
+				'other'			=> array(),
+			//	'glyph'         => array('glyph')
+		);
 	
 	function __construct()
 	{
@@ -53,10 +65,11 @@ class e_media
 	 * Import files from specified path into media database. 
 	 * @param string $cat Category nickname
 	 * @param string $epath path to file.
-	 * @param string $fmask [optional] filetypes eg. .jpg|.gif IMAGES is the default mask. 
+	 * @param string $fmask [optional] filetypes eg. .jpg|.gif IMAGES is the default mask.
+	 * @param array $options
 	 * @return e_media
 	 */
-	public function import($cat='', $epath, $fmask='', $options=array())
+	public function import($cat='', $epath='', $fmask='', $options=array())
 	{
 		if(!vartrue($cat)){ return $this;}
 		
@@ -145,7 +158,8 @@ class e_media
 				}
 			}
 		}
-		if($count)
+
+	//	if($count)
 		{
 			// $mes->addSuccess("Imported {$count} Media items.");
 		}
@@ -183,20 +197,21 @@ class e_media
 	/**
 	 * Remove Media from media table
 	 * @param string $cat [optional] remove a full category of media
-	 * @return 
+	 * @return bool
 	 */
 	function removeCat($cat)
 	{
-		$tp = e107::getParser();
+		if(empty($cat))
+		{
+			return false;
+		}
+
 		$sql = e107::getDb();
 		$mes = e107::getMessage();
-						
-		if(vartrue($cat))
-		{
-			$status = ($sql->delete('core_media',"media_cat = '".$cat."'")) ? TRUE : FALSE;
-			$mes->add("Removing Media in Category: ".$cat, E_MESSAGE_DEBUG);
-			return $status;	
-		}	
+
+		$status = ($sql->delete('core_media',"media_cat = '".$cat."'")) ? true : false;
+		$mes->add("Removing Media in Category: ".$cat, E_MESSAGE_DEBUG);
+		return $status;
 	}
 
 
@@ -205,7 +220,7 @@ class e_media
 	 * Remove Media from media table
 	 * @param string $epath remove media in the specified path.
 	 * @param string $type [optional] image|icon
-	 * @return 
+	 * @return bool
 	 */
 	function removePath($epath, $type='image')
 	{
@@ -214,15 +229,18 @@ class e_media
 		$mes = e107::getMessage();
 		
 		$qry = ($type == 'icon') ? " AND media_category REGEXP '_icon_16|_icon_32|_icon_48|_icon_64' " : " AND NOT media_category REGEXP '_icon_16|_icon_32|_icon_48|_icon_64' ";
-								
-		if(vartrue($epath))
+
+		if(empty($epath))
 		{
-			$path = $tp->createConstants($epath, 'rel');
-			$status = ($sql->delete('core_media',"media_url LIKE '".$path."%'".$qry)) ? TRUE : FALSE;
-			$message = ($type == 'image') ?  "Removing Media with path: ".$path : "Removing Icons with path: ".$path;
-			$mes->add($message, E_MESSAGE_DEBUG);
-			return $status;	
-		}			
+			return false;
+		}
+
+		$path = $tp->createConstants($epath, 'rel');
+		$status = ($sql->delete('core_media',"media_url LIKE '".$path."%'".$qry)) ? TRUE : FALSE;
+		$message = ($type == 'image') ?  "Removing Media with path: ".$path : "Removing Icons with path: ".$path;
+		$mes->add($message, E_MESSAGE_DEBUG);
+		return $status;
+
 	}
 	
 	
@@ -234,7 +252,7 @@ class e_media
 	 */
 	function listIcons($epath)
 	{
-		if(!$epath) return;
+		if(!$epath) return array();
 		
 		$ret = array();
 		$sql = e107::getDb();
@@ -242,7 +260,7 @@ class e_media
 		
 		$path = $tp->createConstants($epath, 'rel');
 	
-		$status = ($sql->gen("SELECT * FROM `#core_media` WHERE `media_url` LIKE '".$path."%' AND media_category REGEXP '_icon_16|_icon_32|_icon_48|_icon_64|_icon_svg' ")) ? TRUE : FALSE;
+		$sql->gen("SELECT * FROM `#core_media` WHERE `media_url` LIKE '".$path."%' AND media_category REGEXP '_icon_16|_icon_32|_icon_48|_icon_64|_icon_svg' ");
 		while ($row = $sql->fetch())
 		{
 			$ret[] = $row['media_url'];
@@ -255,7 +273,7 @@ class e_media
 	 * Create media category.
 	 * 'class' data is optional, 'id' key is ignored
 	 * 
-	 * @param array $data associative array, db keys should be passed without the leading 'media_cat_' e.g. 'class', 'type', etc.
+	 * @param array $datas associative array, db keys should be passed without the leading 'media_cat_' e.g. 'class', 'type', etc.
 	 * @return integer last inserted ID or false on error
 	 */
 	public function createCategory($datas)
@@ -288,6 +306,8 @@ class e_media
 		{
 			return false;
 		}
+
+		unset($parms); // remove later if $parms becomes used.
 				
 		$cat = 'user_'.$type.'_'.intval($userId);
 		
@@ -315,7 +335,7 @@ class e_media
 	
 	/**
 	 * Create multiple media categories in once
-	 * @param array $data
+	 * @param array $multi_data
 	 * @return integer number of successfully inserted records
 	 */
 	public function createCategories($multi_data)
@@ -337,7 +357,7 @@ class e_media
 	{
 		if($owner == '')
 		{
-			return;	
+			return null;
 		}
 		
 		$sql = e107::getDb();
@@ -357,9 +377,12 @@ class e_media
 		
 		return FALSE; 
 	}
-	
+
 	/**
 	 * Return an Array of Media Categories
+	 *
+	 * @param string $owner
+	 * @return array
 	 */
 	public function getCategories($owner='')
 	{
@@ -379,83 +402,95 @@ class e_media
 		}
 		return $ret;	
 	}
-	
+
 	/**
 	 * Return the total number of Images in a particular category
-	 * 
-	 */	
+	 *
+	 * @param string $cat
+	 * @param string $search
+	 * @return array
+	 */
 	public function countImages($cat,$search=null)
 	{
-		
 		return $this->getImages($cat, 0, 'all',$search);
-		
-		/*
-		
-		$inc 		= array();
-		$searchinc 	= array();
-		
-		if(strpos($cat,"+") || !$cat)
-		{
-			$cat = str_replace("+","",$cat);
-			$inc[] = "media_category = '_common_image' ";
-		}
-		if($cat)
-		{
-			$inc[] = "media_category REGEXP '(^|,)(".$cat.")(,|$)' "; // for multiple category field. 
-		}
-		
-		if($search)
-		{
-			$searchinc[] = "media_name LIKE '%".$search."%' "; 
-			$searchinc[] = "media_description LIKE '%".$search."%' "; 
-			$searchinc[] = "media_caption LIKE '%".$search."%' ";
-			$searchinc[] = "media_tags LIKE '%".$search."%' ";  
-		}
-		
-		
-		$query = "SELECT * FROM #core_media WHERE media_userclass IN (".USERCLASS_LIST.") AND ( ".implode(" OR ",$inc)." )" ;
-		
-		if($search)
-		{
-			$query .= " AND ( ".implode(" OR ",$searchinc)." ) " ;	
-		}
-		
-		return e107::getDb()->gen($query);
-		*/
-	}
-	
-	
-	public function getFiles($from=0, $amount = null, $search = null)
-	{
-		return $this->getImages('_common_file', $from, $amount, $search);	
 	}
 
 
-	public function getVideos($from=0, $amount = null, $search = null)
+	/**
+	 * @param string $cat
+	 * @param int  $from
+	 * @param int $amount
+	 * @param string $search
+	 * @return array
+	 */
+	public function getFiles($cat, $from=0, $amount = null, $search = null)
 	{
-		return $this->getImages('_common_video', $from, $amount, $search);
+		return $this->getMedia('application', $cat, $from, $amount, $search);
+	}
+
+
+	/**
+	 * @param string $cat
+	 * @param int  $from
+	 * @param int $amount
+	 * @param string $search
+	 * @return array
+	 */
+	public function getVideos($cat, $from=0, $amount = null, $search = null)
+	{
+		return $this->getMedia('video', $cat, $from, $amount, $search);
+	}
+
+
+	/**
+	 * @param string $cat
+	 * @param int   $from
+	 * @param int  $amount
+	 * @param string  $search
+	 * @return array
+	 */
+	public function getAudios($cat='', $from=0, $amount = null, $search = null)
+	{
+		return $this->getMedia('audio', $cat, $from, $amount, $search);
 	}
 
 	/**
 	 * Return an array of Images in a particular category
+	 *
 	 * @param string $cat : category name. use + to include _common eg. 'news+'
-	 * @param $from
-	 * @param $amount
-	 * @param $search
+	 * @param int    $from
+	 * @param  int      $amount
+	 * @param  string      $search
+	 * @param null   $orderby
 	 * @return array
 	 */
 	public function getImages($cat='', $from=0, $amount=null, $search=null, $orderby=null)
 	{
-		$inc 		= array();
+		return $this->getMedia('image', $cat, $from, $amount, $search, $orderby);
+	}
+
+
+	/**
+	 * Return an array of Images in a particular category
+	 *
+	 * @param string $type image|audio|video
+	 * @param string $cat : category name. use + to include _common eg. 'news+'
+	 * @param int    $from
+	 * @param int|string     $amount
+	 * @param string  $search
+	 * @param string   $orderby
+	 * @return array|bool
+	 */
+	private function getMedia($type, $cat='', $from=0, $amount=null, $search=null, $orderby=null)
+	{
+	//	$inc 		= array();
 		$searchinc 	= array();
+		$catArray   = array();
 		
 		if(strpos($cat,"+") || !$cat)
 		{
 			$cat = str_replace("+","",$cat);
-			// $inc[] = "media_category = '_common_image' ";
-		//	$inc[] = "media_category REGEXP '(^|,)(_common_image)(,|$)' "; 
-		//		$inc[] = "media_category LIKE '%_common_image%' "; 
-			$catArray[] = '_common_image';
+			$catArray[] = '_common_'.$type;
 		}
 		if($cat)
 		{
@@ -465,20 +500,20 @@ class e_media
 			}
 			else
 			{
-				$catArray[] = $cat; 
+				$catArray[] = $cat;
+
+				if($type === 'image' || $type === 'audio'|| $type === 'video')
+				{
+					$catArray[] = $cat.'_'.$type; // BC Fix.
+				}
 			}
-	//		$inc[] = "media_category LIKE '%".$cat."%' "; // for multiple category field. 
-		//	$inc[] = "media_category REGEXP '(^|,)(".$cat.")(,|$)' "; // for multiple category field. 
 		}
-		
-		
-	//	$inc[] = "media_category REGEXP '(^|,)_common_image|banner_image(,|$)' ";
-		
+
 		// TODO check the category is valid. 
 		
 		if($search)
 		{
-			$searchinc[] = "media_name LIKE '%".$search."%' "; 
+			$searchinc[] = "media_name LIKE '%".$search."%' ";
 			$searchinc[] = "media_description LIKE '%".$search."%' "; 
 			$searchinc[] = "media_caption LIKE '%".$search."%' ";
 			$searchinc[] = "media_tags LIKE '%".$search."%' ";  
@@ -490,10 +525,9 @@ class e_media
 		
 		$fields = ($amount == 'all') ? "media_id" : "*";
 		
-		$query = "SELECT ".$fields." FROM #core_media WHERE `media_category` REGEXP '(^|,)".implode("|",$catArray)."(,|$)' AND `media_userclass` IN (".USERCLASS_LIST.")  " ;	
-	//	$query = "SELECT ".$fields." FROM #core_media WHERE media_userclass IN (".USERCLASS_LIST.") AND ( ".implode(" OR ",$inc)." ) " ;	
-
-
+		$query = "SELECT ".$fields." FROM #core_media WHERE `media_category` REGEXP '(^|,)".implode("|",$catArray)."(,|$)' 
+		AND `media_userclass` IN (".USERCLASS_LIST.") 
+		AND `media_type` LIKE '".$type."/%' " ;
 
 		if($search)
 		{
@@ -520,7 +554,7 @@ class e_media
 			$query .= " LIMIT ".$from." ,".$amount;	
 		}
 
-	//	e107::getDebug()->log($query);
+		e107::getDebug()->log($query);
 
 		e107::getDb()->gen($query);
 		while($row = e107::getDb()->fetch())
@@ -559,7 +593,7 @@ class e_media
 		}
 		
 		e107::getDb()->gen($query);
-		while($row = e107::getDb()->fetch(mySQL_ASSOC))
+		while($row = e107::getDb()->fetch())
 		{
 			$id = $row['media_id'];
 			$ret[$id] = $row;
@@ -571,12 +605,16 @@ class e_media
 
 		
 	/**
-	 * Generate Simple Thumbnail window for image -selection 
+	 * Generate Simple Thumbnail window for image -selection
+	 * @deprecated Currently used only by ren_help PreImage_Select
+	 * @param string $cat
+	 * @param string $formid
+	 * @return string
 	 */
-	private function imageSelect($cat,$formid='imageSel')
+	public function imageSelect($cat,$formid='imageSel')
 	{
 		$sql = e107::getDb();
-		$tp = e107::getParser();
+	//	$tp = e107::getParser();
 		
 		$text = "<div style='margin-left:500px;text-align:center; position:relative;z-index:1000;float:left;display:none' id='{$formid}'>";
 		$text .="<div style='-moz-box-shadow: 3px 3px 3px #808080;
@@ -584,7 +622,7 @@ class e_media
 			box-shadow: 3px 3px 3px #808080;
 			background-color:black;border:1px solid black;position:absolute; height:200px;width:205px;overflow-y:scroll; bottom:30px; right:100px'>";
 		
-		$total = ($sql->gen("SELECT * FROM `#core_media` WHERE media_category = '_common' OR media_category = '".$cat."' ORDER BY media_category,media_datestamp DESC ")) ? TRUE : FALSE;
+		$sql->gen("SELECT * FROM `#core_media` WHERE media_category = '_common' OR media_category = '".$cat."' ORDER BY media_category,media_datestamp DESC ");
 		$text .= "<div style='font-size:120%;font-weight:bold;text-align:right;margin-right:10px'><a title='".LAN_CLOSE."' style='text-decoration:none;color:white' href='#' onclick=\"expandit('{$formid}'); return false;\" >x</a></div>";
 			
 		while ($row = $sql->db_Fetch())
@@ -630,7 +668,13 @@ class e_media
 	}
 
 
-
+	/**
+	 * @deprecated by browserCarousel
+	 * @param string $category
+	 * @param null   $tagid
+	 * @param null   $att
+	 * @return string
+	 */
 	public function mediaSelect($category='',$tagid=null,$att=null)
 	{
 	
@@ -646,7 +690,7 @@ class e_media
 			
 		$frm 		= varset($option['from']) ? $option['from'] : 0;
 		$limit 		= varset($option['limit']) ? $option['limit'] : 20;
-		$newfrm 	= $frm + $limit; 
+	//	$newfrm 	= $frm + $limit;
 		$bbcode		= varset($option['bbcode']) ? $option['bbcode'] : null;
 		$navMode	= varset($option['nav']) ? TRUE : FALSE;
 		$search		= varset($option['search']) ? $option['search'] : null;
@@ -654,12 +698,12 @@ class e_media
 		
 		if($category !='_icon')
 		{
-			$cat 	= ($category) ? $category."+" : ""; // the '+' loads category '_common' as well as the chosen category. 
+			$cat 	= ($category) ? $category : ""; // the '+' loads category '_common' as well as the chosen category.
 			$images = $this->getImages($cat,$frm,$limit,$search);
 			$class 	= "media-select-image";
 			$classN = "media-select-image-none";
 			$w		= 120;
-			$h		= 100;
+		//	$h		= 100;
 			$total	= $this->countImages($cat,$search);
 			$onclick_clear = "parent.document.getElementById('{$tagid}').value = '';
 		 	parent.document.getElementById('".$prevId."').src = '".e_IMAGE_ABS."generic/nomedia.png';
@@ -672,13 +716,13 @@ class e_media
 			$class 	= "media-select-icon";
 			$classN = "media-select-icon-none";
 			$w		= 64;
-			$h		= 64;
-			$total 	= 500;
+		//	$h		= 64;
+		//	$total 	= 500;
 			$total	= $this->countImages("_icon_16|_icon_32|_icon_48|_icon_64|_icon_svg",$search);
 			$onclick_clear = "parent.document.getElementById('{$tagid}').value = '';
 		 	parent.document.getElementById('".$prevId."').innerHTML= '';
 		 	 return false;";
-			// $total	= $this->countIcons($cat); //TODO
+
 		}
 		
 		
@@ -726,12 +770,12 @@ class e_media
 		
 		if($bbcode == null) // e107 Media Manager - new-image mode. 
 		{
-			$text .= "<a title='".IMALAN_165."' class='e-tip thumbnail {$class} ".$classN." media-select-none e-dialog-close' data-src='".varset($im['media_url'])."' style='vertical-align:middle;display:block;float:left;' href='#' onclick=\"{$onclick_clear}\" >
+			$text .= "<a title='".IMALAN_165."' class='e-tip thumbnail {$class} ".$classN." media-select-none e-dialog-close' data-src='' style='vertical-align:middle;display:block;float:left;' href='#' onclick=\"{$onclick_clear}\" >
 			<span>".$tp->toGlyph('fa-ban')."</span>
 			</a>";		
 		}
 
-		$w	= false; //
+		//$w	= false; //
 		$h = false;
 		$defaultResizeWidth = 400;
 			
@@ -754,7 +798,8 @@ class e_media
 
 		foreach($images as $im)
 		{
-			list($dbWidth,$dbHeight) = explode(" x ",$im['media_dimensions']);	
+			list($dbWidth,$dbHeight) = explode(" x ",$im['media_dimensions']);
+			unset($dbHeight);
 				
 			$w = ($dbWidth > $defaultResizeWidth) ? $defaultResizeWidth : intval($dbWidth);
 
@@ -790,12 +835,6 @@ class e_media
 			}
 			else // TinyMce and textarea bbcode  
 			{
-				//TODO Add a preview window 
-				$onclicki = "document.getElementById('src').value = '{$im['media_url']}';
-				document.getElementById('preview').src = '{$realPath}';
-		 		
-				return false;";	
-				//$onclicki = "";
 				$class .= " e-media-select";
 				$onclicki = "";
 				
@@ -883,11 +922,7 @@ class e_media
 
 
 	/**
-	 * @param string|array $type
-	 * @param $type['name']
-	 * @param $type[['type']
-	 * @param $type['path'] URL or e107 path {e_THEME} etc.
-	 * @param $type['prefix']
+	 * @param string|array $type array('prefix'=>'', 'pattern'=>'', 'path'=>'', 'name'=>'')
 	 * @param string $addPrefix
 	 * @return array
 	 */
@@ -1003,11 +1038,14 @@ class e_media
 
 		$prefixLength = !empty($prefix) ? strlen($prefix) : 3;
 
-		preg_match_all($pattern, $subject, $matches, PREG_SET_ORDER);
-
-		foreach($matches as $match)
+		if(!empty($pattern) && !empty($subject))
 		{
-		    $icons[] = $addPrefix.substr($match[1],$prefixLength);
+			preg_match_all($pattern, $subject, $matches, PREG_SET_ORDER);
+
+			foreach($matches as $match)
+			{
+			    $icons[] = $addPrefix.substr($match[1],$prefixLength);
+			}
 		}
 
 		if(empty($icons)) // failed to produce a result so don't cache it. .
@@ -1026,11 +1064,12 @@ class e_media
 
 
 
-	function getPath($mime, $path=null)
+	public function getPath($mime, $path=null)
 	{
 		$mes = e107::getMessage();
 
 		list($pmime,$tmp) = explode('/',$mime);
+		unset($tmp);
 
 		if(!vartrue($this->mimePaths[$pmime]))
 		{
@@ -1063,9 +1102,90 @@ class e_media
 		}
 		return $dir;
 	}
-	
-	
-	
+
+	/**
+	 * detected Media Type from Media URL
+	 * @param string $mediaURL
+	 * @return int|string
+	 */
+	public function detectType($mediaURL)
+	{
+		list($id,$type) = explode(".",$mediaURL,2);
+		unset($id);
+
+		foreach($this->mimeExtensions as $key=>$exts)
+		{
+			if(!in_array($type, $exts))
+			{
+				continue;
+			}
+
+			return $key;
+		}
+
+		return null;
+	}
+
+
+	/**
+	 * @param string $default eg. {e_MEDIA_VIDEO}2018-10/myvideo.mp4
+	 * @param array $options
+	 * @return bool|string
+	 */
+	public function previewTag($default, $options=array())
+	{
+		$tp = e107::getParser();
+
+		$type = !empty($options['type']) ? $options['type'] : $this->detectType($default);
+
+		$width = vartrue($options['w'], 220);
+		$height = vartrue($options['h'], 190);
+		$preview = '';
+
+		switch($type)
+		{
+
+			case "video":
+				$preview = $tp->toVideo($default, array('w'=>$width, 'h'=> ($height - 50)));
+			//	$previewURL = $tp->toVideo($default, array('mode'=>'url'));
+				break;
+
+			case "audio":
+				$preview = $tp->toAudio($default);
+			//	$previewURL = false;
+				break;
+
+			case "image":
+				$preview = $tp->toImage($default, array('w'=>$width, 'h'=>$height, 'class'=>'image-selector img-responsive img-fluid', 'legacy'=>varset($options['legacyPath'])));
+			//	$previewURL = $tp->thumbUrl($default, array('w'=>800));
+				break;
+
+			case "application": // file.
+			//	$preview = $tp->toImage($default, array('w'=>$width, 'h'=>$height, 'class'=>'image-selector img-responsive img-fluid'));
+			//	$previewURL = $tp->thumbUrl($default, array('w'=>800));
+				break;
+
+			case "glyph":
+				$preview = "<span class='icon-preview'>".$tp->toGlyph($default)."</span>";
+			//	$previewURL = false;
+			break;
+
+			case "icon":
+				$preview = $tp->toIcon($default);
+			//	$previewURL = false;
+			break;
+
+			default: // blank
+				$preview = null;
+
+		}
+
+		return $preview;
+	}
+
+
+
+
 	public function mediaData($sc_path)
 	{
 		if(!$sc_path) return array();
@@ -1120,11 +1240,8 @@ class e_media
 	 * Import a file into the Media Manager
 	 * @param string $file Path to file
 	 * @param string $category media-category to import into
-	 * @param null|array $opts
-	 * @param string $opts['path'] Custom Folder (optional)
+	 * @param null|array $opts('path'=> Custom Folder (optional))
 	 * @param array $new_data - Additional media info to save.
-	 * @param string $new_data['media_caption']
-	 * @param string $new_data['media_descrption']
 	 * @return bool|string
 	 */
 	public function importFile($file='', $category='_common_image', $opts = null, $new_data = array())
@@ -1214,20 +1331,19 @@ class e_media
 	 * @param $mime
 	 * @return string
 	 */
-	private function checkFileExtension($path, $mime)
+	public function checkFileExtension($path, $mime)
 	{
 		if(empty($mime))
 		{
 			return $path;
 		}
 
-		list($type,$ext) = explode("/",$mime);
 
-		$ext = str_replace("jpeg",'jpg',$ext);
+		$ext = e107::getFile()->getFileExtension($mime);
 
-		if($type == 'image' && (substr($path,-3) != $ext))
+		if($ext && (substr($path,-4) != $ext))
 		{
-			return $path.".".$ext;
+			return $path.$ext;
 		}
 		else
 		{
@@ -1236,6 +1352,31 @@ class e_media
 
 	}
 
+
+	private function browserCarouselItemSelector($data)
+	{
+	//	$close  = (E107_DEBUG_LEVEL > 0) ? "" : "  data-close='true' ";	//
+	//	$select = (E107_DEBUG_LEVEL > 0) ? '' : " ";
+		$close = '';
+		$select = '';
+
+		if(!empty($data['close']) && E107_DEBUG_LEVEL < 1)
+		{
+			$select .= "e-dialog-close";
+			$close = "  data-close='true' ";
+		}
+
+		// e-dialog-save
+
+		$style  = varset($data['style'],'');
+		$class  = varset($data['class'],'');
+		$dataPreview = !empty($data['previewHtml']) ? base64_encode($data['previewHtml']) : '';
+
+		$linkTag = "<a data-toggle='context' class='e-media-select ".$select." ".$class."' ".$close." data-id='".$data['id']."' data-width='".$data['width']."' data-height='".$data['height']."' data-src='".$data['previewUrl']."' data-type='".$data['type']."' data-bbcode='".$data['bbcode']."' data-target='".$data['tagid']."' data-path='".$data['saveValue']."' data-preview='".$data['previewUrl']."'  data-preview-html='".$dataPreview."' title=\"".$data['title']."\" style='".$style."' href='#' >";
+
+		return $linkTag;
+
+	}
 
 	
 	function browserCarouselItem($row = array())
@@ -1252,10 +1393,13 @@ class e_media
 			'tagid'			=> '',
 			'saveValue'		=> '',
 			'previewUrl'	=> $defaultThumb ,
+			'previewHtml'   => null,
 			'thumbUrl'		=> $defaultThumb,
 			'title'			=> '',
 			'gridClass'		=> 'span2 col-md-2',
-			'bbcode'		=> ''
+			'bbcode'		=> '',
+			'tooltip'       => '',
+			'close'         => true // close modal window after item selected
 			
 		);
 		
@@ -1267,63 +1411,98 @@ class e_media
 		}
 		
 			
-		$close = (E107_DEBUG_LEVEL > 0) ? "" : "  data-close='true' ";	//
-		$select = (E107_DEBUG_LEVEL > 0) ? '' : " e-dialog-save e-dialog-close";
 
-		$text = "\n\n<!-- Start Item -->
+
+		$text = "\n\n
 		
 		<div class='media-carousel ".$data['gridClass']."'>
 		
-			<div class='well clearfix'>\n";
+			<div class='well clearfix media-carousel-item-container'>\n";
 
-				$linkTag = "<a data-toggle='context' class='e-media-select e-tip".$select."' ".$close." data-id='".$data['id']."' data-width='".$data['width']."' data-height='".$data['height']."' data-src='".$data['previewUrl']."' data-type='".$data['type']."' data-bbcode='".$data['bbcode']."' data-target='".$data['tagid']."' data-path='".$data['saveValue']."' data-preview='".$data['previewUrl']."' title=\"".$data['title']."\" style='float:left' href='#' >";
+
+				$caption = $data['title'];
+
+				if(!empty($data['tooltip']))
+				{
+					$data['title'] = $data['tooltip'];
+				}
+
+				$linkTag = $this->browserCarouselItemSelector($data);
+
+
 
 				switch($data['type'])
 				{
 					case "video":
-						$mime = vartrue($data['mime'],"video/mp4");
-
-						$text .= '<video width="'.$data['width'].'" height="'.$data['height'].'" controls >
-						  <source src="'.$data['thumbUrl'].'" type="'.$mime.'">
-						  Your browser does not support the video tag.
-						</video>
-						<div class="clearfix" style="text-align:center">';
-
-						$text .= $linkTag;
-						$text .= "\n".$data['title'];
-						$text .= "\n</a></div>\n\n";
-						break;
-
 					case "audio":
-						$mime = vartrue($data['mime'],"audio/mpeg");
-						$text .= '<audio controls>
-						  <source src="'.$data['thumbUrl'].'" type="'.$mime.'">
-	
-						  Your browser does not support the audio tag.
-						</audio>
-						<div class="clearfix" style="text-align:center">';
 
-						$text .= $linkTag;
-						$text .= "\n".$data['title'];
-						$text .= "\n</a></div>\n\n";
+						if($data['type'] === 'video') // video
+						{
+							$text .= $tp->toVideo($data['thumbUrl'], array('w'=>$data['width'],'h'=>'', 'mime'=>$data['mime']));
+						}
+						else    // audio
+						{
+							$text .= $tp->toAudio($data['thumbUrl'], array('mime'=>$data['mime']));
+						}
 
+						$text .= "<div class='row media-carousel-item-controls'>
+									<div class='col-sm-8'><small class='media-carousel-item-caption'>";
+
+						$text .= $this->browserCarouselItemSelector($data);
+						$text .= "\n".$caption;
+						$text .= "\n</a></small></div>";
+
+						$data['style'] = 'float:right';
+
+						$text .= "<div class='col-sm-4 text-right'>".
+						$this->browserCarouselItemSelector($data).
+						"<button class='btn btn-xs btn-primary' style='margin-top:7px'>".LAN_SELECT."</button></a></div>
+								</div>\n\n";
 						break;
-
+						
 
 					case "image":
+
+
 						$text .= $linkTag;
-						$text .= '<img class="img-responsive img-fluid" alt="" src="'.$data['thumbUrl'].'" style="width:100%;display:inline-block" />';
+						$text .= "<span>";
+						$text .= '<img class="img-responsive img-fluid" alt="" src="'.$data['thumbUrl'].'" style="display:inline-block" />';
+						$text .= "</span>";
 						$text .= "\n</a>\n\n";
-						$text .= "\n<div><small class='media-carousel-item-caption'>".$data['title']."</small></div>";
+
+							$text .= "<div class='row media-carousel-item-controls'>
+									<div class='col-sm-8'><small class='media-carousel-item-caption'>";
+
+						$text .= $this->browserCarouselItemSelector($data);
+						$text .= "\n".$caption;
+						$text .= "\n</a></small></div>";
+
+						$data['style'] = 'float:right';
+
+						$text .= "<div class='col-sm-4 text-right'>".
+						$this->browserCarouselItemSelector($data).
+						"<button class='btn btn-xs btn-primary' style='margin-top:7px'>".LAN_SELECT."</button></a></div>
+</div>";
+
+
+
+					//	$text .= "\n<div><small class='media-carousel-item-caption'>".$data['title']."</small></div>";
 						break;
 
 
 					case "glyph":
 						$text .= $linkTag;
-						$text .= "\n<span style='margin:7px;display:inline-block;color: inherit'>".$tp->toGlyph($data['thumbUrl'],false)."</span>";
+						$text .= "\n<span style='margin:7px;display:inline-block;color: inherit'>".$tp->toGlyph($data['thumbUrl'],array('placeholder'=>''))."</span>";
 						$text .= "\n</a>\n\n";
+
 						break;
 
+					case "icon":
+						$text .= $linkTag;
+						$text .= "\n<span style='margin:7px;display:inline-block;color: inherit'>".$tp->toIcon($data['thumbUrl'],array('placeholder'=>''))."</span>";
+						$text .= "\n</a>\n\n";
+
+						break;
 
 					default:
 						// code to be executed if n is different from all labels;
@@ -1332,18 +1511,26 @@ class e_media
 			
 			$text .= "</div>
 			
-			</div>\n<!-- End Item -->\n\n";
+			</div>\n\n\n";
+
+
+
 		
 		return $text;
 
 	}
-	
-	function browserIndicators($slides=array(),$uniqueID)
+
+	/**
+	 * @param $slides
+	 * @param $uniqueID
+	 * @return string
+	 */
+	function browserIndicators($slides, $uniqueID)
 	{
 	
 		if(count($slides)<1)
 		{
-			return;	
+			return '';
 		}
 		
 		 $indicators = '<ol class="carousel-indicators col-md-2 span2" style="top:-40px">
@@ -1423,7 +1610,7 @@ class e_media
 			/* Fix for Bootstrap2 margin-left issue when wrapping */
 		e107::css('inline','
 				
-		.media-carousel { margin-bottom:15px }
+		
 		
 		.row-fluid .media-carousel.span6:nth-child(2n + 3) { margin-left : 0px; }
 		.row-fluid .media-carousel.span4:nth-child(3n + 4) { margin-left : 0px; }
@@ -1431,16 +1618,16 @@ class e_media
 		.row-fluid .media-carousel.span2:nth-child(6n + 7) { margin-left : 0px; }
 		');
 			
-		$frm = e107::getForm();
+	//	$frm = e107::getForm();
 		
 	//	$text .= print_a($_GET,true);
 	
-			$data_src = $this->mediaSelectNav($category,$parm['tagid'], $parm);
-			$carouselID = 'myCarousel-'.$parm['action'];
+			$data_src = $this->mediaSelectNav($parm['category'], $parm['tagid'], $parm);
+			$carouselID = 'media-carousel-'.$parm['action'];
 			$searchToolttip = (empty($parm['searchTooltip'])) ? "Enter some text to filter results" : $parm['searchTooltip'];
 			//$text = "<form class='form-search' action='".e_SELF."?".e_QUERY."' id='core-plugin-list-form' method='get'>";
 					
-					
+			$text = '';
 						
 			if(!e_AJAX_REQUEST)
 			{
@@ -1450,8 +1637,18 @@ class e_media
 				$text .= "<input type='text' class='form-control e-ajax-keyup input-xxlarge ' placeholder= '".$searchPlaceholder."...' title=\"".$searchToolttip."\" name='search' value=''  data-target='media-browser-container-".$parm['action']."' data-src='".$data_src."' />";
 		//		$text .= "<span class='field-help'>bablalal</span>";
 			//	$text .= '<button class="btn btn-primary" name="'.$submitName.'" type="submit">'.LAN_GO.'</button>';
-				$text .= '<a class="btn btn-primary" href="#'.$carouselID.'" data-slide="prev">&lsaquo;</a><a class="btn btn-primary" href="#'.$carouselID.'" data-slide="next">&rsaquo;</a>';
-				$text .= "</span>";		
+			//	$text .= '<a class="btn btn-primary" href="#'.$carouselID.'" data-slide="prev">&lsaquo;</a><a class="btn btn-primary" href="#'.$carouselID.'" data-slide="next">&rsaquo;</a>';
+
+
+				$text .= '&nbsp;<div class="btn-group" >
+			<a id="'.$carouselID.'-prev" class="btn btn-primary btn-secondary" href="#'.$carouselID.'" data-slide="prev"><i class="fa fa-backward"></i></a>
+			<a id="'.$carouselID.'-index" class="media-carousel-index btn btn-primary btn-secondary">1</a>
+			<a id="'.$carouselID.'-next" class="btn btn-primary btn-secondary" href="#'.$carouselID.'" data-slide="next"><i class="fa fa-forward"></i></a>
+			</div>';
+
+
+
+				$text .= "</span>";
 				$text .= "</div>";
 				$text .= "<div id='media-browser-container-".$parm['action']."' class='form-inline clearfix row-fluid'>";
 			}
@@ -1462,9 +1659,9 @@ class e_media
 		//	$text .= $this->search('srch', $srch, 'go', $filterName, $filterArray, $filterVal).$frm->hidden('mode','online');
 			
 			
-				$text .= '<div id="'.$carouselID.'"  class="carousel slide" data-interval="false">';
-				$text .= '{INDICATORS}';
-				$text .= '<div style="margin-top:10px" class="carousel-inner">';	
+				$text .= '<div id="'.$carouselID.'"  class="carousel slide" data-interval="false" data-wrap="false">';
+			//	$text .= '{INDICATORS}';
+				$text .= '<div style="margin-top:10px" class="row admingrid carousel-inner">';
 			
 			
 			//	$text .= "<div class='item active'>";
@@ -1472,8 +1669,11 @@ class e_media
 				$perPage = vartrue($parm['perPage'],12);
 				
 				$c=0;
+				$count = 0;
+
 				
 				$slides = array();
+				$totalSlides = 0;
 
 				if(is_array($data) && count($data) > 0)
 				{
@@ -1481,13 +1681,23 @@ class e_media
 
 					foreach($data as $key=>$val)
 					{
+
 						if($c == 0)
 						{
 							$active = (count($slides) <1) ? ' active' : '';
+							$totalSlides++;
+
 							$text .= '
 
-							<!-- Start Slide -->
+							<!-- Start Slide '.$parm['action'].' '.$totalSlides.' -->
 							<div class="item'.$active.'">';
+
+							if($totalSlides  > 2)
+							{
+								$text .= "<!-- ";
+							}
+
+
 
 							if(vartrue($val['slideCaption']))
 							{
@@ -1503,9 +1713,11 @@ class e_media
 						$val['bbcode']	= $parm['bbcode'];
 						$val['gridClass'] = $parm['gridClass'];
 
+
 						$text .= $this->browserCarouselItem($val);
 
 						$c++;
+
 
 						if(varset($val['slideCategory']) && isset($prevCat))
 						{
@@ -1518,16 +1730,28 @@ class e_media
 
 						}
 
-						if($c == $perPage)
+						$count++;
+
+						if($c == $perPage || (count($data) == $count))
 						{
+
+							if($totalSlides > 2)
+							{
+								$text .= " -->";
+							}
+
+
 							$text .= '
 							</div>
-							<!-- End Slide -->
+							<!-- End Slide '.$parm['action'].' '.$totalSlides.' -->';
 
-							';
+
+
 							$slides[] = 1;
 							$c = 0;
 						}
+
+
 					}
 				
 				}
@@ -1537,7 +1761,7 @@ class e_media
 				}
 				else
 				{
-					$text .= "<div class='alert alert-info alert-block text-center'>No Results Found.</div>";
+					$text .= "<div class='alert alert-info alert-block text-center'>".LAN_NO_RESULTS_FOUND."</div>";
 				}
 
 				$text .= ($c != 0) ? "</div>\n<!-- End Slide -->\n" : "";
@@ -1555,7 +1779,7 @@ class e_media
 			
 			$ret = str_replace('{INDICATORS}', $this->browserIndicators($slides,$carouselID), $text);
 
-			if(E107_DEBUG_LEVEL > 0)
+			//if(E107_DEBUG_LEVEL > 0)
 			{
 		//		print_a($parm);
 			}
@@ -1610,6 +1834,7 @@ class e_media
 		{
 			return $destFilePath;
 		}
+
 
 		@require(e_HANDLER.'phpthumb/ThumbLib.inc.php');
 		try
