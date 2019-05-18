@@ -37,7 +37,7 @@ if($_GET['action'] == 'youtube' )
 }
 
 // TODO use library manager
-e107::js('core', 'plupload/plupload.full.js', 'jquery', 2);
+e107::js('core', 'plupload/plupload.full.min.js', 'jquery', 2);
 e107::css('core', 'plupload/jquery.plupload.queue/css/jquery.plupload.queue.css', 'jquery');
 e107::js('core', 'plupload/jquery.plupload.queue/jquery.plupload.queue.min.js', 'jquery', 2);
 e107::js('core', 'core/mediaManager.js',"jquery",5);
@@ -1022,11 +1022,11 @@ class media_admin_ui extends e_admin_ui
 					break;
 
 				case "glyph":
-					echo $this->glyphTab($parm);
+					echo $this->glyphTab(null, $parm);
 					break;
 
 				case "icon":
-					echo $this->iconTab($parm);
+					echo $this->iconTab(null, $parm);
 					break;
 
 				case "image2":
@@ -1268,7 +1268,8 @@ class media_admin_ui extends e_admin_ui
 		}
 		else
 		{
-			echo $this->mediaSelectUpload();		
+			return $this->mediaManagerTabs();
+			//  echo $this->mediaSelectUpload();
 		}	
 		
 	}
@@ -1373,6 +1374,8 @@ class media_admin_ui extends e_admin_ui
 
 		$cat = $this->getQuery('for');
 
+		$cat = urldecode($cat);
+
 		$tabOptions = array(
 			'core-media-icon'   => array('caption'=> $tp->toGlyph('fa-file-photo-o').IMALAN_72,     'method' => 'iconTab' ),
 			'core-media-image'   => array('caption'=> $tp->toGlyph('fa-file-photo-o').ADLAN_105,    'method' => 'imageTab2' ),
@@ -1417,10 +1420,12 @@ class media_admin_ui extends e_admin_ui
 
 		$text = $frm->tabs($tabs, array('id'=>'admin-ui-media-manager', 'class'=>'media-manager'));
 
-		if($options['bbcode'] || E107_DEBUG_LEVEL > 0)
+	/*	if($options['bbcode'] || E107_DEBUG_LEVEL > 0)
 		{
+
+		}*/
+
 			$text .= $this->mediaManagerSaveButtons($options);
-		}
 
 		$text .= $this->mediaManagerPlaceholders();
 
@@ -1435,6 +1440,9 @@ class media_admin_ui extends e_admin_ui
 	 */
 	function mediaSelectUpload($type='image') 
 	{
+	//	return $this->mediaManagerTabs();
+
+
 		$frm = e107::getForm();
 		$tp = e107::getParser();
 
@@ -1449,7 +1457,7 @@ class media_admin_ui extends e_admin_ui
 
 		if(deftrue('e_DEBUG_MEDIAPICKER'))
 		{
-			return $this->mediaManagerTabs();
+		//	return $this->mediaManagerTabs();
 		}
 
 
@@ -1685,10 +1693,10 @@ class media_admin_ui extends e_admin_ui
 	private function mediaManagerPlaceholders()
 	{
 			$type = (E107_DEBUG_LEVEL > 0) ?  "text" : "hidden";
-		$br = (E107_DEBUG_LEVEL > 0) ?  "<br />" : "";
+		$br = (E107_DEBUG_LEVEL > 0) ?  "<br style='clear:both' />" : "";
 
 		$text = "
-		".$br."<input title='bbcode' type='{$type}' readonly='readonly' class='span11 col-md-11' id='bbcode_holder' name='bbcode_holder' value='' />
+		".$br."<input title='bbcode' type='{$type}' style=readonly='readonly' class='span11 col-md-11' id='bbcode_holder' name='bbcode_holder' value='' />
 		".$br."<input title='html/wysiwyg' type='{$type}' class='span11 col-md-11' readonly='readonly' id='html_holder' name='html_holder' value='' />
 		".$br."<input title='(preview) src' type='{$type}' class='span11 col-md-11' readonly='readonly' id='src' name='src' value='' />
 		".$br."<input title='path (saved to db)' type='{$type}' class='span11 col-md-11' readonly='readonly' id='path' name='path' value='' />
@@ -1701,10 +1709,20 @@ class media_admin_ui extends e_admin_ui
 
 	private function mediaManagerSaveButtons($options = array())
 	{
-		if(empty($options['bbcode']))
+		if(empty($options['bbcode'])) // media picker mode.
 		{
-			return null;
+			$text = "<div class='buttons-bar' style='display:none;text-align:right;padding-right:15px;'>
+			
+			<button id='etrigger-submit' style='display:none' type='submit' data-modal-submit-class='btn-danger' class=' submit e-media-select-file-none e-dialog-close' data-target-label='' data-bbcode='".$options['bbcode']."' data-target='".$this->getQuery('tagid')."' name='reset_value' value='reset'  >
+			<span>".LAN_CLEAR."</span>
+			</button>
+		
+			</div>";
+
+			return $text;
 		}
+
+		// bbcode/wysiwyg mode.
 
 		// hidden from view but used by javascript to re-create the button in the modal-footer.
 		// Tinymce will remove the 'display:none' when loaded.
@@ -1713,7 +1731,7 @@ class media_admin_ui extends e_admin_ui
 			<button id='etrigger-submit' type='submit' class='btn btn-success submit e-dialog-save e-dialog-close' data-bbcode='".$options['bbcode']."' data-target='".$this->getQuery('tagid')."' name='save_image' value='Save it'  >
 			<span>".LAN_SAVE."</span>
 			</button>
-			<button type='submit' class=' btn btn-default btn-secondary submit e-dialog-close' name='cancel_image' value='Cancel'  data-close='true'>
+			<button type='submit' class=' btn btn-default btn-secondary submit e-dialog-close e-dialog-cancel' name='cancel_image' value='Cancel'  data-close='true'>
 			<span>".LAN_CANCEL."</span>
 			</button>
 			</div>";
@@ -1996,8 +2014,8 @@ class media_admin_ui extends e_admin_ui
 
 		);
 
-
-		$close = (!empty($this->getQuery('bbcode'))) ? false : true; // only close on 'select' when bbcodes are not in use.
+		$bbcode = $this->getQuery('bbcode');
+		$close = (!empty($bbcode)) ? false : true; // only close on 'select' when bbcodes are not in use.
 
 
 		$items = array();
@@ -2073,7 +2091,7 @@ class media_admin_ui extends e_admin_ui
 		foreach($bs2 as $val)
 		{
 			$items[] = array(
-					'previewHtml'   => $md->previewTag('glyphicon '.$val,array('type'=>'glyph')),
+					'previewHtml'   => $md->previewTag($val, array('type'=>'glyph')),
 					'previewUrl'	=> 'glyphicon '.$val,
 					'saveValue'		=> $val.'.glyph',
 					'thumbUrl'		=> $val,
@@ -2091,7 +2109,7 @@ class media_admin_ui extends e_admin_ui
 		foreach($fa4 as $val)
 		{
 			$items[] = array(
-					'previewHtml'   => $md->previewTag('fa fa-'.$val,array('type'=>'glyph')),
+					'previewHtml'   => $md->previewTag('fa-'.$val,array('type'=>'glyph')),
 					'previewUrl'	=> 'fa fa-'.$val,
 					'saveValue'		=> 'fa-'.$val.'.glyph',
 					'thumbUrl'		=> 'fa-'.$val,
@@ -2313,11 +2331,12 @@ class media_admin_ui extends e_admin_ui
 
 		}
 
-
-		$close = (!empty($this->getQuery('bbcode'))) ? false : true; // only close on 'select' when bbcodes are not in use.
+		$bbcode = $this->getQuery('bbcode');
+		$close = (!empty($bbcode)) ? false : true; // only close on 'select' when bbcodes are not in use.
 
 		if(!empty($data))
 		{
+			$tp = e107::getParser();
 			foreach($data['items'] as $value)
 			{
 
@@ -2325,6 +2344,7 @@ class media_admin_ui extends e_admin_ui
 				$thumbnail = $value['snippet']['thumbnails']['medium']['url'];
 
 				$items[] = array(
+					'previewHtml'	=> $bbcode ? null : $tp->toVideo($id.".".$extension, array('w'=>210, 'h'=>140)),
 					'previewUrl'	=> $thumbnail,
 					'saveValue'		=> $id.".".$extension, // youtube",
 					'thumbUrl'		=> $thumbnail,
@@ -2421,14 +2441,15 @@ class media_admin_ui extends e_admin_ui
 			}
 		}
 	}
-			
-		
-	
-	
-	
 
+
+	/**
+	 * @deprecated by $prefs.
+	 * @return bool|void
+	 */
 	function settingsPage()
 	{
+		return false;
 		global $pref;
 
 		$frm = e107::getForm();
@@ -3186,7 +3207,7 @@ class media_admin_ui extends e_admin_ui
 
 			$c = md5($f['path'].$f['fname']);
 			
-			if($f['error'])
+			if(!empty($f['error']))
 			{
 				$text = str_replace('[x]', $f['fname'], IMALAN_122);
 				$mes->addWarning($text);

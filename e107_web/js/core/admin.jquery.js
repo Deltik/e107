@@ -49,10 +49,18 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 						{
 							var buttonCaption = $('#e-modal-iframe').contents().find('#etrigger-submit').text(); // copy submit button caption from iframe form.
 
+							var buttonClass = $('#e-modal-iframe').contents().find('#etrigger-submit').attr('data-modal-submit-class'); // co
 							if(buttonCaption)
 							{
 								$('#e-modal-submit').text(buttonCaption).fadeIn(); // display the button in the modal footer.
 							}
+
+							if(buttonClass)
+							{
+								$('#e-modal-submit').addClass(buttonClass);
+							}
+
+
 							$('#e-modal-iframe').contents().find('.buttons-bar').hide(); // hide buttons in the iframe's form.
 						}
 
@@ -279,8 +287,14 @@ $(document).ready(function()
 		});
 
 
+
+
 	$('div.e-container').editable({
 		selector: '.e-editable',
+		params: function(params) {
+			params.token = $(this).attr('data-token');
+           return params;
+		},
 		display: function (value, sourceData)
 		{
 			// HTML entities decoding... fix for:
@@ -599,7 +613,9 @@ $(document).ready(function()
 		 $(".plugin-navigation a").click(function () {
 		 	$(".plugin-navigation a").each(function(index) {
     			var ot = $(this).attr("href");
-				$(ot).hide().removeClass('e-hideme');
+    			if (ot.split('#')[1]) {
+                    $(ot).hide().removeClass('e-hideme');
+                }
 				$(this).closest("li").removeClass("active");
 				$(this).switchClass( "link-active", "link", 0 );
 			});
@@ -607,12 +623,12 @@ $(document).ready(function()
 	   		
 			$(this).switchClass( "link", "link-active", 30 );
 			$(this).closest("li").addClass("active");
-	
-			$(id).removeClass('e-hideme').show({
-				effect: "slide"
-			});
+
 			// 'remember' the active navigation pane
 			if(hash) {
+                $(id).removeClass('e-hideme').show({
+                    effect: "slide"
+                });
 				window.location.hash = 'nav-' + hash;
 			  	if(form) {
 
@@ -741,12 +757,13 @@ $(document).ready(function()
 			
 		
 	
-		// Basic Delete Confirmation	
+		// Basic Delete Confirmation
+		/*
 		$('input.delete,button.delete,a[data-confirm]').click(function(){
   			answer = confirm($(this).attr("data-confirm"));
   			return answer; // answer is a boolean
 		});
-		
+	*/
 		$(".e-confirm").click(function(){
   			answer = confirm($(this).attr("title"));
   			return answer; // answer is a boolean

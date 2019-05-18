@@ -164,13 +164,16 @@ class forum_shortcodes extends e_shortcode
 		  return $text;
 	}
 
-	function sc_search()
+	function sc_search($parm='')
 	{
 
 		if(!deftrue('FONTAWESOME') || !$srchIcon = e107::getParser()->toGlyph('fa-search'))
 		{
 			$srchIcon = LAN_SEARCH;
 		}
+
+		$buttonclass = (!empty($parm['buttonclass'])) ? "class='".$parm['buttonclass']."'" : "class='btn btn-default btn-secondary button'";
+
 
 		// String candidate for USERLIST wrapper
 		return "
@@ -181,7 +184,7 @@ class forum_shortcodes extends e_shortcode
 		<input type='hidden' name='forum' value='all' />
 		<input class='tbox form-control' type='text' name='q' size='20' value='' maxlength='50' />
 		<span class='input-group-btn'>
-		<button class='btn btn-default btn-secondary button' type='submit' name='s' value='search' >".$srchIcon."</button>
+		<button ".$buttonclass." type='submit' name='s' value='search' >".$srchIcon."</button>
 		</span>
 		</div>
 
@@ -328,6 +331,16 @@ class forum_shortcodes extends e_shortcode
 	}
 
 
+	function sc_parentimage($parms=null)
+	{
+		if (empty($this->var['forum_image'])) return '';
+		if (!empty($parms) && !is_array($parms)) parse_str($parms, $parms);
+		if (empty($parms)) $parms = array();
+		$parms = array_merge(array('class'=>'img-fluid', 'h' => 50), $parms);
+		$text = e107::getParser()->toImage($this->var['forum_image'], $parms);
+		return $text.'&nbsp;';
+	}
+
 	function sc_parentname()
 	{
 		return $this->var['forum_name'];
@@ -362,18 +375,34 @@ class forum_shortcodes extends e_shortcode
 	}
 
 
-	function sc_forumname()
+	function sc_forumimage($parms=null)
 	{
-		//    global $f;
-		//	$tp = e107::getParser();
+		if(empty($this->var['forum_image'])) return '';
+
+		if (!empty($parms) && !is_array($parms)) parse_str($parms, $parms);
+		if (empty($parms)) $parms = array();
+		$parms = array_merge(array('class'=>'img-fluid', 'h' => 50), $parms);
+		$text = e107::getParser()->toImage($this->var['forum_image'], $parms);
+		return "<a href='".e107::url('forum', 'forum', $this->var)."'>{$text}</a>&nbsp;";
+
+	}
+
+	function sc_forumname($parm = '')
+	{
 		if(substr($this->var['forum_name'], 0, 1) == '*')
 		{
 			$this->var['forum_name'] = substr($this->var['forum_name'], 1);
 		}
+
 		$this->var['forum_name'] = e107::getParser()->toHTML($this->var['forum_name'], true, 'no_hook');
 
+		if(!empty($parm['class']))
+		{
+			$class = "class='".$parm['class']."'"; 
+		}
+
 		$url = e107::url('forum', 'forum', $this->var);
-		return "<a href='".$url."'>{$this->var['forum_name']}</a>";
+		return "<a href='".$url."' ".$class.">{$this->var['forum_name']}</a>";
 
 	}
 
@@ -394,21 +423,36 @@ class forum_shortcodes extends e_shortcode
 	}
 
 
-	function sc_replies()
+	function sc_replies($parm = '')
 	{
-		return $this->sc_repliesx();
+		return $this->sc_repliesx($parm);
 	}
 
 
-	function sc_threadsx() // EQUAL TO SC_THREADS.......................
+	function sc_threadsx($parm = '') // EQUAL TO SC_THREADS.......................
 	{
-		return e107::getParser()->toBadge($this->var['forum_threads']);
+		$val = ($this->var['forum_threads']) ? $this->var['forum_threads'] : '0';
+
+		if(!empty($parm['raw']))
+		{
+			return $val;
+		}
+
+		return e107::getParser()->toBadge($val);
 	}
 
 
-	function sc_repliesx() // EQUAL TO SC_REPLIES.......................
+	function sc_repliesx($parm = '') // EQUAL TO SC_REPLIES.......................
 	{
-		return e107::getParser()->toBadge($this->var['forum_replies']);
+		//print_a($parm);
+		$val = ($this->var['forum_replies']) ? $this->var['forum_replies'] : '0';
+
+		if(!empty($parm['raw']))
+		{
+			return $val;
+		}
+
+		return e107::getParser()->toBadge($val);
 	}
 
 

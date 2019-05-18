@@ -60,18 +60,16 @@ else
 	$e107CorePage->processViewPage();
     $e107CorePage->setPage();
 
-
-
 	require_once(HEADERF);
 
 	$ns = e107::getRender();
 
 	if(!empty($e107CorePage->pageOutput['title']))
 	{
-		$ns->setContent('title',$e107CorePage->pageOutput['title']);
+		$ns->setContent('title', $e107CorePage->pageOutput['title']);
 	}
 
-	$ns->tablerender($e107CorePage->pageOutput['caption'], $e107CorePage->pageOutput['text'], 'cpage');
+	$ns->tablerender($e107CorePage->pageOutput['caption'], $e107CorePage->pageOutput['text'], $e107CorePage->pageOutput['mode']);
 	require_once(FOOTERF);
 	exit;
 }
@@ -254,10 +252,10 @@ class pageClass
 				$listChapters = $this->listChapters(intval($row['chapter_id']), $row['chapter_sef']);
 				
 				$var = array(
-					'BOOK_NAME' 		=> $tp->toHtml($row['chapter_name']),
+					'BOOK_NAME' 		=> $tp->toHTML($row['chapter_name']),
 					'BOOK_ANCHOR'		=> $frm->name2id($row['chapter_name']),
 					'BOOK_ICON'			=> $this->chapterIcon($row['chapter_icon']),
-					'BOOK_DESCRIPTION'	=> $tp->toHtml($row['chapter_meta_description'],true,'BODY'),
+					'BOOK_DESCRIPTION'	=> $tp->toHTML($row['chapter_meta_description'],true,'BODY'),
 					'CHAPTERS'			=> $listChapters['text'],
 					'BOOK_URL'			=> e107::getUrl()->create('page/book/index', $sef,'allow=chapter_id,chapter_sef,book_sef,page_sef') 
 				);
@@ -329,10 +327,10 @@ class pageClass
 		$template = $tmpl['listChapters'];
 		
 		$bvar = array(
-				'BOOK_NAME' 		=> $tp->toHtml($brow['chapter_name']),
+				'BOOK_NAME' 		=> $tp->toHTML($brow['chapter_name']),
 				'BOOK_ANCHOR'		=> $frm->name2id($brow['chapter_name']),
 				'BOOK_ICON'			=> $this->chapterIcon($brow['chapter_icon']),
-				'BOOK_DESCRIPTION'	=> $tp->toHtml($brow['chapter_meta_description'],true,'BODY'),
+				'BOOK_DESCRIPTION'	=> $tp->toHTML($brow['chapter_meta_description'],true,'BODY'),
 			);
 		
 		$caption = $tp->simpleParse($template['caption'],$bvar);
@@ -359,15 +357,16 @@ class pageClass
 				$row['book_description']	= $this->getDescription($row['chapter_parent']);
 							
 				$var = array(
-					'BOOK_NAME' 		=> $tp->toHtml($row['book_name']),
+					'BOOK_NAME' 		=> $tp->toHTML($row['book_name']),
 					'BOOK_ANCHOR'		=> $frm->name2id($row['book_name']),
 					'BOOK_ICON'			=> $this->chapterIcon($row['book_icon']),
-					'BOOK_DESCRIPTION'	=> $tp->toHtml($row['book_description'],true,'BODY'),
+					'BOOK_DESCRIPTION'	=> $tp->toHTML($row['book_description'],true,'BODY'),
 					
-					'CHAPTER_NAME' 			=> $tp->toHtml($row['chapter_name']),
+					'CHAPTER_NAME' 			=> $tp->toHTML($row['chapter_name']),
 					'CHAPTER_ANCHOR'		=> $frm->name2id($row['chapter_name']),
 					'CHAPTER_ICON'			=> $this->chapterIcon($row['chapter_icon']),
-					'CHAPTER_DESCRIPTION'	=> $tp->toHtml($row['chapter_meta_description'],true,'BODY'),
+					'CHAPTER_IMAGE'			=> $tp->toImage($row['chapter_image']),
+					'CHAPTER_DESCRIPTION'	=> $tp->toHTML($row['chapter_meta_description'],true,'BODY'),
 					'PAGES'					=> $tmp['text'],
 					'CHAPTER_URL'			=> e107::getUrl()->create('page/chapter/index', $row,'allow=chapter_id,chapter_sef,book_sef') 
 				);
@@ -424,7 +423,7 @@ class pageClass
 		$frm 			= e107::getForm();
 
 		// retrieve the template to use for this chapter. 
-		$row = $sql->retrieve('page_chapters','chapter_id,chapter_icon,chapter_name,chapter_parent, chapter_meta_description,chapter_template','chapter_id = '.intval($chapt).' LIMIT 1');
+		$row = $sql->retrieve('page_chapters','chapter_id,chapter_icon,chapter_name,chapter_parent, chapter_image, chapter_meta_description,chapter_template','chapter_id = '.intval($chapt).' LIMIT 1');
 		
 		if($this->displayAllMode === true)
 		{
@@ -448,7 +447,7 @@ class pageClass
 
 		$urlData = array(
 			'chapter_id' 	=> $row['chapter_id'],
-			'chapter_name'	=> $tp->toHtml($row['chapter_name']),
+			'chapter_name'	=> $tp->toHTML($row['chapter_name']),
 			'chapter_sef'	=> $bookSef,
 			'book_sef'		=> $bookSef,
 			'page_sef'		=> '',
@@ -462,14 +461,15 @@ class pageClass
 		$tmpl = varset($tml[$layout]);
 		
 		$bread = array(
-			0 => array('text' => $tp->toHtml($bookTitle), 'url'=> e107::getUrl()->create('page/book/index', $urlData,'allow=chapter_id,chapter_sef,book_id,book_sef,page_sef'))
+			0 => array('text' => $tp->toHTML($bookTitle), 'url'=> e107::getUrl()->create('page/book/index', $urlData,'allow=chapter_id,chapter_sef,book_id,book_sef,page_sef'))
 		);
 	
 		$var = array(
-					'CHAPTER_NAME' 			=> $tp->toHtml($row['chapter_name']),
+					'CHAPTER_NAME' 			=> $tp->toHTML($row['chapter_name']),
 					'CHAPTER_ANCHOR'		=> $frm->name2id($row['chapter_name']),
 					'CHAPTER_ICON'			=> $this->chapterIcon($row['chapter_icon']),
-					'CHAPTER_DESCRIPTION'	=> $tp->toHtml($row['chapter_meta_description'], true,'BODY'),
+					'CHAPTER_IMAGE'			=> $tp->toImage($row['chapter_image']),
+					'CHAPTER_DESCRIPTION'	=> $tp->toHTML($row['chapter_meta_description'], true,'BODY'),
 					'CHAPTER_BREADCRUMB'	=> !empty($_GET['ch']) ? $frm->breadcrumb($bread) : ''
 		);		
 	
@@ -496,7 +496,7 @@ class pageClass
 				{
 					/*$data = array(
 						'title' => $page['page_title'],
-						'text'	=> $tp->toHtml($page['page_text'],true)
+						'text'	=> $tp->toHTML($page['page_text'],true)
 					);*/
 					$page['chapter_id']     = $page['page_chapter'];
 					$page['chapter_name']   =  $this->getName($page['page_chapter']);
@@ -515,7 +515,7 @@ class pageClass
 					
 
 				//	$url = e107::getUrl()->create('page/view', $page, 'allow=page_id,page_sef,chapter_sef,book_sef');
-					// $text .= "<li><a href='".$url."'>".$tp->toHtml($page['page_title'])."</a></li>"; 
+					// $text .= "<li><a href='".$url."'>".$tp->toHTML($page['page_title'])."</a></li>";
 					$text .= e107::getParser()->parseTemplate($template['item'], true, $this->batch);
 				}
 				
@@ -744,7 +744,10 @@ class pageClass
 		if($this->cacheData['COMMENT_FLAG'])
 		{
 			$vars = new e_vars(array('comments' => $this->pageComment(true)));
-			$comments = e107::getScBatch('page',null,'cpage')->setVars($vars)->cpagecomments();
+			/** @var cpage_shortcodes $sc */
+			$sc = e107::getScBatch('page',null,'cpage');
+			$sc->setVars($vars);
+			$comments = $sc->cpagecomments();
 		} 
 		define('e_PAGETITLE', eHelper::formatMetaTitle($this->cacheData['TITLE']));
 		define('META_DESCRIPTION', $this->cacheData['META_DSCR']);
@@ -996,6 +999,7 @@ class pageClass
 
 			if (isset($_POST['commentsubmit']))
 			{
+				$pid = null; //FIXME ?
 				$cobj->enter_comment($_POST['author_name'], $_POST['comment'], "page", $this->pageID, $pid, $_POST['subject']);
 				$e107cache = e107::getCache();
 				$e107cache->clear("comment.page.".$this->pageID);

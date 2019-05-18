@@ -14,16 +14,17 @@
 	</keywords>
 	<libraries>
 		<library name="bootstrap" version="4" scope="all"/>
-		<library name="fontawesome" scope="all"/>
+		<library name="fontawesome" version="5" scope="all"/>
 	</libraries>
 	<stylesheets>
 		<css file="style.css" name="Default"/>
            <css file="*" name="*"/>
 	</stylesheets>
 	<layouts>
-		<layout name='test' title='Test' default='true' />
-		<layout name='default' title='Default'  />
+		<layout name='default' title='Default'  default='true' />
 		<layout name='home' title='Home' />
 		<layout name='full' title='Full' />
+		<layout name='test' title='Test'  />
+		<layout name='glyphs' title='Glyphs (test)' />
 	</layouts>
 </e107Theme>

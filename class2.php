@@ -229,7 +229,7 @@ if(isset($CLASS2_INCLUDE) && ($CLASS2_INCLUDE!=''))
 
 //define("MPREFIX", $mySQLprefix); moved to $e107->set_constants()
 
-if(!isset($ADMIN_DIRECTORY))
+if(empty($mySQLdefaultdb))
 {
   // e107_config.php is either empty, not valid or doesn't exist so redirect to installer..
   header('Location: install.php');
@@ -246,6 +246,12 @@ unset($tmpPlugDir);
 //
 // clever stuff that figures out where the paths are on the fly.. no more need for hard-coded e_HTTP :)
 //
+
+if(empty($HANDLERS_DIRECTORY))
+{
+	$HANDLERS_DIRECTORY = 'e107_handlers/';
+}
+
 $tmp = e_ROOT.$HANDLERS_DIRECTORY;
 
 //Core functions - now API independent
@@ -253,80 +259,26 @@ $tmp = e_ROOT.$HANDLERS_DIRECTORY;
 e107_require_once($tmp.'/e107_class.php');
 unset($tmp);
 
-
-
-$e107_paths = compact('ADMIN_DIRECTORY', 'FILES_DIRECTORY', 'IMAGES_DIRECTORY', 'THEMES_DIRECTORY', 'PLUGINS_DIRECTORY', 'HANDLERS_DIRECTORY', 'LANGUAGES_DIRECTORY', 'HELP_DIRECTORY', 'DOWNLOADS_DIRECTORY','UPLOADS_DIRECTORY','SYSTEM_DIRECTORY', 'MEDIA_DIRECTORY','CACHE_DIRECTORY','LOGS_DIRECTORY', 'CORE_DIRECTORY', 'WEB_DIRECTORY');
-$sql_info = compact('mySQLserver', 'mySQLuser', 'mySQLpassword', 'mySQLdefaultdb', 'mySQLprefix', 'mySQLport');
-$e107 = e107::getInstance()->initCore($e107_paths, e_ROOT, $sql_info, varset($E107_CONFIG, array()));
-
-e107::getSingleton('eIPHandler');			// This auto-handles bans etc
-
-
-### NEW Register Autoload - do it asap
-if(!function_exists('spl_autoload_register'))
+/** @note compact() causes issues with PHP7.3 */
+$dirPaths = array('ADMIN_DIRECTORY', 'FILES_DIRECTORY', 'IMAGES_DIRECTORY', 'THEMES_DIRECTORY', 'PLUGINS_DIRECTORY', 'HANDLERS_DIRECTORY', 'LANGUAGES_DIRECTORY', 'HELP_DIRECTORY', 'DOWNLOADS_DIRECTORY','UPLOADS_DIRECTORY','SYSTEM_DIRECTORY', 'MEDIA_DIRECTORY','CACHE_DIRECTORY','LOGS_DIRECTORY', 'CORE_DIRECTORY', 'WEB_DIRECTORY');
+$e107_paths = array();
+foreach($dirPaths as $v)
 {
-	// PHP >= 5.1.2 required
-	die('Fatal exception - spl_autoload_* required.');
-}
-
-
-// allow disable of autoloading - may be removed as e107::autoload_register() is flexible enough
-if(!defset('E107_DISABLE_AUTOLOAD', false))
-{
-	/**
-	 * Generic autoloader. (didn't work while in e107_class.php) 
-	 * @example if your plugin calls 'use Xxxxx\Yyyyy\Zzzzz;' it will attempt to load: ./vendor/Xxxxx/Yyyyy/Zzzzz.php
-	 */
-	function autoloadPsr0($className)
+	if(isset($$v))
 	{
-		$className = str_replace("_", "\\", $className);
-		$className = ltrim($className, '\\');
-		$fileName = '';
-		$namespace = '';
-		
-		if ($lastNsPos = strripos($className, '\\'))
-		{
-			$namespace = substr($className, 0, $lastNsPos);
-			$className = substr($className, $lastNsPos + 1);
-			$fileName = str_replace('\\', DIRECTORY_SEPARATOR, $namespace) . DIRECTORY_SEPARATOR;
-		}
-		
-		$fileName .= str_replace('_', DIRECTORY_SEPARATOR, $className) . '.php';
-		
-		$fullPath = 'vendor'. DIRECTORY_SEPARATOR . $fileName;
-		
-		if(file_exists($fullPath))
-		{
-			e107_require_once($fullPath);	
-		}
-		else
-		{
-			return false;	
-		} 
-		
+		$e107_paths[$v] = $$v;
 	}
-
-	e107::autoload_register(array('e107', 'autoload'));
-//	e107::autoload_register('autoloadPsr0');  // Generic 'use xxxx\yyyy\zzzz;' fix/solution for plugin developers. 
-	
 }
 
-	function genericAutoload($className)
-	    {
-	        $className = str_replace("_", "\\", $className);
-	        $className = ltrim($className, '\\');
-	        $fileName = '';
-	        $namespace = '';
-	        if ($lastNsPos = strripos($className, '\\'))
-	        {
-	            $namespace = substr($className, 0, $lastNsPos);
-	            $className = substr($className, $lastNsPos + 1);
-	            $fileName = str_replace('\\', DIRECTORY_SEPARATOR, $namespace) . DIRECTORY_SEPARATOR;
-	        }
-	        $fileName .= str_replace('_', DIRECTORY_SEPARATOR, $className) . '.php';
-	
-	        e107_require_once($fileName);
-	    }
+// $e107_paths = compact('ADMIN_DIRECTORY', 'FILES_DIRECTORY', 'IMAGES_DIRECTORY', 'THEMES_DIRECTORY', 'PLUGINS_DIRECTORY', 'HANDLERS_DIRECTORY', 'LANGUAGES_DIRECTORY', 'HELP_DIRECTORY', 'DOWNLOADS_DIRECTORY','UPLOADS_DIRECTORY','SYSTEM_DIRECTORY', 'MEDIA_DIRECTORY','CACHE_DIRECTORY','LOGS_DIRECTORY', 'CORE_DIRECTORY', 'WEB_DIRECTORY');
+$sql_info = compact('mySQLserver', 'mySQLuser', 'mySQLpassword', 'mySQLdefaultdb', 'mySQLprefix');
+if(isset($mySQLport))
+{
+	$sql_info['mySQLport'] = $mySQLport;
+}
+$e107 = e107::getInstance()->initCore($e107_paths, e_ROOT, $sql_info, varset($E107_CONFIG, array()));
+e107::getSingleton('eIPHandler');			// This auto-handles bans etc
+unset($dirPaths,$sql_info,$e107_paths);
 
 /**
  * NEW - system security levels
@@ -416,12 +368,12 @@ if(E107_DEBUG_LEVEL && isset($db_debug) && is_object($db_debug))
 //
 // I: Sanity check on e107_config.php
 //     e107_config.php upgrade check
-// FIXME - obsolete check, rewrite it
-if (!$ADMIN_DIRECTORY && !$DOWNLOADS_DIRECTORY)
-{
-	message_handler('CRITICAL_ERROR', 8, ': generic, ', 'e107_config.php');
-	exit;
-}
+// obsolete check, rewrite it
+// if (!$ADMIN_DIRECTORY && !$DOWNLOADS_DIRECTORY)
+// {
+	// message_handler('CRITICAL_ERROR', 8, ': generic, ', 'e107_config.php');
+// 	exit;
+// }
 
 //
 // J: MYSQL INITIALIZATION
@@ -739,7 +691,7 @@ $sql->db_Mark_Time('Misc resources. Online user tracking, cache');
 $e107cache = e107::getCache(); //TODO - find & replace $e107cache, $e107->ecache
 
 //DEPRECATED, BC, call the method only when needed, $e107->override caught by __get()
-$override = e107::getSingleton('override', true); //TODO - find & replace $override, $e107->override
+$override = e107::getSingleton('override', true);
 
 //DEPRECATED, BC, call the method only when needed, $e107->user_class caught by __get()
 $e_userclass = e107::getUserClass();  //TODO - find & replace $e_userclass, $e107->user_class
@@ -770,10 +722,18 @@ function getip()
 $developerMode = (vartrue($pref['developer'],false) || E107_DEBUG_LEVEL > 0);
 
 // for multi-language these definitions needs to come after the language loaded.
-define('SITENAME', trim($tp->toHTML($pref['sitename'], '', 'USER_TITLE,er_on,defs')));
+if(!defined('SITENAME')) // Allow override by English_custom.php or English_global.php plugin files.
+{
+	define('SITENAME', trim($tp->toHTML($pref['sitename'], '', 'USER_TITLE,er_on,defs')));
+}
+if(!defined('SITEDESCRIPTION')) // Allow override by English_custom.php or English_global.php plugin files.
+{
+	define('SITEDESCRIPTION', $tp->toHTML($pref['sitedescription'], '', 'emotes_off,defs'));
+}
+
 define('SITEBUTTON', $tp->replaceConstants($pref['sitebutton'],'abs'));
 define('SITETAG', $tp->toHTML($pref['sitetag'], false, 'emotes_off,defs'));
-define('SITEDESCRIPTION', $tp->toHTML($pref['sitedescription'], '', 'emotes_off,defs'));
+
 define('SITEADMIN', $pref['siteadmin']);
 define('SITEADMINEMAIL', $pref['siteadminemail']);
 define('SITEDISCLAIMER', $tp->toHTML($pref['sitedisclaimer'], '', 'emotes_off,defs'));
@@ -897,12 +857,12 @@ if (!function_exists('checkvalidtheme'))
 			$legacy = (file_exists( e_THEME_ABS.$themeArray[$id].'/theme.xml') === false);
 
 			define('THEME_LEGACY',$legacy);
-	
+			unset($action);
 			
 			return;
 		}
 
-		$sql->db_Mark_time("Theme Check");
+		$sql->db_Mark_Time("Theme Check");
 
 		if (@fopen(e_THEME.$theme_check.'/theme.php', 'r'))
 	//	if (is_readable(e_THEME.$theme_check.'/theme.php'))
@@ -933,6 +893,7 @@ if (!function_exists('checkvalidtheme'))
 					}
 				}
 				closedir($handle);
+				return null;
 			}
 
 			$e107tmp_theme = 'bootstrap3'; // set to bootstrap3 by default.  search_validtheme();
@@ -948,7 +909,7 @@ if (!function_exists('checkvalidtheme'))
 				
 			}
 		}
-		$sql->db_Mark_time("Theme Check End");
+		$sql->db_Mark_Time("Theme Check End");
 
 		$themes_dir = $e107->getFolder('themes');
 		$e107->http_theme_dir = "{$e107->server_path}{$themes_dir}{$e107->site_theme}/";
@@ -999,7 +960,9 @@ if (!class_exists('e107table', false))
 
 		/**
 		 * Set a unique id for use in tablestyle() method/function
+		 *
 		 * @param string $id
+		 * @return e107table
 		 */
 		public function setUniqueId($id)
 		{
@@ -1010,8 +973,10 @@ if (!class_exists('e107table', false))
 
 		/**
 		 * Set Advanced Page/Menu content (beyond just $caption and $text)
+		 *
 		 * @param string $type header|footer|text|title|image|list
 		 * @param string $val
+		 * @return bool|e107table
 		 */
 		public function setContent($type, $val)
 		{
@@ -1021,6 +986,8 @@ if (!class_exists('e107table', false))
 			}
 
 			$this->content[$type] = (string) $val;
+
+			return $this;
 		}
 
 
@@ -1061,12 +1028,11 @@ if (!class_exists('e107table', false))
 		}
 
 
-
 		/**
-		 * @param $caption string caption text
-		 * @param $text string
-		 * @param $mode unique identifier
-		 * @param $return boolean : return the html instead of echo it. 
+		 * @param string $caption caption text
+		 * @param string $text
+		 * @param string $mode unique identifier
+		 * @param boolean $return  : return the html instead of echo it.
 		 * @return null
 		 */
 		public function tablerender($caption, $text, $mode = 'default', $return = false)
@@ -1129,10 +1095,12 @@ if (!class_exists('e107table', false))
 		
 			if(class_exists($this->adminThemeClass) && ($this->frontend == false))
 			{
-				$thm = new $this->adminThemeClass();	
+				/** @var e_theme_render $thm */
+				$thm = new $this->adminThemeClass();
 			}
 			elseif(class_exists($this->themeClass)) // disabled at the moment. 
 			{
+				/** @var e_theme_render $thm */
 				$thm = new $this->themeClass();
 			}
 
@@ -1177,7 +1145,7 @@ e107::getIPHandler()->ban();
 
 if(varset($pref['force_userupdate']) && USER && !isset($_E107['no_forceuserupdate']) && $_SERVER['QUERY_STRING'] !== 'logout')
 {
-	if(force_userupdate($currentUser))
+	if(isset($currentUser) && force_userupdate($currentUser))
 	{
 	  header('Location: '.SITEURL.'usersettings.php?update');
 	  exit();
@@ -1222,7 +1190,7 @@ if (($_SERVER['QUERY_STRING'] == 'logout')/* || (($pref['user_tracking'] == 'ses
 	{
 		if (check_class(varset($pref['user_audit_class'],''))) // Need to note in user audit trail
 		{
-			e107::getLog()->user_audit(USER_AUDIT_LOGOUT, '', USERID, USERNAME);
+			e107::getLog()->user_audit(USER_AUDIT_LOGOUT, null, USERID, USERNAME);
 		}
 	}
 
@@ -1386,89 +1354,41 @@ $theme_pref = varset($pref['sitetheme_pref']);
 // --------------------------------------------------------------
 $sql->db_Mark_Time('Find/Load Theme-Layout'); // needs to run after checkvalidtheme() (for theme previewing).
 
-if(!defined("THEME_LAYOUT"))
+if(deftrue('e_ADMIN_AREA'))
 {
-    $def = "";   // no custom pages found yet.
-    $cusPagePref = (varset($user_pref['sitetheme_custompages'])) ? $user_pref['sitetheme_custompages'] : varset($pref['sitetheme_custompages']);
-
-	if(is_array($cusPagePref) && count($cusPagePref)>0)  // check if we match a page in layout custompages.
-	{
-	    //e_SELF.(e_QUERY ? '?'.e_QUERY : '');
-		$c_url = str_replace(array('&amp;'), array('&'), e_REQUEST_URL);//.(e_QUERY ? '?'.e_QUERY : '');// mod_rewrite support
-		// FIX - check against urldecoded strings
-		$c_url = rtrim(rawurldecode($c_url), '?');
-		
-    	foreach($cusPagePref as $lyout=>$cusPageArray)
-		{
-			if(!is_array($cusPageArray)) { continue; }
-			
-			// NEW - Front page template check - early
-			if(in_array('FRONTPAGE', $cusPageArray) && ($c_url == SITEURL || rtrim($c_url, '/') == SITEURL.'index.php'))
-			{
-				$def = $lyout;
-				break;
-			}
-   			foreach($cusPageArray as $kpage)
-			{
-				if(substr($kpage, -1) === '!' )
-				{
-					$kpage = rtrim($kpage, '!');
-					if(substr($c_url, - strlen($kpage)) === $kpage)
-					{
-						$def =  $lyout;
-						break 2;
-					}
-					continue;
-				}
-
-				if ($kpage && ($kpage == defset('e_PAGE') || strpos($c_url, $kpage) !== false))
-				{
-            	 //	$def = ($lyout) ? $lyout : "legacyCustom";
-					$def =  $lyout;
-					break 2;
-				}
-			}
-		}
-	}
-
-	/* Done via e_IFRAME and USER_AREA force combination, check moved to menu.php
-	if(strpos(e_SELF.'?'.e_QUERY, $ADMIN_DIRECTORY. 'menus.php?configure')!==FALSE)
-	{
-		$menus_equery = explode('.', e_QUERY);
-		$def = $menus_equery[1];
-	}
-	*/
-
-	if(deftrue('e_ADMIN_AREA'))
-	{
-		define("THEME_STYLE", $pref['admincss']);
-	}
-	elseif(varset($pref['themecss']) && file_exists(THEME.$pref['themecss']))
-	{
-		define("THEME_STYLE", $pref['themecss']);
-	}
-	else
-	{
-		define("THEME_STYLE", 'style.css');
-	}	
-
-    if($def) // custom-page layout.
-	{
-    	define("THEME_LAYOUT",$def);
-	}
-	else // default layout.
-	{
-    	$deflayout = (!isset($user_pref['sitetheme_deflayout'])) ? varset($pref['sitetheme_deflayout']) : $user_pref['sitetheme_deflayout'];
-		/**
-		 * @ignore
-		 */
-		define("THEME_LAYOUT",$deflayout);  // default layout.
-	}
-
-    unset($def,$lyout,$cusPagePref,$menus_equery,$deflayout);
-
+	define("THEME_STYLE", $pref['admincss']);
+}
+elseif(varset($pref['themecss']) && file_exists(THEME.$pref['themecss']))
+{
+	define("THEME_STYLE", $pref['themecss']);
+}
+else
+{
+	define("THEME_STYLE", 'style.css');
 }
 
+if(!defined("THEME_LAYOUT"))
+{
+	$user_pref      = e107::getUser()->getPref();
+	$pref           = e107::getPref();
+	$cusPagePref    = (!empty($user_pref['sitetheme_custompages'])) ? $user_pref['sitetheme_custompages'] : varset($pref['sitetheme_custompages'],array());
+	$cusPageDef     = (empty($user_pref['sitetheme_deflayout'])) ? varset($pref['sitetheme_deflayout'],'') : $user_pref['sitetheme_deflayout'];
+	$deflayout      = e107::getTheme()->getThemeLayout($cusPagePref, $cusPageDef, e_REQUEST_URL, $_SERVER['SCRIPT_FILENAME']);
+
+	define("THEME_LAYOUT",$deflayout);
+
+    unset($cusPageDef,$lyout,$cusPagePref,$menus_equery,$deflayout);
+}
+
+// Load library dependencies.
+if(deftrue('e_ADMIN_AREA'))
+{
+	e107::getTheme('current', true)->loadLibrary();
+}
+else
+{
+	e107::getTheme('current')->loadLibrary();
+}
 // -----------------------------------------------------------------------
 
 
@@ -1524,9 +1444,23 @@ elseif (!in_array('lan_'.e_PAGE,$exclude_lan) && !$isPluginDir)
 }
 */
 
-if ($pref['anon_post'] ? define('ANON', true) : define('ANON', false));
+if ($pref['anon_post'])
+{
+	define('ANON', true);
+}
+else
+{
+	define('ANON', false);
+}
 
-if (empty($pref['newsposts']) ? define('ITEMVIEW', 15) : define('ITEMVIEW', $pref['newsposts']));
+if(empty($pref['newsposts']))
+{
+	define('ITEMVIEW', 15);
+}
+else
+{
+	define('ITEMVIEW', $pref['newsposts']);
+}
 
 if ($pref['antiflood1'] == 1 && !defined('FLOODPROTECT'))
 {
@@ -1622,12 +1556,14 @@ function check_email($email)
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------------
-/**
- * @param $var is a single class number or name, or a comma-separated list of the same.
- * @param $userclass a custom list of userclasses or leave blank for the current user's permissions. 
-* If a class is prefixed with '-' this means 'exclude' - returns FALSE if the user is in this class (overrides 'includes').
-* Otherwise returns TRUE if the user is in any of the classes listed in $var.
- */
+	/**
+	 * @param mixed $var is a single class number or name, or a comma-separated list of the same.
+	 * @param mixed $userclass a custom list of userclasses or leave blank for the current user's permissions.
+	 * If a class is prefixed with '-' this means 'exclude' - returns FALSE if the user is in this class (overrides 'includes').
+	 * Otherwise returns TRUE if the user is in any of the classes listed in $var.
+	 * @param int   $uid
+	 * @return bool
+	 */
 function check_class($var, $userclass = USERCLASS_LIST, $uid = 0)
 {
 	$e107 = e107::getInstance();
@@ -1638,7 +1574,11 @@ function check_class($var, $userclass = USERCLASS_LIST, $uid = 0)
 
 	if(e107::isCli())
 	{
-		return true;
+		global $_E107;
+		if(empty($_E107['phpunit']))
+		{
+			return true;
+		}
 	}
 
 	if(is_numeric($uid) && $uid > 0)
@@ -1661,7 +1601,7 @@ function check_class($var, $userclass = USERCLASS_LIST, $uid = 0)
 		$v = trim($v);
 		$invert = FALSE;
 		//value to test is a userclass name (or garbage, of course), go get the id
-		if( ! is_numeric($v))
+		if(!is_numeric($v))
 		{
 			if (substr($v, 0, 1) == '-')
 			{
@@ -1697,14 +1637,18 @@ function check_class($var, $userclass = USERCLASS_LIST, $uid = 0)
 }
 
 
-
+/**
+ * @param                   $arg
+ * @param bool|mixed|string $ap
+ * @return bool
+ */
 function getperms($arg, $ap = ADMINPERMS)
 {
 	// $ap = "4"; // Just for testing.
 
 	if(!ADMIN || trim($ap) === '')
 	{
-		return FALSE;
+		return false;
 	}
 
 	if($arg === 0) // Common-error avoidance with getperms(0)
@@ -1714,7 +1658,7 @@ function getperms($arg, $ap = ADMINPERMS)
 
 	if ($ap === '0' || $ap === '0.') // BC fix.
 	{
-		return TRUE;
+		return true;
 	}
 
 	if ($arg == 'P' && preg_match("#(.*?)/".e107::getInstance()->getFolder('plugins')."(.*?)/(.*?)#", e_SELF, $matches))
@@ -1733,7 +1677,7 @@ function getperms($arg, $ap = ADMINPERMS)
 
 	if(in_array($arg,$ap_array,FALSE))
 	{
-		return TRUE;
+		return true;
 	}
     elseif(strpos($arg, "|")) // check for multiple perms - separated by '|'.
 	{
@@ -1742,13 +1686,13 @@ function getperms($arg, $ap = ADMINPERMS)
 		{
 		   	if(in_array($val,$ap_array))
 			{
-				return TRUE;
+				return true;
 			}
 		}
 	}
 	else
 	{
-		return FALSE;
+		return false;
 	}
 }
 
@@ -1756,6 +1700,8 @@ function getperms($arg, $ap = ADMINPERMS)
  * @deprecated
  * Get the user data from user and user_extended tables
  * SO MUCH DEPRECATED! Use e107::user($uid);
+ * @param  int $uid
+ * @param string $extra
  * @return array
  */
 function get_user_data($uid, $extra = '')
@@ -1772,6 +1718,8 @@ function get_user_data($uid, $extra = '')
 		e107::getMessage()->addDebug('Deprecated get_user_data() backtrace:<pre>'."\n".print_r(debug_backtrace(null,2), true).'</pre>');
 	}
 
+	unset($extra);
+
 	$var = array();
 	$user = e107::getSystemUser($uid, true);
 	if($user)
@@ -1786,6 +1734,10 @@ function get_user_data($uid, $extra = '')
 /**
  * @deprecated
  * @example Use instead: e107::getConfig(alias)->->setPref($array)->save();  Not to be used for saving plugin or theme prefs!
+ * @param string    $table
+ * @param int|mixed $uid
+ * @param string    $row_val
+ * @return bool|int|string
  */
 function save_prefs($table = 'core', $uid = USERID, $row_val = '')
 {
@@ -2088,7 +2040,7 @@ e107::getDebug()->log("Timezone: ".USERTIMEZONE); // remove later on.
    				->remove('sitetheme')
    				->remove('sitetheme_custompages')
    				->remove('sitetheme_deflayout')
-   				->save(false);
+   				->save();
 		}
 
 
@@ -2114,12 +2066,13 @@ $sql->db_Mark_Time('(After Go online)');
 
 /**
  * Set Cookie
- * @param string $name
- * @param string $value
+ *
+ * @param string  $name
+ * @param string  $value
  * @param integer $expire seconds
- * @param string $path
- * @param string $domain
- * @param boolean $secure
+ * @param string  $path
+ * @param string  $domain
+ * @param int     $secure
  * @return void
  */
 function cookie($name, $value, $expire=0, $path = e_HTTP, $domain = '', $secure = 0)
@@ -2260,7 +2213,7 @@ function class_list($uid = '')
  * @Deprecated  by e107::lan();
  * @param string $path
  * @param boolean $force [optional] Please use the default
- * @return void
+ * @return bool
  */
 function include_lan($path, $force = false)
 {
@@ -2370,6 +2323,7 @@ class error_handler
 	protected $xdebug = false;
 	protected $docroot = '';
 	protected $label = array();
+	protected $color = null;
 
 	function __construct()
 	{
@@ -2410,6 +2364,14 @@ class error_handler
 		}
 	}
 
+	/**
+	 * @param $type
+	 * @param $message
+	 * @param $file
+	 * @param $line
+	 * @param $context
+	 * @return bool
+	 */
 	function handle_error($type, $message, $file, $line, $context) {
 		$startup_error = (!defined('E107_DEBUG_LEVEL')); // Error before debug system initialized
 
@@ -2420,7 +2382,7 @@ class error_handler
 			case E_DEPRECATED:
 		//	case E_STRICT:
 
-			if ($startup_error || E107_DBG_ALLERRORS || E107_DBG_ERRBACKTRACE)
+			if ($startup_error || deftrue('E107_DBG_ALLERRORS') || deftrue('E107_DBG_ERRBACKTRACE'))
 			{
 
 
@@ -2442,7 +2404,7 @@ class error_handler
 			}
 			break;
 			case E_WARNING:
-			if ($startup_error || E107_DBG_BASIC || E107_DBG_ERRBACKTRACE)
+			if ($startup_error || deftrue('E107_DBG_BASIC') || deftrue('E107_DBG_ERRBACKTRACE'))
 			{
 			//	$error['short'] = "Warning: {$message}, Line {$line} of {$file}<br />\n";
 				$error['short'] = "<span class='label label-".$this->color[$type]."'>".$this->label[$type]."</span> {$message}, Line <mark>{$line}</mark> of {$file}<br />\n";
@@ -2472,6 +2434,8 @@ class error_handler
 				$error['trace'] = $backtrace;
 				$this->errors[] = $error;
 			}
+			break;
+
 			default:
 			return true;
 			break;
@@ -2549,9 +2513,13 @@ class error_handler
 		return ($ret) ? "<table class='table table-condensed fborder'>\n".$ret."</table>" : FALSE;
 	}
 
+	/**
+	 * @param $information
+	 * @param $level
+	 */
 	function trigger_error($information, $level)
 	{
-		trigger_error($information);
+		trigger_error($information, $level);
 	}
 }
 
@@ -2691,8 +2659,11 @@ class e_http_header
 
 		echo $text;
 		
-	}			
+	}
 
+	/**
+	 * @param $header
+	 */
 	private function unsetHeader($header)
 	{
 		header_remove($header);

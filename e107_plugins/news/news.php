@@ -473,7 +473,7 @@ class news_front
 				break;
 
 			case "list":
-				$title = $tp->toHtml($news['category_name'],false,'TITLE_PLAIN');
+				$title = $tp->toHTML($news['category_name'],false,'TITLE_PLAIN');
 				if(!defined('e_PAGETITLE'))
 				{
 					define('e_PAGETITLE', $title );
@@ -599,7 +599,7 @@ class news_front
 
 		if($news['category_name'] && !defined('e_PAGETITLE') && $type == 'cat')
 		{
-			define('e_PAGETITLE', $tp->toHtml($news['category_name'],false,'TITLE_PLAIN'));
+			define('e_PAGETITLE', $tp->toHTML($news['category_name'],false,'TITLE_PLAIN'));
 		}
 
 		if($news['category_meta_keywords'] && !defined('META_KEYWORDS'))
@@ -1005,6 +1005,8 @@ class news_front
 
 	private function renderViewTemplate()
 	{
+		global $NEWSSTYLE; // v1.x backward compatibility.
+
 		$this->addDebug("Method",'renderViewTemplate()');
 
 		if($newsCachedPage = $this->checkCache($this->cacheString))
@@ -1126,9 +1128,10 @@ class news_front
 			$param['current_action'] = $action;
 			$param['template_key'] = 'news/view';
 
-			if(vartrue($NEWSSTYLE))
+			if(!empty($NEWSSTYLE))
 			{
 				$template =  $NEWSSTYLE;
+
 			}
 			elseif(function_exists("news_style")) // BC
 			{
@@ -1466,6 +1469,9 @@ class news_front
 			// }
 		}
 
+		/**
+		 * @deprecated - for BC only. May be removed in future without further notice.
+		 */
 		if(isset($this->pref['news_unstemplate']) && $this->pref['news_unstemplate'] && file_exists(THEME."news_template.php"))
 		{
 			// theme specific template required ...
@@ -1502,13 +1508,23 @@ class news_front
 					$loop = 1;
 				}
 			}
+
 			$loop = 1;
-			foreach($newsdata as $data) {
-				$var = "ITEMS{$loop}";
-				$$var = $data;
+
+			$items = array();
+
+			foreach($newsdata as $data)
+			{
+				$var = "ITEMS".$loop;
+			//	$$var = $data;
+				$items[$var] = $data;
 				$loop ++;
 			}
-			$text = preg_replace("/\{(.*?)\}/e", '$\1', $NEWSCLAYOUT);
+
+
+			$text = $tp->parseTemplate($NEWSCLAYOUT, false, $items);
+
+		//	$text = preg_replace("/\{(.*?)\}/e", '$\1', $NEWSCLAYOUT);
 
 
 			// Deprecated
@@ -1528,8 +1544,9 @@ class news_front
 			//    $text .= ($nextprev ? "<div class='nextprev'>".$nextprev."</div>" : "");
 			//    $text=''.$text.'<center>'.$nextprev.'</center>';
 
-			echo $text;
+		//	echo $text;
 			$this->setNewsCache($this->cacheString, $text);
+			return $text;
 		}
 		else
 		{

@@ -292,13 +292,24 @@
 			return "<a href='" . e_SELF . '?' . e_QUERY . "#top' onclick=\"window.scrollTo(0,0);\">" . $text . '</a>';
 		}
 
-		function sc_joined()
+		
+		/**
+			* @example {JOINED: dateformat=relative} - long|short|relative
+		*/
+		function sc_joined($parm = '')
 		{
-
 			$gen = e107::getDate();
 			if($this->postInfo['post_user'])
 			{
-				return LAN_FORUM_2031 . ': ' . $gen->convert_date($this->postInfo['user_join'], 'forum') . '<br />';
+
+				if(empty($parm['dateformat']))
+				{
+					return LAN_FORUM_2031 . ': ' . $gen->convert_date($this->postInfo['user_join'], 'forum') . '<br />';
+				}
+				else
+				{
+					return LAN_FORUM_2031 . ': ' . $gen->convert_date($this->postInfo['user_join'], $parm['dateformat']) . '<br />';
+				}
 			}
 		}
 
@@ -309,7 +320,7 @@
 
 			if($parm == 'relative')
 			{
-				return $gen->computeLapse($this->postInfo['post_datestamp'], time(), false, false, 'short');
+				return $gen->computeLapse($this->postInfo['post_datestamp'], time(), false, true, 'short');
 			}
 
 			// XXX what is this line meant to do?
@@ -395,7 +406,7 @@
 
 								$url = e_REQUEST_SELF . "?id=" . $this->postInfo['post_id'] . "&amp;dl=" . $key;
 
-								$saveicon = (deftrue('BOOTSTRAP') === 4) ? 'fa-save' : 'icon-save.glyph'; 
+								$saveicon = (deftrue('FONTAWESOME')) ? 'fa-save' : 'icon-save.glyph';
                 				$saveicon = e107::getParser()->toGlyph($saveicon,false);
 								
 								if(defset("BOOTSTRAP"))
@@ -416,7 +427,7 @@
 								if(file_exists($baseDir . $file))
 								{
 									$thumb = $tp->thumbUrl($baseDir . $file, $thumbAtt, true);
-									$full = $tp->thumbUrl($baseDir . $file, 'w=1000&x=1', true);
+									$full = $tp->thumbUrl($baseDir . $file, 'w=0&x=1', true);
 
 									//TODO Use jQuery zoom instead.
 
@@ -833,19 +844,24 @@
 			$text = '<div class="btn-group pull-right">
     	<button class="btn btn-default btn-secondary btn-sm btn-small dropdown-toggle" data-toggle="dropdown">
     	' . LAN_FORUM_8013 . '
-    	<span class="caret"></span>
+    	';
+    	if(BOOTSTRAP !== 4)
+    	{
+    		$text .= '<span class="caret"></span>';
+    	}
+    	$text .= '
     	</button>
     	<ul class="dropdown-menu pull-right text-right">';
 
 
-			$text .= "<li class='text-right'><a href='" . e_HTTP . "email.php?plugin:forum." . $this->postInfo['post_thread'] . "'>" . LAN_FORUM_2044 . " " . $tp->toGlyph('envelope') . "</a></li>";
-			$text .= "<li class='text-right'><a href='" . e_HTTP . "print.php?plugin:forum." . $this->postInfo['post_thread'] . "'>" . LAN_FORUM_2045 . " " . $tp->toGlyph('print') . "</a></li>"; // FIXME
+			$text .= "<li class='text-right float-right float-right'><a href='" . e_HTTP . "email.php?plugin:forum." . $this->postInfo['post_thread'] . "'>" . LAN_FORUM_2044 . " " . $tp->toGlyph('fa-envelope') . "</a></li>";
+			$text .= "<li class='text-right float-right'><a href='" . e_HTTP . "print.php?plugin:forum." . $this->postInfo['post_thread'] . "'>" . LAN_FORUM_2045 . " " . $tp->toGlyph('fa-print') . "</a></li>"; // FIXME
 
 			if(USER) // Report
 			{
 				$urlReport = e107::url('forum', 'post') . "?f=report&amp;id=" . $this->postInfo['post_thread'] . "&amp;post=" . $this->postInfo['post_id'];
 				//	$urlReport = $this->e107->url->create('forum/thread/report', "id={$this->postInfo['post_thread']}&post={$this->postInfo['post_id']}");
-				$text .= "<li class='text-right'><a href='" . $urlReport . "'>" . LAN_FORUM_2046 . " " . $tp->toGlyph('flag') . "</a></li>";
+				$text .= "<li class='text-right float-right'><a href='" . $urlReport . "'>" . LAN_FORUM_2046 . " " . $tp->toGlyph('fa-flag') . "</a></li>";
 			}
 
 			// Edit
@@ -855,17 +871,28 @@
 
 				$url = e107::url('forum', 'post') . "?f=edit&amp;id=" . $this->postInfo['post_thread'] . "&amp;post=" . $this->postInfo['post_id'];
 				//$url = e107::getUrl()->create('forum/thread/edit', array('id' => $this->postInfo['post_thread'], 'post'=>$this->postInfo['post_id']));
-				$text .= "<li class='text-right'><a href='" . $url . "'>" . LAN_EDIT . " " . $tp->toGlyph('edit') . "</a></li>";
+				$text .= "<li class='text-right float-right'><a href='" . $url . "'>" . LAN_EDIT . " " . $tp->toGlyph('fa-edit') . "</a></li>";
 
+			}
+
+			// Delete own post, if it is the last in the thread
+			if($this->thisIsTheLastPost && USER && $this->thread->threadInfo['thread_lastuser'] == USERID)
+			{
+				/* only show delete button when post is not the initial post of the topic
+				 * AND if this post is the last post in the thread */
+				if($this->thread->threadInfo['thread_active'] && empty($this->postInfo['thread_start']) )
+				{
+					$text .= "<li class='text-right float-right'><a href='" . e_REQUEST_URI . "' data-forum-action='deletepost' data-forum-post='" . $this->postInfo['post_id'] . "'>" . LAN_DELETE . " " . $tp->toGlyph('fa-trash') . "</a></li>";
+				}
 			}
 
 			if($this->forum->checkperm($this->postInfo['post_forum'], 'post'))
 			{
 				$url = e107::url('forum', 'post') . "?f=quote&amp;id=" . $this->postInfo['post_thread'] . "&amp;post=" . $this->postInfo['post_id'];
 				//$url = e107::getUrl()->create('forum/thread/quote', array('id' => $this->postInfo['post_thread'], 'post'=>$this->postInfo['post_id']));
-				$text .= "<li class='text-right'><a href='" . $url . "'>" . LAN_FORUM_2041 . " " . $tp->toGlyph('share-alt') . "</a></li>";
+				$text .= "<li class='text-right float-right'><a href='" . $url . "'>" . LAN_FORUM_2041 . " " . $tp->toGlyph('fa-share-alt') . "</a></li>";
 
-				//	$text .= "<li class='text-right'><a href='".e107::getUrl()->create('forum/thread/quote', array('id' => $this->postInfo['post_id']))."'>".LAN_FORUM_2041." ".$tp->toGlyph('share-alt')."</a></li>";
+				//	$text .= "<li class='text-right float-right'><a href='".e107::getUrl()->create('forum/thread/quote', array('id' => $this->postInfo['post_id']))."'>".LAN_FORUM_2041." ".$tp->toGlyph('share-alt')."</a></li>";
 			}
 
 
@@ -882,24 +909,24 @@
 					$url = e107::url('forum', 'post') . "?f=edit&amp;id=" . $this->postInfo['post_thread'] . "&amp;post=" . $this->postInfo['post_id'];
 					// $url = e107::getUrl()->create('forum/thread/edit', array('id' => $this->postInfo['post_thread'], 'post'=>$this->postInfo['post_id']));
 
-					$text .= "<li class='text-right'><a href='" . $url . "'>" . LAN_EDIT . " " . $tp->toGlyph('edit') . "</a></li>";
+					$text .= "<li class='text-right float-right'><a href='" . $url . "'>" . LAN_EDIT . " " . $tp->toGlyph('fa-edit') . "</a></li>";
 				}
 
 				// only show delete button when post is not the initial post of the topic
 				//	if(!$this->forum->threadDetermineInitialPost($this->postInfo['post_id']))
 				if(empty($this->postInfo['thread_start']))
 				{
-					$text .= "<li class='text-right'><a href='" . e_REQUEST_URI . "' data-forum-action='deletepost' data-forum-post='" . $this->postInfo['post_id'] . "'>" . LAN_DELETE . " " . $tp->toGlyph('trash') . "</a></li>";
+					$text .= "<li class='text-right float-right'><a href='" . e_REQUEST_URI . "' data-forum-action='deletepost' data-forum-post='" . $this->postInfo['post_id'] . "'>" . LAN_DELETE . " " . $tp->toGlyph('fa-trash') . "</a></li>";
 				}
 
 				if($type == 'thread')
 				{
 					$url = e107::url('forum', 'move', array('thread_id' => $this->postInfo['post_thread']));
-					$text .= "<li class='text-right'><a href='" . $url . "'>" . LAN_FORUM_2042 . " " . $tp->toGlyph('move') . "</a></li>";
+					$text .= "<li class='text-right float-right'><a href='" . $url . "'>" . LAN_FORUM_2042 . " " . $tp->toGlyph('fa-arrows') . "</a></li>";
 				}
 				elseif(e_DEVELOPER === true) //TODO
 				{
-					$text .= "<li class='text-right'><a href='" . e107::url('forum', 'split', array('thread_id' => $this->postInfo['post_thread'], 'post_id' => $this->postInfo['post_id'])) . "'>" . LAN_FORUM_2043 . " " . $tp->toGlyph('cut') . "</a></li>";
+					$text .= "<li class='text-right float-right'><a href='" . e107::url('forum', 'split', array('thread_id' => $this->postInfo['post_thread'], 'post_id' => $this->postInfo['post_id'])) . "'>" . LAN_FORUM_2043 . " " . $tp->toGlyph('fa-cut') . "</a></li>";
 
 				}
 			}
@@ -1175,8 +1202,14 @@
 
 		function sc_quickreply()
 		{
-			global $forum, $forum_quickreply;
+			global $forum, $forum_quickreply, $thread;
 
+			// Define which tinymce4 template should be used, depending if the current user is registered or a guest
+			if (!deftrue('e_TINYMCE_TEMPLATE'))
+			{
+				define('e_TINYMCE_TEMPLATE', (USER ? 'member' : 'public')); // allow images / videos.
+			}
+			
 			if($forum->checkPerm($this->var['thread_forum_id'], 'post') && $this->var['thread_active'])
 			{
 				//XXX Show only on the last page??
@@ -1213,7 +1246,8 @@
 						$text = "
 						<form action='" . $url . "' method='post'>
 						<div class='form-group'>" .
-						e107::getForm()->bbarea('post','','forum', '_common', 'small', array('id' => 'forum-quickreply-text', 'wysiwyg' => $editor)) .
+//						e107::getForm()->bbarea('post','','forum', '_common', 'small', array('id' => 'forum-quickreply-text', 'wysiwyg' => $editor)) .
+						e107::getForm()->bbarea('post','','forum', 'forum', 'medium', array('id' => 'forum-quickreply-text', 'wysiwyg' => $editor)) .
 						"</div>
 						<div class='center text-center form-group'>
 							<input type='submit' data-token='" . e_TOKEN . "' data-forum-insert='" . $ajaxInsert . "' data-forum-post='" . $this->var['thread_forum_id'] . "' data-forum-thread='" . $this->var['thread_id'] . "' data-forum-action='quickreply' name='reply' value='" . LAN_FORUM_2006 . "' class='btn btn-success button' />

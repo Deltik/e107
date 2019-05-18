@@ -161,11 +161,15 @@ class cpage_shortcodes extends e_shortcode
 	// Not a shortcode really, as it shouldn't be cached at all :/
 	function cpagecomments()
 	{
-		$com = $this->var['comments'];
+		$com 		= $this->var['comments'];
+		$comflag 	= $this->var['page_comment_flag'];
+		
 		//if($parm && isset($com[$parm])) return $com[$parm];
-
-		return e107::getComment()->parseLayout($com['comment'],$com['comment_form'],$com['moderate']);
-
+		if($comflag)
+		{
+			return e107::getComment()->parseLayout($com['comment'],$com['comment_form'],$com['moderate']);	
+		}
+		
 	//	return $com['comment'].$com['moderate'].$com['comment_form'];
 	}
 	
@@ -295,7 +299,7 @@ class cpage_shortcodes extends e_shortcode
 		}
 		
 		$buttonText = (empty($this->var['menu_button_text'])) ? LAN_READ_MORE : $this->var['menu_button_text'];
-		$buttonUrl	= (empty($this->var['menu_button_url'])) ? $url : $tp->replaceConstants($this->var['menu_button_url']);
+		$buttonUrl	= (empty($this->var['menu_button_url'])) ? $url : $tp->replaceConstants($this->var['menu_button_url'], 'abs');
 		$buttonTarget = (empty($this->var['menu_button_target'])) ? '' : ' target="'.$this->var['menu_button_target'].'" '; //TODO add pref to admin area.
 
 		$text = vartrue($options['text'], $buttonText);
@@ -341,7 +345,7 @@ class cpage_shortcodes extends e_shortcode
 			return $this->sc_cpageurl();
 		}
 
-		return e107::getParser()->replaceConstants($this->var['menu_button_url']);
+		return e107::getParser()->replaceConstants($this->var['menu_button_url'], 'abs');
 	}
 	
 	
@@ -451,7 +455,7 @@ class cpage_shortcodes extends e_shortcode
 		$tp = e107::getParser();
 		$row = $this->getBook();
 
-		return $tp->toHtml($row['chapter_name'], false, 'TITLE');		
+		return $tp->toHTML($row['chapter_name'], false, 'TITLE');		
 	}
 	
 	function sc_book_anchor()
@@ -475,7 +479,7 @@ class cpage_shortcodes extends e_shortcode
 		$tp = e107::getParser();
 		$row = $this->getBook();
 		
-		return $tp->toHtml($row['chapter_meta_description'], true, 'BODY');
+		return $tp->toHTML($row['chapter_meta_description'], true, 'BODY');
 	}
 	
 	function sc_book_url()
@@ -506,7 +510,7 @@ class cpage_shortcodes extends e_shortcode
 		$tp = e107::getParser();
 		$row = $this->getChapter();
 
-		return $tp->toHtml($row['chapter_name'], false, 'TITLE');		
+		return $tp->toHTML($row['chapter_name'], false, 'TITLE');		
 	}
 
 	/**
@@ -557,7 +561,7 @@ class cpage_shortcodes extends e_shortcode
 		$tp = e107::getParser();
 		$row = $this->getChapter();
 		
-		return $tp->toHtml($row['chapter_meta_description'], true, 'BODY');
+		return $tp->toHTML($row['chapter_meta_description'], true, 'BODY');
 	}
 
 	/**

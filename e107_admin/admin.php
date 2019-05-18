@@ -62,8 +62,10 @@ if(in_array($pref['adminstyle'], array('infopanel', 'flexpanel')))
 	}
 }
 
-
-
+// DEBUG THE ADDON_UPDATED INFOPANEL
+//e107::getCache()->clear('Infopanel_plugin', true);
+//e107::getSession()->clear('addons-update-status');
+//e107::getSession()->set('addons-update-checked',false); // set to recheck it.
 
 define('e_ADMIN_HOME', true); // used by some admin shortcodes.
 
@@ -105,7 +107,8 @@ class admin_start
 			array('forumthanks',    0.5),
 			array('eclassifieds',   1.11),
 			array('jshelpers',      '0.3b'),
-			array('akismet',        7.0)
+			array('akismet',        7.0),
+			array('newforumposts_main', 1),
 	);
 
 
@@ -129,7 +132,8 @@ class admin_start
 			e_PLUGIN."tinymce4/e_meta.php",
 			e_THEME."bootstrap3/css/bootstrap_dark.css",
 			e_PLUGIN."search_menu/languages/English.php",
-			e_LANGUAGEDIR."English/lan_parser_functions.php",
+			e_LANGUAGEDIR.e_LANGUAGE."/lan_parser_functions.php",
+			e_LANGUAGEDIR.e_LANGUAGE."/admin/help/theme.php",
 			e_HANDLER."np_class.php",
 			e_CORE."shortcodes/single/user_extended.sc",
 			e_ADMIN."download.php",
@@ -455,13 +459,13 @@ TMPO;
 		if($numDays < 3) // installed in the past 3 days.
 		{
 			$srch = array('[',']');
-			$repl = array("<a href='http://e107help.org' rel='external'>","</a>");
-			echo e107::getMessage()->setTitle(ADLAN_190,E_MESSAGE_INFO)->addInfo("<p>".e107::getParser()->lanVars(e107::getParser()->toHTML(ADLAN_192, true), (str_replace($srch,$repl)))."</p>")->render();
+			$repl = array("<a href='http://e107help.org' target='_blank' rel='external'>","</a>");
+			echo e107::getMessage()->setTitle(ADLAN_190,E_MESSAGE_INFO)->addInfo("<p>".str_replace($srch,$repl,ADLAN_192)."</p>")->render();
 		}
 		elseif($pref < $v2ReleaseDate && !file_exists($upgradeAlertFlag)) // installed prior to v2 release.
 		{
 			$srch = array('[',']');
-			$repl = array("<a href='http://e107help.org' rel='external'>","</a>");
+			$repl = array("<a href='http://e107help.org' target='_blank' rel='external'>","</a>");
 			$message = str_replace($srch,$repl,ADLAN_191);
 			$message .= "<div class='text-right'><a class='btn btn-xs btn-primary ' href='admin.php?dismiss=upgrade'>".LAN_DONT_SHOW_AGAIN."</a></div>"; //todo do it with class=e-ajax and data-dismiss='alert'
 			echo e107::getMessage()->setTitle(LAN_UPGRADING,E_MESSAGE_INFO)->addInfo($message)->render();
@@ -700,7 +704,7 @@ TMPO;
 		if (isset($potential))
 		{
 			//$text = ADLAN_ERR_3."<br /><br />";
-			$mes->addWarning($tp->toHtml(ADLAN_ERR_3, true));
+			$mes->addWarning($tp->toHTML(ADLAN_ERR_3, true));
 			$text = '<ul>';
 			foreach ($potential as $p_file)
 			{

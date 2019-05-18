@@ -69,9 +69,27 @@ if(vartrue($_GET['id']) && isset($_GET['dl']))
 	exit;
 }
 
+if (isset($_GET['last']))
+{
+	$_GET['f'] = 'last';
+}
+
+if(isset($_GET['f']) && $_GET['f'] == 'post')
+{
+	$thread->processFunction();
+}
+
+$thread->init();
+
+
+/* Check if use has moderator permissions for this thread */
+$moderatorUserIds = $forum->getModeratorUserIdsByThreadId($thread->threadInfo['thread_id']);
+define('MODERATOR', (USER && in_array(USERID, $moderatorUserIds)));
+
+
 if(e_AJAX_REQUEST)
 {
-    if(varset($_POST['action']) == 'quickreply')
+	if(varset($_POST['action']) == 'quickreply')
 	{
 		$forum->ajaxQuickReply();
 	}
@@ -85,21 +103,11 @@ if(e_AJAX_REQUEST)
 	{
 		$forum->ajaxModerate();
 	}
-
+	else if(varset($_POST['action']) == 'deletepost')
+	{
+		$forum->usersLastPostDeletion();
+	}
 }
-
-		
-if (isset($_GET['last']))
-{
-	$_GET['f'] = 'last';
-}
-
-if(isset($_GET['f']) && $_GET['f'] == 'post')
-{
-	$thread->processFunction();
-}
-
-$thread->init();
 
 
 /*
@@ -142,8 +150,9 @@ if (USER && (USERID != $thread->threadInfo['thread_user'] || $thread->threadInfo
 }
 
 define('e_PAGETITLE', strip_tags($tp->toHTML($thread->threadInfo['thread_name'], true, 'no_hook, emotes_off')).' / '.$tp->toHTML($thread->threadInfo['forum_name'], true, 'no_hook, emotes_off').' / '.LAN_FORUM_1001);
+
 $forum->modArray = $forum->forumGetMods($thread->threadInfo['forum_moderators']);
-define('MODERATOR', (USER && $forum->isModerator(USERID)));
+
 
 e107::getScBatch('view', 'forum')->setScVar('forum', $forum);
 //var_dump(e107::getScBatch('forum', 'forum'));
@@ -461,6 +470,7 @@ function forumbuttons($thread)
 //---- $tVars->MESSAGE = $thread->message;
 
 		$sc->setVars($thread->threadInfo);
+		$sc->setScVar('threadInfo', $thread->threadInfo);
 //$forum->set_crumb(true, '', $sc); // Set $BREADCRUMB (and BACKLINK)
 
 //---- $forstr = $tp->simpleParse($FORUMSTART, $tVars);
@@ -481,6 +491,8 @@ $i = $thread->page;
 $sc->wrapper('forum_viewtopic/end'); 
 $forend = $tp->parseTemplate($FORUMEND, true, $sc);
 
+$lastPostDetectionCounter = count($postList);
+$sc->setScVar('thisIsTheLastPost', false);
 
 foreach ($postList as $c => $postInfo)
 {
@@ -489,6 +501,9 @@ foreach ($postList as $c => $postInfo)
 		$postInfo['post_options'] = unserialize($postInfo['post_options']);
 	}
 	$loop_uid = (int)$postInfo['post_user'];
+
+	$lastPostDetectionCounter--;
+	if ($lastPostDetectionCounter == 0) $sc->setScVar('thisIsTheLastPost', true);
 
 //---- Orphan $tnum????
 	$tnum = $i;
@@ -1042,7 +1057,7 @@ class e107ForumThread
 								<a class='pull-right btn btn-xs btn-primary e-expandit' href='#post-info'>View Post</a>
 								</div>
 								<div id='post-info' class='e-hideme alert alert-block alert-danger'>
-									".$tp->toHtml($postInfo['post_entry'],true)."
+									".$tp->toHTML($postInfo['post_entry'],true)."
 								</div>
 								<div class='form-group' >
 									<div class='col-md-12'>

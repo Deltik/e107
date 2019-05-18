@@ -321,7 +321,7 @@ class news_sub_form_ui extends e_admin_form_ui
              <div class="modal-content">
 			    <div class="modal-header">
 			    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-			   <h4>'.$tp->toHtml($submitnews_title,false,'TITLE').'</h4>
+			   <h4>'.$tp->toHTML($submitnews_title,false,'TITLE').'</h4>
 			    </div>
 			    <div class="submitnews modal-body">
 			    <p>';
@@ -447,13 +447,13 @@ class news_admin_ui extends e_admin_ui
 		'checkboxes'	   		=> array('title' => '', 			'type' => null, 		'width' => '3%', 	'thclass' => 'center first', 	'class' => 'center', 	'nosort' => true, 'toggle' => 'news_selected', 'forced' => TRUE),
 		'news_id'				=> array('title' => LAN_ID, 	    'type' => 'text', 	    'width' => '5%', 	'thclass' => 'center', 			'class' => 'center',  	'nosort' => false, 'readParms'=>'link=sef&target=blank'),
  		'news_thumbnail'		=> array('title' => NWSLAN_67, 		'type' => 'method', 'data'=>'str',	'width' => '110px',	'thclass' => 'center', 			'class' => "center", 		'nosort' => false, 'readParms'=>'thumb=60&thumb_urlraw=0&thumb_aw=60',  'readonly'=>false),
- 		'news_title'			=> array('title' => LAN_TITLE, 		'type' => 'text',   'data'=>'str',    'tab'=>0, 'writeParms'=> array('required'=> 1, 'size'=>'block-level'), 'inline'=>true,		'width' => 'auto', 'thclass' => '', 				'class' => null, 		'nosort' => false),
-		'news_summary'			=> array('title' => LAN_SUMMARY, 	'type' => 'text', 	'data'=>'str',   'tab'=>0, 'inline'=>true, 'writeParms'=>'size=block-level',	'width' => 'auto', 	'thclass' => 'left', 				'class' => 'left', 		'nosort' => false),
+ 		'news_title'			=> array('title' => LAN_TITLE, 		'type' => 'text',   'data'=>'safestr',    'tab'=>0, 'writeParms'=> array('required'=> 1, 'size'=>'block-level'), 'inline'=>true,		'width' => 'auto', 'thclass' => '', 				'class' => null, 		'nosort' => false),
+		'news_summary'			=> array('title' => LAN_SUMMARY, 	'type' => 'text', 	'data'=>'safestr',   'tab'=>0, 'inline'=>true, 'writeParms'=>'size=block-level',	'width' => 'auto', 	'thclass' => 'left', 				'class' => 'left', 		'nosort' => false),
 		'news_body'			    => array('title' => "", 	        'type' => 'method', 'data'=>'str',    'tab'=>0,  'nolist'=>true, 'writeParms'=>'nolabel=1',		'width' => 'auto', 	'thclass' => '',  'class' => null, 		'nosort' => false),
 		'news_extended'			=> array('title' => "", 	        'type' => null,     'data'=>'str', 'tab'=>0,  'nolist'=>true, 'writeParms'=>'nolabel=1',		'width' => 'auto', 	'thclass' => '',  'class' => null, 		'nosort' => false),
 
-		'news_meta_keywords'	=> array('title' => LAN_KEYWORDS, 	'type' => 'tags', 	  'data'=>'str',  'tab'=>1,	'inline'=>true, 'width' => 'auto', 	'thclass' => '', 				'class' => null, 		'nosort' => false),
-		'news_meta_description'	=> array('title' => LAN_DESCRIPTION,'type' => 'textarea', 'data'=>'str',	'tab'=>1,	'width' => 'auto', 	'thclass' => '', 				'class' => null, 		'nosort' => false, 'writeParms'=>array('size'=>'xxlarge')),
+		'news_meta_keywords'	=> array('title' => LAN_KEYWORDS, 	'type' => 'tags', 	  'data'=>'safestr',  'tab'=>1,	'inline'=>true, 'width' => 'auto', 	'thclass' => '', 				'class' => null, 		'nosort' => false),
+		'news_meta_description'	=> array('title' => LAN_DESCRIPTION,'type' => 'textarea', 'data'=>'safestr',	'tab'=>1,	'width' => 'auto', 	'thclass' => '', 				'class' => null, 		'nosort' => false, 'writeParms'=>array('size'=>'xxlarge')),
 		'news_sef'				=> array('title' => LAN_SEFURL, 	'type' => 'text',    'batch'=>1,  'data'=>'str', 'tab'=>1,  'inline'=>true, 	'width' => 'auto', 	'thclass' => '', 				'class' => null, 		'nosort' => false, 'writeParms'=>array('size'=>'xxlarge', 'show'=>1, 'sef'=>'news_title')),
 		'news_ping'				=> array('title' => LAN_PING, 	    'type' => 'checkbox',   'tab'=>1, 'data'=>false, 'writeParms'=>'value=0',	'inline'=>true, 	'width' => 'auto', 	'thclass' => '', 				'class' => null, 		'nosort' => false),
 
@@ -464,11 +464,11 @@ class news_admin_ui extends e_admin_ui
        	'news_end'				=> array('title' => LAN_END, 		'type' => 'datestamp',  'data'=>'int', 'tab'=>2,  'writeParms'=>'type=datetime',	'width' => 'auto', 	'thclass' => '', 				'class' => null, 		'nosort' => false, 'parms' => 'mask=%A %d %B %Y'),
         'news_class'			=> array('title' => LAN_VISIBILITY, 'type' => 'userclass',  'tab'=>2,   'inline'=>true, 'width' => 'auto', 	'thclass' => '', 				'class' => null,  'batch'=>true, 'filter'=>true),
 
-		'news_template'		    => array('title' => LAN_TEMPLATE, 	'type' => 'method',  'data'=>'str',  'tab'=>2,  'inline'=>true, 'writeParms'=>array('plugin'=>'news', 'id'=>'news_view', 'area'=> 'front', 'merge'=>false), 'width' => 'auto', 	'thclass' => 'left', 			'class' => 'left', 		'nosort' => false, 'batch'=>true, 'filter'=>true),
+		'news_template'		    => array('title' => LAN_TEMPLATE, 	'type' => 'method',  'data'=>'safestr',  'tab'=>2,  'inline'=>true, 'writeParms'=>array('plugin'=>'news', 'id'=>'news_view', 'area'=> 'front', 'merge'=>false), 'width' => 'auto', 	'thclass' => 'left', 			'class' => 'left', 		'nosort' => false, 'batch'=>true, 'filter'=>true),
 
-		'news_render_type'		=> array('title' => LAN_LOCATION, 	'type' => 'dropdown',  'data'=>'str',  'tab'=>2,  'inline'=>true, 'readParms'=>array('type'=>'checkboxes'), 'width' => 'auto', 	'thclass' => 'left', 			'class' => 'left', 		'nosort' => false, 'batch'=>true, 'filter'=>true),
+		'news_render_type'		=> array('title' => LAN_LOCATION, 	'type' => 'dropdown',  'data'=>'safestr',  'tab'=>2,  'inline'=>true, 'readParms'=>array('type'=>'checkboxes'), 'width' => 'auto', 	'thclass' => 'left', 			'class' => 'left', 		'nosort' => false, 'batch'=>true, 'filter'=>true),
 
-			'news_sticky'			=> array('title' => LAN_NEWS_28, 	'type' => 'boolean',   'data'=>'int', 'tab'=>2, 'width' => 'auto', 	'thclass' => 'center', 			'class' => 'center', 	'nosort' => false, 'batch'=>true, 'filter'=>true),
+		'news_sticky'			=> array('title' => LAN_NEWS_28, 	'type' => 'boolean',   'data'=>'int', 'tab'=>2, 'width' => 'auto', 	'thclass' => 'center', 			'class' => 'center', 	'nosort' => false, 'batch'=>true, 'filter'=>true),
         'news_allow_comments' 	=> array('title' => LAN_COMMENTS, 		'type' => 'boolean',  'data'=>'int',  'tab'=>2,	'writeParms'=>'inverse=1',  'width' => 'auto', 	'thclass' => 'center', 			'class' => 'center', 	'nosort' => false,'batch'=>true, 'filter'=>true,'readParms'=>'reverse=1'),
         'news_comment_total' 	=> array('title' => LAN_NEWS_60, 	'type' => 'number',    'data'=>'int', 'tab'=>2,	'noedit'=>true, 'width' => '10%', 	'thclass' => '', 				'class' => null, 		'nosort' => false),
 	//	admin_news_notify
@@ -1160,7 +1160,7 @@ class news_admin_ui extends e_admin_ui
 
 			$newsTemplates = array();
 
-			if($newInfo = e107::getTemplateInfo('news', 'news'))  //TODO  'category'=>'Categories'? research 'Use non-standard template for news layout' and integrate here.
+			if($newInfo = e107::getTemplateInfo('news', 'news', null, 'front', true))  //TODO  'category'=>'Categories'? research 'Use non-standard template for news layout' and integrate here.
 			{
 				foreach($newInfo as $k=>$val)
 				{
@@ -1752,13 +1752,13 @@ class news_form_ui extends e_admin_form_ui
 				}
 			}
 
-
-			$text = $frm->imagepicker('news_thumbnail[0]', varset($thumbTmp[0]), varset($paths[0]),'media=news&video=1&legacyPath={e_IMAGE}newspost_images');
-			$text .= $frm->imagepicker('news_thumbnail[1]', varset($thumbTmp[1]), varset($paths[1]),'media=news&video=1&legacyPath={e_IMAGE}newspost_images');
-			$text .= $frm->imagepicker('news_thumbnail[2]', varset($thumbTmp[2]), varset($paths[2]),'media=news&video=1&legacyPath={e_IMAGE}newspost_images');
-			$text .= $frm->imagepicker('news_thumbnail[3]', varset($thumbTmp[3]), varset($paths[3]),'media=news&video=1&legacyPath={e_IMAGE}newspost_images');
-			$text .= $frm->imagepicker('news_thumbnail[4]', varset($thumbTmp[4]), varset($paths[4]),'media=news&video=1&legacyPath={e_IMAGE}newspost_images');
-
+			$text = "<div class='mediaselector-multi'>";
+			$text .= $frm->imagepicker('news_thumbnail[0]', varset($thumbTmp[0]), varset($paths[0]), array('media' => 'news+', 'video' => 1, 'legacyPath' => '{e_IMAGE}newspost_images'));
+			$text .= $frm->imagepicker('news_thumbnail[1]', varset($thumbTmp[1]), varset($paths[1]), array('media' => 'news+', 'video' => 1, 'legacyPath' => '{e_IMAGE}newspost_images'));
+			$text .= $frm->imagepicker('news_thumbnail[2]', varset($thumbTmp[2]), varset($paths[2]), array('media' => 'news+', 'video' => 1, 'legacyPath' => '{e_IMAGE}newspost_images'));
+			$text .= $frm->imagepicker('news_thumbnail[3]', varset($thumbTmp[3]), varset($paths[3]), array('media' => 'news+', 'video' => 1, 'legacyPath' => '{e_IMAGE}newspost_images'));
+			$text .= $frm->imagepicker('news_thumbnail[4]', varset($thumbTmp[4]), varset($paths[4]), array('media' => 'news+', 'video' => 1, 'legacyPath' => '{e_IMAGE}newspost_images'));
+			$text .= "</div>";
 		//	$text .= "<div class='field-help'>Insert image/video into designated area of template.</div>";
 			return $text;
 		}

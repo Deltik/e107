@@ -584,7 +584,7 @@ class page_admin_ui extends e_admin_ui
 			'page_template' 	=> array('title'=> LAN_TEMPLATE, 		'tab' => 0,	'type' => 'dropdown', 	'width' => 'auto','filter' => true, 'batch'=>true, 'inline'=>true, 'writeParms'=>array()),
 
 		 	'page_author' 		=> array('title'=> LAN_AUTHOR, 		'tab' => 0,	'type' => 'user', 'inline'=>true, 		'data'=>'int','width' => 'auto', 'thclass' => 'left'),
-			'page_text' 		=> array('title'=> CUSLAN_9,		'tab' => 0,	'type' => 'bbarea',		'data'=>'str',	'width' => '30%', 'readParms' => 'expand=...&truncate=50&bb=1', 'writeParms'=>array('media'=>'page', 'template'=>'page')),
+			'page_text' 		=> array('title'=> CUSLAN_9,		'tab' => 0,	'type' => 'bbarea',		'data'=>'str',	'width' => '30%', 'readParms' => 'expand=...&truncate=50&bb=1', 'writeParms'=>array('media'=>'page^', 'template'=>'page')),
 		
 		
 			// Options Tab. 
@@ -604,16 +604,16 @@ class page_admin_ui extends e_admin_ui
 			// Menu Tab  XXX 'menu_name' is 'menu_name' - not caption. 
 			'menu_name' 		=> array('title'=> CUSLAN_64, 		'tab' => 2,	'type' => 'text', 		'width' => 'auto','nolist'=>true, "help"=>"Will be listed in the Menu-Manager under this name or may be called using {CMENU=name} in your theme. Must use ASCII characters only and be all lowercase."),
 		   	'menu_title'	   	=> array('title'=> CUSLAN_65, 	    'nolist'=>true, 'tab' => 2,	'type' => 'text', 'inline'=>true,		'width'=>'25%', "help"=>"Caption displayed on the menu item.", 'writeParms'=>'size=xxlarge'),
-			'menu_text' 		=> array('title'=> CUSLAN_66,		'nolist'=>true, 'tab' => 2,	'type' => 'bbarea',		'data'=>'str',	'width' => '30%', 'readParms' => 'expand=...&truncate=50&bb=1', 'writeParms'=>'media=page' ),
+			'menu_text' 		=> array('title'=> CUSLAN_66,		'nolist'=>true, 'tab' => 2,	'type' => 'bbarea',		'data'=>'str',	'width' => '30%', 'readParms' => 'expand=...&truncate=50&bb=1', 'writeParms'=>'media=page^' ),
 			'menu_template' 	=> array('title'=> CUSLAN_67,       'nolist'=>true, 'tab' => 2,	'type' => 'dropdown', 	'width' => 'auto','filter' => true, 'batch'=>true, 'inline'=>true, 'writeParms'=>''),
             'menu_class' 		=> array('title'=> LAN_VISIBILITY, 	'tab' => 3,	'type' => 'userclass', 	'data'=>'int', 'inline'=>true, 'width' => 'auto',  'filter' => true, 'batch' => true),
 			'menu_button_text'	=> array('title'=> CUSLAN_68, 	    'nolist'=>true, 'tab' => 3,	'type' => 'text', 'inline'=>true,		'width'=>'25%', "help"=>"Leave blank to use the default"),
 		
 			'menu_button_url'	=> array('title'=> CUSLAN_69, 	    'nolist'=>true, 'tab' => 3,	'type' => 'text', 'inline'=>true,		'width'=>'25%', "help"=>"Leave blank to use the corresponding page", 'writeParms'=>'size=xxlarge'),
 		
-			'menu_icon'			=> array('title' =>CUSLAN_70,       'nolist'=>true, 'tab' => 2,	'type' => 'icon', 		'width' => '110px',	'thclass' => 'center', 			'class' => "center", 'nosort' => false, 'readParms'=>'thumb=60&thumb_urlraw=0&thumb_aw=60','writeParms'=>'media=page&glyphs=1', 'readonly'=>false),
+			'menu_icon'			=> array('title' =>CUSLAN_70,       'nolist'=>true, 'tab' => 2,	'type' => 'icon', 		'width' => '110px',	'thclass' => 'center', 			'class' => "center", 'nosort' => false, 'readParms'=>'thumb=60&thumb_urlraw=0&thumb_aw=60','writeParms'=>'media=page^&glyphs=1', 'readonly'=>false),
 		
-			'menu_image'		=> array('title' =>CUSLAN_71, 	    'nolist'=>true, 'tab' => 2,	'type' => 'image', 		'width' => '110px',	'thclass' => 'center', 			'class' => "center", 'nosort' => false, 'readParms'=>'thumb=60&thumb_urlraw=0&thumb_aw=60','writeParms'=>'media=page&video=1', 'readonly'=>false),
+			'menu_image'		=> array('title' =>CUSLAN_71, 	    'nolist'=>true, 'tab' => 2,	'type' => 'image', 		'width' => '110px',	'thclass' => 'center', 			'class' => "center", 'nosort' => false, 'readParms'=>'thumb=60&thumb_urlraw=0&thumb_aw=60','writeParms'=>'media=page^&video=1', 'readonly'=>false),
 			
 	
 	
@@ -636,6 +636,7 @@ class page_admin_ui extends e_admin_ui
 		protected $cats = array(0 => LAN_NONE);
 		protected $templates = array();
 		protected $chapterFields = array();
+		protected $chapters = array();
 
 		function init()
 		{
@@ -790,10 +791,15 @@ class page_admin_ui extends e_admin_ui
 			
 			$sql = e107::getDb();
 
-			$sql->gen("SELECT chapter_id,chapter_name,chapter_parent, chapter_fields FROM #page_chapters ORDER BY chapter_parent asc, chapter_order");
+			$sql->gen("SELECT chapter_id,chapter_name,chapter_parent, chapter_sef, chapter_fields FROM #page_chapters ORDER BY chapter_parent asc, chapter_order");
 			while($row = $sql->fetch())
 			{
 				$cat = $row['chapter_id'];
+
+				$chrow = $row;
+				unset($chrow['chapter_fields']);
+
+				$this->chapters[$cat] = $chrow;
 
 				if($row['chapter_parent'] == 0)
 				{
@@ -978,13 +984,20 @@ class page_admin_ui extends e_admin_ui
             /** @var e_admin_model $model */
             foreach ($tree->getTree() as $id => $model)
             {
-                // No chapter, override route
-                if(!$model->get('page_chapter'))
-                {
+
+				if($chap = $model->get('page_chapter'))
+				{
+                    $model->set('chapter_sef', $this->chapters[$chap]['chapter_sef']);
+                    $parent = (int) $this->chapters[$chap]['chapter_parent'];
+                    $model->set('book_sef', $this->chapters[$parent]['chapter_sef']);
+				}
+				else
+				{
                     $urlData = $this->url;
                     $urlData['route'] = 'page/view/other';
                     $model->setUrl($urlData);
                 }
+
             }
         }
 
@@ -1014,6 +1027,9 @@ class page_admin_ui extends e_admin_ui
 		
 		function beforeCreate($newdata,$olddata)
 		{
+
+			$newdata = e107::getCustomFields()->processDataPost('page_fields',$newdata);
+
 			$newdata['menu_name'] = preg_replace('/[^\w-*]/','-',$newdata['menu_name']);
 
 			if(empty($newdata['page_sef']))

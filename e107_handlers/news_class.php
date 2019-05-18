@@ -489,6 +489,11 @@ class news {
 
 			}
 
+			if(empty($parms['mode']))
+			{
+				$parms['mode'] = 'news_grid_menu';
+			}
+
 		//	$gridSize       = vartrue($parms['layout'],'col-md-4');
 
 			$parmSrch       = array(
@@ -531,7 +536,7 @@ class news {
 
 			if(!empty($parms['order']))
 			{
-				$treeparm['db_order'] = e107::getParser()->toDb($parms['order']);
+				$treeparm['db_order'] = e107::getParser()->toDB($parms['order']);
 			}
 
 			$parms['return'] = true;
@@ -858,7 +863,7 @@ class e_news_tree extends e_front_tree_model
 
 		if(!empty($items))
 		{
-
+			/** @var e_tree_model $news */
 			foreach ($items as $news)
 			{
 				$d = $news->toArray();
@@ -938,7 +943,7 @@ class e_news_category_item extends e_front_model
 			 return e107::getParser()->toAttribute($this->cat('name'));
 		}
 
-		return e107::getParser()->toHtml($this->cat('name'),true,'TITLE_PLAIN');
+		return e107::getParser()->toHTML($this->cat('name'),true,'TITLE_PLAIN');
 	}
 
 	public function sc_news_category_url($parm = '')
@@ -1038,7 +1043,7 @@ class e_news_category_tree extends e_front_tree_model
 	 * Load active categories only (containing active news items)
 	 *
 	 * @param boolean $force
-	 * @return e_news_category_tree
+	 * @return e_tree_model|e_news_category_tree
 	 */
 	public function loadActive($force = false)
 	{
@@ -1100,7 +1105,7 @@ class e_news_category_tree extends e_front_tree_model
 		$bullet = defined('BULLET') ? THEME_ABS.'images/'.BULLET : THEME_ABS.'images/bullet2.gif';
 		$obj = new e_vars(array('bullet' => $bullet));
 
-
+		/** @var e_tree_model $cat */
 		foreach ($this->getTree() as $cat)
 		{
 			$obj->active = '';

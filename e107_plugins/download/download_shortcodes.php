@@ -63,15 +63,15 @@ class download_shortcodes extends e_shortcode
 
 				if(!empty($this->grandparent))
 				{
-					$breadcrumb[]	= array('text' => $this->grandparent['download_category_name'],	'url' => ($this->grandparent['download_category_id']) ? e107::url('download', 'category', $this->grandparent) : null); // 'download/list/category', array('id'=>$this->grandparent['download_category_id'],'name'=>$this->grandparent['download_category_sef'])) : null);
+					$breadcrumb[]	= array('text' => $this->grandparent['download_category_name'],	'url' => ($this->grandparent['download_category_id']) ? e107::url('download', 'category', $this->grandparent) : null);
 				}
 
 				if(!empty($this->parent))
 				{
-					$breadcrumb[]	= array('text' => $this->parent['download_category_name'],	'url' => ($this->parent['download_category_id']) ?  e107::url('download', 'category', $this->parent) : null); //  e107::url('download/list/category', array('id'=>$this->parent['download_category_id'],'name'=>$this->parent['download_category_sef'])) : null);
+					$breadcrumb[]	= array('text' => $this->parent['download_category_name'],	'url' => ($this->parent['download_category_id']) ?  e107::url('download', 'category', $this->parent) : null);
 				}
 
-				$breadcrumb[]	= array('text' => $this->var['download_category_name'],	'url' => ($this->var['download_category_id']) ?  e107::url('download', 'category', $this->var) : null); // e107::url('download/list/category', array('id'=>$this->var['download_category_id'],'name'=>$this->var['download_category_sef'])) : null);
+				$breadcrumb[]	= array('text' => $this->var['download_category_name'],	'url' => ($this->var['download_category_id']) ?  e107::url('download', 'category', $this->var) : null);
 				$breadcrumb[]	= array('text' => $this->var['download_name'],			'url' => null);
 			break;
 		}
@@ -415,7 +415,7 @@ class download_shortcodes extends e_shortcode
       
 		if(deftrue('BOOTSTRAP'))
 		{
-			$img = e107::getParser()->toGlyph('icon-download.glyph',false); 
+			$img = e107::getParser()->toGlyph('fa-download',false);
 		//	$img = '<i class="icon-download"></i>'; 
 		}
 	  	
@@ -704,7 +704,7 @@ class download_shortcodes extends e_shortcode
       
 		if(deftrue('BOOTSTRAP'))
 		{
-			$img = e107::getParser()->toGlyph('download',$parm); // '<i class="icon-download"></i>'; 
+			$img = e107::getParser()->toGlyph('fa-download',$parm); // '<i class="icon-download"></i>';
 		}	
 		
 		if ($pref['agree_flag'] == 1) 
@@ -955,7 +955,7 @@ class download_shortcodes extends e_shortcode
 			
 			$url = e107::url('download', 'item', $dlrowrow);
 
-			$icon = (deftrue('BOOTSTRAP')) ? $tp->toGlyph('chevron-left') : '&lt;&lt;';
+			$icon = (deftrue('BOOTSTRAP')) ? $tp->toGlyph('fa-chevron-left') : '&lt;&lt;';
 			
 	    	return "<a class='e-tip' href='".$url ."' title=\"".$dlrowrow['download_name']."\">".$icon." ".LAN_PREVIOUS."</a>\n";
    		
@@ -982,7 +982,7 @@ class download_shortcodes extends e_shortcode
 			extract($dlrowrow);
 			$url = 	$url = e107::url('download', 'item', $dlrowrow);
 
-			$icon = (deftrue('BOOTSTRAP')) ? $tp->toGlyph('chevron-right') : '&gt;&gt;';
+			$icon = (deftrue('BOOTSTRAP')) ? $tp->toGlyph('fa-chevron-right') : '&gt;&gt;';
 
 			return "<a class='e-tip' href='".$url."' title=\"".$dlrowrow['download_name']."\">".LAN_NEXT." ".$icon."</a>\n";
    		 
@@ -1043,7 +1043,7 @@ class download_shortcodes extends e_shortcode
               <span class="input-group-btn">
               <button class="btn btn-default btn-secondary" type="submit" name="s"  value="1">';
               
-              $text .= $tp->toIcon('glyphicon-search.glyph');
+              $text .= $tp->toIcon('fa-search.glyph');
 
              $text .= '</button>
              </span>

@@ -372,7 +372,7 @@ if (!function_exists('multiarray_sort'))
 	 * @param $order
 	 * @param $natsort
 	 * @param $case
-	 * @return sorted array. 
+	 * @return array sorted array.
 	 */
     function multiarray_sort(&$array, $key, $order = 'asc', $natsort = true, $case = true)
     {
@@ -397,14 +397,20 @@ if (!function_exists('multiarray_sort'))
 
         if(!isset($sort_values))
         {
-            return;             
+            return $array;
         }
             
         reset ($sort_values);
-
+/*
         while (list ($arr_key, $arr_val) = each ($sort_values))
         {
  			$key = is_numeric($arr_key) ? "" : $arr_key; // retain assoc-array keys. 
+ 			$sorted_arr[$key] = $array[$arr_key];
+        }*/
+
+        foreach($sort_values as $arr_key=>$arr_val)
+        {
+            $key = is_numeric($arr_key) ? "" : $arr_key; // retain assoc-array keys.
  			$sorted_arr[$key] = $array[$arr_key];
         }
         return $sorted_arr;
@@ -419,11 +425,14 @@ class e_array {
     /**
     * Returns an array from stored array data in php serialized, e107 var_export and json-encoded data. 
     *
-    * @param string $ArrayData
+    * @param string $sourceArrayData
     * @return array|bool stored data
     */
-    public function unserialize($ArrayData) 
+    public function unserialize($sourceArrayData)
     {
+        $ArrayData = $sourceArrayData;
+
+
         if ($ArrayData == ""){
             return false;
         }
@@ -463,7 +472,7 @@ class e_array {
 
         if(strpos($ArrayData, "\$data = ") === 0) // Fix for buggy old value.
 		{
-			$ArrayData = substr($ArrayData,8);
+			$ArrayData = (string) substr($ArrayData,8);
 		}
 
         if(strtolower(substr($ArrayData,0,5)) != 'array')
@@ -471,7 +480,7 @@ class e_array {
             return false;
         }
 
-		if(strpos($ArrayData," => \'") !== false)
+		if(strpos($ArrayData,"0 => \'")!=false)
 		{
              $ArrayData = stripslashes($ArrayData);
 		}
@@ -507,7 +516,10 @@ class e_array {
 					echo "<pre>";
 					debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
 					echo "</pre>";
+
 				}
+
+				e107::getAdminLog()->addError($sourceArrayData)->toFile('unserializeError_'.time().'.log','e107::unserialize',false);
 
 			    return array();
 
@@ -536,13 +548,13 @@ class e_array {
     *
     * @param array $ArrayData array to be stored
     * @param bool|string $mode true = var_export with addedslashes, false = var_export (default), 'json' = json encoded
-    * @return string
+    * @return null|string
     */
     public function serialize($ArrayData, $mode = false)
     {       
         if (!is_array($ArrayData) || empty($ArrayData))
         {
-            return false;
+            return null;
         }
 
         if($mode === 'json')

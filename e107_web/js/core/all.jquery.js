@@ -143,12 +143,18 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 						method: $element.attr('data-method'),
 						// Image to show loading.
 						loading: $element.attr('data-loading'),
+						// FontAwesome icon name.
+						loadingIcon: $element.attr('data-loading-icon'),
+						// ID or class of container to place loading-icon within. eg. #mycontainer or .mycontainer
+						loadingTarget: $element.attr('data-loading-target'),
 						// If this is a navigation controller, e.g. pager.
 						nav: $element.attr('data-nav-inc'),
 						// Old way - href='myscript.php#id-to-target.
 						href: $element.attr("href"),
 						// Wait for final event. Useful for keyUp, keyDown... etc.
-						wait: $element.attr('data-event-wait')
+						wait: $element.attr('data-event-wait'),
+						// Optional confirmation message - requires user input before proceeding. 
+						confirm: $element.attr('data-confirm'),
 					};
 
 					// If this is a navigation controller, e.g. pager.
@@ -160,6 +166,7 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 						ajaxOptions.url = $element.attr('data-src');
 						// Set Ajax type to "GET".
 						ajaxOptions.type = 'GET';
+
 					}
 
 					if(ajaxOptions.wait != null)
@@ -422,6 +429,7 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 		var val = src.match(/from=(\d+)/);
 		var amt = parseInt(val[1]);
 
+
 		var oldVal = 'from=' + amt;
 		var newVal = null;
 
@@ -448,6 +456,11 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 		else
 		{
 			newVal = 'from=' + add;
+		}
+
+		if($(e).attr("data-nav-id"))
+		{
+			navid = '.' + $(e).attr("data-nav-id");
 		}
 
 		if(newVal)
@@ -539,6 +552,22 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 			$element.after($loadingImage);
 		}
 
+		if(options.confirm != null)
+		{
+			answer = confirm(options.confirm);
+
+			if(answer === false)
+			{
+				return null;
+			}
+		}
+
+		if(options.loadingIcon != null && options.loadingTarget != null)
+		{
+			var loadHtml = '<i class="e-ajax-loading fa fa-spin '+ options.loadingIcon +'"></i>';
+			$(options.loadingTarget).html(loadHtml);
+		}
+
 		// Old way - href='myscript.php#id-to-target.
 		if(options.target == null || options.url == null)
 		{
@@ -574,6 +603,11 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 			data: data,
 			complete: function ()
 			{
+				if(loadHtml)
+				{
+					$('.e-ajax-loading').hide();
+				}
+
 				if($loadingImage)
 				{
 					$loadingImage.remove();

@@ -135,7 +135,7 @@ class e_admin_request
 		// Set current id
 		if(isset($this->_request_qry[$this->_id_key]))
 		{
-			$this->_id = preg_replace('/[^\w-:.]/', '', $this->_request_qry[$this->_id_key]);
+			$this->_id = preg_replace('/[^\w\-:\.]/', '', $this->_request_qry[$this->_id_key]);
 		}
 
 		$this->_posted_qry =& $_POST; //raw?
@@ -1647,6 +1647,12 @@ class e_admin_controller
 	 * @var string default action name
 	 */
 	protected $_default_action = 'index';
+
+
+	/**
+	 * @var string default trigger action.
+	 */
+	protected $_default_trigger = 'auto';
 	
 	/**
 	 * List (numerical array) of only allowed for this controller actions
@@ -1875,7 +1881,7 @@ class e_admin_controller
 	 *
 	 * @param string $title if boolean true - current menu caption will be used
 	 * @param boolean $meta add to meta as well
-	 * @return e_admin_controller
+	 * @return object e_admin_controller
 	 */
 	public function addTitle($title = true, $meta = true)
 	{
@@ -1932,6 +1938,7 @@ class e_admin_controller
 	//	print_a($title);
 		$this->getResponse()->appendTitle($title);
 		if($meta) $this->addMetaTitle($title);
+
 		return $this;
 	}
 
@@ -2357,6 +2364,14 @@ class e_admin_controller
 		return $this->_default_action;
 	}
 
+
+
+	public function getDefaultTrigger()
+	{
+		return $this->_default_trigger;
+
+	}
+
 	/**
 	 * Set default action
 	 * @param string $action_name
@@ -2365,6 +2380,21 @@ class e_admin_controller
 	public function setDefaultAction($action_name)
 	{
 		$this->_default_action = $action_name;
+		return $this;
+	}
+
+
+		/**
+	 * Set default trigger
+	 * @param string|array $triggers 'auto' or array of triggers
+	 * @example $triggers['submit'] = array(LAN_UPDATE, 'update', $model->getId());
+				$triggers['submit'] = array(LAN_CREATE, 'create', 0);
+				$triggers['cancel'] = array(LAN_CANCEL, 'cancel');
+	 * @return e_admin_controller
+	 */
+	public function setDefaultTrigger($triggers)
+	{
+		$this->_default_trigger = $triggers;
 		return $this;
 	}
 
@@ -2396,6 +2426,7 @@ class e_admin_controller_ui extends e_admin_controller
 	 * @var array UI field data
 	 */
 
+	protected $listQry;
 
 	protected $pid;
 
@@ -2946,7 +2977,13 @@ class e_admin_controller_ui extends e_admin_controller
 
 		if($this->getAction() === 'list' || $this->getAction() === 'grid')
 		{
-			return $this->getListModel()->get($key);
+			$obj = $this->getListModel();
+			if(is_object($obj))
+			{
+				return $obj->get($key);
+			}
+
+			return null;
 		}
 
 		return $this->getModel()->get($key);
@@ -3072,6 +3109,10 @@ class e_admin_controller_ui extends e_admin_controller
 		$orderField = $this->getSortField();
 
 		$arr = array();
+		/**
+		 * @var  $id
+		 * @var e_tree_model $model
+		 */
 		foreach ($tree->getTree() as $id => $model)
 		{
 			$parent = $model->get($parentField);
@@ -3088,7 +3129,7 @@ class e_admin_controller_ui extends e_admin_controller
 
 		$tree->setTree($arr,true); // set the newly ordered tree.
 
-		var_dump($arr);
+	//	var_dump($arr);
 
 		return $this->_tree_model;
 	}
@@ -3302,14 +3343,15 @@ class e_admin_controller_ui extends e_admin_controller
 				return $this;
 			}
 		}
-		
+
 		if($selected)
 		{
 			foreach ($selected as $i => $_sel) 
 			{
-				$selected[$i] = preg_replace('/[^\w-:.]/', '', $_sel);
+				$selected[$i] = preg_replace('/[^\w\-:.]/', '', $_sel);
 			}
 		}
+
 
 		if(substr($batch_trigger, 0, 6) === 'batch_')
 		{
@@ -3461,9 +3503,13 @@ class e_admin_controller_ui extends e_admin_controller
 						unset($classes[$id],$msg);
 					}
 				}
-				$this->handleCommaBatch($selected, $field, array_keys($classes), $trigger[0] === 'ucdelall' ? 'clearAll' : 'addAll');
+				if(method_exists($this, 'handleCommaBatch'))
+				{
+					$this->handleCommaBatch($selected, $field, array_keys($classes), $trigger[0] === 'ucdelall' ? 'clearAll' : 'addAll');
+				}
 			break;
-			
+
+			// handleListCopyBatch etc.
 			default:
 				$field = $trigger[0];
 				$value = $trigger[1];
@@ -3724,7 +3770,7 @@ class e_admin_controller_ui extends e_admin_controller
 
 			default:
 				$choice = explode('|', str_replace('{ID}', $id, $choice), 3);
-				$this->redirectAction(preg_replace('/[^\w-:.]/', '', $choice[0]), vartrue($choice[1]), vartrue($choice[2]));
+				$this->redirectAction(preg_replace('/[^\w\-:.]/', '', $choice[0]), vartrue($choice[1]), vartrue($choice[2]));
 			break;
 		}
 		return;
@@ -4039,10 +4085,13 @@ class e_admin_controller_ui extends e_admin_controller
 		$tableSJoinArr = array(); // FROM for join tables
 		$filter = array();
 
+		$this->listQry = $listQry;
 
 		$searchQuery = $this->fixSearchWildcards($tp->toDB($request->getQuery('searchquery', '')));
 		$searchFilter = $this->_parseFilterRequest($request->getQuery('filter_options', ''));
-		
+
+		$listQry = $this->listQry; // check for modification during parseFilterRequest();
+
 		if(E107_DEBUG_LEVEL == E107_DBG_SQLQUERIES)
 		{
 			e107::getMessage()->addDebug('searchQuery: <b>'.$searchQuery.'</b>'); 
@@ -4155,7 +4204,7 @@ class e_admin_controller_ui extends e_admin_controller
 			// filter for WHERE and FROM clauses
 			$searchable_types = array('text', 'textarea', 'bbarea', 'url', 'ip', 'tags', 'email', 'int', 'integer', 'str', 'string', 'number'); //method? 'user',
 			
-			if($var['type'] === 'method' && !empty($var['data']) && ($var['data'] === 'string' || $var['data'] === 'str'))
+			if($var['type'] === 'method' && !empty($var['data']) && ($var['data'] === 'string' || $var['data'] === 'str' || $var['data'] === 'int'))
 			{
 				$searchable_types[] = 'method';
 			}
@@ -4173,15 +4222,39 @@ class e_admin_controller_ui extends e_admin_controller
 
 				if($var['type'] === 'ip')
 				{
-					$ipSearch = e107::getIpHandler()->ipEncode($searchQuery);
+					$ipSearch = e107::getIPHandler()->ipEncode($searchQuery);
 					if(!empty($ipSearch))
 					{
 						$filter[] = $var['__tableField']." LIKE '%".$ipSearch."%'";
 					}
 					// Continue below for BC check also.
 				}
-							
-				$filter[] = $var['__tableField']." LIKE '%".$searchQuery."%'";
+
+
+				if(strpos($searchQuery, " ") !==false) // search multiple words across fields.
+				{
+					$tmp = explode(" ", $searchQuery);
+
+					if(count($tmp) < 4) // avoid excessively long query.
+					{
+						foreach($tmp as $splitSearchQuery)
+						{
+							if(!empty($splitSearchQuery))
+							{
+								$filter[] = $var['__tableField']." LIKE '%".$splitSearchQuery."%'";
+							}
+						}
+					}
+					else
+					{
+						$filter[] = $var['__tableField']." LIKE '%".$searchQuery."%'";
+					}
+
+				}
+				else
+				{
+					$filter[] = $var['__tableField']." LIKE '%".$searchQuery."%'";
+				}
 
 
 				if($isfilter)
@@ -4426,7 +4499,7 @@ class e_admin_controller_ui extends e_admin_controller
 	 * @param string $noredirectAction passed to doAfterSubmit()
 	 * @return boolean
 	 */
-	protected function _manageSubmit($callbackBefore = '', $callbackAfter = '', $callbackError = '', $noredirectAction = '')
+	protected function _manageSubmit($callbackBefore = '', $callbackAfter = '', $callbackError = '', $noredirectAction = '', $forceSave=false)
 	{
 
 		$model = $this->getModel();
@@ -4512,7 +4585,7 @@ class e_admin_controller_ui extends e_admin_controller
 
 		// Scenario I - use request owned POST data - toForm already executed
 		$model->setPostedData($_posted, null, false) // insert() or update() dbInsert();
-			->save(true);
+			->save(true, $forceSave);
 
 
 
@@ -4715,6 +4788,8 @@ class e_admin_ui extends e_admin_controller_ui
 			return;
 		}
 
+		$opts = null;
+
 		foreach($tmp as $plug=>$config)
 		{
 
@@ -4722,11 +4797,18 @@ class e_admin_ui extends e_admin_controller_ui
 
 			if(!empty($config['fields']))
 			{
+				if(!empty($this->fields['options']))
+				{
+					$opts = $this->fields['options'];
+					unset($this->fields['options']);
+				}
+
 				foreach($config['fields'] as $k=>$v)
 				{
 					$v['data'] = false; // disable data-saving to db table. .
 
 					$fieldName = 'x_'.$plug.'_'.$k;
+					e107::getDebug()->log($fieldName." initiated by ".$plug);
 
 					if($v['type'] === 'method' && method_exists($form,$fieldName))
 					{
@@ -4738,6 +4820,11 @@ class e_admin_ui extends e_admin_controller_ui
 
 					$this->fields[$fieldName] = $v; // ie. x_plugin_key
 
+				}
+
+				if(!empty($opts)) // move options field to the end.
+				{
+					$this->fields['options'] = $opts;
 				}
 			}
 
@@ -4867,7 +4954,7 @@ class e_admin_ui extends e_admin_controller_ui
 				$selected = explode(',', $this->getPosted('delete_confirm_value'));
 				foreach ($selected as $i => $_sel) 
 				{
-					$selected[$i] = preg_replace('/[^\w-:.]/', '', $_sel);
+					$selected[$i] = preg_replace('/[^\w\-:.]/', '', $_sel);
 				}
 			}
 		}
@@ -5205,7 +5292,7 @@ class e_admin_ui extends e_admin_controller_ui
 	 */
 	protected function handleListBoolBatch($selected, $field, $value)
 	{
-		$cnt = $this->getTreeModel()->update($field, $value, $selected, $value, false);
+		$cnt = $this->getTreeModel()->batchUpdate($field, $value, $selected, $value, false);
 		if($cnt)
 		{
 			$caption = e107::getParser()->lanVars(LAN_UI_BATCH_BOOL_SUCCESS, $cnt, true);
@@ -5222,7 +5309,7 @@ class e_admin_ui extends e_admin_controller_ui
 	protected function handleListBoolreverseBatch($selected, $field, $value)
 	{
 		$tree = $this->getTreeModel();
-		$cnt = $tree->update($field, "1-{$field}", $selected, null, false);
+		$cnt = $tree->batchUpdate($field, "1-{$field}", $selected, null, false);
 		if($cnt)
 		{
 			$caption = e107::getParser()->lanVars(LAN_UI_BATCH_REVERSED_SUCCESS, $cnt, true);
@@ -5237,7 +5324,7 @@ class e_admin_ui extends e_admin_controller_ui
 	{
 		$tree = $this->getTreeModel();
 		$cnt = $rcnt = 0;
-		$value = e107::getParser()->toDb($value);
+		$value = e107::getParser()->toDB($value);
 		
 		switch ($type) 
 		{
@@ -5292,12 +5379,12 @@ class e_admin_ui extends e_admin_controller_ui
 						$value = implode(',', array_map('trim', $value));
 					}
 					
-					$cnt = $this->getTreeModel()->update($field, $value, $selected, true, true);
+					$cnt = $this->getTreeModel()->batchUpdate($field, $value, $selected, true, true);
 				}
 				else
 				{
 					$this->getTreeModel()->addMessageWarning(LAN_UPDATED_FAILED)->setMessages();//"Comma list is empty, aborting."
-					$this->getTreeModel()->addDebug(LAN_UPDATED_FAILED.": Comma list is empty, aborting.")->setMessages();
+					$this->getTreeModel()->addMessageDebug(LAN_UPDATED_FAILED.": Comma list is empty, aborting.")->setMessages();
 				}
 			break;
 				
@@ -5305,7 +5392,7 @@ class e_admin_ui extends e_admin_controller_ui
 				$allowed = !is_array($value) ? explode(',', $value) : $value;
 				if(!$allowed)
 				{
-					$rcnt = $this->getTreeModel()->update($field, '', $selected, '', true);
+					$rcnt = $this->getTreeModel()->batchUpdate($field, '', $selected, '', true);
 				}
 				else
 				{
@@ -5393,7 +5480,7 @@ class e_admin_ui extends e_admin_controller_ui
 
 
 
-		$cnt = $this->getTreeModel()->update($field, $val, $selected, true, false);
+		$cnt = $this->getTreeModel()->batchUpdate($field, $val, $selected, true, false);
 		if($cnt)
 		{
 			$vttl = $this->getUI()->renderValue($field, $value, $this->getFieldAttr($field));
@@ -5576,24 +5663,32 @@ class e_admin_ui extends e_admin_controller_ui
 		
 		$_name = $_POST['name'];
 		$_value = $_POST['value'];
+		$_token = $_POST['token'];
+
 		$parms = $this->fields[$_name]['readParms'] ? $this->fields[$_name]['readParms'] : '';
 		if(!is_array($parms)) parse_str($parms, $parms);
-		if(vartrue($parms['editable'])) $this->fields[$_name]['inline'] = true;
+		if(!empty($parms['editable'])) $this->fields[$_name]['inline'] = true;
 		
-		if(vartrue($this->fields[$_name]['noedit']) || vartrue($this->fields[$_name]['nolist']) || !vartrue($this->fields[$_name]['inline']))
+		if(!empty($this->fields[$_name]['noedit']) || !empty($this->fields[$_name]['nolist']) || empty($this->fields[$_name]['inline']) || empty($_token) || !password_verify(session_id(),$_token))
 		{
 			header($protocol.': 403 Forbidden', true, 403);
 			header("Status: 403 Forbidden", true, 403);
 			echo ADLAN_86; //Forbidden
-			$this->logajax("Forbidden");
+
+			$result = var_export($this->fields[$_name], true);
+			$this->logajax("Forbidden\nAction:".$this->getAction()."\nField:\n".$result);
 			return;
 		}
-		
+
+
+
 
 		
 		$model = $this->getModel()->load($this->getId());
 		$_POST = array(); //reset post
 		$_POST[$_name] = $_value; // set current field only
+
+	//	print_r($_POST);
 		
 		// generic handler - same as regular edit form submit
 
@@ -5639,6 +5734,7 @@ class e_admin_ui extends e_admin_controller_ui
 		$message .= print_r($_POST,true);
 		$message .= "\n_GET\n";
 		$message .= print_r($_GET,true);
+
 		$message .= "---------------";
 		
 		file_put_contents(e_LOG.'uiAjaxResponseInline.log', $message."\n\n", FILE_APPEND);
@@ -5669,7 +5765,7 @@ class e_admin_ui extends e_admin_controller_ui
 		
 		$sql    = e107::getDb();
 		$step   = $this->orderStep ? intval($this->orderStep) : 1;
-		$from   = ($_GET['from']) ? intval($_GET['from']) * $step : 0;
+		$from   = !empty($_GET['from']) ? (int) $_GET['from'] * $step : $step;
 
 		$c = $from;
 		$updated = array();
@@ -5678,14 +5774,15 @@ class e_admin_ui extends e_admin_controller_ui
 		{
 
 			list($tmp,$id) = explode("-", $row, 2);
-			$id = preg_replace('/[^\w-:.]/', '', $id);
+			$id = preg_replace('/[^\w\-:.]/', '', $id);
 			if(!is_numeric($id)) $id = "'{$id}'";
 			if($sql->update($this->table, $this->sortField." = {$c} WHERE ".$this->pid." = ".$id)!==false)
 			{
 				$updated[] = "#".$id."  --  ".$this->sortField." = ".$c;
 			}
+
 			// echo($sql->getLastQuery()."\n");
-			$c++; //  += $step;
+			$c += $step;
 
 		}
 
@@ -5695,7 +5792,7 @@ class e_admin_ui extends e_admin_controller_ui
 			return null;
 		}
 
-	//file_put_contents(e_LOG."sortAjax.log", print_r($_POST['all'],true));
+//	file_put_contents(e_LOG."sortAjax.log", print_r($updated,true));
 
 		// Increment every other record after the current page of records.
 	//	$changed = (intval($_POST['neworder']) * $step) + $from ;
@@ -5938,8 +6035,25 @@ class e_admin_ui extends e_admin_controller_ui
 	}
 
 	/**
- * User defined error handling, return true to suppress model messages
- */
+	 * User defined before pref saving logic
+	 * @param $new_data
+	 * @param $old_data
+	 */
+	public function beforePrefsSave($new_data, $old_data)
+	{
+	}
+
+	/**
+	 * User defined before pref saving logic
+	 */
+	public function afterPrefsSave()
+	{
+
+	}
+
+	/**
+    * User defined error handling, return true to suppress model messages
+    */
 	public function onUpdateError($new_data, $old_data, $id)
 	{
 	}
@@ -5987,7 +6101,7 @@ class e_admin_ui extends e_admin_controller_ui
 
 	/**
 	 *
-	 * @return TBD
+	 * @return string
 	 */
 	public function CreatePage()
 	{
@@ -5997,6 +6111,16 @@ class e_admin_ui extends e_admin_controller_ui
 	public function PrefsSaveTrigger()
 	{
 		$data = $this->getPosted();
+
+		$beforePref = $data;
+		unset($beforePref['e-token'],$beforePref['etrigger_save']);
+
+		$tmp = $this->beforePrefsSave($beforePref, $this->getConfig()->getPref());
+
+		if(!empty($tmp))
+		{
+			$data = $tmp;
+		}
 
 		foreach($this->prefs as $k=>$v) // fix for empty checkboxes - need to save a value.
 		{
@@ -6033,6 +6157,7 @@ class e_admin_ui extends e_admin_controller_ui
 
 		$this->getConfig()->save(true);
 
+		$this->afterPrefsSave();
 
 /*
 		$this->getConfig()
@@ -6080,7 +6205,7 @@ class e_admin_ui extends e_admin_controller_ui
 		// Option for working with tables having no PID
 		if(!varset($this->pid) && vartrue($this->fields) && false !== $this->pid)
 		{
-			$message = e107::getParser()->toHtml(LAN_UI_NOPID_ERROR,true);
+			$message = e107::getParser()->toHTML(LAN_UI_NOPID_ERROR,true);
 			e107::getMessage()->add($message, E_MESSAGE_WARNING);
 		}
 
@@ -6136,7 +6261,7 @@ class e_admin_ui extends e_admin_controller_ui
 		if($this->pluginName !== 'core' && !e107::isInstalled($this->pluginName))
 		{
 			$obj = get_class($this);
-			e107::getMessage()->addError($obj." \$pluginName: is not valid. (".$this->pluginName. ")"); // debug only.
+			e107::getMessage()->addWarning($obj."The plugin is not installed or \$pluginName: is not valid. (".$this->pluginName. ")"); // debug only.
 			return $this;
 		}
 
@@ -6486,10 +6611,11 @@ class e_admin_form_ui extends e_form
 						'footer' => $form_end,  //XXX Unused?
 						'after_submit_options' => $controller->getAfterSubmitOptions(), // or true for default redirect options
 						'after_submit_default' => $request->getPosted('__after_submit_action', $controller->getDefaultAction()), // or true for default redirect options
-						'triggers' => 'auto', // standard create/update-cancel triggers
+						'triggers' => $controller->getDefaultTrigger(), // standard create/update-cancel triggers
 					)
 				)
 		);
+
 		$models[] = $controller->getModel();
 
 		return $this->renderCreateForm($forms, $models, e_AJAX_REQUEST);
@@ -6529,7 +6655,73 @@ class e_admin_form_ui extends e_form
 	}
 
 
+	/**
+	 * Integrate e_addon data into the list model.
+	 * @param e_tree_model $tree
+	 * @param array $fields
+	 * @param string $pid
+	 * @return null
+	 */
+	private function setAdminAddonModel(e_tree_model $tree, $fields, $pid)
+	{
 
+		$event= $this->getController()->getEventName();
+
+		$arr = array();
+
+		/** @var e_tree_model $model */
+		foreach($tree->getTree() as $model)
+		{
+			foreach($fields as $fld)
+			{
+
+				if(strpos($fld,'x_') !== 0)
+				{
+					continue;
+				}
+
+				list($prefix,$plug,$field) = explode("_",$fld,3);
+
+				if($prefix !== 'x' || empty($field) || empty($plug))
+				{
+					continue;
+				}
+
+				$id = $model->get($pid);
+
+				if(!empty($id))
+				{
+					$arr[$plug][$field][$id] = $model;
+				}
+			}
+
+
+		}
+
+
+		foreach($arr as $plug=>$field)
+		{
+
+			if($obj = e107::getAddon($plug, 'e_admin'))
+			{
+				foreach($field as $fld=>$var)
+				{
+					$ids = implode(",", array_keys($var));
+
+					$value = (array) e107::callMethod($obj,'load', $event,$ids);
+
+				//	$value = (array) $obj->load($event, $ids);
+
+					foreach($var as $id=>$model)
+					{
+						$model->set("x_".$plug."_".$fld, varset($value[$id][$fld],null));
+					}
+				}
+			}
+
+		}
+
+	}
 
 
 	/**
@@ -6547,8 +6739,11 @@ class e_admin_form_ui extends e_form
 
 		$request = $controller->getRequest();
 		$id = $this->getElementId();
+		$pid = $controller->getPrimaryName();
 		$tree = $options = array();
 		$tree[$id] = $controller->getTreeModel();
+
+
 
 
 		if(deftrue('e_DEBUG_TREESORT') && $view === 'default')
@@ -6560,6 +6755,8 @@ class e_admin_form_ui extends e_form
 		$controller->setFieldAttr('options', 'noConfirm', $controller->deleteConfirmScreen);
 
 		$fields = $controller->getFields();
+
+		$this->setAdminAddonModel($tree[$id], array_keys($fields), $pid);
 
 		// checks dispatcher acess/perms for create/edit/delete access in list mode.
 		$mode           = $controller->getMode();
@@ -6622,7 +6819,7 @@ class e_admin_form_ui extends e_form
 
 		$options[$id] = array(
 			'id'            => $this->getElementId(), // unique string used for building element ids, REQUIRED
-			'pid'           => $controller->getPrimaryName(), // primary field name, REQUIRED
+			'pid'           => $pid, // primary field name, REQUIRED
 			'query'	        => $controller->getFormQuery(), // work around - see form in newspost.php (submitted news)
 			'head_query'    => $request->buildQueryString('field=[FIELD]&asc=[ASC]&from=[FROM]', false), // without field, asc and from vars, REQUIRED
 			'np_query'      => $request->buildQueryString(array(), false, 'from'), // without from var, REQUIRED for next/prev functionality
@@ -6695,6 +6892,7 @@ class e_admin_form_ui extends e_form
 			$fieldsets['confirm']['triggers']['hidden'] = $this->hidden('etrigger_batch', 'delete');
 		}
 
+		$id = null;
 		$forms[$id] = array(
 			'id' => $this->getElementId(), // unique string used for building element ids, REQUIRED
 			'url' => e_REQUEST_SELF, // default
@@ -6752,7 +6950,7 @@ class e_admin_form_ui extends e_form
 			parse_str($input_options, $input_options);
 		}
 		$input_options['id'] = false;
-		$input_options['class'] = 'tbox input-text filter ';
+		$input_options['class'] = 'tbox input-text filter input-xlarge ';
 		$controller = $this->getController();
 		$filter_pre = vartrue($controller->preFiliterMarkup);
 		$filter_post = vartrue($controller->postFiliterMarkup);
@@ -7440,6 +7638,9 @@ class e_admin_form_ui extends e_form
 		return $this->_controller;
 	}
 }
+
+
+
 
 
 include_once(e107::coreTemplatePath('admin_icons'));

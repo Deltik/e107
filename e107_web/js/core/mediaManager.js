@@ -143,6 +143,7 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 	{
 		var $this = $(that);
 		var style = '';
+		var css = '';
 		var bb = '';
 
 		var src = $('#src').attr('value'); // working old
@@ -158,6 +159,8 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 		var margin_left = $('#margin-left').val();
 		var _float = $('#float').val();
 		var alt = $('#alt').val();
+
+
 
 		var target = $this.attr('data-target');
 
@@ -186,7 +189,12 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 
 		if(_float == 'left' || _float == 'right')
 		{
-			style = style + 'float:' + _float + ';';
+	//		style = style + 'float:' + _float + ';';
+		}
+
+		if(_float == 'left' || _float == 'right')
+		{
+			css = 'bbcode-img-' + _float;
 		}
 
 		if(width === undefined)
@@ -201,11 +209,33 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 
 		// Set the Html / Wysiwyg Value.
 		var $img = $('<img/>');
-		$img.attr('style', style);
+
+		if(css != '')
+		{
+			$img.attr('class', css);
+		}
+
+		if(style != '')
+		{
+			$img.attr('style', style);
+		}
+
 		$img.attr('src', src);
-		$img.attr('alt', alt);
-		$img.attr('width', width);
-		$img.attr('height', height);
+
+		if(alt != '')
+		{
+			$img.attr('alt', alt);
+		}
+
+		if(width > 0)
+		{
+			$img.attr('width', width);
+		}
+
+		if(height > 0)
+		{
+			$img.attr('height', height);
+		}
 
 		if($htmlHolder.length > 0)
 		{
@@ -216,12 +246,12 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 		if (path == '') return;
 
 		// Only Do width/height styling on bbcodes --
-		if(width != '' && width !== undefined)
+		if(width != '' && width != 0 && width !== undefined)
 		{
 			style = style + 'width:' + width + 'px;';
 		}
 
-		if(height != '' && height !== undefined)
+		if(height != '' && height != 0 && height !== undefined)
 		{
 			style = style + 'height:' + height + 'px;';
 		}
@@ -230,15 +260,29 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 		{
 			bb = '[img';
 
+			var bparm = {};
+
+			if(css != '')
+			{
+				// bb = bb + '&class=' + css;
+				bparm['class'] = css;
+			}
+
 			if(style != '')
 			{
-				bb = bb + ' style=' + style;
+				// bb = bb + ' style=' + style;
+				bparm['style'] = style;
 			}
 
 			if(alt != '')
 			{
-				bb = bb + '&alt=' + alt;
+			// 	bb = bb + '&alt=' + alt;
+				bparm['alt'] = alt;
 			}
+
+			var bbquery = decodeURIComponent(jQuery.param(bparm, true));
+			console.log(bbquery);
+			bb = bb + ' ' + bbquery;
 
 			bb = bb + ']';
 			bb = bb + path;
@@ -321,6 +365,8 @@ var e107 = e107 || {'settings': {}, 'behaviors': {}};
 		{
 			$parentTarget.text(label);
 		}
+
+		console.log(label);
 	};
 
 
@@ -856,7 +902,7 @@ console.log('Bbcode: '+bbcode);
 				{title: "Zip files", extensions: extArchive || "zip,gz,rar"},
 				{title: "Document files", extensions: extDoc || "pdf,doc,docx,xls,xlsm,xml"},
 				{title: "Media files", extensions: 'mp3,mp4,wav,ogg,webm,mid,midi'},
-				{title: "Other files", extensions: 'torrent,txt'}
+				{title: "Other files", extensions: 'torrent,txt,dmg'}
 			],
 			preinit: {
 				Init: function (up, info)
@@ -865,6 +911,16 @@ console.log('Bbcode: '+bbcode);
 				}
 			},
 			init: {
+				BeforeUpload: function(e,file)
+				{
+
+
+				},
+				BeforeChunkUpload: function(uploader, file, post, currentBlob, currentOffset)
+				{
+					//console.log(file);
+              		// currentBlob.name=file.name;
+       			},
 				FilesAdded: function (up, files)
 				{
 

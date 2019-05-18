@@ -423,8 +423,8 @@
 			<field name="link_open">0</field>
 			<field name="link_class">0</field>
 			<field name="link_function"></field>
-			<field name="link_sefurl"></field>
-			<field name="link_owner"></field>
+			<field name="link_sefurl">index</field>
+			<field name="link_owner">contact</field>
 		</item>
 		<item>
 			<field name="link_id">6</field>
@@ -438,8 +438,8 @@
 			<field name="link_open">0</field>
 			<field name="link_class">255</field>
 			<field name="link_function"></field>
-			<field name="link_sefurl"></field>
-			<field name="link_owner"></field>
+			<field name="link_sefurl">index</field>
+			<field name="link_owner">news</field>
 		</item>
 		<item>
 			<field name="link_id">7</field>
@@ -1098,7 +1098,7 @@
 			<field name="gen_user_id">1</field>
 			<field name="gen_ip">Hello World!</field>
 			<field name="gen_intdata">0</field>
-			<field name="gen_chardata"><![CDATA[[html]This is the voux template for a simple blog/website. The text you are reading is the &quot;Welcome Message&quot; and the items below are &quot;News Items&quot;. Visit the admin-area to modify.<br><br><a class=&quot;btn btn-primary btn-large &quot; href=&quot;e107_admin/admin.php&quot;>Go to Admin area</a><br>[/html]]]></field>
+			<field name="gen_chardata"><![CDATA[[html]This is the voux template for a simple blog/website. The text you are reading is the &quot;Welcome Message&quot; and the items below are &quot;News Items&quot;. Visit the admin-area to modify.<br><br><a class=&quot;btn btn-primary btn-large &quot; href=&quot;{e_ADMIN}admin.php&quot;>Go to Admin area</a><br>[/html]]]></field>
 		</item>
 	</dbTable>
 	<dbTable name="news_category">
