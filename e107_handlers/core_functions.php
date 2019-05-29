@@ -301,10 +301,12 @@ if (!function_exists('asortbyindex'))
        }
        asort ($sort_values);
        reset ($sort_values);
-       while (list ($arr_key, $arr_val) = each ($sort_values))
+
+       foreach($sort_values as $arr_key =>$arr_val)
        {
               $sorted_arr[] = $array[$arr_key];
        }
+
        return $sorted_arr;
     }
 }
@@ -433,7 +435,8 @@ class e_array {
         $ArrayData = $sourceArrayData;
 
 
-        if ($ArrayData == ""){
+        if ($ArrayData == "")
+        {
             return false;
         }
 
@@ -448,8 +451,7 @@ class e_array {
             $dat = unserialize($ArrayData);
             $ArrayData = $this->WriteArray($dat,FALSE);
         }
-
-	    if(substr($ArrayData,0,1) === '{' || substr($ArrayData,0,1) === '[') // json
+		elseif(strpos($ArrayData,'{') === 0 || strpos($ArrayData,'[') === 0) // json
 	    {
 	        $dat = json_decode($ArrayData, true);
 
@@ -484,6 +486,10 @@ class e_array {
 		{
              $ArrayData = stripslashes($ArrayData);
 		}
+		elseif(strpos($ArrayData,'array') === 0 && strpos($ArrayData,"\' => \'") !== false)
+		{
+			$ArrayData = stripslashes($ArrayData);
+		}
 
 	    $ArrayData = str_replace('=&gt;','=>',$ArrayData); //FIX for PDO encoding of strings. .
 
@@ -516,10 +522,11 @@ class e_array {
 					echo "<pre>";
 					debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
 					echo "</pre>";
-
+					file_put_contents(e_LOG.'unserializeError_'.time().'.log', $sourceArrayData);
 				}
 
-				e107::getAdminLog()->addError($sourceArrayData)->toFile('unserializeError_'.time().'.log','e107::unserialize',false);
+			//	e107::getAdminLog()->addError($sourceArrayData)->toFile('unserializeError_'.time().'.log','e107::unserialize',false);
+
 
 			    return array();
 
@@ -533,6 +540,12 @@ class e_array {
 	        if (!isset($data) || !is_array($data))
 	        {
 	            trigger_error("Bad stored array data - <br /><br />".htmlentities($ArrayData), E_USER_ERROR);
+
+	            if(e_DEBUG === true)
+				{
+	                file_put_contents(e_LOG.'unserializeError_'.time().'.log', $sourceArrayData);
+				}
+
 	            return false;
 	        }
 

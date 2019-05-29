@@ -227,6 +227,16 @@ if(isset($CLASS2_INCLUDE) && ($CLASS2_INCLUDE!=''))
 	 require_once(e_ROOT.$CLASS2_INCLUDE);
 }
 
+if(empty($HANDLERS_DIRECTORY))
+{
+	$HANDLERS_DIRECTORY = 'e107_handlers/';
+}
+
+if(empty($PLUGINS_DIRECTORY))
+{
+	$PLUGINS_DIRECTORY = 'e107_plugins/';
+}
+
 //define("MPREFIX", $mySQLprefix); moved to $e107->set_constants()
 
 if(empty($mySQLdefaultdb))
@@ -247,10 +257,7 @@ unset($tmpPlugDir);
 // clever stuff that figures out where the paths are on the fly.. no more need for hard-coded e_HTTP :)
 //
 
-if(empty($HANDLERS_DIRECTORY))
-{
-	$HANDLERS_DIRECTORY = 'e107_handlers/';
-}
+
 
 $tmp = e_ROOT.$HANDLERS_DIRECTORY;
 
@@ -2365,6 +2372,22 @@ class error_handler
 	}
 
 	/**
+	 * Deftrue function independent of core function.
+	 * @param $value
+	 * @return bool
+	 */
+	private function deftrue($value)
+	{
+		if (defined($value) && constant($value))
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+
+	/**
 	 * @param $type
 	 * @param $message
 	 * @param $file
@@ -2382,7 +2405,7 @@ class error_handler
 			case E_DEPRECATED:
 		//	case E_STRICT:
 
-			if ($startup_error || deftrue('E107_DBG_ALLERRORS') || deftrue('E107_DBG_ERRBACKTRACE'))
+			if ($startup_error || $this->deftrue('E107_DBG_ALLERRORS')  || $this->deftrue('E107_DBG_ERRBACKTRACE'))
 			{
 
 
@@ -2404,7 +2427,7 @@ class error_handler
 			}
 			break;
 			case E_WARNING:
-			if ($startup_error || deftrue('E107_DBG_BASIC') || deftrue('E107_DBG_ERRBACKTRACE'))
+			if ($startup_error || $this->deftrue('E107_DBG_BASIC') || $this->deftrue('E107_DBG_ERRBACKTRACE'))
 			{
 			//	$error['short'] = "Warning: {$message}, Line {$line} of {$file}<br />\n";
 				$error['short'] = "<span class='label label-".$this->color[$type]."'>".$this->label[$type]."</span> {$message}, Line <mark>{$line}</mark> of {$file}<br />\n";

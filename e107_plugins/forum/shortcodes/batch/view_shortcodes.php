@@ -296,7 +296,7 @@
 		/**
 			* @example {JOINED: dateformat=relative} - long|short|relative
 		*/
-		function sc_joined($parm = '')
+		function sc_joined($parm = null)
 		{
 			$gen = e107::getDate();
 			if($this->postInfo['post_user'])
@@ -1027,22 +1027,19 @@
 
 		function sc_moderators()
 		{
-			global $forum;
-
 			$modUser = array();
-			foreach($forum->modArray as $user)
+			foreach($this->forum->modArray as $user)
 			{
 				$modUser[] = "<a href='" . e107::getUrl()->create('user/profile/view', $user) . "'>" . $user['user_name'] . "</a>";
 			}
 
-//$tVars->MODERATORS = LAN_FORUM_2003.": ". implode(', ', $modUser);
+
 			return LAN_FORUM_2003 . ": " . implode(', ', $modUser);
-//unset($modUser);
+
 		}
 
 		function sc_threadstatus()
 		{
-//$tVars->THREADSTATUS = (!$thread->threadInfo['thread_active'] ? LAN_FORUM_2004 : '');
 			return (!$this->var['thread_active'] ? LAN_FORUM_2004 : '');
 		}
 
@@ -1143,7 +1140,12 @@
 			$text = '<div class="btn-group">
    ' . $replyUrl . '
     <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
-    <span class="caret"></span>
+    ';
+	if(BOOTSTRAP !== 4)
+	{
+    	$text .= '<span class="caret"></span>';
+    }
+    $text .= '
     <span class="sr-only">Toggle Dropdown</span>
     </button>
     <ul class="dropdown-menu pull-right">
