@@ -5,8 +5,7 @@ composer.phar
 
 # Ignore third-party files
 phpDocumentor.phar
-# Uncomment the following line for e107 v3. See ./e107_handlers/vendor/README.md for details.
-#e107_handlers/vendor/
+e107_handlers/vendor/
 e107_docs/api/
 
 # Ignore user files
