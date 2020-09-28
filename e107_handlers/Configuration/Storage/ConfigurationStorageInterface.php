@@ -25,7 +25,7 @@ interface ConfigurationStorageInterface
 	 * Reads configuration data from storage backend
 	 *
 	 * @return mixed
-	 *  Data that can be parsed into a {@see ConfigurationInterface}
+	 *  Data that can be parsed into a {@link ConfigurationInterface}
 	 * @throws \RuntimeException If there was an error reading
 	 */
 	public function read();
@@ -33,10 +33,10 @@ interface ConfigurationStorageInterface
 	/**
 	 * Writes configuration data to storage backend
 	 *
-	 * @param mixed $data
-	 *  Raw data that this storage backend can commit to storage
+	 * @param ConfigurationInterface $config
+	 *  A {@link ConfigurationInterface} to serialize into the persistent storage format
 	 * @return void
 	 * @throws \RuntimeException If there was an error writing
 	 */
-	public function write($data);
+	public function write($config);
 }

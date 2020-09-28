@@ -41,7 +41,7 @@ abstract class E107Base extends Base
 	protected function writeLocalE107Config()
 	{
 		$twig_loader = new ArrayLoader([
-			'e107_config.php' => file_get_contents(codecept_data_dir()."/e107_config.php.sample")
+			'e107_config.php' => file_get_contents(codecept_data_dir()."/e107_config.sample.v2.php")
 		]);
 		$twig = new Environment($twig_loader);
 

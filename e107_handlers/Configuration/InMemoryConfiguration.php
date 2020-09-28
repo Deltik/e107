@@ -256,7 +256,7 @@ class InMemoryConfiguration implements ConfigurationInterface
 	 */
 	public function save()
 	{
-		$this->storageBackend->write($this->data);
+		$this->storageBackend->write($this);
 		$this->saveState = self::SAVED;
 	}
 
