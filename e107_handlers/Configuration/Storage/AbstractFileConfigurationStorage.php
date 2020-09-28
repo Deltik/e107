@@ -50,9 +50,9 @@ abstract class AbstractFileConfigurationStorage implements ConfigurationStorageI
 	/**
 	 * @inheritdoc
 	 */
-	public function write($data)
+	public function write($config)
 	{
-		$fileContents = $this->toFile($data);
+		$fileContents = $this->toFile($config);
 		$bytesWritten = file_put_contents($this->filePath, $fileContents);
 		if ($bytesWritten === FALSE)
 		{
@@ -71,8 +71,8 @@ abstract class AbstractFileConfigurationStorage implements ConfigurationStorageI
 
 	/**
 	 * Convert the configuration data into the raw configuration file format
-	 * @param mixed $data The data from {@see ConfigurationInterface::save()}
+	 * @param ConfigurationInterface $config A {@link ConfigurationInterface} to read from
 	 * @return string The exact contents to write into the configuration file
 	 */
-	abstract protected function toFile($data);
+	abstract protected function toFile($config);
 }

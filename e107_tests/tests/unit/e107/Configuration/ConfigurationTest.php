@@ -104,9 +104,9 @@ class ConfigurationTest extends \Codeception\Test\Unit
 		try
 		{
 			$storage = self::makeEmpty(ConfigurationStorageInterface::class, [
-				'write' => Expected::once(function ($input) use ($data)
+				'write' => Expected::once(function ($input) use ($configuration)
 				{
-					$this->assertEquals($data, $input);
+					$this->assertEquals($configuration, $input);
 				}),
 			]);
 		}
