@@ -52,7 +52,7 @@
 					'autologin'     => 0,
 					'noredirect'    => true,
 					'response'      => '',
-					'_expected_'    => true
+					'_expected_'    => '1.dc21ec566610f0844c6b5ace7ad57283'
 				),
 			);
 			
@@ -84,7 +84,7 @@
 				$this->assertNotEmpty($newid);
 
 				$result = $this->lg->login('newuser', 'newuser', 0, '', true);
-				$this->assertTrue($result);
+				$this->assertMatchesRegularExpression('/[0-9]+\.[0-9a-f]{32}/', $result);
 
 				$class = e107::getDb()->retrieve('user', 'user_class', "user_id = ".$newid);
 

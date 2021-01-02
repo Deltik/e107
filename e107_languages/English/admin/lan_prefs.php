@@ -308,3 +308,8 @@ define("PRFLAN_283", "Display navigation-bar labels");
 define("PRFLAN_284", "Collapse navigation side-bar by default");
 define("PRFLAN_285", "Display field help tips");
 define("PRFLAN_286", "Content Filters");
+
+define("PRFLAN_SESSION_HANDLER_LABEL", "Session handler");
+define("PRFLAN_SESSION_HANDLER_DATABASE", "Database (non-blocking)");
+define("PRFLAN_SESSION_HANDLER_FILES_BLOCKING", "Files (native; blocking)");
+define("PRFLAN_SESSION_HANDLER_FILES_NONBLOCKING", "Files (non-blocking)");
