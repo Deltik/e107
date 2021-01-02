@@ -147,6 +147,7 @@ else
 
 
 
+			$_SESSION[e_COOKIE] = $cookieval;
 
 
 

@@ -37,7 +37,7 @@ e107::coreLan('mailout', true);
 
 require_once (e_ADMIN."auth.php");
 
-$e_userclass = e107::getUserClass(); 
+$e_userclass = e107::getUserClass();
 require_once(e_HANDLER.'mailout_admin_class.php');		// Admin tasks handler
 $ue = e107::getUserExt();
 $core_pref = e107::getConfig();
@@ -191,6 +191,10 @@ if(isset($_POST['updateprefs']))
 				$newValue = $value;
 				$sessionRegenerate = true;
 			}
+		}
+		elseif($key == 'session_handler')
+		{
+			$newValue = $value;
 		}
 		else
 		{
@@ -1437,48 +1441,28 @@ $text .= "
 		
 	}
 
-
-/*
-
-
-					
-	$text .= "
-					<tr>
-						<td>".PRFLAN_81.": </td>
-						<td>
-";
-
-if($hasGD)
+$session_handlers = \e107\Factories\SessionHandlerFactory::getImplementations();
+$mapped_session_handlers = [];
+foreach ($session_handlers as $session_handler)
 {
-	$text .= $frm->radio_switch('logcode', $pref['logcode']);
-}
-else
-{
-	$text .= PRFLAN_133;
-}
-$text .= "
-						</td>
-					</tr>
-					<tr>
-						<td>".PRFLAN_138.": </td>
-						<td>
-";
-if($hasGD)
-{
-	$text .= $frm->radio_switch('fpwcode', $pref['fpwcode']);
-}
-else
-{
-	$text .= PRFLAN_133;
+	switch ($session_handler)
+	{
+		case \e107\SessionHandlers\DatabaseSessionHandler::class:
+			$lan = PRFLAN_SESSION_HANDLER_DATABASE;
+			break;
+		case \e107\SessionHandlers\FilesSessionHandler::class:
+			$lan = PRFLAN_SESSION_HANDLER_FILES_BLOCKING;
+			break;
+		case \e107\SessionHandlers\NonblockingFilesSessionHandler::class:
+			$lan = PRFLAN_SESSION_HANDLER_FILES_NONBLOCKING;
+			break;
+		default:
+			$lan = $session_handler;
+	}
+	$mapped_session_handlers[$session_handler] = $lan;
 }
 
 $text .= "
-						</td>
-					</tr>";
- * 
- 
- */
-    $text .= "
 
 					<tr>
 						<td><label for='disallowmultilogin'>".PRFLAN_129."</label>".$frm->help(PRFLAN_130)."</td>
@@ -1488,45 +1472,28 @@ $text .= "
 					</tr>
 
 					<tr>
-						<td><label for='user-tracking-cookie'>".PRFLAN_48."</label></td>
+						<td><label for='session-handler'>".PRFLAN_SESSION_HANDLER_LABEL."</label></td>
 						<td >
 							<div class='form-inline'>
-							".$frm->radio('user_tracking', array('cookie' => PRFLAN_49, 'session' => PRFLAN_50), varset($pref['user_tracking']))."
+							".$frm->select('session_handler', $mapped_session_handlers, $pref['session_handler'])."
 						</div></td>
 					</tr>
 					
-				
-					<tr>
-						<td><label for='cookie-name'>".PRFLAN_55."</label>".$frm->help(PRFLAN_263)."</td>
-						<td >".$frm->text('cookie_name', varset($pref['cookie_name']), 20)."
-						</td>
-					</tr>
-
+					
 					<tr>
 						<td><label for='session-lifetime'>".PRFLAN_272."</label>".$frm->help(PRFLAN_273)."</td>
 						<td>
 							".$frm->number('session_lifetime', varset($pref['session_lifetime']), 86400)."
 						</td>
 					</tr>
-					";
+					
 
-//	if(e_DEVELOPER) // Experimental (translate terms after this check is removed)
-    {
-           //  $systemSaveMethod = ini_get('session.save_handler');
-           //  $saveMethod = (!empty($systemSaveMethod)) ? $systemSaveMethod : 'files';
-            // $systemSaveMethod => PRFLAN_276,
-                $text .= "
-	                <tr>
-						<td><label for='session-save-method'>".PRFLAN_282."</label></td>
-						<td class='form-inline'>
-							".$frm->select('session_save_method', [ 'db'=>'Database', 'files'=>'Files'], varset($pref['session_save_method']))."
-							
-						</td>
+					<tr>
+						<td><label for='cookie-name'>".PRFLAN_55."</label></td>
+						<td >".$frm->text('cookie_name', $pref['cookie_name'], 20)."
+						<div class='field-help'>".PRFLAN_263.".</div></td>
 					</tr>
-                    ";
-    }
 
-    $text .= "
 					<tr>
 						<td><label for='passwordencoding'>".PRFLAN_188.":</label></td>
 

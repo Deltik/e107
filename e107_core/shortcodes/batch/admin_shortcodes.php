@@ -96,7 +96,7 @@ class admin_shortcodes extends e_shortcode
 
 
     }
-   
+
     // {ADMIN_COREUPDATE}
     public function sc_admin_coreupdate($parm='')
 	{
@@ -367,23 +367,10 @@ class admin_shortcodes extends e_shortcode
 		if($lanperms && !getperms($sql->mySQLlanguage))
 		{
 			$slng->set($lanperms[0]);
-			if ($pref['user_tracking'] === 'session' && $pref['multilanguage_subdomain'])
+			if ($pref['multilanguage_subdomain'])
 			{
 				e107::getRedirect()->redirect($slng->subdomainUrl($lanperms[0]));
 			}
-			/*$sql->mySQLlanguage = ($lanperms[0] != $pref['sitelanguage']) ? $lanperms[0] : "";
-			if ($pref['user_tracking'] == "session")
-			{
-				$_SESSION['e107language_'.$pref['cookie_name']] = $lanperms[0];
-				if($pref['multilanguage_subdomain']){
-					header("Location:".$slng->subdomainUrl($lanperms[0]));
-				}
-			}
-			else
-			{
-				setcookie('e107language_'.$pref['cookie_name'], $lanperms[0], time() + 86400, '/');
-				$_COOKIE['e107language_'.$pref['cookie_name']]= $lanperms[0];
-			}*/
 		}
 
 		if(varset($GLOBALS['mySQLtablelist']))
@@ -2670,7 +2657,7 @@ Inverse 	10 	<span class="badge badge-inverse">10</span>
 		</ul>
 		
 		';
-		
+
 	}
 
 

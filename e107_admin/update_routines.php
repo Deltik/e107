@@ -736,17 +736,29 @@ function update_core_database($type = '')
 			$sql->gen("INSERT INTO `".MPREFIX."core_media_cat` VALUES(0, '_common', '_common_audio', '(Common Audio)', '', 'Media in this category will be available in all areas of admin. ', 253, '', 0);");
 		}
 
-
+		if (e107::getConfig()->has('user_tracking'))
+		{
+			if ($just_check)
+			{
+				return update_needed("Overhauled session handler");
+			}
+			else
+			{
+				$config = e107::getConfig();
+				$config->remove('user_tracking');
+				if (!$config->has('session_handler'))
+				{
+					$should = get_default_prefs();
+					$config->set('session_handler', $should['session_handler']);
+				}
+				$config->save(false, true);
+			}
+		}
 
 
 
 
 		return $just_check;
-
-
-
-
-
 	}
 
 

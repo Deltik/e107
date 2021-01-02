@@ -878,11 +878,15 @@ if (($_SERVER['QUERY_STRING'] === 'logout')/* || (($pref['user_tracking'] == 'se
 	e107::getUser()->logout();
 	
 	// it might be removed soon
-	if ($pref['user_tracking'] === 'session')
+	$_SESSION[e_COOKIE] = '';
+	session_destroy();
+	if (ini_get("session.use_cookies"))
 	{
-		session_destroy();
-		$_SESSION[e_COOKIE]='';
-		// @TODO: Need to destroy the session cookie as well (not done by session_destroy()
+		$params = session_get_cookie_params();
+		setcookie(session_name(), '', time() - 2592000,
+			$params["path"], $params["domain"],
+			$params["secure"], $params["httponly"]
+		);
 	}
 	cookie(e_COOKIE, '', (time() - 2592000));
 	
@@ -1796,46 +1800,6 @@ function cookie($name, $value, $expire=0, $path = e_HTTP, $domain = '', $secure 
 	}
 	
 	setcookie($name, $value, $expire, $path, $domain, $secure, true);
-}
-
-//
-/**
- *
- * generic function for retaining values across pages. ie. cookies or sessions.
- * @deprecated Use e107::getUserSession()->makeUserCookie($userData, $autologin); instead.
- * @param $name
- * @param $value
- * @param string $expire
- * @param string $path
- * @param string $domain
- * @param int $secure
- */
-function session_set($name, $value, $expire='', $path = e_HTTP, $domain = '', $secure = 0)
-{
-
-	//$userData = ['user_name
-//	e107::getUserSession()->makeUserCookie($userData, $autologin);
-
-	global $pref;
-	if ($pref['user_tracking'] === 'session')
-	{
-		$_SESSION[$name] = $value;
-	}
-	else
-	{
-		if((empty($domain) && !e_SUBDOMAIN) || (defined('MULTILANG_SUBDOMAIN') && MULTILANG_SUBDOMAIN === true))
-		{
-			$domain = (e_DOMAIN !== false) ? ".".e_DOMAIN : "";
-		}
-
-		if(defined('e_MULTISITE_MATCH'))
-		{
-			$path = '/';
-		}
-		
-		setcookie($name, $value, $expire, $path, $domain, $secure, true);
-		$_COOKIE[$name] = $value;
-	}
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
