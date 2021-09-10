@@ -154,8 +154,8 @@ class core_library
 			),
 			// Override library path to CDN.
 			'library_path'      => 'https://cdn.jsdelivr.net/jquery.once',
-			'path'              => '2.1.2',
-			'version'           => '2.1.2',
+			'path'              => '2.2.3',
+			'version'           => '2.2.3',
 		);
 
 		// jQuery Once (local).
@@ -238,8 +238,8 @@ class core_library
 			),
 			// Override library path to CDN.
 			'library_path'      => 'https://cdn.jsdelivr.net/jquery.ui',
-			'path'              => '1.11.4',
-			'version'           => '1.11.4',
+			'path'              => '1.12.1',
+			'version'           => '1.12.1',
 		);
 
 		// jQuery UI (local).
@@ -929,9 +929,9 @@ class core_library
 			),
 			'variants'          => array(),
 			// Override library path to CDN.
-			'library_path'      => 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0',
+			'library_path'      => 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2',
 			'path'              => '',
-			'version'           => '5.14.0',
+			'version'           => '5.15.2',
 		);
 
 		// Font-Awesome (local).
@@ -1095,11 +1095,20 @@ class e_library_manager
 	private $callbacks = array();
 
 	/**
+	 * @var e_file
+	 */
+	private $fileHandler;
+
+	/**
 	 * Constructor
 	 * Use {@link getInstance()}, direct instantiating is not possible for signleton objects.
+	 *
+	 * @param e_file|null $fileHandler
 	 */
-	public function __construct()
+	public function __construct($fileHandler = null)
 	{
+		if ($fileHandler === null) $fileHandler = e107::getFile();
+		$this->fileHandler = $fileHandler;
 	}
 
 	/**
@@ -1531,7 +1540,7 @@ class e_library_manager
 		$directories = array();
 
 		// Retrieve list of directories.
-		$file = e107::getFile();
+		$file = $this->fileHandler;
 		$dirs = $file->get_dirs($dir);
 
 		foreach($dirs as $dirName)
@@ -2179,7 +2188,7 @@ class e_library_manager
 		// The library will be cached with version number, so this only run once per library.
 		if(strpos($file, 'http') === 0)
 		{
-			$content = e107::getFile()->getRemoteContent($file);
+			$content = $this->fileHandler->getRemoteContent($file);
 			$tmpFile = tempnam(sys_get_temp_dir(), 'lib_');
 
 			if($tmpFile)
