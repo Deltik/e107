@@ -1267,7 +1267,16 @@ class validatorClass
 						switch ($defs['dbClean'])
 						{
 							case 'toDB' :
-								$value = $tp->toDB($value);
+								$value = $tp->toDB(
+									$value,
+									false,
+									false,
+									false,
+									[
+										'type' => $defs['fieldType'],
+										'field' => $defs['srcName'],
+									]
+								);
 								break;
 							case 'intval' :
 								$value = (int) $value;
