@@ -16,22 +16,31 @@ jobs:
       fail-fast: false
       matrix:
         interpreter:
-          - image: php:7.4
-          - image: php:8.1
-          - image: php:8.2
-          - image: php:8.3
+          - image: php
+            version: 7.4
+          - image: php
+            version: 8.1
+          - image: php
+            version: 8.2
+          - image: php
+            version: 8.3
         db:
-          - image: mysql:5.5
-          - image: bitnami/mysql:8.0
-          - image: mariadb:10.0
-          - image: mariadb:10.6
-          - image: mariadb:10.11
+          - image: mysql
+            version: 5.5
+          - image: bitnami/mysql
+            version: 5.6
+          - image: mariadb
+            version: 10.0
+          - image: mariadb
+            version: 10.6
+          - image: mariadb
+            version: 10.11
     runs-on: ubuntu-latest
     container:
-      image: ${{ matrix.interpreter.image }}
+      image: ${{ matrix.interpreter.image }}:${{ matrix.interpreter.version }}
     services:
       db:
-        image: ${{ matrix.db.image }}
+        image: ${{ matrix.db.image }}:${{ matrix.db.version }}
         env:
           MYSQL_ROOT_PASSWORD: 'Database Password for Continuous Integration'
           MYSQL_DATABASE: 'app'
@@ -69,49 +78,15 @@ jobs:
         USE_GIT_BPO="$(test $VERSION_ID -lt 10 && echo "-t ${DEBIAN_RELEASE}-backports" || echo)"
         apt-get $USE_GIT_BPO install -y git zip libzip-dev libbz2-dev libpng-dev libjpeg-dev libwebp-dev libvpx-dev libicu-dev
 
-    - name: Configure PHP gd extension with default bundle
-      run: |
-        if [ $(php -r 'printf(version_compare(PHP_VERSION, "7.4.0", ">=") ? 1 : 0);') = '1' ]
-        then
-          docker-php-ext-configure gd --with-jpeg --with-webp
-        elif [ $(php -r 'printf(version_compare(PHP_VERSION, "7.0.0", ">=") ? 1 : 0);') = '1' ]
-        then
-          docker-php-ext-configure gd --with-jpeg-dir=/usr --with-webp-dir=/usr
-        else
-          docker-php-ext-configure gd --with-jpeg-dir=/usr --with-vpx-dir=/usr
-        fi
-
-    - name: Install necessary PHP extensions
-      run: |
-        docker-php-ext-install -j "$(nproc)" \
-        zip bz2 gd pdo_mysql mysqli intl
-
-    - name: PECL install xdebug
-      run: |
-        if [ $(php -r 'printf(version_compare(PHP_VERSION, "8.2.99", ">=") ? 1 : 0);') = '1' ]
-        then
-          pecl install https://xdebug.org/files/xdebug-3.3.0alpha2.tgz
-        elif [ $(php -r 'printf(version_compare(PHP_VERSION, "8.0.0", ">=") ? 1 : 0);') = '1' ]
-        then
-          pecl install xdebug
-        elif [ $(php -r 'printf(version_compare(PHP_VERSION, "7.2.0", ">=") ? 1 : 0);') = '1' ]
-        then
-          pecl install xdebug-3.1.6
-        elif [ $(php -r 'printf(version_compare(PHP_VERSION, "7.1.0", ">=") ? 1 : 0);') = '1' ]
-        then
-          pecl install xdebug-2.9.8
-        elif [ $(php -r 'printf(version_compare(PHP_VERSION, "7.0.0", ">=") ? 1 : 0);') = '1' ]
-        then
-          pecl install xdebug-2.7.2
-        else
-          pecl install xdebug-2.5.5
-        fi
-        docker-php-ext-enable xdebug
+    - name: Install PHP extensions and tools
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.interpreter.version }}
+        extensions: zip, bz2, gd, pdo_mysql, mysqli, intl
+        coverage: xdebug
+        tools: composer
 
     - uses: actions/checkout@v3
-
-    - name: Install Composer
-      run: curl -sSL https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin/ --filename=composer
 
     - name: Install test dependencies
       run: composer update --prefer-dist --no-progress
